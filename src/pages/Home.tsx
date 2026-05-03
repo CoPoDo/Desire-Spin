@@ -1,0 +1,103 @@
+import { GameCard } from '../components/layout/GameCard';
+import { BonanzaArt } from './slots/sweet-bonanza/Art';
+import { OlympusArt } from './slots/gates-of-olympus/Art';
+
+export function Home() {
+  return (
+    <div className="space-y-10">
+      <Hero />
+
+      <section>
+        <SectionHeader title="Slots" subtitle="High-fidelity tumble slots" />
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
+          <GameCard
+            to="/slots/sweet-bonanza"
+            title="Sweet Bonanza"
+            subtitle="Tumble · 21,100× max"
+            badge="HOT"
+            bg="linear-gradient(180deg, #2a1148 0%, #160628 100%)"
+            art={<BonanzaArt />}
+          />
+          <GameCard
+            to="/slots/gates-of-olympus"
+            title="Gates of Olympus"
+            subtitle="Tumble · 5,000× max"
+            badge="NEW"
+            bg="linear-gradient(180deg, #0a1530 0%, #070d20 100%)"
+            art={<OlympusArt />}
+          />
+          <GameCard
+            title="Big Bass Bonanza"
+            subtitle="Coming soon"
+            disabled
+            art={<PlaceholderArt label="🎣" tone="#10334a" />}
+          />
+          <GameCard
+            title="Sugar Rush"
+            subtitle="Coming soon"
+            disabled
+            art={<PlaceholderArt label="🍭" tone="#3a124a" />}
+          />
+          <GameCard
+            title="Wanted Dead or a Wild"
+            subtitle="Coming soon"
+            disabled
+            art={<PlaceholderArt label="🤠" tone="#3a2010" />}
+          />
+        </div>
+      </section>
+
+      <section>
+        <SectionHeader title="Originals" subtitle="More games next iteration" />
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4">
+          <GameCard title="Dice" subtitle="Coming soon" disabled art={<PlaceholderArt label="🎲" tone="#102b3a" />} />
+          <GameCard title="Mines" subtitle="Coming soon" disabled art={<PlaceholderArt label="💣" tone="#3a1010" />} />
+          <GameCard title="Crash" subtitle="Coming soon" disabled art={<PlaceholderArt label="🚀" tone="#102b3a" />} />
+          <GameCard title="Plinko" subtitle="Coming soon" disabled art={<PlaceholderArt label="🟣" tone="#241a3a" />} />
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function SectionHeader({ title, subtitle }: { title: string; subtitle?: string }) {
+  return (
+    <div className="flex items-end justify-between mb-3">
+      <div>
+        <h2 className="font-display text-2xl font-bold">{title}</h2>
+        {subtitle && <p className="text-sm text-ink-dim">{subtitle}</p>}
+      </div>
+    </div>
+  );
+}
+
+function PlaceholderArt({ label, tone }: { label: string; tone: string }) {
+  return (
+    <div
+      className="w-full h-full flex items-center justify-center text-6xl"
+      style={{ background: `linear-gradient(180deg, ${tone}, #0b0f17)` }}
+    >
+      <span className="opacity-70">{label}</span>
+    </div>
+  );
+}
+
+function Hero() {
+  return (
+    <section className="relative overflow-hidden rounded-3xl border border-edge bg-gradient-to-br from-bonanza-purple/30 via-bg-card to-olympus-navy/30 p-8 md:p-12">
+      <div className="relative z-10 max-w-2xl">
+        <div className="pill bg-accent/15 text-accent mb-3">play money · provably fair</div>
+        <h1 className="font-display text-3xl md:text-5xl font-extrabold leading-tight">
+          The casino, without the cost.
+        </h1>
+        <p className="mt-3 text-ink-dim max-w-lg">
+          A faithful emulator of modern crypto-casino slots. Every spin is deterministic
+          from a server seed, client seed, and nonce — verifiable in one click.
+          Zero real money, zero stakes.
+        </p>
+      </div>
+      <div className="absolute -right-16 -bottom-16 w-[420px] h-[420px] rounded-full bg-accent/15 blur-3xl pointer-events-none" />
+      <div className="absolute -right-32 top-10 w-[260px] h-[260px] rounded-full bg-accent-violet/20 blur-3xl pointer-events-none" />
+    </section>
+  );
+}

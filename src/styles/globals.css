@@ -1,0 +1,84 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body, #root {
+    height: 100%;
+  }
+  body {
+    background:
+      radial-gradient(1200px 600px at 80% -10%, rgba(167, 139, 250, 0.10), transparent 60%),
+      radial-gradient(1000px 500px at -10% 20%, rgba(34, 211, 238, 0.08), transparent 60%),
+      #0f1419;
+    color: #e5e9f0;
+  }
+  ::selection {
+    background: #1fff7a;
+    color: #0f1419;
+  }
+  /* Subtle scrollbars */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { background: #2a3142; border-radius: 8px; }
+  ::-webkit-scrollbar-thumb:hover { background: #3a4258; }
+  ::-webkit-scrollbar-track { background: transparent; }
+}
+
+@layer components {
+  .card {
+    @apply bg-bg-card border border-edge rounded-2xl shadow-card;
+  }
+  .pill {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-colors disabled:opacity-50 disabled:pointer-events-none;
+  }
+  .btn-primary {
+    @apply btn bg-accent text-bg hover:bg-accent/90;
+  }
+  .btn-ghost {
+    @apply btn bg-bg-hover text-ink hover:bg-edge;
+  }
+  .btn-danger {
+    @apply btn bg-accent-hot text-white hover:bg-accent-hot/90;
+  }
+  .input {
+    @apply w-full rounded-lg bg-bg-elev border border-edge px-3 py-2 text-sm text-ink outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 placeholder:text-ink-mute;
+  }
+  .label {
+    @apply text-xs font-medium uppercase tracking-wide text-ink-dim;
+  }
+  .grid-bg-bonanza {
+    background:
+      radial-gradient(60% 60% at 50% 0%, rgba(255, 95, 162, 0.25), transparent 60%),
+      radial-gradient(60% 60% at 50% 100%, rgba(125, 60, 255, 0.25), transparent 60%),
+      linear-gradient(180deg, #2a1148 0%, #160628 100%);
+  }
+  .grid-bg-olympus {
+    background:
+      radial-gradient(60% 60% at 50% 0%, rgba(255, 198, 42, 0.25), transparent 60%),
+      radial-gradient(60% 60% at 50% 100%, rgba(10, 21, 48, 0.6), transparent 60%),
+      linear-gradient(180deg, #0a1530 0%, #070d20 100%);
+  }
+}
+
+/* Game cell base */
+.cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 1px 0 rgba(255,255,255,0.06) inset, 0 6px 18px rgba(0,0,0,0.35);
+}
+.cell.win {
+  animation: win-pulse 600ms ease-out;
+}
+@keyframes win-pulse {
+  0% { transform: scale(1); filter: brightness(1); }
+  40% { transform: scale(1.08); filter: brightness(1.45); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
