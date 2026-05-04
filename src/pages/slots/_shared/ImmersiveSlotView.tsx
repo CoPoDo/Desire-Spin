@@ -1641,8 +1641,14 @@ export function ImmersiveSlotView({
             style={{ color: cfg.theme.accent }}
           >{statusMsg}</span>
         ) : autoplay ? (
-          <span className="text-[#ffe9a8] flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#ffc62a] animate-pulse" />
+          <span
+            className="flex items-center gap-1.5"
+            style={{ color: cfg.theme.accent }}
+          >
+            <span
+              className="w-1.5 h-1.5 rounded-full animate-pulse"
+              style={{ background: cfg.theme.accent }}
+            />
             AUTO {autoplay.infinite ? '∞' : autoplay.remaining}
           </span>
         ) : !busy && !inFree && winTotal === 0 ? (
