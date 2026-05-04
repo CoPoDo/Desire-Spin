@@ -158,6 +158,11 @@ export function ImmersiveSlotView({
   const [orbImpacts, setOrbImpacts] = useState<{ id: string; col: number; row: number }[]>([]);
   const [clusterPopups, setClusterPopups] = useState<{ id: string; col: number; row: number; payout: number }[]>([]);
   const [prespin, setPrespin] = useState<boolean>(false);
+  // Tier-scaled lightning bolts that strike across the painted scene
+  // during big-win celebrations on Olympus. Each entry is a unique key
+  // + a randomised zigzag path; the SVG renders them with a fade-in /
+  // flash / fade-out animation. Ported from House Edge gatesStrikeLightning.
+  const [bigWinBolts, setBigWinBolts] = useState<{ id: string; d: string; tx: number; ty: number; delay: number }[]>([]);
   const [scatterFlashes, setScatterFlashes] = useState<{ id: string; col: number; row: number }[]>([]);
   const [anticipation, setAnticipation] = useState<number>(0); // current scatter count if >= 3
   const [fsOverlay, setFsOverlay] = useState<{ count: number; reason: 'scatter' | 'retrigger' | 'buy' } | null>(null);
@@ -658,6 +663,39 @@ export function ImmersiveSlotView({
           totalMs * 0.45,
         ),
       );
+    }
+    // Tier-scaled lightning bolts strike across the scene on Olympus
+    // only — Zeus's signature flourish for big wins. Bolt count scales
+    // with intensity (BIG → 3, HUGE → 5, MEGA → 7, EPIC → 9, COLOSSAL
+    // → 12). Each bolt has a randomised zigzag path and staggered start.
+    if (cfg.id === 'gates-of-olympus' && bigWin.tier.intensity >= 0.8) {
+      const boltCount = Math.min(12, Math.round(2 + bigWin.tier.intensity * 2.2));
+      const newBolts: typeof bigWinBolts = [];
+      for (let i = 0; i < boltCount; i++) {
+        // Random target inside the upper grid area (in 100x100 viewBox)
+        const tx = 8 + Math.random() * 84;
+        const ty = 30 + Math.random() * 50;
+        const sx = tx + (Math.random() - 0.5) * 24;
+        const sy = -2;
+        const segs = 4 + Math.floor(Math.random() * 3);
+        let path = `M ${sx.toFixed(1)} ${sy.toFixed(1)}`;
+        for (let s = 1; s <= segs; s++) {
+          const t = s / segs;
+          const baseX = sx + (tx - sx) * t;
+          const baseY = sy + (ty - sy) * t;
+          const jitter = s === segs ? 0 : (Math.random() - 0.5) * 12;
+          path += ` L ${(baseX + jitter).toFixed(1)} ${baseY.toFixed(1)}`;
+        }
+        newBolts.push({
+          id: `bw-bolt-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 6)}`,
+          d: path,
+          tx,
+          ty,
+          delay: i * 65, // ms stagger between strikes
+        });
+      }
+      setBigWinBolts(newBolts);
+      coinTimers.push(window.setTimeout(() => setBigWinBolts([]), totalMs - 200));
     }
     const dismissT = setTimeout(() => setBigWin(null), totalMs);
     return () => {
@@ -1316,6 +1354,45 @@ export function ImmersiveSlotView({
           {/* Tiered Big/Huge/Mega/Epic Win celebration centered on grid.
               Title pulses, payout counts up live, vignette darkens scene
               behind the title for emphasis. Intensity scales tier. */}
+          {/* Big-win lightning strikes (Olympus only). 3-12 bolts strike
+              the scene with staggered timings during the big-win moment. */}
+          {bigWinBolts.length > 0 && (
+            <svg
+              className="absolute inset-0 pointer-events-none z-[9]"
+              viewBox="0 0 100 100"
+              preserveAspectRatio="none"
+              style={{ width: '100%', height: '100%' }}
+            >
+              {bigWinBolts.map((b) => (
+                <g key={b.id} style={{ animation: `tierBoltFlash 0.7s ease-out ${b.delay}ms forwards`, opacity: 0 }}>
+                  {/* Outer wide glow */}
+                  <path
+                    d={b.d}
+                    stroke="#ffe9a8"
+                    strokeWidth="1.4"
+                    fill="none"
+                    strokeLinecap="round"
+                    strokeLinejoin="miter"
+                    vectorEffect="non-scaling-stroke"
+                    style={{
+                      filter: 'drop-shadow(0 0 6px rgba(255,233,168,1)) drop-shadow(0 0 14px rgba(255,180,40,.85))',
+                    }}
+                  />
+                  {/* Inner bright core */}
+                  <path
+                    d={b.d}
+                    stroke="#fffbe1"
+                    strokeWidth="0.5"
+                    fill="none"
+                    strokeLinecap="round"
+                    vectorEffect="non-scaling-stroke"
+                  />
+                  {/* Impact ring at target */}
+                  <circle cx={b.tx} cy={b.ty} r="2.2" fill="rgba(255,233,168,.55)" stroke="#ffe9a8" strokeWidth="0.3" vectorEffect="non-scaling-stroke" />
+                </g>
+              ))}
+            </svg>
+          )}
           <AnimatePresence>
             {bigWin && (
               <motion.div

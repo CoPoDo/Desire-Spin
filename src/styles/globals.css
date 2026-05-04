@@ -1328,6 +1328,18 @@
   100% { transform: translate(110vw, -8px) rotate(720deg); opacity: 0; }
 }
 
+/* Tier-scaled lightning bolt flash (ported from House Edge gates). Each
+ * bolt fades up to 1, holds bright for ~25%, dims and lingers, then
+ * clears. The 0% start at opacity:0 + forwards on the animation lets
+ * the staggered animation-delay control bolt order without flicker. */
+@keyframes tierBoltFlash {
+  0%   { opacity: 0; }
+  10%  { opacity: 1; }
+  35%  { opacity: 0.55; }
+  55%  { opacity: 0.95; }
+  100% { opacity: 0; }
+}
+
 /* Screen-shake utility classes (ported from House Edge). Apply to any
  * container — translates + tiny rotation cycles for ~0.35s/0.55s/0.9s
  * to convey tiered impact on big-win moments. Loops once and ends
