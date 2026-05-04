@@ -1086,16 +1086,16 @@ export function ImmersiveSlotView({
                        *  beyond the dot itself so it reads as RAGE-LIT. */}
                       {/* Left eye — positioned over the painted Zeus's left
                        *  eye in olympus-bg.png. The painted Zeus is in the
-                       *  upper-left; his eyes sit at approximately
-                       *  (14%, 12%) and (18%, 12%) of the stage container.
-                       *  Earlier coords (top:18%) put the eyes on his
-                       *  chest, which is why the user "didn't see them
-                       *  flash" — they were lit but not over the face. */}
+                       *  upper-left; his face is centred around (24%, 10%)
+                       *  in the image. His glowing painted eyes sit at
+                       *  approximately (22%, 10%) and (26%, 10%). Earlier
+                       *  values (14%/18%) were on the LEFT cheek/temple
+                       *  not over the eye sockets. */}
                       <span
                         className="absolute rounded-full bj-zeus-eye"
                         style={{
-                          left: '14%',
-                          top: '11.5%',
+                          left: '22%',
+                          top: '10%',
                           width: '2.6%',
                           aspectRatio: '1 / 1',
                           background:
@@ -1109,8 +1109,8 @@ export function ImmersiveSlotView({
                       <span
                         className="absolute rounded-full bj-zeus-eye"
                         style={{
-                          left: '18%',
-                          top: '11.5%',
+                          left: '26%',
+                          top: '10%',
                           width: '2.6%',
                           aspectRatio: '1 / 1',
                           background:
@@ -1136,7 +1136,7 @@ export function ImmersiveSlotView({
                     <motion.div
                       key={zeusCallout.key}
                       className="absolute pointer-events-none z-[12]"
-                      style={{ left: '23%', top: '7%' }}
+                      style={{ left: '32%', top: '6%' }}
                       initial={{ opacity: 0, scale: 0.5, y: 8 }}
                       animate={{ opacity: 1, scale: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.85 }}
