@@ -1229,25 +1229,26 @@ function BigJuanBackdrop() {
       </svg>
 
       {/* Wrestling ring ropes (top + bottom) — sit just inside the crowd
-       * silhouettes so they read as the front rope of the squared circle */}
+       * silhouettes so they read as the front rope of the squared circle.
+       * Glow pulses with the spotlight rhythm so the gold rope visibly
+       * catches the arena lighting in waves. */}
       <div
-        className="absolute inset-x-0"
+        className="absolute inset-x-0 bj-ring-rope"
         style={{
           top: '14%',
           height: '4px',
           background: 'linear-gradient(180deg, #ffd166, #c8932e)',
-          boxShadow: '0 0 8px rgba(255,209,102,.5)',
           opacity: .8,
         }}
       />
       <div
-        className="absolute inset-x-0"
+        className="absolute inset-x-0 bj-ring-rope"
         style={{
           bottom: '12%',
           height: '4px',
           background: 'linear-gradient(180deg, #ffd166, #c8932e)',
-          boxShadow: '0 0 8px rgba(255,209,102,.5)',
           opacity: .8,
+          animationDelay: '-1.2s',
         }}
       />
       {/* Turnbuckles (red/yellow padding at the corners of the ring) */}

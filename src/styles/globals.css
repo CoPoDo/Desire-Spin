@@ -1431,6 +1431,19 @@
   50%      { transform: translate(-50%, -50%) scale(1.04); filter: blur(.4px) brightness(1.08); }
 }
 
+/* Big Juan ring ropes — gold rope visibly catches the spotlight in
+ * waves. Box-shadow pulse cycles brightness/spread so the rope shines
+ * brighter when light passes over it. Two ropes use offset delay so
+ * they shimmer at different times. */
+.bj-ring-rope {
+  box-shadow: 0 0 8px rgba(255,209,102,.5);
+  animation: bjRingRopeShine 3.4s ease-in-out infinite;
+}
+@keyframes bjRingRopeShine {
+  0%, 100% { box-shadow: 0 0 8px  rgba(255,209,102,.5);  }
+  50%      { box-shadow: 0 0 16px rgba(255,209,102,.95); }
+}
+
 /* Big Juan arena spotlights — slow opacity lift so the stage lighting
  * pulses with the announcer's rhythm. Subtle so it reads as ambient
  * stadium lighting rather than a deliberate effect. */
