@@ -128,11 +128,27 @@ export function BigJuan() {
       sound.play('drop');
     }
 
-    // If wild switch triggered, briefly flash the indicator
+    // If wild switch triggered, do a two-stage reveal: first show the grid
+    // with the original symbols (pre-switch), then flash the banner + sound,
+    // then morph the affected cells into wilds with a brief delay so the
+    // player visually sees the switch happen.
     if (r.wildSwitch?.switched) {
+      // Build the pre-switch grid by reverting the wild-switched cells back
+      // to their original symbol
+      const preSwitchGrid = r.grid.map((col) => [...col]);
+      for (const [reel, row] of r.wildSwitch.positions) {
+        preSwitchGrid[reel]![row] = r.wildSwitch.switchedSymbol!;
+      }
+      // Show pre-switch grid briefly
+      setGrid(preSwitchGrid);
+      await new Promise<void>((res) => setTimeout(res, 380));
+      // Flash banner + sound
       setShowWildSwitch(true);
-      sound.play('big-win');
+      sound.play('mega-win');
+      // Now reveal the wild-switched grid
+      setGrid(r.grid);
       setTimeout(() => setShowWildSwitch(false), 1800);
+      await new Promise<void>((res) => setTimeout(res, 500));
     }
 
     // Mark winning cells
