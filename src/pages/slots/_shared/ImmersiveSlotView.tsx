@@ -213,9 +213,10 @@ export function ImmersiveSlotView({
               for (let i = 0; i < scatterPositions.length; i++) {
                 setTimeout(() => sound.play('scatter-land'), 100 + i * 130);
               }
-              if (scatterPositions.length >= 3) {
+              // Set anticipation level: 2 = subtle tease, 3+ = full anticipation
+              if (scatterPositions.length >= 2) {
                 setAnticipation(scatterPositions.length);
-                sound.play('thunder');
+                if (scatterPositions.length >= 3) sound.play('thunder');
               }
               setTimeout(() => setScatterFlashes([]), 1100);
             }
@@ -322,9 +323,9 @@ export function ImmersiveSlotView({
               setTimeout(() => setScatterFlashes([]), 900);
             }
             const totalScatters = countScattersInGrid(frame.grid, cfg.scatterId);
-            if (totalScatters >= 3) {
+            if (totalScatters >= 2) {
               setAnticipation(totalScatters);
-              if (newScatters.length > 0) sound.play('thunder');
+              if (totalScatters >= 3 && newScatters.length > 0) sound.play('thunder');
             } else {
               setAnticipation(0);
             }
@@ -665,6 +666,26 @@ export function ImmersiveSlotView({
                 'radial-gradient(60% 100% at 50% 50%, #2a1148 0%, #160628 60%, #050308 100%)',
             }}
           />
+          {/* Free-spins backdrop tint — adds a deeper purple/amber overlay
+              during FS sessions so the scene feels visibly shifted into a
+              higher-stakes mode. Real Pragmatic darkens + warms the bg
+              during bonus play. */}
+          <AnimatePresence>
+            {inFree && (
+              <motion.div
+                className="absolute inset-0 pointer-events-none rounded-[14px]"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.6 }}
+                style={{
+                  background:
+                    'linear-gradient(180deg, rgba(120, 40, 10, 0.18) 0%, rgba(60, 10, 80, 0.32) 50%, rgba(20, 5, 40, 0.4) 100%)',
+                  mixBlendMode: 'multiply',
+                }}
+              />
+            )}
+          </AnimatePresence>
           {/* Twinkling stars on top */}
           <div
             className="absolute inset-0 pointer-events-none"
@@ -807,9 +828,32 @@ export function ImmersiveSlotView({
             ))}
           </AnimatePresence>
 
-          {/* Anticipation: pulsing amber-red border + dim when 3+ scatters
-              are visible (one away from a free spins trigger). Real Olympus
-              has the same tension-build during cascades. */}
+          {/* Scatter near-miss tease (2 scatters visible — still need 2 more
+              for a trigger but enough to start the anticipation). Real game
+              starts subtle pulses here. */}
+          <AnimatePresence>
+            {anticipation === 2 && (
+              <motion.div
+                className="absolute inset-0 pointer-events-none z-[3] rounded-2xl"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
+                <motion.div
+                  className="absolute inset-0 rounded-2xl"
+                  style={{
+                    boxShadow: 'inset 0 0 50px rgba(255,200,80,.25)',
+                  }}
+                  animate={{ opacity: [0.4, 0.8, 0.4] }}
+                  transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Anticipation: stronger pulsing amber-red border + on-screen
+              callout when 3+ scatters are visible (one away from a free
+              spins trigger). Real Olympus does this exact tension build. */}
           <AnimatePresence>
             {anticipation >= 3 && (
               <motion.div
