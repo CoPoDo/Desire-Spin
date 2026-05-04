@@ -1904,8 +1904,13 @@ export function ImmersiveSlotView({
                 <div className="card bg-bg-elev/60 p-4 mb-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-ink-dim uppercase tracking-wider">You Get</span>
-                    <span className="font-serif italic font-bold text-2xl text-[#ffe9a8]"
-                          style={{ textShadow: '0 0 12px rgba(255,200,40,.7)' }}>
+                    <span
+                      className="font-serif italic font-bold text-2xl"
+                      style={{
+                        color: cfg.theme.accent,
+                        textShadow: `0 0 12px ${cfg.theme.glow}`,
+                      }}
+                    >
                       {cfg.freeSpinsAwardOnTrigger} Free Spins
                     </span>
                   </div>
