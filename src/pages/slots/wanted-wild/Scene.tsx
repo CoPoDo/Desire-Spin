@@ -121,19 +121,49 @@ export function WantedScene() {
         </g>
       </svg>
 
-      {/* 3. Cactus silhouettes far left + a tumbleweed */}
-      <div
-        className="absolute select-none"
+      {/* 3. Cactus silhouette + nailed WANTED poster on a fence post */}
+      <WantedCactus position={{ bottom: '5%', left: '4%' }} size="min(54px, 12cqw)" />
+
+      {/* Nailed WANTED poster on a fence post (right of the cactus) */}
+      <svg
+        className="absolute"
         style={{
-          bottom: '8%',
-          left: '5%',
-          fontSize: 'min(48px, 11cqw)',
-          opacity: 0.8,
-          filter: 'drop-shadow(0 0 8px rgba(0,0,0,.5))',
+          bottom: '6%',
+          left: '20%',
+          width: 'min(38px, 8cqw)',
+          aspectRatio: '1 / 1.5',
+          filter: 'drop-shadow(0 4px 6px rgba(0,0,0,.6))',
+          opacity: 0.92,
         }}
+        viewBox="0 0 30 45"
       >
-        🌵
-      </div>
+        <defs>
+          <linearGradient id="ww-post" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#5a3a18" />
+            <stop offset="100%" stopColor="#1a0a02" />
+          </linearGradient>
+        </defs>
+        {/* Fence post */}
+        <rect x="13" y="0" width="4" height="45" fill="url(#ww-post)" />
+        {/* Crossbar at top */}
+        <rect x="6" y="3" width="18" height="1.5" fill="url(#ww-post)" />
+        {/* Poster (slightly tilted, off-cream) */}
+        <g transform="rotate(-4 15 18)">
+          <rect x="3" y="6" width="24" height="24" fill="#f5e9d4" stroke="#5a3a04" strokeWidth=".4" />
+          {/* Bullet hole */}
+          <circle cx="22" cy="10" r=".9" fill="#1a0a02" stroke="#3a1a04" strokeWidth=".2" />
+          {/* WANTED text */}
+          <text x="15" y="13" textAnchor="middle" fontSize="3.4" fontFamily="serif" fontWeight="900" fill="#1a0a02">WANTED</text>
+          <line x1="5" y1="14.5" x2="25" y2="14.5" stroke="#1a0a02" strokeWidth=".25" />
+          {/* Skull face */}
+          <circle cx="15" cy="20" r="3.5" fill="#fff5e0" stroke="#1a0a02" strokeWidth=".25" />
+          <ellipse cx="13.5" cy="20" rx=".7" ry=".9" fill="#1a0a02" />
+          <ellipse cx="16.5" cy="20" rx=".7" ry=".9" fill="#1a0a02" />
+          <rect x="13" y="22.5" width="4" height="1" fill="#fff5e0" stroke="#1a0a02" strokeWidth=".15" />
+          {/* DEAD OR ALIVE */}
+          <text x="15" y="27" textAnchor="middle" fontSize="1.6" fontFamily="serif" fontWeight="700" fill="#1a0a02">DEAD OR ALIVE</text>
+        </g>
+      </svg>
       <div
         className="absolute select-none"
         style={{
@@ -215,5 +245,42 @@ export function WantedScene() {
         }}
       />
     </div>
+  );
+}
+
+function WantedCactus({
+  position,
+  size,
+}: {
+  position: { bottom?: string; left?: string; right?: string };
+  size: string;
+}) {
+  return (
+    <svg
+      className="absolute"
+      style={{
+        ...position,
+        width: size,
+        aspectRatio: '1 / 1.5',
+        filter:
+          'drop-shadow(2px 0 4px rgba(255,140,40,.3)) drop-shadow(0 4px 6px rgba(0,0,0,.6))',
+      }}
+      viewBox="0 0 50 75"
+    >
+      <path
+        d="M 22 75 L 22 38 Q 22 28 18 28 Q 12 28 12 34 L 12 48 Q 12 52 16 52
+           L 18 52 L 18 36 Q 18 30 22 30 Z"
+        fill="#1a0a02"
+      />
+      <path
+        d="M 28 75 L 28 28 Q 28 18 34 18 L 38 18 Q 42 18 42 24 L 42 36
+           Q 42 40 38 40 L 36 40 L 36 30 Q 36 26 32 26 Q 28 26 28 32 Z"
+        fill="#1a0a02"
+      />
+      {/* Spine pattern */}
+      {[24, 30].map((x) => (
+        <line key={x} x1={x} y1="34" x2={x} y2="72" stroke="rgba(255,150,80,.16)" strokeWidth=".4" />
+      ))}
+    </svg>
   );
 }
