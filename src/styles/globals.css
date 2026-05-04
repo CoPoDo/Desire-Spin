@@ -731,13 +731,20 @@
 }
 /* Maraca scatter pulses to draw the eye */
 .juan-sym-scatter {
-  animation: juanScatterPulse 1.7s ease-in-out infinite;
+  /* Real maracas SHAKE — short rotational wobble + a subtle scale lift,
+   * not just an idle scale pulse. Combined animation gives the scatter
+   * a "rattling" feel that matches the instrument. */
+  animation: juanScatterShake 1.4s ease-in-out infinite;
   filter: drop-shadow(0 3px 6px rgba(0,0,0,.65))
           drop-shadow(0 0 14px rgba(255, 200, 80, 0.7));
+  transform-origin: 50% 80%; /* rotate around the handle base */
 }
-@keyframes juanScatterPulse {
-  0%, 100% { transform: scale(1) translateZ(0); opacity: 0.95; }
-  50%      { transform: scale(1.05) translateZ(0); opacity: 1; }
+@keyframes juanScatterShake {
+  0%, 100% { transform: rotate(-3deg) scale(1) translateZ(0); opacity: 0.95; }
+  20%      { transform: rotate(4deg) scale(1.03) translateZ(0); opacity: 1; }
+  40%      { transform: rotate(-3deg) scale(1.02) translateZ(0); }
+  60%      { transform: rotate(3deg) scale(1.04) translateZ(0); opacity: 1; }
+  80%      { transform: rotate(-2deg) scale(1.02) translateZ(0); }
 }
 /* Juan (top-pay) gently pulses like a cantina spotlight */
 .juan-sym-hero {
