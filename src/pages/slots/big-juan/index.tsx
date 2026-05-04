@@ -412,9 +412,9 @@ export function BigJuan() {
                   <span className="inline-block" style={{ width: 36, height: 36 }}>
                     <PinataSvg />
                   </span>
-                  BONUS ROUND
+                  ¡PIÑATA TIME!
                 </div>
-                <div className="text-xl mt-1">{showFsTrigger}× SCATTER</div>
+                <div className="text-xl mt-1">{showFsTrigger}× PIÑATA SCATTER</div>
               </div>
             </motion.div>
           )}
