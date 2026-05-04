@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
 import { useGame } from '../../../game-context';
 import { createRng } from '../../../lib/fairness';
@@ -24,7 +24,6 @@ export function BlackjackGame() {
   const [rngState, setRngState] = useState<{ serverSeed: string; clientSeed: string; nonce: number; pos: number } | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const inHand = round !== null && round.phase === 'player';
   const done = round?.phase === 'done';
 
   const startHand = useCallback(() => {
