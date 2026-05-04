@@ -1517,13 +1517,17 @@ function scatterPositionsInGrid(grid: TGrid, scatterId: string): { col: number; 
   return out;
 }
 
-/** Real Pragmatic Olympus win tiers, by payout-to-bet ratio. */
+/** Real Pragmatic Olympus win tiers, by payout-to-bet ratio.
+ *  Real game uses an escalating set: BIG → HUGE → MEGA → EPIC →
+ *  SENSATIONAL → INCREDIBLE / COLOSSAL for the rarest tier. */
 type WinTier = { label: string; intensity: number; sound: 'big-win' | 'mega-win' };
 function winTierFor(payout: number, bet: number): WinTier | null {
   const ratio = payout / Math.max(bet, 0.01);
-  if (ratio >= 100) return { label: 'EPIC WIN',  intensity: 2.4, sound: 'mega-win' };
-  if (ratio >= 50)  return { label: 'MEGA WIN',  intensity: 1.7, sound: 'mega-win' };
-  if (ratio >= 25)  return { label: 'HUGE WIN',  intensity: 1.2, sound: 'big-win' };
-  if (ratio >= 10)  return { label: 'BIG WIN',   intensity: 0.8, sound: 'big-win' };
+  if (ratio >= 500) return { label: 'COLOSSAL WIN',     intensity: 4.0, sound: 'mega-win' };
+  if (ratio >= 200) return { label: 'SENSATIONAL WIN',  intensity: 3.2, sound: 'mega-win' };
+  if (ratio >= 100) return { label: 'EPIC WIN',         intensity: 2.4, sound: 'mega-win' };
+  if (ratio >= 50)  return { label: 'MEGA WIN',         intensity: 1.7, sound: 'mega-win' };
+  if (ratio >= 25)  return { label: 'HUGE WIN',         intensity: 1.2, sound: 'big-win' };
+  if (ratio >= 10)  return { label: 'BIG WIN',          intensity: 0.8, sound: 'big-win' };
   return null;
 }

@@ -109,9 +109,14 @@ export function useSound() {
           tone(720, 80, 'square', 0.05, undefined, 50);
           break;
         case 'drop':
-          // Solid percussive thunk: low tone + filtered noise click.
-          tone(160, 70, 'sine', 0.05, 80);
-          noiseBurst(40, 800, 0.04);
+          // Heavier "stone hits stone" thunk: layered sub-tone (sine 90Hz)
+          // + body tone (square 180Hz) + bright tap (triangle 480Hz) +
+          // filtered noise click. Matches real Olympus's weighty drops.
+          tone(90, 110, 'sine', 0.08, 60);
+          tone(180, 80, 'square', 0.04, 90);
+          tone(480, 40, 'triangle', 0.025, 360, 5);
+          noiseBurst(30, 1200, 0.05);
+          noiseBurst(60, 400, 0.025, 12);
           break;
         case 'multiplier':
           // Bright zap: rising chime + sparkle noise.
