@@ -782,6 +782,46 @@ export function ImmersiveSlotView({
             ))}
           </AnimatePresence>
 
+          {/* Accumulating WIN counter during winning cascades — appears center-
+              top of the grid area whenever there's an active win, grows with
+              each chain payout. Hidden when no win in this spin. */}
+          <AnimatePresence>
+            {winTotal > 0 && !bigWin && (
+              <motion.div
+                key="cascadewin"
+                className="absolute pointer-events-none z-[7]"
+                style={{
+                  left: '50%',
+                  top: `${Math.max(liveInsets.top - 6, 8)}%`,
+                  transform: 'translate(-50%, -50%)',
+                }}
+                initial={{ scale: 0.4, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ opacity: 0, scale: 0.6 }}
+                transition={{ type: 'spring', stiffness: 280, damping: 18 }}
+              >
+                <div
+                  className="flex flex-col items-center px-4 py-1 rounded-full backdrop-blur-sm"
+                  style={{
+                    background: 'linear-gradient(180deg, rgba(80,40,5,.75), rgba(40,20,2,.85))',
+                    border: '1px solid rgba(255,233,168,.55)',
+                    boxShadow:
+                      'inset 0 1px 0 rgba(255,255,255,.25), 0 0 18px rgba(255,200,40,.45), 0 4px 10px rgba(0,0,0,.5)',
+                  }}
+                >
+                  <span className="text-[8px] uppercase tracking-widest text-[#FFE0A8]">Win</span>
+                  <CountUp
+                    value={winTotal}
+                    format={fmtCurrency}
+                    duration={500}
+                    className="font-serif italic font-bold text-lg text-[#fff7d6] leading-none tabular-nums"
+                    style={{ textShadow: '0 0 12px rgba(255,200,40,.95), 0 1px 2px rgba(0,0,0,.6)' }}
+                  />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* Tiered Big/Huge/Mega/Epic Win celebration centered on grid.
               Title pulses, payout counts up live, intensity scales with tier. */}
           <AnimatePresence>
@@ -873,10 +913,12 @@ export function ImmersiveSlotView({
               disabled={busy || autoplay !== null}
               className="flex flex-col items-center"
             >
-              <span className="text-[8px] uppercase tracking-[0.2em] text-ink-mute leading-none">Bet</span>
+              <span className="text-[8px] uppercase tracking-[0.2em] text-ink-mute leading-none">
+                {ante ? 'Total' : 'Bet'}
+              </span>
               <span className="font-mono font-semibold text-sm tabular-nums text-[#ffe9a8] min-w-[52px] text-center"
                     style={{ textShadow: '0 0 10px rgba(255,200,40,.5)' }}>
-                {fmtCurrency(bet)}
+                {fmtCurrency(ante ? bet * cfg.ante.betMultiplier : bet)}
               </span>
             </button>
             <button
