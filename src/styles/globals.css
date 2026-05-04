@@ -1334,6 +1334,15 @@
   50%      { transform: translate(-50%, -50%) scale(1.02); opacity: 0.4;  }
 }
 
+/* Cantina fairy lights — independent per-bulb twinkle. Pure opacity
+ * cycle, no transform, so the GPU can cheaply animate dozens of bulbs
+ * in parallel. Staggered animation-delay (set inline per bulb) makes
+ * the string flicker like real bulbs. */
+@keyframes cantinaFairyLightTwinkle {
+  0%, 100% { opacity: 0.55; }
+  50%      { opacity: 1; }
+}
+
 /* Sugar Rush chocolate river — animated stroke-dashoffset so the
  * cream-coloured glaze appears to flow horizontally. Combined with
  * the dashed stroke this reads as melted chocolate moving rather than

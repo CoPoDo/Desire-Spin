@@ -127,7 +127,10 @@ export function JuanScene() {
           stroke="rgba(0,0,0,.6)"
           strokeWidth=".15"
         />
-        {/* Bulbs along the string */}
+        {/* Bulbs along the string — each twinkles independently with a
+         *  staggered animation-delay so the string flickers like real
+         *  fairy lights catching slight power fluctuations rather than
+         *  glowing all-on. */}
         {Array.from({ length: 18 }).map((_, i) => {
           const x = (i + 0.5) * (100 / 18);
           // Mimic the string sag (matches Q curves above)
@@ -137,8 +140,14 @@ export function JuanScene() {
               : 1 + 1.6 * (1 - Math.abs(x - 75) / 25);
           const colors = ['#ffd166', '#ff5560', '#1fff7a', '#5fb8ff', '#ffae50'];
           const color = colors[i % colors.length]!;
+          // Pseudo-random delay so the twinkle is uncorrelated bulb-to-bulb.
+          const delay = ((i * 7) % 23) / 10;
           return (
-            <g key={i}>
+            <g key={i} style={{
+              animation: 'cantinaFairyLightTwinkle 2.6s ease-in-out infinite',
+              animationDelay: `${delay}s`,
+              transformOrigin: `${x}% ${y}%`,
+            }}>
               <circle
                 cx={x}
                 cy={y}
