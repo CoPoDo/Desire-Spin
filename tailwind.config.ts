@@ -37,6 +37,7 @@ export default {
       },
       fontFamily: {
         display: ['"Sora"', '"Inter"', 'system-ui', 'sans-serif'],
+        serif: ['"Fraunces"', 'ui-serif', 'Georgia', 'serif'],
         sans: ['"Inter"', 'system-ui', 'sans-serif'],
         mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
       },

@@ -54,16 +54,25 @@ export function SlotShell({ cfg, renderCell, initialGrid }: SlotShellProps) {
   const [bigWin, setBigWin] = useState<{ payout: number; multiplier: number } | null>(null);
   const [paytableOpen, setPaytableOpen] = useState(false);
   const [floatingMults, setFloatingMults] = useState<MultiplierLanding[]>([]);
-  const cancelled = useRef(false);
+  const [fsOverlay, setFsOverlay] = useState<{ count: number; reason: 'scatter' | 'retrigger' | 'buy' } | null>(null);
+  const aliveRef = useRef(true);
+  // busyRef shadows the busy state for synchronous re-entry guards — clicking
+  // Spin twice rapidly won't double-debit because the ref flips immediately.
+  const busyRef = useRef(false);
 
-  useEffect(() => () => { cancelled.current = true; }, []);
+  useEffect(() => {
+    aliveRef.current = true;
+    return () => {
+      aliveRef.current = false;
+    };
+  }, []);
 
   const playFrames = useCallback(
     async (frames: Frame[], betUsed: number, mode: SpinMode) => {
       let totalThisRound = 0;
       let lastGrid: TGrid | null = null;
       for (const frame of frames) {
-        if (cancelled.current) return totalThisRound;
+        if (!aliveRef.current) return totalThisRound;
         switch (frame.kind) {
           case 'initialDrop': {
             // Mark all cells as fresh for drop animation
@@ -125,6 +134,11 @@ export function SlotShell({ cfg, renderCell, initialGrid }: SlotShellProps) {
                   ? `Bonus purchased: ${frame.count} free spins`
                   : `Free spins won! ${frame.count} awarded.`,
             );
+            // Show full-screen overlay only for the initial trigger / buy.
+            if (frame.reason !== 'retrigger') {
+              setFsOverlay({ count: frame.count, reason: frame.reason });
+              setTimeout(() => setFsOverlay(null), 2200);
+            }
             setFreeSpins((s) => {
               if (frame.reason === 'retrigger' && s) {
                 return { ...s, total: s.total + frame.count, remaining: s.remaining + frame.count };
@@ -177,47 +191,66 @@ export function SlotShell({ cfg, renderCell, initialGrid }: SlotShellProps) {
 
   const runRound = useCallback(
     async (mode: 'spin' | 'buy') => {
-      if (busy) return;
+      if (busyRef.current) return;
       const baseBet = bet;
       const adjBet = ante ? +(bet * cfg.ante.betMultiplier).toFixed(2) : bet;
       const cost = mode === 'buy' ? cfg.buyBonusCost * baseBet : adjBet;
       if (balance.balance < cost) return;
-      sound.play('spin');
+
+      busyRef.current = true;
       setBusy(true);
+      sound.play('spin');
       setBigWin(null);
       setFloatingMults([]);
       setStatusMsg(mode === 'buy' ? 'Bonus round!' : 'Spinning…');
       balance.debit(cost);
 
-      const seeds = fairness.consumeNonce();
-      const rng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
-      const result =
-        mode === 'buy'
-          ? buyBonusRound(rng, cfg, { bet: baseBet, ante: false })
-          : playRound(rng, cfg, { bet: baseBet, ante });
+      try {
+        const seeds = fairness.consumeNonce();
+        if (!seeds || !seeds.serverSeed || !seeds.clientSeed) {
+          // Defensive: should never happen now that consumeNonce is ref-backed,
+          // but if it ever did we'd refund and bail with a visible message.
+          balance.credit(cost);
+          setStatusMsg('Could not load seeds — try refreshing.');
+          return;
+        }
+        const rng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
+        const result =
+          mode === 'buy'
+            ? buyBonusRound(rng, cfg, { bet: baseBet, ante: false })
+            : playRound(rng, cfg, { bet: baseBet, ante });
 
-      await playFrames(result.frames, baseBet, 'base');
+        await playFrames(result.frames, baseBet, mode === 'buy' ? 'free' : 'base');
 
-      const payout = result.totalPayout;
-      setWinTotal(payout);
-      if (payout > 0) {
-        balance.credit(payout);
-        setStatusMsg(`Won ${fmtCurrency(payout)}!`);
-      } else {
-        setStatusMsg('No win. Spin again?');
+        const payout = result.totalPayout;
+        setWinTotal(payout);
+        if (payout > 0) {
+          balance.credit(payout);
+          setStatusMsg(`Won ${fmtCurrency(payout)}!`);
+        } else {
+          setStatusMsg('No win. Spin again?');
+        }
+        history.record({
+          game: cfg.name,
+          bet: cost,
+          payout,
+          multiplier: payout / Math.max(cost, 0.01),
+          serverSeedHash: fairness.hash,
+          clientSeed: seeds.clientSeed,
+          nonce: seeds.nonce,
+        });
+      } catch (err) {
+        // Refund on engine error so we never silently eat the bet.
+        balance.credit(cost);
+        setStatusMsg('Spin failed — bet refunded. See console for details.');
+        // eslint-disable-next-line no-console
+        console.error('Spin failed:', err);
+      } finally {
+        busyRef.current = false;
+        setBusy(false);
       }
-      history.record({
-        game: cfg.name,
-        bet: cost,
-        payout,
-        multiplier: payout / Math.max(cost, 0.01),
-        serverSeedHash: fairness.hash,
-        clientSeed: seeds.clientSeed,
-        nonce: seeds.nonce,
-      });
-      setBusy(false);
     },
-    [ante, balance, bet, busy, cfg, fairness, history, playFrames, sound],
+    [ante, balance, bet, cfg, fairness, history, playFrames, sound],
   );
 
   const presets = useMemo(() => BET_PRESETS, []);
@@ -225,15 +258,23 @@ export function SlotShell({ cfg, renderCell, initialGrid }: SlotShellProps) {
   const inFree = freeSpins !== null;
 
   return (
-    <div className="space-y-4">
+    <div className={`space-y-4 ${cfg.theme.stageClass ?? ''}`}>
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="font-display text-2xl md:text-3xl font-bold">{cfg.name}</h1>
+          <h1 className={`text-2xl md:text-3xl font-bold ${cfg.theme.stageClass === 'olympus-stage' ? 'font-serif italic' : 'font-display'}`}
+              style={cfg.theme.stageClass === 'olympus-stage' ? {
+                background: 'linear-gradient(180deg, #ffffff 0%, #ffe9a8 50%, #c8932f 100%)',
+                WebkitBackgroundClip: 'text',
+                backgroundClip: 'text',
+                color: 'transparent',
+              } : undefined}>
+            {cfg.name}
+          </h1>
           <p className="text-xs md:text-sm text-ink-dim">{statusMsg}</p>
         </div>
         <div className="flex items-center gap-2">
           {inFree && (
-            <div className="card px-3 py-1.5 text-xs">
+            <div className={`px-3 py-1.5 text-xs rounded-xl ${cfg.theme.stageClass === 'olympus-stage' ? 'olympus-fs-counter' : 'card'}`}>
               <span className="label mr-2">Free spins</span>
               <span className="font-mono">
                 {(freeSpins!.total - freeSpins!.remaining)}/{freeSpins!.total}
@@ -317,10 +358,63 @@ export function SlotShell({ cfg, renderCell, initialGrid }: SlotShellProps) {
           buyBonusCost={buyCost}
           inFreeSpins={inFree}
           freeSpinsRemaining={freeSpins?.remaining}
+          spinButtonClass={cfg.theme.stageClass === 'olympus-stage' ? 'btn-olympus' : undefined}
         />
       </div>
 
       <Paytable open={paytableOpen} onClose={() => setPaytableOpen(false)} cfg={cfg} renderCell={renderCell} />
+
+      <AnimatePresence>
+        {fsOverlay && (
+          <motion.div
+            className={`olympus-fs-overlay fixed inset-0 z-[120] flex flex-col items-center justify-center text-center p-6 pointer-events-none`}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.35 }}
+          >
+            <motion.div
+              className="olympus-fs-title text-5xl md:text-7xl mb-2"
+              initial={{ scale: 0.3, rotate: -8, opacity: 0 }}
+              animate={{ scale: 1, rotate: 0, opacity: 1 }}
+              transition={{ type: 'spring', stiffness: 220, damping: 14 }}
+            >
+              {fsOverlay.reason === 'buy' ? 'BONUS UNLOCKED' : 'FREE SPINS!'}
+            </motion.div>
+            <motion.div
+              className="olympus-fs-sub text-sm md:text-base"
+              initial={{ y: 8, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.25 }}
+            >
+              {fsOverlay.count} spins awarded
+            </motion.div>
+            {/* Lightning bolts */}
+            {[...Array(8)].map((_, i) => {
+              const left = 8 + (i * 11) + (i % 2 === 0 ? 4 : 0);
+              const top = 12 + ((i * 17) % 70);
+              const delay = (i * 0.08) % 0.5;
+              return (
+                <motion.span
+                  key={i}
+                  className="absolute text-4xl md:text-5xl"
+                  style={{
+                    left: `${left}%`,
+                    top: `${top}%`,
+                    color: '#FFE9A8',
+                    textShadow: '0 0 18px rgba(255,200,40,.95), 0 0 36px rgba(255,140,40,.7)',
+                  }}
+                  initial={{ scale: 0, rotate: -180, opacity: 0 }}
+                  animate={{ scale: [0, 1.3, 1], rotate: [180, 20, 0], opacity: [0, 1, 1] }}
+                  transition={{ duration: 0.8, delay, ease: 'easeOut' }}
+                >
+                  ⚡
+                </motion.span>
+              );
+            })}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

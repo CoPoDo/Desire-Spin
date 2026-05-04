@@ -36,13 +36,14 @@ export function Grid({
         const c = idx % cfg.cols;
         const r = Math.floor(idx / cfg.cols);
         const cell = grid[c]?.[r];
-        if (!cell) return <div key={idx} className="cell" />;
+        const cellClass = `cell ${cfg.theme.cellClass ?? ''}`;
+        if (!cell) return <div key={idx} className={cellClass} />;
         const isWin = winning.has(`${c}:${r}`);
         const isNew = newKeys.has(cell.key);
         return (
           <motion.div
             key={cell.key}
-            className={`cell ${isWin ? 'win' : ''}`}
+            className={`${cellClass} ${isWin ? 'win' : ''}`}
             initial={isNew ? { y: -40, opacity: 0 } : false}
             animate={{ y: 0, opacity: 1 }}
             transition={{ type: 'spring', stiffness: 380, damping: 26 }}

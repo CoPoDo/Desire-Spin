@@ -140,5 +140,9 @@ export type SlotConfig = {
     accent: string;
     glow: string;
     gridClass: string;
+    /** Class added to each cell for game-specific styling (`cell-olympus`, `cell-bonanza`). */
+    cellClass: string;
+    /** Class added to the page-level wrapper for atmosphere (e.g. `olympus-stage`). */
+    stageClass?: string;
   };
 };

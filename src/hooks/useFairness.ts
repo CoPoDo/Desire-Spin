@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { loadJson, saveJson } from '../lib/storage';
 import {
   Seeds,
@@ -28,47 +28,61 @@ export function useFairness() {
   const [state, setState] = useState<FairnessState>(() =>
     loadJson<FairnessState | null>(KEY, null) ?? makeFresh(),
   );
+  // Authoritative copy for synchronous reads (setState updater timing in React
+  // 18 makes it unsafe to assume the updater has run before the call returns).
+  const ref = useRef<FairnessState>(state);
+  // Keep ref in sync whenever state changes from anywhere.
+  useEffect(() => {
+    ref.current = state;
+  }, [state]);
 
   useEffect(() => {
     saveJson(KEY, state);
   }, [state]);
 
   const setClientSeed = useCallback((clientSeed: string) => {
-    setState((s) => ({
-      ...s,
-      current: { ...s.current, clientSeed: clientSeed.trim() || generateClientSeed() },
-    }));
+    const trimmed = clientSeed.trim() || generateClientSeed();
+    ref.current = { ...ref.current, current: { ...ref.current.current, clientSeed: trimmed } };
+    setState(ref.current);
   }, []);
 
-  /** Increment nonce — call once per bet committed. Returns the seeds for that bet. */
+  /**
+   * Increment nonce — call once per bet committed. Returns the seeds *as used
+   * by this bet* (i.e. the nonce value the engine should sign with). Reads
+   * and mutates a ref so we get a synchronous, race-free snapshot regardless
+   * of React's batching / StrictMode behavior.
+   */
   const consumeNonce = useCallback((): Seeds => {
-    let snapshot: Seeds | null = null;
-    setState((s) => {
-      snapshot = { ...s.current };
-      return { ...s, current: { ...s.current, nonce: s.current.nonce + 1 } };
-    });
-    return snapshot!;
+    const snapshot: Seeds = { ...ref.current.current };
+    ref.current = {
+      ...ref.current,
+      current: { ...ref.current.current, nonce: ref.current.current.nonce + 1 },
+    };
+    setState(ref.current);
+    return snapshot;
   }, []);
 
   /** Reveal current server seed and rotate to a new one. */
   const rotate = useCallback(() => {
-    setState((s) => {
-      const newServer = generateServerSeed();
-      return {
-        current: {
-          serverSeed: newServer,
-          clientSeed: s.current.clientSeed,
-          nonce: 0,
-        },
-        currentHash: sha256Hex(newServer),
-        previous: { ...s.current, revealed: true },
-      };
-    });
+    const newServer = generateServerSeed();
+    const next: FairnessState = {
+      current: {
+        serverSeed: newServer,
+        clientSeed: ref.current.current.clientSeed,
+        nonce: 0,
+      },
+      currentHash: sha256Hex(newServer),
+      previous: { ...ref.current.current, revealed: true },
+    };
+    ref.current = next;
+    setState(next);
   }, []);
 
   /** Wipe and start fresh. */
   const resetSeeds = useCallback(() => {
-    setState(makeFresh());
+    const fresh = makeFresh();
+    ref.current = fresh;
+    setState(fresh);
   }, []);
 
   const view = useMemo(
@@ -80,5 +94,8 @@ export function useFairness() {
     [state],
   );
 
-  return { ...view, setClientSeed, consumeNonce, rotate, resetSeeds };
+  return useMemo(
+    () => ({ ...view, setClientSeed, consumeNonce, rotate, resetSeeds }),
+    [view, setClientSeed, consumeNonce, rotate, resetSeeds],
+  );
 }

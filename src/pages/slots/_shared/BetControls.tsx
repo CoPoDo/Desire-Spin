@@ -13,6 +13,8 @@ export type BetControlsProps = {
   buyBonusCost: number;
   inFreeSpins: boolean;
   freeSpinsRemaining?: number;
+  /** Optional CSS class for the primary spin button (e.g. `btn-olympus`). */
+  spinButtonClass?: string;
 };
 
 export function BetControls(p: BetControlsProps) {
@@ -94,7 +96,7 @@ export function BetControls(p: BetControlsProps) {
 
       <div className="space-y-2">
         <button
-          className="btn-primary w-full text-base h-12"
+          className={`${p.spinButtonClass ?? 'btn-primary'} btn w-full text-base h-12`}
           disabled={cantSpin}
           onClick={p.onSpin}
         >

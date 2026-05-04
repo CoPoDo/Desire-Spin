@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { loadJson, saveJson } from '../lib/storage';
 
 export type BetRecord = {
@@ -33,5 +33,5 @@ export function useBetHistory() {
 
   const clear = useCallback(() => setHistory([]), []);
 
-  return { history, record, clear };
+  return useMemo(() => ({ history, record, clear }), [history, record, clear]);
 }

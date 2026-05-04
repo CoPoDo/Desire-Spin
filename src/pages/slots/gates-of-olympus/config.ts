@@ -56,5 +56,7 @@ export const gatesOfOlympusConfig: SlotConfig = {
     accent: '#ffc62a',
     glow: 'rgba(255, 198, 42, 0.55)',
     gridClass: 'grid-bg-olympus',
+    cellClass: 'cell-olympus',
+    stageClass: 'olympus-stage',
   },
 };

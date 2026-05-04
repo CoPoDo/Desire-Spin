@@ -112,5 +112,6 @@ export const sweetBonanzaConfig: SlotConfig = {
     accent: '#ff5fa2',
     glow: 'rgba(255,95,162,0.55)',
     gridClass: 'grid-bg-bonanza',
+    cellClass: 'cell-bonanza',
   },
 };
