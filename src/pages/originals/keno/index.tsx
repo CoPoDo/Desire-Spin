@@ -12,6 +12,7 @@ import {
   play,
   tableFor,
 } from './engine';
+import { fireConfetti } from '../../../lib/confetti';
 
 const RISKS: Risk[] = ['classic', 'low', 'medium', 'high'];
 
@@ -85,6 +86,11 @@ export function KenoGame() {
         result.multiplier >= 50 ? 'mega-win' :
         result.multiplier >= 5 ? 'big-win' : 'win',
       );
+      if (result.multiplier >= 5) {
+        fireConfetti({
+          count: result.multiplier >= 50 ? 130 : 70,
+        });
+      }
     } else {
       sound.play('drop');
     }
