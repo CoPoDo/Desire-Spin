@@ -1334,6 +1334,15 @@
   50%      { transform: translate(-50%, -50%) scale(1.02); opacity: 0.4;  }
 }
 
+/* Sugar Rush chocolate river — animated stroke-dashoffset so the
+ * cream-coloured glaze appears to flow horizontally. Combined with
+ * the dashed stroke this reads as melted chocolate moving rather than
+ * a static curve. */
+@keyframes sugarChocolateFlow {
+  0%   { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: -10; }
+}
+
 /* Wolf Gold moon — slow corona breathe. Long-exposure photographs of
  * full moons show a subtle bloom that pulses; this fakes that with a
  * gentle scale + slight brightness lift. Translate centre-anchor

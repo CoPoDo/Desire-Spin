@@ -351,12 +351,17 @@ export function SugarRushScene() {
           d="M 0,8 L 0,3 Q 8,1.6 16,3 Q 24,4.4 32,2.4 Q 42,0.8 52,2.4 Q 62,4 72,2.6 Q 82,1.4 92,3 Q 96,3.8 100,3 L 100,8 Z"
           fill="url(#sr-choc)"
         />
-        {/* Cream-coloured glaze highlight along the surface ripple */}
+        {/* Cream-coloured glaze highlight along the surface ripple. Animated
+         *  to slide horizontally so the chocolate visibly "flows" left to
+         *  right rather than sitting frozen. The dasharray + dashoffset
+         *  trick paints the highlight as a moving stripe along the curve. */}
         <path
           d="M 0,3 Q 8,1.6 16,3 Q 24,4.4 32,2.4 Q 42,0.8 52,2.4 Q 62,4 72,2.6 Q 82,1.4 92,3 Q 96,3.8 100,3"
           fill="none"
           stroke="url(#sr-glaze)"
           strokeWidth=".4"
+          strokeDasharray="6 4"
+          style={{ animation: 'sugarChocolateFlow 4.5s linear infinite' }}
         />
         {/* Tiny chocolate-chip flecks suspended near the surface */}
         {[
