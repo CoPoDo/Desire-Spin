@@ -242,8 +242,8 @@ function Board({
     return out;
   }, [rows, W]);
 
-  const pegRadius = 0.12;
-  const ballRadius = 0.34;
+  const pegRadius = 0.11;
+  const ballRadius = 0.42;
 
   // Bucket geometry: bucket b is centered at x = b + 1 (between adjacent
   // bottom-row pegs), spans width 1, sits at y = rows + 2.0 to H - 0.2.
@@ -265,14 +265,24 @@ function Board({
             <stop offset="80%" stopColor="#7f8aa0" />
             <stop offset="100%" stopColor="#3a3f4d" />
           </radialGradient>
-          <radialGradient id="plinko-ball" cx="32%" cy="28%" r="60%">
-            <stop offset="0%" stopColor="#fffce6" />
-            <stop offset="25%" stopColor="#ffe9a8" />
-            <stop offset="55%" stopColor="#ffc850" />
-            <stop offset="100%" stopColor="#a8761a" />
+          {/* Stake-style ball: bright coral / red with white highlight, dark
+           * burgundy shadow on the underside. */}
+          <radialGradient id="plinko-ball" cx="34%" cy="28%" r="64%">
+            <stop offset="0%" stopColor="#fff5e8" />
+            <stop offset="18%" stopColor="#ffc69b" />
+            <stop offset="50%" stopColor="#ff5560" />
+            <stop offset="80%" stopColor="#c8102e" />
+            <stop offset="100%" stopColor="#5a0810" />
           </radialGradient>
           <filter id="plinko-glow" x="-50%" y="-50%" width="200%" height="200%">
             <feGaussianBlur stdDeviation="0.18" result="b" />
+            <feMerge>
+              <feMergeNode in="b" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+          <filter id="plinko-ball-glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="0.12" result="b" />
             <feMerge>
               <feMergeNode in="b" />
               <feMergeNode in="SourceGraphic" />
@@ -394,9 +404,9 @@ function Ball({
     <motion.circle
       r={ballRadius}
       fill="url(#plinko-ball)"
-      stroke="rgba(120, 70, 0, .6)"
-      strokeWidth={0.025}
-      filter="url(#plinko-glow)"
+      stroke="rgba(90, 8, 16, .8)"
+      strokeWidth={0.03}
+      filter="url(#plinko-ball-glow)"
       initial={{ cx: cxKeys[0], cy: cyKeys[0] }}
       animate={{ cx: cxKeys, cy: cyKeys }}
       transition={{ duration: dur, times, ease: 'easeIn' }}
