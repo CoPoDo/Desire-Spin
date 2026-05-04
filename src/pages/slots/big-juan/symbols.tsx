@@ -123,6 +123,122 @@ export function DiabloSvg({ size = '100%' }: { size?: string | number }) {
   );
 }
 
+/** Guitar — Mexican vihuela / acoustic with rosette + strings. */
+export function GuitarSvg({ size = '100%' }: { size?: string | number }) {
+  return (
+    <svg viewBox="0 0 64 64" width={size} height={size}>
+      <defs>
+        <radialGradient id="bj-gtr-body" cx="35%" cy="35%" r="65%">
+          <stop offset="0%" stopColor="#fff0c4" />
+          <stop offset="40%" stopColor="#d8932e" />
+          <stop offset="80%" stopColor="#7a4a04" />
+          <stop offset="100%" stopColor="#2a1a04" />
+        </radialGradient>
+      </defs>
+      <ellipse cx="32" cy="44" rx="16" ry="14" fill="url(#bj-gtr-body)" stroke="#2a1a04" strokeWidth="1" />
+      <ellipse cx="32" cy="28" rx="10" ry="8" fill="url(#bj-gtr-body)" stroke="#2a1a04" strokeWidth="1" />
+      {/* Sound hole rosette */}
+      <circle cx="32" cy="42" r="4" fill="#1a0a04" stroke="#5a3a04" strokeWidth=".8" />
+      <circle cx="32" cy="42" r="3" fill="none" stroke="rgba(255,209,102,.4)" strokeWidth=".5" />
+      {/* Bridge */}
+      <rect x="26" y="48" width="12" height="2" fill="#5a3a04" />
+      {/* Strings */}
+      {[28, 30, 32, 34, 36].map((x, i) => (
+        <line key={i} x1={x} y1="14" x2={x} y2="50" stroke="#fff5c4" strokeWidth=".4" opacity=".8" />
+      ))}
+      {/* Neck */}
+      <rect x="29" y="6" width="6" height="14" fill="#3a1a04" stroke="#5a3a04" strokeWidth=".7" />
+      {/* Headstock */}
+      <rect x="27" y="3" width="10" height="5" rx="1" fill="#3a1a04" stroke="#5a3a04" strokeWidth=".7" />
+      {[28, 32, 36].map((x, i) => (
+        <circle key={i} cx={x} cy="5.5" r=".8" fill="#ffd166" />
+      ))}
+      {/* Decorative inlays around the rosette (Mexican wooden inlay) */}
+      <circle cx="32" cy="42" r="5.5" fill="none" stroke="#ff5560" strokeWidth=".5" opacity=".6" />
+      <circle cx="32" cy="42" r="6.5" fill="none" stroke="#1fff7a" strokeWidth=".4" opacity=".5" />
+      {/* Body highlight */}
+      <ellipse cx="24" cy="36" rx="3" ry="6" fill="rgba(255,255,255,.35)" />
+    </svg>
+  );
+}
+
+/** Boot — leather cowboy/wrestling boot with stitching. */
+export function BootSvg({ size = '100%' }: { size?: string | number }) {
+  return (
+    <svg viewBox="0 0 64 64" width={size} height={size}>
+      <defs>
+        <linearGradient id="bj-bt-leather" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#a87042" />
+          <stop offset="50%" stopColor="#5a3018" />
+          <stop offset="100%" stopColor="#1a0a02" />
+        </linearGradient>
+      </defs>
+      {/* Boot shaft */}
+      <path d="M16 8 L 30 8 L 32 36 L 16 36 Z" fill="url(#bj-bt-leather)" stroke="#1a0a02" strokeWidth=".8" />
+      {/* Boot foot */}
+      <path d="M16 36 L 32 36 L 52 48 Q 54 50 54 54 L 16 54 Z" fill="url(#bj-bt-leather)" stroke="#1a0a02" strokeWidth=".8" strokeLinejoin="round" />
+      {/* Heel */}
+      <rect x="16" y="50" width="6" height="6" fill="#3a1a04" stroke="#1a0a02" strokeWidth=".6" />
+      {/* Stitching */}
+      <path d="M18 12 L 28 12" stroke="#ffd166" strokeWidth=".4" strokeDasharray="1 1.5" />
+      <path d="M18 22 L 30 22" stroke="#ffd166" strokeWidth=".4" strokeDasharray="1 1.5" />
+      <path d="M18 32 L 30 32" stroke="#ffd166" strokeWidth=".4" strokeDasharray="1 1.5" />
+      {/* Top fold */}
+      <path d="M16 8 L 30 8 L 30 12 L 16 12 Z" fill="#3a1a08" stroke="#1a0a02" strokeWidth=".4" />
+      {/* Decorative star */}
+      <path d="M22 18 L 23 21 L 26 21 L 24 23 L 25 26 L 22 24 L 19 26 L 20 23 L 18 21 L 21 21 Z" fill="#ffd166" stroke="#5a3a04" strokeWidth=".3" />
+      {/* Spur */}
+      <g transform="translate(54 48)">
+        <circle cx="3" cy="0" r="3" fill="none" stroke="#dde4f0" strokeWidth=".7" />
+        {[0, 60, 120, 180, 240, 300].map((a, i) => {
+          const x = 3 + Math.cos((a * Math.PI) / 180) * 3;
+          const y = Math.sin((a * Math.PI) / 180) * 3;
+          return <line key={i} x1="3" y1="0" x2={x} y2={y} stroke="#dde4f0" strokeWidth=".4" />;
+        })}
+      </g>
+    </svg>
+  );
+}
+
+/** Boxing/wrestling glove. */
+export function GloveSvg({ size = '100%' }: { size?: string | number }) {
+  return (
+    <svg viewBox="0 0 64 64" width={size} height={size}>
+      <defs>
+        <radialGradient id="bj-glv" cx="38%" cy="32%" r="65%">
+          <stop offset="0%" stopColor="#a3d4ff" />
+          <stop offset="55%" stopColor="#1a72c4" />
+          <stop offset="100%" stopColor="#0a1f4a" />
+        </radialGradient>
+      </defs>
+      {/* Main fist */}
+      <path
+        d="M 14 24 Q 14 14 24 14 L 38 14 Q 50 14 50 28 L 50 44 Q 50 54 40 54 L 22 54 Q 14 54 14 46 Z"
+        fill="url(#bj-glv)"
+        stroke="#0a1f4a"
+        strokeWidth="1"
+        strokeLinejoin="round"
+      />
+      {/* Thumb bump */}
+      <path d="M 14 28 Q 6 28 6 38 Q 6 46 14 46 Z" fill="url(#bj-glv)" stroke="#0a1f4a" strokeWidth=".8" />
+      {/* Wrist cuff (red strap) */}
+      <rect x="14" y="50" width="36" height="6" fill="#c8102e" stroke="#5a081a" strokeWidth=".6" />
+      <rect x="14" y="50" width="36" height="1.5" fill="rgba(255,255,255,.4)" />
+      {/* Knuckle creases */}
+      <path d="M 18 30 L 18 40" stroke="rgba(0,0,0,.4)" strokeWidth=".5" />
+      <path d="M 26 26 L 26 40" stroke="rgba(0,0,0,.4)" strokeWidth=".5" />
+      <path d="M 34 26 L 34 40" stroke="rgba(0,0,0,.4)" strokeWidth=".5" />
+      <path d="M 42 26 L 42 40" stroke="rgba(0,0,0,.4)" strokeWidth=".5" />
+      {/* Highlight */}
+      <ellipse cx="22" cy="22" rx="5" ry="3" fill="rgba(255,255,255,.5)" transform="rotate(-15 22 22)" />
+      {/* Strap buckle */}
+      <rect x="28" y="51" width="8" height="3" fill="#ffd166" stroke="#5a3a04" strokeWidth=".4" />
+      {/* Stitching on cuff */}
+      <line x1="14" y1="56" x2="50" y2="56" stroke="#5a081a" strokeWidth=".5" strokeDasharray="1 1.5" />
+    </svg>
+  );
+}
+
 /** Sombrero (re-using same wide-brim hat used in Juan's Cantina). */
 export function SombreroSvg({ size = '100%' }: { size?: string | number }) {
   return (

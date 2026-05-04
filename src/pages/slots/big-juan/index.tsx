@@ -20,6 +20,9 @@ import {
   BigJuanSvg,
   DiabloSvg,
   SombreroSvg,
+  GuitarSvg,
+  BootSvg,
+  GloveSvg,
   ChilliSvg,
   PinataSvg,
 } from './symbols';
@@ -693,6 +696,9 @@ function renderBigJuanSymbol(symId: string) {
     case 'juan':     return <BigJuanSvg />;
     case 'diablo':   return <DiabloSvg />;
     case 'sombrero': return <SombreroSvg />;
+    case 'guitar':   return <GuitarSvg />;
+    case 'boot':     return <BootSvg />;
+    case 'glove':    return <GloveSvg />;
     case 'chilli':   return <ChilliSvg />;
     case 'pinata':   return <PinataSvg />;
   }
