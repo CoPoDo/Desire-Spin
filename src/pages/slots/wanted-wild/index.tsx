@@ -12,6 +12,12 @@ export function WantedWild() {
       archInsets={{ left: 8, top: 27, width: 84 }}
       // Smoke + blood-red FS tint
       freeSpinsTint="linear-gradient(180deg, rgba(120, 30, 10, 0.24) 0%, rgba(180, 30, 30, 0.32) 50%, rgba(40, 10, 10, 0.46) 100%)"
+      // Real Wanted Dead or a Wild's bonus name is iconic — "DEAD OR ALIVE"
+      // bounty rounds, sheriff-star burst on the trigger frame. Lightning
+      // bolts make zero sense for a Western. Use a sheriff-star glyph and
+      // a bounty-poster-style banner instead.
+      fsTriggerGlyph="⭐"
+      fsTriggerTitle="DEAD OR ALIVE"
       maxWinLabel="5,000×"
       renderCell={({ symbolId, multiplier }) => {
         if (multiplier !== undefined) {
