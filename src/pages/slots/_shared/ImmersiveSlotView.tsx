@@ -817,7 +817,17 @@ export function ImmersiveSlotView({
           on-grid multiplier total (sum of all visible orbs), and total won.
           Real-Olympus parity. */}
       {inFree && freeSpins && (
-        <div className="absolute top-[max(env(safe-area-inset-top),6px)] mt-[52px] left-1/2 -translate-x-1/2 z-[35] flex items-stretch gap-2 px-3 py-1.5 rounded-2xl olympus-fs-counter whitespace-nowrap">
+        <div
+          className="absolute top-[max(env(safe-area-inset-top),6px)] mt-[52px] left-1/2 -translate-x-1/2 z-[35] flex items-stretch gap-2 px-3 py-1.5 rounded-2xl whitespace-nowrap olympus-fs-counter"
+          // Override the .olympus-fs-counter gold gradient with the
+          // slot's own accent so the FS HUD feels native — Bonanza
+          // glows pink, Cantina warm orange, Wolf violet, etc.
+          style={{
+            background: `linear-gradient(180deg, ${cfg.theme.accent}38, ${cfg.theme.accent}11)`,
+            borderColor: `${cfg.theme.accent}8c`,
+            boxShadow: `inset 0 0 0 1px rgba(255,255,255,.06), 0 0 18px ${cfg.theme.glow}, 0 4px 14px rgba(0,0,0,.45)`,
+          }}
+        >
           <div className="flex flex-col items-center px-1.5">
             <span className="text-[8px] uppercase tracking-widest text-[#FFE0A8]">Spins</span>
             <span className="font-serif italic font-bold text-lg leading-none text-[#ffe9a8] tabular-nums"
