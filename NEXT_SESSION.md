@@ -128,7 +128,7 @@ Hard-coded defaults in `src/pages/slots/gates-of-olympus/index.tsx`:
 
 ## Originals (Stake-style)
 
-20 Stake-style games deployed, all using the shared `OriginalPageLayout`
+21 Stake-style games deployed, all using the shared `OriginalPageLayout`
 (back / title / balance + refill / menu) and the provably-fair RNG via
 `fairness.consumeNonce()`. Each one is in `src/pages/originals/<name>/`
 with `engine.ts` (game logic) + `index.tsx` (UI).
@@ -155,6 +155,7 @@ with `engine.ts` (game logic) + `index.tsx` (UI).
 | Mini Slot | ~96%   | Classic 3-reel single-line, 5 weighted symbols, 2-cherry consolation |
 | Race      | 99%    | Pick 1 of 4 horses, 3.96× payout, animated race reveal |
 | RPS       | 99%    | Rock-Paper-Scissors vs RNG, 1.97× win / push on tie |
+| Dragon Tiger | 99% | Two-card high-card battle, 1.98× side / 16.83× tie |
 
 All games that make sense (Dice/Limbo/Plinko/Wheel/Crash/Diamonds) ship
 with **Manual / Auto tabs** and auto-bet config (count + stop-on-profit
