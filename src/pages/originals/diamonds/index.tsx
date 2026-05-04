@@ -14,6 +14,7 @@ import {
   useAutoBetRunner,
 } from '../_shared/AutoBetController';
 import { type DiamondsResult, gemMeta, play } from './engine';
+import { fireConfetti } from '../../../lib/confetti';
 
 export function DiamondsGame() {
   const { balance, fairness, sound, history, session } = useGame();
@@ -47,6 +48,11 @@ export function DiamondsGame() {
     if (r.payout > 0) {
       balance.credit(r.payout);
       sound.play(r.multiplier >= 50 ? 'mega-win' : r.multiplier >= 5 ? 'big-win' : 'win');
+      if (r.multiplier >= 5) {
+        fireConfetti({
+          count: r.multiplier >= 50 ? 130 : 70,
+        });
+      }
     } else {
       sound.play('drop');
     }

@@ -15,6 +15,7 @@ import {
   popProbFor,
   pumpOnce,
 } from './engine';
+import { fireConfetti } from '../../../lib/confetti';
 
 const DIFFICULTIES: Difficulty[] = ['easy', 'medium', 'hard', 'expert'];
 
@@ -72,6 +73,11 @@ export function PumpGame() {
     const next = cashOut(round);
     setRound(next);
     balance.credit(next.payout);
+    if (currentMult >= 1.5) {
+      fireConfetti({
+        count: currentMult >= 20 ? 130 : currentMult >= 5 ? 80 : 50,
+      });
+    }
     history.record({
       game: 'Pump',
       bet: round.bet,
