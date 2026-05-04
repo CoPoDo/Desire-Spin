@@ -77,34 +77,38 @@ export type ImmersiveSlotViewProps = {
   fsTriggerTitle?: string;
 };
 
-// Frame delays — tuned to feel snappy. Earlier values dragged spins out;
-// real Pragmatic Olympus is significantly faster than I had it.
+// Frame delays — tuned to feel snappy. Real Pragmatic Olympus FS spins
+// take 4-6 seconds each; previous values clocked under 3s so the
+// bonus felt like it flew by. Bumped pacing on every FS-relevant
+// frame so the multiplier reveals + scatter pays + FS award + total
+// breathe properly. Base spins still feel snappy because turbo + skip
+// shortcuts apply on top of these.
 const FRAME_DELAY: Record<string, number> = {
-  initialDrop: 320,        // drop + settle
-  lightningStrike: 1300,   // dramatic Zeus pause (was 2000ms — too long)
-  multipliersLanded: 380,  // subtle orb thump
-  wins: 520,               // brief winning highlight hold
-  tumble: 260,             // clear + new drops settle
-  scattersWon: 600,        // scatter pay flash
-  freeSpinsAwarded: 950,   // award announcement
-  freeSpinsBegin: 800,     // FS session start
-  freeSpinsEnd: 1100,      // FS total reveal
-  multiplierApplied: 850,  // total multiplier × payout reveal
+  initialDrop: 320,         // drop + settle
+  lightningStrike: 1500,    // dramatic Zeus pause
+  multipliersLanded: 480,   // subtle orb thump (slightly longer)
+  wins: 600,                // winning highlight hold
+  tumble: 260,              // clear + new drops settle
+  scattersWon: 750,         // scatter pay flash
+  freeSpinsAwarded: 1100,   // award announcement
+  freeSpinsBegin: 950,      // FS session start
+  freeSpinsEnd: 1300,       // FS total reveal
+  multiplierApplied: 1200,  // total ×N reveal — was 850, way too quick
   final: 0,
 };
 
 // Per-frame minimum delay so turbo doesn't make things janky.
 const TURBO_MIN_DELAY: Record<string, number> = {
   initialDrop: 160,
-  lightningStrike: 700,
-  multipliersLanded: 180,
-  wins: 240,
+  lightningStrike: 800,
+  multipliersLanded: 220,
+  wins: 280,
   tumble: 150,
-  scattersWon: 300,
-  freeSpinsAwarded: 600,
-  freeSpinsBegin: 500,
-  freeSpinsEnd: 700,
-  multiplierApplied: 450,
+  scattersWon: 380,
+  freeSpinsAwarded: 700,
+  freeSpinsBegin: 600,
+  freeSpinsEnd: 800,
+  multiplierApplied: 600,
 };
 
 const TURBO_FACTOR = 0.30;
@@ -256,8 +260,8 @@ export function ImmersiveSlotView({
           frame.kind === 'initialDrop'
         ) {
           const breather = turboRef.current
-            ? (skipRef.current ? 0 : 180)
-            : 500;
+            ? (skipRef.current ? 0 : 240)
+            : 750;
           if (breather > 0) await sleep(breather);
           if (!aliveRef.current) return;
         }
@@ -453,10 +457,13 @@ export function ImmersiveSlotView({
             setStatusMsg(`×${fmtMultiplier(frame.sumOfMultipliers)} → ${fmtCurrency(frame.finalPayout)}`);
             // Real-game-style reveal: pop a centered "TOTAL ×N" banner
             // summing all sticky orbs on the grid, then fade. The banner
-            // auto-clears in well under the 850ms frame-delay so the next
-            // frame plays without overlap.
+            // auto-clears under the 1200ms multiplierApplied frame-delay
+            // so the next frame plays without overlap. Real Bonanza /
+            // Olympus hold the reveal a beat longer than my first pass —
+            // bumped from 720ms to 1000ms so the player has time to
+            // register what just happened.
             setFsMultReveal({ sumOfMultipliers: frame.sumOfMultipliers, finalPayout: frame.finalPayout });
-            scheduleSpin(() => setFsMultReveal(null), turboRef.current ? 380 : 720);
+            scheduleSpin(() => setFsMultReveal(null), turboRef.current ? 540 : 1000);
             break;
           }
           case 'freeSpinsEnd': {
