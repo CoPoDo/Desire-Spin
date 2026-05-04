@@ -102,31 +102,19 @@ export function PharaohScene() {
         ))}
       </svg>
 
-      {/* 3. Palm tree foreground left */}
-      <div
-        className="absolute select-none"
-        style={{
-          bottom: '7%',
-          left: '4%',
-          fontSize: 'min(56px, 12cqw)',
-          opacity: 0.85,
-          filter: 'drop-shadow(0 0 8px rgba(0,0,0,.6))',
-        }}
-      >
-        🌴
-      </div>
-      <div
-        className="absolute select-none"
-        style={{
-          bottom: '6%',
-          right: '6%',
-          fontSize: 'min(48px, 10cqw)',
-          opacity: 0.8,
-          filter: 'drop-shadow(0 0 8px rgba(0,0,0,.6))',
-        }}
-      >
-        🌴
-      </div>
+      {/* 3. Palm tree silhouettes — proper SVG. Curved trunk + 6 fronds
+       * radiating out, plus a small cluster of dates. Silhouetted against
+       * the sunset glow with subtle warm rim-lighting. */}
+      <PalmTree
+        position={{ bottom: '4%', left: '3%' }}
+        size="min(64px, 13cqw)"
+        scaleX={1}
+      />
+      <PalmTree
+        position={{ bottom: '3%', right: '4%' }}
+        size="min(56px, 11cqw)"
+        scaleX={-1}
+      />
 
       {/* 4. Floating glyph particles */}
       <div
@@ -178,5 +166,86 @@ export function PharaohScene() {
         }}
       />
     </div>
+  );
+}
+
+function PalmTree({
+  position,
+  size,
+  scaleX = 1,
+}: {
+  position: { bottom?: string; left?: string; right?: string };
+  size: string;
+  scaleX?: 1 | -1;
+}) {
+  return (
+    <svg
+      className="absolute"
+      style={{
+        ...position,
+        width: size,
+        aspectRatio: '1 / 1.6',
+        filter: 'drop-shadow(0 0 8px rgba(0,0,0,.6)) drop-shadow(2px 0 4px rgba(255,140,40,.35))',
+        transform: `scaleX(${scaleX})`,
+      }}
+      viewBox="0 0 50 80"
+    >
+      <defs>
+        <linearGradient id="ph-trunk" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#3a1a04" />
+          <stop offset="100%" stopColor="#0a0204" />
+        </linearGradient>
+        <linearGradient id="ph-frond" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#1a3a04" />
+          <stop offset="100%" stopColor="#02100a" />
+        </linearGradient>
+      </defs>
+      {/* Curved trunk */}
+      <path
+        d="M 24 78 Q 22 50 26 28 Q 28 14 24 4"
+        stroke="url(#ph-trunk)"
+        strokeWidth="3"
+        strokeLinecap="round"
+        fill="none"
+      />
+      {/* Trunk segments (texture) */}
+      {[20, 30, 40, 50, 60, 70].map((y, i) => (
+        <line
+          key={i}
+          x1="22"
+          y1={y}
+          x2="27"
+          y2={y - 1}
+          stroke="#0a0204"
+          strokeWidth=".4"
+          opacity=".6"
+        />
+      ))}
+      {/* Fronds — 6 leaves radiating from the top */}
+      <path d="M 24 4 Q 8 2 0 12" stroke="url(#ph-frond)" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+      <path d="M 24 4 Q 6 8 -2 22" stroke="url(#ph-frond)" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+      <path d="M 24 4 Q 14 -4 6 -6" stroke="url(#ph-frond)" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+      <path d="M 24 4 Q 36 -2 44 -6" stroke="url(#ph-frond)" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+      <path d="M 24 4 Q 42 2 50 12" stroke="url(#ph-frond)" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+      <path d="M 24 4 Q 44 8 52 22" stroke="url(#ph-frond)" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+      {/* Frond tip leaves (small triangles giving the spiky-leaf feel) */}
+      {[
+        [3, 11], [-1, 21], [7, -5], [43, -5], [47, 11], [51, 21],
+      ].map(([x, y], i) => (
+        <ellipse
+          key={i}
+          cx={x}
+          cy={y}
+          rx="1.2"
+          ry="0.4"
+          fill="#0a1a02"
+          opacity=".75"
+        />
+      ))}
+      {/* Dates cluster (small dark dots near the crown) */}
+      <circle cx="22" cy="6" r=".7" fill="#5a3a04" />
+      <circle cx="26" cy="6" r=".7" fill="#5a3a04" />
+      <circle cx="24" cy="8" r=".6" fill="#5a3a04" />
+    </svg>
   );
 }
