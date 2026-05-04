@@ -594,6 +594,9 @@ export function ImmersiveSlotView({
       setAnticipation(0);
       setStatusMsg('');
       setWinTotal(0);
+      setZeusEyesGlow(false);
+      setBigWinBolts([]);
+      setFsMultReveal(null);
       // Pre-spin: blur+darken the previous grid for ~180ms so the swap to
       // the new grid feels like a real "reels stopped" transition.
       setPrespin(true);
