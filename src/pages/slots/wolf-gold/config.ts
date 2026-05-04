@@ -52,5 +52,12 @@ export const wolfGoldConfig: SlotConfig = {
     glow: 'rgba(167,139,250,0.65)',
     gridClass: 'grid-bg-wolf',
     cellClass: 'cell-wolf',
+    // Real Wolf Gold (Pragmatic) is a 5×3 reel slot — the reels
+    // physically scroll vertically with motion blur during the spin
+    // animation, then stop sequentially left-to-right (the iconic
+    // Pragmatic reel-spin sound + visual). Set prespinStyle: 'reel-spin'
+    // so the visual matches the real-game character rather than the
+    // tumble fall-out used by Bonanza/Olympus.
+    prespinStyle: 'reel-spin',
   },
 };
