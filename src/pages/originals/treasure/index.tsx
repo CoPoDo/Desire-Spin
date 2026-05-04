@@ -12,6 +12,7 @@ import {
   type Tile,
   generateGrid,
 } from './engine';
+import { fireConfetti } from '../../../lib/confetti';
 
 type Phase = 'idle' | 'playing' | 'lost' | 'cashed';
 
@@ -76,6 +77,11 @@ export function TreasureGame() {
     balance.credit(payout);
     sound.play(accumulated >= 10 ? 'mega-win' : accumulated >= 2 ? 'big-win' : 'win');
     setPhase('cashed');
+    if (accumulated >= 1.5) {
+      fireConfetti({
+        count: accumulated >= 30 ? 130 : accumulated >= 10 ? 80 : 50,
+      });
+    }
     if (seedsUsed) {
       history.record({
         game: 'Treasure',

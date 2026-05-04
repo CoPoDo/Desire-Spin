@@ -12,6 +12,7 @@ import {
   play,
   zonePayoutMultiplier,
 } from './engine';
+import { fireConfetti } from '../../../lib/confetti';
 
 type Phase = 'idle' | 'shot' | 'reveal';
 
@@ -58,6 +59,10 @@ export function PenaltyGame() {
       if (r.goal) {
         balance.credit(r.payout);
         sound.play('big-win');
+        fireConfetti({
+          count: r.multiplier >= 6 ? 130 : 80,
+          colors: ['#1fff7a', '#ffffff', '#ffd166'],
+        });
       } else {
         sound.play('drop');
       }
