@@ -66,6 +66,14 @@ export type ImmersiveSlotViewProps = {
   /** Optional custom free-spins backdrop tint (pure CSS background). When
    *  omitted, a warm purple/amber Olympus-style overlay is used. */
   freeSpinsTint?: string;
+  /** Glyph rendered as the floating decoration on the FS-trigger overlay.
+   *  Defaults to ⚡ (lightning) for Olympus. Per-slot themes override:
+   *  Cantina passes 🎺/🎉, Bonanza passes 🍬, etc. Accepts any short
+   *  string (emoji or single character) — kept simple to avoid SVG churn. */
+  fsTriggerGlyph?: string;
+  /** Override the FS trigger banner copy (default: "FREE SPINS!" or
+   *  "BONUS UNLOCKED" for buy-mode). Cantina uses "FIESTA TIME!", etc. */
+  fsTriggerTitle?: string;
 };
 
 // Frame delays — tuned to feel snappy. Earlier values dragged spins out;
@@ -118,6 +126,8 @@ export function ImmersiveSlotView({
   backdropElement,
   backdropAspect,
   freeSpinsTint,
+  fsTriggerGlyph = '⚡',
+  fsTriggerTitle,
   archInsets,
   betPresets = DEFAULT_PRESETS,
   maxWinLabel = '5,000×',
@@ -1983,7 +1993,9 @@ export function ImmersiveSlotView({
               animate={{ scale: 1, rotate: 0, opacity: 1 }}
               transition={{ type: 'spring', stiffness: 220, damping: 14 }}
             >
-              {fsOverlay.reason === 'buy' ? 'BONUS UNLOCKED' : 'FREE SPINS!'}
+              {fsOverlay.reason === 'buy'
+                ? 'BONUS UNLOCKED'
+                : (fsTriggerTitle ?? 'FREE SPINS!')}
             </motion.div>
             <motion.div
               className="olympus-fs-sub text-xs md:text-base"
@@ -2010,7 +2022,7 @@ export function ImmersiveSlotView({
                   initial={{ scale: 0, rotate: -180, opacity: 0 }}
                   animate={{ scale: [0, 1.3, 1], rotate: [180, 20, 0], opacity: [0, 1, 1] }}
                   transition={{ duration: 0.8, delay, ease: 'easeOut' }}
-                >⚡</motion.span>
+                >{fsTriggerGlyph}</motion.span>
               );
             })}
           </motion.div>

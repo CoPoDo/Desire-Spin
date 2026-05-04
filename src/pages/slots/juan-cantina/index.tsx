@@ -14,6 +14,11 @@ export function JuanCantina() {
       archInsets={{ left: 8, top: 27, width: 84 }}
       // Warm dusk-fire FS tint (deep red-orange)
       freeSpinsTint="linear-gradient(180deg, rgba(180, 60, 20, 0.22) 0%, rgba(200, 40, 60, 0.34) 50%, rgba(60, 10, 20, 0.46) 100%)"
+      // Lightning bolts (the default Olympus FS-trigger glyph) feel wrong
+      // for a mariachi cantina. Swap for a chili-pepper pop and rebrand
+      // the banner with the on-theme fiesta callout.
+      fsTriggerGlyph="🌶"
+      fsTriggerTitle="¡FIESTA TIME!"
       maxWinLabel="5,000×"
       renderCell={({ symbolId, multiplier }) => {
         if (multiplier !== undefined) {
