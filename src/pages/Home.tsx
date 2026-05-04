@@ -5,6 +5,7 @@ import { SugarRushArt } from './slots/sugar-rush/Art';
 import { JuanCantinaArt } from './slots/juan-cantina/Art';
 import { WantedWildArt } from './slots/wanted-wild/Art';
 import { PharaohGoldArt } from './slots/pharaoh-gold/Art';
+import { WolfGoldArt } from './slots/wolf-gold/Art';
 
 export function Home() {
   return (
@@ -61,6 +62,14 @@ export function Home() {
             badge="NEW"
             bg="linear-gradient(180deg, #ffd166 0%, #14051a 100%)"
             art={<PharaohGoldArt />}
+          />
+          <GameCard
+            to="/slots/wolf-gold"
+            title="Wolf Gold"
+            subtitle="Tumble · Moonlit wilderness"
+            badge="NEW"
+            bg="linear-gradient(180deg, #6638c8 0%, #02010a 100%)"
+            art={<WolfGoldArt />}
           />
         </div>
       </section>
