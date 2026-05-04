@@ -141,6 +141,20 @@ export function Home() {
             badge="LIVE"
             art={<PlaceholderArt label="💎" tone="#1a3a3a" />}
           />
+          <GameCard
+            to="/originals/video-poker"
+            title="Video Poker"
+            subtitle="Jacks or Better"
+            badge="LIVE"
+            art={<PlaceholderArt label="🃏" tone="#3a1a10" />}
+          />
+          <GameCard
+            to="/originals/coin-flip"
+            title="Coin Flip"
+            subtitle="Streak the coin"
+            badge="LIVE"
+            art={<PlaceholderArt label="🪙" tone="#3a3010" />}
+          />
         </div>
       </section>
     </div>

@@ -21,6 +21,8 @@ import { RouletteGame } from './pages/originals/roulette';
 import { BlackjackGame } from './pages/originals/blackjack';
 import { BaccaratGame } from './pages/originals/baccarat';
 import { DiamondsGame } from './pages/originals/diamonds';
+import { VideoPokerGame } from './pages/originals/video-poker';
+import { CoinFlipGame } from './pages/originals/coin-flip';
 
 export default function App() {
   return (
@@ -49,6 +51,8 @@ export default function App() {
         <Route path="/originals/blackjack" element={<BlackjackGame />} />
         <Route path="/originals/baccarat" element={<BaccaratGame />} />
         <Route path="/originals/diamonds" element={<DiamondsGame />} />
+        <Route path="/originals/video-poker" element={<VideoPokerGame />} />
+        <Route path="/originals/coin-flip" element={<CoinFlipGame />} />
 
         {/* Lobby + non-game routes — full Layout with sidebar */}
         <Route path="/" element={<Layout><Home /></Layout>} />
