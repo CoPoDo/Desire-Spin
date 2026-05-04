@@ -87,6 +87,24 @@ export function SugarRushScene() {
         <path d="M 48,1 L 52,1 L 51,4 L 49,4 Z" fill="rgba(255,255,255,.65)" />
       </svg>
 
+      {/* Stage-light glow behind the reels — gives the grid focus and
+       * matches real Sugar Rush's pink stage-light backdrop behind the
+       * reels. Sized to cover the grid footprint (top:27% width:84%). */}
+      <div
+        className="absolute pointer-events-none"
+        style={{
+          left: '50%',
+          top: '46%',
+          transform: 'translate(-50%, -50%)',
+          width: '92%',
+          height: '50%',
+          background:
+            'radial-gradient(ellipse at center, rgba(255,200,232,.34) 0%, rgba(255,140,210,.18) 40%, transparent 75%)',
+          filter: 'blur(8px)',
+          mixBlendMode: 'screen',
+        }}
+      />
+
       {/* 4. Cloud puffs (wispier) */}
       <div
         className="absolute inset-0"
