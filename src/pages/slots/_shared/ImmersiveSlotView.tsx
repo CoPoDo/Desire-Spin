@@ -6,6 +6,7 @@ import { useGame } from '../../../game-context';
 import { useMusic } from '../../../hooks/useMusic';
 import { createRng } from '../../../lib/fairness';
 import { fireConfetti } from '../../../lib/confetti';
+import { speakZeus, zeusLineFor } from '../../../lib/zeusVoice';
 import { fmtCurrency, fmtMultiplier } from '../../../lib/format';
 import type {
   Frame,
@@ -171,6 +172,12 @@ export function ImmersiveSlotView({
   // + a randomised zigzag path; the SVG renders them with a fade-in /
   // flash / fade-out animation. Ported from House Edge gatesStrikeLightning.
   const [bigWinBolts, setBigWinBolts] = useState<{ id: string; d: string; tx: number; ty: number; delay: number }[]>([]);
+  // Zeus eyes glow red briefly when divine events fire (multipliers
+  // landing, lightning strike, free-spins trigger). Only shown on
+  // Olympus since Zeus is in that backdrop. Paired with a deep TTS
+  // line via lib/zeusVoice so the moment lands as "the god has
+  // spoken" rather than just "a glow appeared".
+  const [zeusEyesGlow, setZeusEyesGlow] = useState<boolean>(false);
   const [scatterFlashes, setScatterFlashes] = useState<{ id: string; col: number; row: number }[]>([]);
   const [anticipation, setAnticipation] = useState<number>(0); // current scatter count if >= 3
   const [fsOverlay, setFsOverlay] = useState<{ count: number; reason: 'scatter' | 'retrigger' | 'buy' } | null>(null);
@@ -306,6 +313,11 @@ export function ImmersiveSlotView({
             // multiplier orbs onto the board. Dramatic full-screen overlay.
             sound.play('lightning-strike');
             setLightningStrike(true);
+            if (cfg.id === 'gates-of-olympus') {
+              setZeusEyesGlow(true);
+              speakZeus(zeusLineFor('lightningStrike'));
+              scheduleSpin(() => setZeusEyesGlow(false), 1400);
+            }
             // Schedule timings scale with turbo / skip so orbs land BEFORE
             // the frame ends and the overlay clears, regardless of speed.
             const lsBase = 1500; // matches lightningStrike frame delay range
@@ -366,6 +378,15 @@ export function ImmersiveSlotView({
             setGrid(frame.grid);
             lastGrid = frame.grid;
             sound.play('multiplier');
+            // Zeus's eyes glow red + voice line when multipliers land
+            // on the board — only on Olympus. Real Pragmatic Olympus
+            // has a sampled VO; we approximate with deep TTS via
+            // lib/zeusVoice.
+            if (cfg.id === 'gates-of-olympus') {
+              setZeusEyesGlow(true);
+              speakZeus(zeusLineFor('multiplierLanded'));
+              scheduleSpin(() => setZeusEyesGlow(false), 1100);
+            }
             // Impact rings — each orb gets an expanding gold ring at its
             // landing position. Real Olympus shows a similar shockwave.
             const impacts = frame.landings.map((l) => ({
@@ -431,6 +452,11 @@ export function ImmersiveSlotView({
           }
           case 'freeSpinsAwarded': {
             sound.play('free-spins-trigger');
+            if (cfg.id === 'gates-of-olympus') {
+              setZeusEyesGlow(true);
+              speakZeus(zeusLineFor('freeSpinsTrigger'));
+              scheduleSpin(() => setZeusEyesGlow(false), 1800);
+            }
             if (frame.reason !== 'retrigger') {
               setFsOverlay({ count: frame.count, reason: frame.reason });
               scheduleSpin(() => setFsOverlay(null), 2400);
@@ -888,21 +914,74 @@ export function ImmersiveSlotView({
           }}
         >
           {backdropSrc ? (
-            <img
-              src={backdropSrc}
-              alt=""
-              className="absolute inset-0 w-full h-full select-none"
-              draggable={false}
-              // If the painted backdrop fails to load, fall back to the
-              // gradient — the game still plays, just no painted scene.
-              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-              style={{
-                filter: 'drop-shadow(0 12px 40px rgba(0,0,0,.6))',
-                borderRadius: '14px',
-                background:
-                  'radial-gradient(60% 100% at 50% 50%, #2a1148 0%, #160628 60%, #050308 100%)',
-              }}
-            />
+            <>
+              <img
+                src={backdropSrc}
+                alt=""
+                className="absolute inset-0 w-full h-full select-none"
+                draggable={false}
+                // If the painted backdrop fails to load, fall back to the
+                // gradient — the game still plays, just no painted scene.
+                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                style={{
+                  filter: 'drop-shadow(0 12px 40px rgba(0,0,0,.6))',
+                  borderRadius: '14px',
+                  background:
+                    'radial-gradient(60% 100% at 50% 50%, #2a1148 0%, #160628 60%, #050308 100%)',
+                }}
+              />
+              {/* Zeus eye-glow overlay (Olympus only). Two red dots
+               *  positioned over the painted Zeus's face, lit only when
+               *  zeusEyesGlow is true. Real Pragmatic Olympus shows
+               *  Zeus's eyes flash when he intervenes; we approximate
+               *  with two pulsing red radial-gradients positioned at
+               *  approximate eye coordinates of the painted figure. */}
+              {cfg.id === 'gates-of-olympus' && (
+                <AnimatePresence>
+                  {zeusEyesGlow && (
+                    <motion.div
+                      className="absolute pointer-events-none z-[8]"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: [0, 1, 1, 0.6, 1] }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 1.2, ease: 'easeOut' }}
+                      style={{ inset: 0 }}
+                    >
+                      {/* Left eye */}
+                      <span
+                        className="absolute rounded-full"
+                        style={{
+                          left: '14%',
+                          top: '17.5%',
+                          width: '1.1%',
+                          aspectRatio: '1 / 1',
+                          background:
+                            'radial-gradient(circle, #ffffff 0%, #ff3030 35%, rgba(200,16,46,.85) 60%, transparent 80%)',
+                          boxShadow:
+                            '0 0 6px rgba(255,48,48,1), 0 0 14px rgba(255,40,40,.85), 0 0 28px rgba(200,16,46,.6)',
+                          mixBlendMode: 'screen',
+                        }}
+                      />
+                      {/* Right eye */}
+                      <span
+                        className="absolute rounded-full"
+                        style={{
+                          left: '17.6%',
+                          top: '17.5%',
+                          width: '1.1%',
+                          aspectRatio: '1 / 1',
+                          background:
+                            'radial-gradient(circle, #ffffff 0%, #ff3030 35%, rgba(200,16,46,.85) 60%, transparent 80%)',
+                          boxShadow:
+                            '0 0 6px rgba(255,48,48,1), 0 0 14px rgba(255,40,40,.85), 0 0 28px rgba(200,16,46,.6)',
+                          mixBlendMode: 'screen',
+                        }}
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              )}
+            </>
           ) : backdropElement ? (
             <div
               className="absolute inset-0 w-full h-full overflow-hidden"
