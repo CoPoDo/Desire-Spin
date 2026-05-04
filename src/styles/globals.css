@@ -414,6 +414,16 @@
   text-shadow: 0 0 14px rgba(255, 200, 40, 0.7), 0 2px 4px rgba(0, 0, 0, 0.5);
 }
 
+/* Spin button color-shift when free spins are active. Real Pragmatic
+   tints its main action button with a subtle violet/amethyst hue during
+   bonus to communicate the elevated state. */
+.olympus-fs-mode .spin-btn,
+.spin-btn[data-fs="1"] {
+  background:
+    radial-gradient(circle at 35% 28%, #fff5c4 0%, #ffd37a 18%, #f5c56f 38%, #c8932e 65%, #6a4410 100%);
+  filter: hue-rotate(-12deg) saturate(1.05);
+}
+
 /* Big round SPIN button for immersive slot view (Pragmatic-style mobile) */
 .spin-btn {
   position: relative;

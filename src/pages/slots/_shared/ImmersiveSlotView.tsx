@@ -858,6 +858,38 @@ export function ImmersiveSlotView({
             <Grid grid={grid} cfg={cfg} winning={winning} newKeys={newKeys} renderCell={renderCell} bare />
           </div>
 
+          {/* Scatter columns pulse with subtle gold light when 3+ scatters
+              are visible — entire columns containing scatters glow softly,
+              drawing the eye to potential bonus triggers. Real Pragmatic
+              does the same column-light sweep for tension. */}
+          {anticipation >= 3 && (() => {
+            const cols = new Set<number>();
+            for (let c = 0; c < grid.length; c++) {
+              const column = grid[c]!;
+              for (const cell of column) {
+                if (cell.symbolId === cfg.scatterId) { cols.add(c); break; }
+              }
+            }
+            return Array.from(cols).map((c) => (
+              <motion.div
+                key={`scatcol-${c}`}
+                className="absolute pointer-events-none z-[3]"
+                style={{
+                  left: `${liveInsets.left + c * (liveInsets.width / cfg.cols)}%`,
+                  top: `${liveInsets.top}%`,
+                  width: `${liveInsets.width / cfg.cols}%`,
+                  height: `${liveInsets.width / cfg.cols * (cfg.rows / 1.2)}%`,
+                  background:
+                    'linear-gradient(180deg, rgba(255,233,168,0.0) 0%, rgba(255,200,80,0.18) 50%, rgba(255,233,168,0.0) 100%)',
+                  mixBlendMode: 'screen',
+                  borderRadius: '8px',
+                }}
+                animate={{ opacity: [0.4, 0.95, 0.4] }}
+                transition={{ duration: 1.1, repeat: Infinity, ease: 'easeInOut' }}
+              />
+            ));
+          })()}
+
           {/* Idle cell glint — random subtle sparkle when no spin running */}
           <AnimatePresence>
             {idleGlint && (
@@ -1031,6 +1063,33 @@ export function ImmersiveSlotView({
                 </div>
               </motion.div>
             )}
+          </AnimatePresence>
+
+          {/* Lit background around winning cluster centroids — warm gold
+              radial glow behind each cluster makes the painted scene feel
+              illuminated by the win. Real Pragmatic does this. */}
+          <AnimatePresence>
+            {clusterPopups.map((p) => (
+              <motion.div
+                key={`winlit-${p.id}`}
+                className="absolute pointer-events-none z-[1] rounded-full"
+                style={{
+                  left: `${liveInsets.left + (p.col + 0.5) * (liveInsets.width / cfg.cols)}%`,
+                  top: `${liveInsets.top + (p.row + 0.5) * (liveInsets.width / cfg.cols)}%`,
+                  width: `${liveInsets.width / cfg.cols * 3}%`,
+                  aspectRatio: '1 / 1',
+                  transform: 'translate(-50%, -50%)',
+                  background:
+                    'radial-gradient(circle at 50% 50%, rgba(255,200,80,0.45) 0%, rgba(255,140,40,0.2) 35%, transparent 65%)',
+                  filter: 'blur(8px)',
+                  mixBlendMode: 'screen',
+                }}
+                initial={{ opacity: 0, scale: 0.5 }}
+                animate={{ opacity: [0, 0.85, 0.65], scale: [0.5, 1.2, 1] }}
+                exit={{ opacity: 0, scale: 0.6 }}
+                transition={{ duration: 0.55 }}
+              />
+            ))}
           </AnimatePresence>
 
           {/* Win amount popup over each winning cluster (real Olympus parity).
@@ -1224,9 +1283,15 @@ export function ImmersiveSlotView({
             AUTO {autoplay.infinite ? '∞' : autoplay.remaining}
           </span>
         ) : !busy && !inFree && winTotal === 0 ? (
-          <span className="text-ink-mute uppercase tracking-[0.18em] text-[10px]">
-            Place Your Bet
-          </span>
+          balance.balance < (ante ? bet * cfg.ante.betMultiplier : bet) ? (
+            <span className="text-[#ff5560] uppercase tracking-[0.18em] text-[10px] font-bold">
+              Insufficient Balance
+            </span>
+          ) : (
+            <span className="text-ink-mute uppercase tracking-[0.18em] text-[10px]">
+              Place Your Bet
+            </span>
+          )
         ) : null}
       </div>
 
@@ -1299,6 +1364,7 @@ export function ImmersiveSlotView({
           }}
           disabled={!autoplay && (busy || balance.balance < (ante ? bet * cfg.ante.betMultiplier : bet))}
           className="spin-btn flex-shrink-0"
+          data-fs={inFree ? '1' : undefined}
         >
           <span className="spin-btn-inner">
             {autoplay ? (
