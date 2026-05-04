@@ -4,6 +4,7 @@ import { useGame } from '../../game-context';
 import { fmtCurrency } from '../../lib/format';
 import { FairnessPanel } from '../fairness/FairnessPanel';
 import { BetHistoryTable } from '../fairness/BetHistoryTable';
+import { BackIcon, MenuDotsIcon } from '../ui/icons';
 
 /** Full-screen immersive layout for a slot game page. No sidebar, no footer.
  *  A compact floating top bar shows balance + back link + sound toggle.
@@ -23,9 +24,7 @@ export function SlotPageLayout({ children }: { children: ReactNode }) {
           aria-label="Back to lobby"
           className="flex items-center justify-center w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm border border-white/10 text-white/90 hover:bg-black/60"
         >
-          <svg viewBox="0 0 24 24" width={20} height={20} fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M15 18l-6-6 6-6"/>
-          </svg>
+          <BackIcon size={20} strokeWidth={2.4} />
         </Link>
 
         <div className="flex-1 flex items-center justify-center gap-1">
@@ -52,11 +51,7 @@ export function SlotPageLayout({ children }: { children: ReactNode }) {
           onClick={() => setMenuOpen((v) => !v)}
           className="flex items-center justify-center w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm border border-white/10 text-white/90 hover:bg-black/60"
         >
-          <svg viewBox="0 0 24 24" width={20} height={20} fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="5"  r="1.4"/>
-            <circle cx="12" cy="12" r="1.4"/>
-            <circle cx="12" cy="19" r="1.4"/>
-          </svg>
+          <MenuDotsIcon size={20} strokeWidth={2.4} />
         </button>
       </header>
 

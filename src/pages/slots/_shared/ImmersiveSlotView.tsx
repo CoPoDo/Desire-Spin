@@ -19,6 +19,10 @@ import { Paytable } from './Paytable';
 import { buyBonusRound, playRound } from './engine';
 import { CountUp } from '../../../components/ui/CountUp';
 import { CoinShower } from '../../../components/ui/CoinShower';
+import {
+  TurboIcon, AutoplayIcon, InfoIcon, MusicIcon, MusicMutedIcon,
+  PlusIcon, MinusIcon, StopIcon, SpinArrowIcon,
+} from '../../../components/ui/icons';
 
 /**
  * Mobile-first immersive slot view. The whole viewport is the game:
@@ -931,8 +935,10 @@ export function ImmersiveSlotView({
               aria-label="Decrease bet"
               onClick={stepDown}
               disabled={busy || autoplay !== null || presetIdx === 0}
-              className="w-8 h-8 rounded-full bg-bg-card border border-edge text-ink hover:bg-bg-hover disabled:opacity-40 flex items-center justify-center text-lg leading-none"
-            >−</button>
+              className="w-8 h-8 rounded-full bg-bg-card border border-edge text-ink hover:bg-bg-hover disabled:opacity-40 flex items-center justify-center"
+            >
+              <MinusIcon />
+            </button>
             <button
               onClick={() => setBetSheetOpen(true)}
               disabled={busy || autoplay !== null}
@@ -950,8 +956,10 @@ export function ImmersiveSlotView({
               aria-label="Increase bet"
               onClick={stepUp}
               disabled={busy || autoplay !== null || presetIdx === betPresets.length - 1}
-              className="w-8 h-8 rounded-full bg-bg-card border border-edge text-ink hover:bg-bg-hover disabled:opacity-40 flex items-center justify-center text-lg leading-none"
-            >+</button>
+              className="w-8 h-8 rounded-full bg-bg-card border border-edge text-ink hover:bg-bg-hover disabled:opacity-40 flex items-center justify-center"
+            >
+              <PlusIcon />
+            </button>
           </div>
           <button
             onClick={() => setBuyBonusOpen(true)}
@@ -974,13 +982,25 @@ export function ImmersiveSlotView({
           className="spin-btn flex-shrink-0"
         >
           <span className="spin-btn-inner">
-            <span className="spin-btn-text">
-              {autoplay
-                ? 'STOP'
-                : busy
-                  ? (inFree ? `${freeSpins!.remaining}` : '…')
-                  : inFree ? freeSpins!.remaining : 'SPIN'}
-            </span>
+            {autoplay ? (
+              <span className="text-[#fff7d6] flex items-center justify-center" style={{ filter: 'drop-shadow(0 0 8px rgba(255,200,80,.95))' }}>
+                <StopIcon size={26} />
+              </span>
+            ) : busy ? (
+              inFree ? (
+                <span className="spin-btn-text">{freeSpins!.remaining}</span>
+              ) : (
+                <span className="text-[#fff7d6] flex items-center justify-center animate-spin" style={{ filter: 'drop-shadow(0 0 8px rgba(255,200,80,.95))' }}>
+                  <SpinArrowIcon size={28} />
+                </span>
+              )
+            ) : inFree ? (
+              <span className="spin-btn-text">{freeSpins!.remaining}</span>
+            ) : (
+              <span className="text-[#fff7d6] flex items-center justify-center" style={{ filter: 'drop-shadow(0 0 10px rgba(255,200,80,.95))' }}>
+                <SpinArrowIcon size={32} strokeWidth={2.6} />
+              </span>
+            )}
           </span>
         </button>
 
@@ -990,32 +1010,40 @@ export function ImmersiveSlotView({
             <button
               aria-label={turbo ? 'Turbo on' : 'Turbo off'}
               onClick={() => setTurbo((t) => !t)}
-              className={`w-8 h-8 rounded-full border flex items-center justify-center text-base leading-none transition ${
+              className={`w-8 h-8 rounded-full border flex items-center justify-center transition ${
                 turbo
                   ? 'bg-gradient-to-b from-[#ffc62a] to-[#c8932e] border-[#ffe9a8] text-[#1a0f00] shadow-[0_0_14px_rgba(255,198,42,.6)]'
                   : 'bg-bg-card border-edge text-ink-dim'
               }`}
-            >⚡</button>
+            >
+              <TurboIcon size={16} />
+            </button>
             <button
               aria-label="Auto play"
               onClick={() => setAutoplaySheetOpen(true)}
               disabled={busy || inFree}
-              className="w-8 h-8 rounded-full bg-bg-card border border-edge text-ink-dim hover:bg-bg-hover disabled:opacity-40 flex items-center justify-center text-base leading-none"
-            >↻</button>
+              className="w-8 h-8 rounded-full bg-bg-card border border-edge text-ink-dim hover:bg-bg-hover disabled:opacity-40 flex items-center justify-center"
+            >
+              <AutoplayIcon size={16} />
+            </button>
             <button
               aria-label="Game info / paytable"
               onClick={() => setPaytableOpen(true)}
-              className="w-8 h-8 rounded-full bg-bg-card border border-edge text-ink-dim hover:bg-bg-hover flex items-center justify-center text-sm leading-none font-serif italic font-bold"
-            >i</button>
+              className="w-8 h-8 rounded-full bg-bg-card border border-edge text-ink-dim hover:bg-bg-hover flex items-center justify-center"
+            >
+              <InfoIcon size={16} />
+            </button>
             <button
               aria-label={music.musicEnabled ? 'Music on' : 'Music off'}
               onClick={() => music.setMusicEnabled(!music.musicEnabled)}
-              className={`w-8 h-8 rounded-full border flex items-center justify-center text-sm leading-none ${
+              className={`w-8 h-8 rounded-full border flex items-center justify-center ${
                 music.musicEnabled
                   ? 'bg-bg-card border-[#ffc62a]/40 text-[#ffe9a8]'
                   : 'bg-bg-card border-edge text-ink-mute'
               }`}
-            >♪</button>
+            >
+              {music.musicEnabled ? <MusicIcon size={16} /> : <MusicMutedIcon size={16} />}
+            </button>
           </div>
           <label className="flex items-center gap-1.5 cursor-pointer text-[10px] uppercase tracking-wider text-ink-dim w-full justify-center">
             <input
