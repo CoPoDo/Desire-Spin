@@ -85,6 +85,13 @@ export function Home() {
             badge="LIVE"
             art={<PlaceholderArt label="🟣" tone="#241a3a" />}
           />
+          <GameCard
+            to="/originals/wheel"
+            title="Wheel"
+            subtitle="Spin to win"
+            badge="LIVE"
+            art={<PlaceholderArt label="🎡" tone="#3a2010" />}
+          />
         </div>
       </section>
     </div>
