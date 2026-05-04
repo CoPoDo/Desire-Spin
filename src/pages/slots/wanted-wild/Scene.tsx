@@ -164,50 +164,41 @@ export function WantedScene() {
           <text x="15" y="27" textAnchor="middle" fontSize="1.6" fontFamily="serif" fontWeight="700" fill="#1a0a02">DEAD OR ALIVE</text>
         </g>
       </svg>
+      {/* Rusted horseshoe nailed to a fence post on the right (replaces a
+       *  wheat emoji that read as a green sprout — wrong palette + wrong
+       *  vibe for a dusty western backdrop). */}
+      <Horseshoe position={{ bottom: '7%', right: '12%' }} size="min(28px, 6cqw)" />
+
+      {/* Rolling tumbleweeds across the foreground — proper SVG tumbleweed
+       *  (tangled dry-brush ball) instead of a potted-plant emoji. Two
+       *  staggered instances at different sizes so it feels organic rather
+       *  than a single repeating sprite. */}
       <div
-        className="absolute select-none"
+        className="absolute"
         style={{
           bottom: '7%',
-          right: '12%',
-          fontSize: 'min(28px, 6cqw)',
-          opacity: 0.7,
-          filter: 'drop-shadow(0 0 6px rgba(0,0,0,.4)) sepia(.5) saturate(2)',
-          color: '#a0703a',
-        }}
-      >
-        🌾
-      </div>
-
-      {/* Rolling tumbleweed across the foreground (signature western
-          ambient touch). Two staggered instances at different sizes so it
-          feels organic rather than a single repeating sprite. */}
-      <div
-        className="absolute select-none"
-        style={{
-          bottom: '8%',
           left: 0,
-          fontSize: 'min(22px, 5cqw)',
-          color: '#7a4a18',
-          filter: 'drop-shadow(0 2px 4px rgba(0,0,0,.5)) sepia(.6) saturate(1.4)',
+          width: 'min(28px, 6cqw)',
+          aspectRatio: '1 / 1',
           animation: 'wantedTumbleweed 22s linear infinite',
           willChange: 'transform, opacity',
         }}
       >
-        🪴
+        <Tumbleweed />
       </div>
       <div
-        className="absolute select-none"
+        className="absolute"
         style={{
-          bottom: '6%',
+          bottom: '5%',
           left: 0,
-          fontSize: 'min(18px, 4cqw)',
-          color: '#7a4a18',
-          filter: 'drop-shadow(0 2px 4px rgba(0,0,0,.5)) sepia(.6) saturate(1.4)',
+          width: 'min(22px, 5cqw)',
+          aspectRatio: '1 / 1',
           animation: 'wantedTumbleweed 30s linear 14s infinite',
           willChange: 'transform, opacity',
+          opacity: 0.85,
         }}
       >
-        🪴
+        <Tumbleweed />
       </div>
 
       {/* Warm dusk stage-light glow behind reels */}
@@ -297,6 +288,104 @@ function WantedCactus({
       {[24, 30].map((x) => (
         <line key={x} x1={x} y1="34" x2={x} y2="72" stroke="rgba(255,150,80,.16)" strokeWidth=".4" />
       ))}
+    </svg>
+  );
+}
+
+/** Tumbleweed — tangled ball of dry brush. Built from concentric arcs +
+ *  radial twigs to read as a wind-blown bramble at any size. */
+function Tumbleweed() {
+  return (
+    <svg
+      viewBox="0 0 32 32"
+      style={{ width: '100%', height: '100%', filter: 'drop-shadow(0 2px 3px rgba(0,0,0,.55))' }}
+    >
+      {/* Outer twig spokes radiating from centre — gives the bramble silhouette */}
+      <g stroke="#5a3a14" strokeWidth=".7" strokeLinecap="round" fill="none" opacity=".95">
+        {[0, 30, 60, 95, 130, 165, 200, 235, 270, 305, 340].map((deg, i) => {
+          const r1 = 4 + (i % 3) * 0.4;
+          const r2 = 13 + (i * 1.3) % 3;
+          const a = (deg * Math.PI) / 180;
+          const x1 = 16 + Math.cos(a) * r1;
+          const y1 = 16 + Math.sin(a) * r1;
+          const x2 = 16 + Math.cos(a) * r2;
+          const y2 = 16 + Math.sin(a) * r2;
+          return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} />;
+        })}
+      </g>
+      {/* Mid-density tangle: arcs that don't form a perfect circle */}
+      <g stroke="#7a4a1a" strokeWidth=".55" fill="none" opacity=".85">
+        <path d="M 6 14 Q 12 7 22 9 Q 28 12 26 22 Q 22 28 12 26 Q 5 22 6 14 Z" />
+        <path d="M 10 12 Q 18 10 24 16 Q 24 22 16 24 Q 9 22 10 12 Z" />
+        <path d="M 8 18 Q 14 24 22 22 Q 26 18 22 12" />
+      </g>
+      {/* Inner brighter strands for depth */}
+      <g stroke="#a87038" strokeWidth=".4" fill="none" opacity=".75">
+        <path d="M 12 12 Q 18 14 20 20" />
+        <path d="M 22 13 Q 18 18 13 20" />
+        <path d="M 11 18 L 22 18" />
+      </g>
+      {/* A few stray twigs poking out of the silhouette */}
+      <g stroke="#3a1a04" strokeWidth=".6" strokeLinecap="round" opacity=".9">
+        <line x1="2" y1="14" x2="6" y2="15" />
+        <line x1="29" y1="18" x2="25" y2="17" />
+        <line x1="16" y1="2" x2="16" y2="6" />
+        <line x1="14" y1="30" x2="15" y2="26" />
+      </g>
+    </svg>
+  );
+}
+
+/** Horseshoe — rusted iron horseshoe with nail-holes. Sits as a small
+ *  prop on the right of the scene. */
+function Horseshoe({
+  position,
+  size,
+}: {
+  position: { bottom?: string; right?: string; left?: string };
+  size: string;
+}) {
+  return (
+    <svg
+      className="absolute"
+      style={{
+        ...position,
+        width: size,
+        aspectRatio: '1 / 1.05',
+        filter: 'drop-shadow(0 3px 5px rgba(0,0,0,.6))',
+        opacity: 0.92,
+      }}
+      viewBox="0 0 32 34"
+    >
+      <defs>
+        <linearGradient id="ww-iron" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#7a5a30" />
+          <stop offset="55%" stopColor="#a87038" />
+          <stop offset="100%" stopColor="#3a1a04" />
+        </linearGradient>
+      </defs>
+      {/* Horseshoe — open-bottom U shape, slightly tilted */}
+      <g transform="rotate(-12 16 17)">
+        <path
+          d="M 6 6 Q 6 0 16 0 Q 26 0 26 6 L 26 22 Q 26 28 22 28 L 22 12 Q 22 8 16 8 Q 10 8 10 12 L 10 28 Q 6 28 6 22 Z"
+          fill="url(#ww-iron)"
+          stroke="#1a0a02"
+          strokeWidth=".7"
+        />
+        {/* Nail holes — 3 on each side */}
+        {[
+          [9, 9],
+          [9, 14],
+          [9, 19],
+          [23, 9],
+          [23, 14],
+          [23, 19],
+        ].map(([cx, cy], i) => (
+          <circle key={i} cx={cx} cy={cy} r=".7" fill="#1a0a02" />
+        ))}
+        {/* Top inner highlight (rim sheen) */}
+        <path d="M 8 4 Q 16 1 24 4" stroke="rgba(255,200,120,.45)" strokeWidth=".5" fill="none" />
+      </g>
     </svg>
   );
 }
