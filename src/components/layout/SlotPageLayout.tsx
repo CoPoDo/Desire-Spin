@@ -1,4 +1,4 @@
-import { ReactNode, useState } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useGame } from '../../game-context';
 import { fmtCurrency } from '../../lib/format';
@@ -14,6 +14,20 @@ export function SlotPageLayout({ children }: { children: ReactNode }) {
   const [fairnessOpen, setFairnessOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+
+  // Lock body scroll while the slot page is mounted. Belt-and-suspenders:
+  // the layout is also fixed inset-0 + overflow-hidden, but on Android Chrome
+  // the URL bar collapsing while playing can transiently expose body scroll.
+  useEffect(() => {
+    const prevHtml = document.documentElement.style.overflow;
+    const prevBody = document.body.style.overflow;
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.documentElement.style.overflow = prevHtml;
+      document.body.style.overflow = prevBody;
+    };
+  }, []);
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-[#060311] text-ink flex flex-col">
