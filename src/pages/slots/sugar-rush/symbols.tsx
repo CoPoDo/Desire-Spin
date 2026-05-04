@@ -5,10 +5,13 @@ import { motion } from 'framer-motion';
 const wrap = 'bonanza-sym';
 const scatterWrap = 'bonanza-sym bonanza-sym-scatter sugar-sym-scatter';
 
-/** Donut — pink-glazed with rainbow sprinkles, hole in the middle. */
+/** Donut — pink-glazed with rainbow sprinkles, hole in the middle.
+ *  Top-pay symbol for Sugar Rush gets a slow gentle pulse like the
+ *  hero symbol in real candy slots — visibly special vs. the
+ *  cupcake/popsicle/gummy bear that just sit. */
 export function DonutSymbol() {
   return (
-    <div className={wrap} style={{ color: '#ff7ad9' }}>
+    <div className={`${wrap} sugar-sym-donut`} style={{ color: '#ff7ad9' }}>
       <svg viewBox="0 0 64 64" className="w-full h-full">
         <defs>
           <radialGradient id="dn-dough" cx="50%" cy="50%" r="55%">

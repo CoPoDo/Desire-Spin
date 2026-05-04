@@ -1685,6 +1685,18 @@
   0%, 100% { transform: scale(1) translateZ(0); opacity: 0.95; }
   50%      { transform: scale(1.05) translateZ(0); opacity: 1; }
 }
+/* Sugar Rush top-pay donut — gentle pulse + slow rotate so the hero
+ * symbol visibly stands out from the cupcake/popsicle/gummy bear
+ * supporting cast. The rotation is slow enough to read as the donut
+ * "sitting on display" rather than rolling. */
+.sugar-sym-donut {
+  animation: sugarDonutPulse 2.3s ease-in-out infinite;
+}
+@keyframes sugarDonutPulse {
+  0%, 100% { transform: scale(1) rotate(-3deg) translateZ(0); }
+  50%      { transform: scale(1.06) rotate(3deg) translateZ(0); }
+}
+
 /* Sugar Rush lollipop scatter — overrides the Bonanza idle pulse with a
  * slow continuous spin (lollipops twirl on their stick). Combined with
  * the existing pulse this reads as the candy disc rotating while
