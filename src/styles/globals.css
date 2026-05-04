@@ -1376,6 +1376,18 @@
   50%      { transform: translate(-50%, -50%) scale(1.02); opacity: 0.4;  }
 }
 
+/* Cantina door lantern — oil-lamp flame flicker. Combines opacity
+ * variation + r-value variation so the lantern dot grows / shrinks
+ * subtly while flickering. Steeper irregular pattern reads as flame
+ * catching draughts rather than a smooth pulse. */
+@keyframes cantinaLanternFlicker {
+  0%, 100% { fill-opacity: 0.85; r: 0.5;  }
+  18%      { fill-opacity: 0.7;  r: 0.45; }
+  35%      { fill-opacity: 1;    r: 0.6;  }
+  52%      { fill-opacity: 0.75; r: 0.48; }
+  72%      { fill-opacity: 0.95; r: 0.55; }
+}
+
 /* Cantina fairy lights — independent per-bulb twinkle. Pure opacity
  * cycle, no transform, so the GPU can cheaply animate dozens of bulbs
  * in parallel. Staggered animation-delay (set inline per bulb) makes

@@ -94,8 +94,14 @@ export function JuanScene() {
           {/* Porch railing posts */}
           <rect x="0" y="17" width=".5" height="3" fill="#0a0204" />
           <rect x="23.5" y="17" width=".5" height="3" fill="#0a0204" />
-          {/* Hanging lantern at the door */}
-          <circle cx="12" cy="9.5" r=".5" fill="rgba(255,209,102,.85)" />
+          {/* Hanging lantern at the door — oil-lamp flicker. The flame
+           *  catches subtle drafts so the lantern "lives" instead of
+           *  glowing as a flat dot. */}
+          <circle
+            cx="12" cy="9.5" r=".5"
+            fill="rgba(255,209,102,.85)"
+            style={{ animation: 'cantinaLanternFlicker 1.6s ease-in-out infinite' }}
+          />
           <line x1="12" y1="9" x2="12" y2="7" stroke="#0a0204" strokeWidth=".15" />
         </g>
         {/* Near desert ground line with some texture */}
