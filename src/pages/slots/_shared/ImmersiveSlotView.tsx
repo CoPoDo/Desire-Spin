@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useGame } from '../../../game-context';
 import { useMusic } from '../../../hooks/useMusic';
 import { createRng } from '../../../lib/fairness';
+import { fireConfetti } from '../../../lib/confetti';
 import { fmtCurrency, fmtMultiplier } from '../../../lib/format';
 import type {
   Frame,
@@ -636,6 +637,27 @@ export function ImmersiveSlotView({
     for (let i = 0; i < coinCount; i++) {
       const at = 200 + (i / coinCount) * (totalMs - 800) + Math.random() * 80;
       coinTimers.push(window.setTimeout(() => sound.play('coin'), at));
+    }
+    // Visual chip-shower in the slot's accent palette. Burst count
+    // scales with the win tier (BIG ≈ 60, MEGA ≈ 100, MAX ≈ 160) and
+    // a second smaller burst fires partway through for sustained
+    // visual energy.
+    const burstCount = Math.round(50 + bigWin.tier.intensity * 25);
+    const palette = [
+      cfg.theme.accent,
+      '#fff5dc',
+      '#ffe9a8',
+      '#ffd166',
+      '#ffffff',
+    ];
+    fireConfetti({ count: burstCount, colors: palette });
+    if (bigWin.tier.intensity >= 1.7) {
+      coinTimers.push(
+        window.setTimeout(
+          () => fireConfetti({ count: Math.round(burstCount * 0.5), colors: palette }),
+          totalMs * 0.45,
+        ),
+      );
     }
     const dismissT = setTimeout(() => setBigWin(null), totalMs);
     return () => {
