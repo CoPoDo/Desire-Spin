@@ -13,6 +13,7 @@ import {
   play,
   rankLabel,
 } from './engine';
+import { fireConfetti } from '../../../lib/confetti';
 
 type Bets = { player: number; banker: number; tie: number };
 
@@ -53,6 +54,11 @@ export function BaccaratGame() {
     if (totalPayout > 0) {
       balance.credit(totalPayout);
       sound.play(totalPayout >= totalBet * 5 ? 'mega-win' : totalPayout > totalBet ? 'big-win' : 'win');
+      if (totalPayout > totalBet) {
+        fireConfetti({
+          count: totalPayout >= totalBet * 5 ? 130 : 70,
+        });
+      }
     } else {
       sound.play('drop');
     }
