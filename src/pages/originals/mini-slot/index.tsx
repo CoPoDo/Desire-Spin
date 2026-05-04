@@ -14,6 +14,7 @@ import {
   useAutoBetRunner,
 } from '../_shared/AutoBetController';
 import { SYMBOLS, type SymbolId, spin, symbolMeta } from './engine';
+import { fireConfetti } from '../../../lib/confetti';
 
 export function MiniSlotGame() {
   const { balance, fairness, sound, history, session } = useGame();
@@ -59,6 +60,11 @@ export function MiniSlotGame() {
       setWinning(win);
       sound.play(r.multiplier >= 100 ? 'mega-win' : r.multiplier >= 10 ? 'big-win' : 'win');
       balance.credit(r.payout);
+      // Confetti shower for 3-of-a-kind wins (audit's signature
+      // big-win flourish, ported from House Edge in lib/confetti).
+      if (r.multiplier >= 10) {
+        fireConfetti({ count: r.multiplier >= 100 ? 120 : 70 });
+      }
     } else {
       sound.play('drop');
     }
