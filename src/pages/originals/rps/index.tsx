@@ -158,9 +158,38 @@ export function RpsGame() {
             </AnimatePresence>
           </div>
 
-          {/* VS divider */}
+          {/* VS divider — coloured ring around "vs" reflects the round
+           *  outcome so the player gets a glance-able win/loss/tie cue
+           *  regardless of the emoji glow on the moves. */}
           <div className="text-center">
-            <span className="font-mono font-bold text-xs uppercase tracking-widest text-ink-mute">
+            <span
+              className="inline-flex items-center justify-center w-9 h-9 rounded-full font-mono font-bold text-xs uppercase tracking-widest"
+              style={{
+                background:
+                  outcome === 'win'
+                    ? 'radial-gradient(circle, rgba(31,255,122,.25), transparent 75%)'
+                    : outcome === 'loss'
+                      ? 'radial-gradient(circle, rgba(255,61,139,.25), transparent 75%)'
+                      : outcome === 'tie'
+                        ? 'radial-gradient(circle, rgba(255,209,102,.18), transparent 75%)'
+                        : 'transparent',
+                border: outcome === 'win'
+                  ? '1px solid rgba(31,255,122,.55)'
+                  : outcome === 'loss'
+                    ? '1px solid rgba(255,61,139,.55)'
+                    : outcome === 'tie'
+                      ? '1px solid rgba(255,209,102,.45)'
+                      : '1px solid rgba(255,255,255,.08)',
+                color:
+                  outcome === 'win'
+                    ? '#1fff7a'
+                    : outcome === 'loss'
+                      ? '#ff3d8b'
+                      : outcome === 'tie'
+                        ? '#ffd166'
+                        : '#9aa3b2',
+              }}
+            >
               vs
             </span>
           </div>
