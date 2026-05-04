@@ -191,6 +191,23 @@ export function JuanScene() {
         }}
       />
 
+      {/* Stage-light glow behind the reels — warm sunset glow centred on
+       * the grid area so the reels feel anchored to the cantina stage. */}
+      <div
+        className="absolute pointer-events-none"
+        style={{
+          left: '50%',
+          top: '46%',
+          transform: 'translate(-50%, -50%)',
+          width: '92%',
+          height: '50%',
+          background:
+            'radial-gradient(ellipse at center, rgba(255,180,80,.32) 0%, rgba(255,140,40,.16) 40%, transparent 75%)',
+          filter: 'blur(8px)',
+          mixBlendMode: 'screen',
+        }}
+      />
+
       {/* 5. Sparkle dust + fireflies (reuses bonanzaSparkle keyframe) */}
       <div
         className="absolute inset-0"
