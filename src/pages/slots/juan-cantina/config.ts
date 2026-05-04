@@ -59,5 +59,12 @@ export const juanCantinaConfig: SlotConfig = {
     glow: 'rgba(255,174,80,0.6)',
     gridClass: 'grid-bg-juan',
     cellClass: 'cell-juan',
+    // Cantina is a tumble slot mechanically (cousin of Sweet Bonanza), so
+    // the spin-start transition is the same gravity fall-out — old fiesta
+    // symbols drop down off the grid, new ones cascade in from above.
+    // Per-slot personality comes from the warm-dusk stage-light + papel
+    // picado bunting + cactus silhouettes (see Pass 5/6) — the spin
+    // transition itself stays mechanically consistent with the engine.
+    prespinStyle: 'fall',
   },
 };
