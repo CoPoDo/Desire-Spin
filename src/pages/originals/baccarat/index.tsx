@@ -237,7 +237,7 @@ function CardView({ card, delay = 0 }: { card: Card; delay?: number }) {
       initial={{ y: -20, opacity: 0, rotateY: 180 }}
       animate={{ y: 0, opacity: 1, rotateY: 0 }}
       transition={{ delay: delay / 1000, type: 'spring', stiffness: 240, damping: 20 }}
-      className="w-14 h-20 rounded-lg flex flex-col items-center justify-center font-bold text-sm"
+      className="relative w-14 h-20 rounded-lg font-bold text-sm"
       style={{
         background: 'linear-gradient(180deg, #f5f0e4, #e8dfc9)',
         border: '2px solid #c8932e',
@@ -245,8 +245,20 @@ function CardView({ card, delay = 0 }: { card: Card; delay?: number }) {
         color: red ? '#c8102e' : '#1a0f00',
       }}
     >
-      <div>{rankLabel(card.rank)}</div>
-      <div className="mt-0.5">{card.suit}</div>
+      {/* Corner pips for proper playing-card look */}
+      <div className="absolute top-0.5 left-1 leading-none flex flex-col items-center text-[9px]">
+        <span>{rankLabel(card.rank)}</span>
+        <span>{card.suit}</span>
+      </div>
+      <div className="absolute bottom-0.5 right-1 leading-none flex flex-col items-center rotate-180 text-[9px]">
+        <span>{rankLabel(card.rank)}</span>
+        <span>{card.suit}</span>
+      </div>
+      {/* Centre */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <div>{rankLabel(card.rank)}</div>
+        <div className="mt-0.5">{card.suit}</div>
+      </div>
     </motion.div>
   );
 }
