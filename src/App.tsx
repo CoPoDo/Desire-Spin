@@ -30,6 +30,7 @@ import { RaceGame } from './pages/originals/race';
 import { RpsGame } from './pages/originals/rps';
 import { DragonTigerGame } from './pages/originals/dragon-tiger';
 import { CasesGame } from './pages/originals/cases';
+import { SicBoGame } from './pages/originals/sicbo';
 
 export default function App() {
   return (
@@ -67,6 +68,7 @@ export default function App() {
         <Route path="/originals/rps" element={<RpsGame />} />
         <Route path="/originals/dragon-tiger" element={<DragonTigerGame />} />
         <Route path="/originals/cases" element={<CasesGame />} />
+        <Route path="/originals/sicbo" element={<SicBoGame />} />
 
         {/* Lobby + non-game routes — full Layout with sidebar */}
         <Route path="/" element={<Layout><Home /></Layout>} />
