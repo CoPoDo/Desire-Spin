@@ -115,6 +115,9 @@ export function useMusic({ soundEnabled }: { soundEnabled: boolean }) {
   const start = useCallback(
     (intensity: Intensity) => {
       if (!musicEnabled || !soundEnabled || !intensity) return;
+      // Idempotent: if already playing this intensity, do nothing — avoids
+      // the music chopping every time runRound is called.
+      if (intensityRef.current === intensity && tickRef.current != null) return;
       ensureCtx();
       stopAll();
       intensityRef.current = intensity;

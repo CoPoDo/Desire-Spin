@@ -158,7 +158,11 @@ export function ImmersiveSlotView({
 
   useEffect(() => {
     aliveRef.current = true;
-    return () => { aliveRef.current = false; };
+    return () => {
+      aliveRef.current = false;
+      music.stop(); // stop music when leaving the slot page
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const playFrames = useCallback(
