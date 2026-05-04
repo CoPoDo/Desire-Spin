@@ -116,6 +116,54 @@ export function PharaohScene() {
         scaleX={-1}
       />
 
+      {/* Obelisk silhouette mid-distance left — adds Egyptian verticality
+       * that the pyramid+Sphinx group was lacking. */}
+      <svg
+        className="absolute"
+        style={{
+          bottom: '32%',
+          left: '12%',
+          width: '5%',
+          aspectRatio: '1 / 6',
+          opacity: 0.78,
+          filter: 'drop-shadow(2px 0 4px rgba(255,140,40,.35))',
+        }}
+        viewBox="0 0 10 60"
+      >
+        <defs>
+          <linearGradient id="ph-obelisk" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#5a3a0a" />
+            <stop offset="100%" stopColor="#1a0a04" />
+          </linearGradient>
+        </defs>
+        {/* Obelisk shaft (slight taper) */}
+        <path d="M 4 55 L 4 8 L 5 6 L 6 8 L 6 55 Z" fill="url(#ph-obelisk)" />
+        {/* Pyramidion (small pyramid cap) */}
+        <path d="M 4 8 L 5 4 L 6 8 Z" fill="#7a4a04" />
+        {/* Hieroglyph hint marks */}
+        {[20, 28, 36, 44].map((y, i) => (
+          <rect key={i} x="4.4" y={y} width="1.2" height="2" fill="rgba(255,209,102,.4)" />
+        ))}
+        {/* Base */}
+        <rect x="3" y="55" width="4" height="3" fill="#3a1a04" />
+      </svg>
+
+      {/* Stage-light glow behind reels */}
+      <div
+        className="absolute pointer-events-none"
+        style={{
+          left: '50%',
+          top: '46%',
+          transform: 'translate(-50%, -50%)',
+          width: '92%',
+          height: '50%',
+          background:
+            'radial-gradient(ellipse at center, rgba(255,232,168,.32) 0%, rgba(255,180,80,.15) 40%, transparent 75%)',
+          filter: 'blur(8px)',
+          mixBlendMode: 'screen',
+        }}
+      />
+
       {/* 4. Floating glyph particles */}
       <div
         className="absolute inset-0"
