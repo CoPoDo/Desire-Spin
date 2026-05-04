@@ -1077,7 +1077,8 @@ export function ImmersiveSlotView({
           </AnimatePresence>
 
           {/* Tiered Big/Huge/Mega/Epic Win celebration centered on grid.
-              Title pulses, payout counts up live, intensity scales with tier. */}
+              Title pulses, payout counts up live, vignette darkens scene
+              behind the title for emphasis. Intensity scales tier. */}
           <AnimatePresence>
             {bigWin && (
               <motion.div
@@ -1086,8 +1087,32 @@ export function ImmersiveSlotView({
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
               >
+                {/* Vignette darkens the surrounding scene so the title pops */}
                 <motion.div
-                  className="text-center"
+                  className="absolute inset-0 rounded-[14px]"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  style={{
+                    background:
+                      'radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.55) 80%)',
+                  }}
+                />
+                {/* Bright halo behind the title */}
+                <motion.div
+                  className="absolute"
+                  style={{
+                    width: '85%',
+                    height: '50%',
+                    background: 'radial-gradient(ellipse at center, rgba(255,200,80,0.45) 0%, rgba(255,140,40,0.2) 35%, transparent 65%)',
+                    filter: 'blur(8px)',
+                  }}
+                  animate={{ scale: [0.8, 1.05, 0.95, 1], opacity: [0, 1, 0.8, 0.9] }}
+                  transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+                />
+
+                <motion.div
+                  className="text-center relative"
                   initial={{ scale: 0.4, rotate: -6 }}
                   animate={{
                     scale: [0.4, 1.15, 1],
@@ -1102,7 +1127,12 @@ export function ImmersiveSlotView({
                 >
                   <motion.div
                     className="font-serif italic font-bold olympus-fs-title"
-                    style={{ fontSize: `clamp(${24 + bigWin.tier.intensity * 6}px, ${8 + bigWin.tier.intensity * 1.5}vw, ${48 + bigWin.tier.intensity * 12}px)` }}
+                    style={{
+                      fontSize: `clamp(${24 + bigWin.tier.intensity * 6}px, ${8 + bigWin.tier.intensity * 1.5}vw, ${48 + bigWin.tier.intensity * 12}px)`,
+                      letterSpacing: '-0.015em',
+                      // Outer dramatic stroke for higher tiers
+                      WebkitTextStroke: bigWin.tier.intensity >= 2.4 ? '1px rgba(255,233,168,0.4)' : undefined,
+                    }}
                     animate={{ scale: [1, 1.06, 1] }}
                     transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
                   >
@@ -1112,11 +1142,10 @@ export function ImmersiveSlotView({
                     value={bigWin.payout}
                     duration={1400}
                     format={fmtCurrency}
-                    className="block font-mono font-bold mt-1"
+                    className="block font-serif italic font-extrabold mt-1 olympus-fs-title"
                     style={{
-                      fontSize: 'clamp(22px, 7vw, 42px)',
-                      color: '#FFE9A8',
-                      textShadow: '0 0 22px rgba(255,200,40,.9), 0 4px 8px rgba(0,0,0,.6)',
+                      fontSize: `clamp(${22 + bigWin.tier.intensity * 4}px, ${7 + bigWin.tier.intensity * 1}vw, ${42 + bigWin.tier.intensity * 8}px)`,
+                      letterSpacing: '-0.015em',
                     }}
                   />
                 </motion.div>
