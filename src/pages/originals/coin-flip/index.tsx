@@ -6,6 +6,7 @@ import { createRng } from '../../../lib/fairness';
 import { fmtCurrency, fmtMultiplier } from '../../../lib/format';
 import { BetInput } from '../_shared/BetInput';
 import { type Side, flip, multiplierAfter } from './engine';
+import { fireConfetti } from '../../../lib/confetti';
 
 type Phase = 'idle' | 'choosing' | 'flipping' | 'won' | 'lost';
 
@@ -71,6 +72,11 @@ export function CoinFlipGame() {
     if (phase !== 'choosing' || streak === 0) return;
     sound.play('big-win');
     balance.credit(cashoutAmount);
+    if (accumMult >= 2) {
+      fireConfetti({
+        count: accumMult >= 16 ? 130 : accumMult >= 4 ? 80 : 50,
+      });
+    }
     history.record({
       game: 'Coin Flip',
       bet,
