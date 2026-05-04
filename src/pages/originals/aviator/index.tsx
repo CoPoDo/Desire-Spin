@@ -206,9 +206,10 @@ export function AviatorGame() {
   return (
     <OriginalPageLayout title="Aviator">
       <div className="flex flex-col p-4 gap-4 max-w-md mx-auto w-full">
-        {/* Sky stage with plane */}
+        {/* Sky stage with plane — shakes briefly when the plane crashes
+         *  (camera-shake on impact, like a real cockpit-cam). */}
         <div
-          className="rounded-2xl border border-edge p-4 relative overflow-hidden min-h-[280px]"
+          className={`rounded-2xl border border-edge p-4 relative overflow-hidden min-h-[280px] ${lost ? 'shake-medium' : ''}`}
           style={{
             background: lost
               ? 'linear-gradient(180deg, #2a0a14 0%, #5a0814 40%, #1a0408 100%)'
