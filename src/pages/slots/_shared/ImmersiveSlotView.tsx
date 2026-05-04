@@ -1401,29 +1401,58 @@ export function ImmersiveSlotView({
         </>
       )}
 
-      {/* Bet preset sheet */}
+      {/* Bet preset sheet — Olympus-themed */}
       {betSheetOpen && (
         <>
           <button
             aria-label="Close bet menu"
             onClick={() => setBetSheetOpen(false)}
-            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm"
           />
-          <div className="fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl bg-bg-card border-t border-edge p-4 pb-[max(env(safe-area-inset-bottom),16px)] animate-rise">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-display font-bold">Bet amount</h3>
-              <button onClick={() => setBetSheetOpen(false)} className="text-ink-dim text-xl">✕</button>
+          <div
+            className="fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl p-4 pb-[max(env(safe-area-inset-bottom),16px)] animate-rise overflow-hidden"
+            style={{
+              background:
+                'radial-gradient(ellipse at 50% 0%, rgba(120,60,20,.4), rgba(20,5,10,.96) 70%), linear-gradient(180deg, #1a0f36 0%, #0a0716 60%, #050308 100%)',
+              border: '1.5px solid rgba(255,198,42,.45)',
+              borderBottom: 'none',
+              boxShadow: 'inset 0 1px 0 rgba(255,233,168,.3), 0 -8px 24px rgba(0,0,0,.6), 0 0 32px rgba(255,180,40,.18)',
+            }}
+          >
+            {/* Decorative corner bolts */}
+            <span className="absolute top-2 left-3 text-base opacity-80" style={{ color: '#FFE9A8', textShadow: '0 0 8px rgba(255,200,40,.7)' }}>⚡</span>
+            <span className="absolute top-2 right-3 text-base opacity-80" style={{ color: '#FFE9A8', textShadow: '0 0 8px rgba(255,200,40,.7)' }}>⚡</span>
+
+            <div className="flex items-center justify-between mb-1 mt-1">
+              <h3 className="font-serif italic font-bold olympus-fs-title text-lg">Bet Amount</h3>
+              <button onClick={() => setBetSheetOpen(false)} className="text-[#FFE0A8] text-lg w-6 h-6 flex items-center justify-center">✕</button>
             </div>
+            <p className="text-[10px] uppercase tracking-widest text-ink-mute mb-3">
+              {ante ? `Ante on · total per spin ${fmtCurrency(bet * cfg.ante.betMultiplier)}` : 'Per spin'}
+            </p>
             <div className="grid grid-cols-3 gap-2">
               {betPresets.map((v) => (
                 <button
                   key={v}
-                  onClick={() => { setBet(v); setBetSheetOpen(false); }}
-                  className={`py-3 rounded-xl font-mono font-semibold text-sm transition ${
+                  onClick={() => { setBet(v); setBetSheetOpen(false); sound.play('click'); }}
+                  className={`py-3 rounded-xl font-mono font-semibold text-sm transition relative ${
                     bet === v
-                      ? 'bg-gradient-to-b from-[#f5c56f] to-[#c8932e] text-[#1a0f00] shadow-[0_0_18px_rgba(255,198,42,.5)]'
-                      : 'bg-bg-elev border border-edge text-ink hover:bg-bg-hover'
+                      ? 'text-[#1a0f00]'
+                      : 'text-[#FFE0A8] hover:bg-[#ffe9a8]/10'
                   }`}
+                  style={
+                    bet === v
+                      ? {
+                          background: 'linear-gradient(180deg, #fff5c4 0%, #ffd37a 25%, #c8932e 75%, #6a4410 100%)',
+                          border: '1.5px solid #FFE9A8',
+                          boxShadow: 'inset 0 1px 0 rgba(255,255,255,.6), 0 0 18px rgba(255,198,42,.55)',
+                          textShadow: '0 1px 0 rgba(255,255,255,.4)',
+                        }
+                      : {
+                          background: 'rgba(255,233,168,.04)',
+                          border: '1px solid rgba(255,198,42,.25)',
+                        }
+                  }
                 >
                   {fmtCurrency(v)}
                 </button>
@@ -1431,7 +1460,11 @@ export function ImmersiveSlotView({
             </div>
             <button
               onClick={() => setBetSheetOpen(false)}
-              className="mt-3 w-full py-2.5 rounded-xl bg-bg-hover text-ink-dim text-sm"
+              className="mt-3 w-full py-2.5 rounded-xl text-[#FFE0A8] text-sm"
+              style={{
+                background: 'rgba(255,233,168,.06)',
+                border: '1px solid rgba(255,198,42,.25)',
+              }}
             >Cancel</button>
           </div>
         </>
