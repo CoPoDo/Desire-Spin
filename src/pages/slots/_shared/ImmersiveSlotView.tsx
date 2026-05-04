@@ -1945,7 +1945,16 @@ export function ImmersiveSlotView({
                       setBuyBonusOpen(false);
                       runRound('buy');
                     }}
-                    className="btn-olympus btn flex-1 py-3 disabled:opacity-50"
+                    className="btn flex-1 py-3 disabled:opacity-50 font-bold"
+                    style={{
+                      // Theme-tinted Confirm button — accent gradient
+                      // matches the Buy Bonus button itself.
+                      background: `linear-gradient(180deg, ${cfg.theme.accent} 0%, ${cfg.theme.accent}c0 50%, rgba(20,8,30,.85) 100%)`,
+                      color: '#fff',
+                      border: `1.5px solid ${cfg.theme.accent}`,
+                      boxShadow: `0 0 14px ${cfg.theme.glow}, inset 0 1px 0 rgba(255,255,255,.25)`,
+                      textShadow: '0 1px 0 rgba(0,0,0,.45), 0 0 6px rgba(255,255,255,.4)',
+                    }}
                   >
                     Confirm
                   </button>
