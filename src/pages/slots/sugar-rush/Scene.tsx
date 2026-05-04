@@ -291,6 +291,39 @@ export function SugarRushScene() {
         <ellipse cx="18" cy="28" rx="2.5" ry="3.5" fill="rgba(255,255,255,.5)" transform="rotate(-15 18 28)" />
       </svg>
 
+      {/* Sprinkles rain — small coloured rectangles fall down across the
+       * candyland (signature Sugar Rush ambient touch — real game uses
+       * raining sprinkles when you trigger free spins). Ten sprinkles
+       * with varied colours / sizes / speeds / delays. */}
+      {[
+        { left: '6%',  size: 5, dur: 9,  delay: 0,    color: '#ff5560' },
+        { left: '14%', size: 3, dur: 11, delay: 2.4,  color: '#ffd166' },
+        { left: '22%', size: 4, dur: 8,  delay: 4.8,  color: '#1fff7a' },
+        { left: '32%', size: 5, dur: 10, delay: 1.2,  color: '#5fb8ff' },
+        { left: '44%', size: 3, dur: 12, delay: 3.6,  color: '#ff7ad9' },
+        { left: '56%', size: 4, dur: 9,  delay: 5.6,  color: '#a78bfa' },
+        { left: '66%', size: 5, dur: 11, delay: 0.8,  color: '#ffae50' },
+        { left: '78%', size: 3, dur: 8.5, delay: 2.2, color: '#ff5560' },
+        { left: '88%', size: 4, dur: 10.5, delay: 4.2, color: '#1fff7a' },
+        { left: '94%', size: 5, dur: 9.5, delay: 6.0, color: '#ffd166' },
+      ].map((s, i) => (
+        <div
+          key={i}
+          className="absolute"
+          style={{
+            left: s.left,
+            top: 0,
+            width: `${s.size}px`,
+            height: `${s.size * 1.6}px`,
+            background: s.color,
+            borderRadius: '1px',
+            boxShadow: `0 0 4px ${s.color}aa`,
+            animation: `sugarSprinkleFall ${s.dur}s linear ${s.delay}s infinite`,
+            mixBlendMode: 'screen',
+          }}
+        />
+      ))}
+
       {/* 7. Vignette + frame */}
       <div
         className="absolute inset-0"

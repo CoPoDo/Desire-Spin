@@ -1137,6 +1137,14 @@
   100% { transform: translate(20px, -110%) rotate(540deg); opacity: 0; }
 }
 
+/* Sugar Rush — coloured sprinkles raining DOWN across the candyland */
+@keyframes sugarSprinkleFall {
+  0%   { transform: translate(0, -10%) rotate(0deg); opacity: 0; }
+  8%   { opacity: 0.95; }
+  92%  { opacity: 0.95; }
+  100% { transform: translate(-12px, 110%) rotate(720deg); opacity: 0; }
+}
+
 /* Sweet Bonanza symbol container — vibrant drop-shadow for the candy palette.
  * Larger than Olympus's 78% so the saturated fruits dominate the cell, matching
  * real Sweet Bonanza's punchy filled-cell look. */
