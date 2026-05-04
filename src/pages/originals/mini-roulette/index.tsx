@@ -414,13 +414,17 @@ function Wheel({
           const labelAngle = (i * segAngle - 90) * (Math.PI / 180);
           const lx = 50 + 35 * Math.cos(labelAngle);
           const ly = 50 + 35 * Math.sin(labelAngle);
+          const isWin = winning === i;
           return (
             <g key={i}>
               <path
                 d={`M${x1} ${y1} A ${r2} ${r2} 0 0 1 ${x2} ${y2} L ${x3} ${y3} A ${r1} ${r1} 0 0 0 ${x4} ${y4} Z`}
                 fill={fill}
-                stroke="rgba(255,255,255,.12)"
-                strokeWidth="0.4"
+                stroke={isWin ? '#ffffff' : 'rgba(255,255,255,.12)'}
+                strokeWidth={isWin ? 1.2 : 0.4}
+                style={isWin && !busy ? {
+                  filter: `drop-shadow(0 0 4px ${fill}) drop-shadow(0 0 8px ${fill})`,
+                } : undefined}
               />
               <text
                 x={lx}
