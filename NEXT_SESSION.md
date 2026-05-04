@@ -5,8 +5,11 @@ A running note for whoever (Claude or human) picks up this repo next.
 ## Status
 
 **Gates of Olympus**, **Sweet Bonanza**, **Sugar Rush**, **Juan's
-Cantina**, **Wanted Dead or a Wild** and **Pharaoh's Gold** all run
-on the ImmersiveSlotView shell (full-screen layout, big-win celebration, free
+Cantina**, **Wanted Dead or a Wild**, **Pharaoh's Gold** and **Wolf
+Gold** all run on the ImmersiveSlotView shell. **Big Juan** is a
+separate paylines-engine slot (5×4, 40 paylines, chilli wilds,
+Wild Switch, piñata-scatter bonus respins, hold-and-win jackpots,
+Buy Bonus, autoplay, big-win celebrations). (full-screen layout, big-win celebration, free
 spins HUD, buy bonus, ante bet, autoplay, turbo, tap-to-skip, fairness
 panel, coin shower, etc). They share an engine but have their own
 visual identities — Olympus uses a painted Zeus/arch backdrop image,
