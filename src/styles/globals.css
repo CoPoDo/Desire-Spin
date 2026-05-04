@@ -299,7 +299,13 @@
  * force a recomposite on every frame and fight for GPU time with the
  * spring-physics drop running on 30 cells. */
 .olympus-sym-scatter {
-  animation: scatterIdlePulse 1.6s ease-in-out infinite;
+  /* Zeus-bolt scatter — pulses + occasional electric arc flicker so
+   * the symbol reads as charged with stored thunder rather than just
+   * idling. The two stacked animations layer the pulse with a sharper
+   * irregular flash. */
+  animation:
+    scatterIdlePulse 1.6s ease-in-out infinite,
+    scatterIdleArc 4.2s steps(1, end) infinite;
   /* Stronger glow than the base symbol — still static, no per-frame cost. */
   filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.7))
           drop-shadow(0 0 12px rgba(255, 200, 80, 0.6));
@@ -307,6 +313,15 @@
 @keyframes scatterIdlePulse {
   0%, 100% { transform: scale(1) translateZ(0); opacity: 0.92; }
   50%      { transform: scale(1.04) translateZ(0); opacity: 1; }
+}
+/* Sharp electric-arc flicker layered on top — fires for ~80ms every
+ * 4.2s. Filter spike adds a brief over-bright flash as if the bolt
+ * arcs charge. steps(1, end) makes the brightness change instant
+ * (mimicking electrical stutter) rather than smoothly interpolating. */
+@keyframes scatterIdleArc {
+  0%   { filter: drop-shadow(0 2px 6px rgba(0,0,0,.7)) drop-shadow(0 0 12px rgba(255,200,80,.6)); }
+  2%   { filter: drop-shadow(0 0 4px rgba(255,253,225,1)) drop-shadow(0 0 22px rgba(255,233,168,1)) drop-shadow(0 0 38px rgba(255,200,80,.85)) brightness(1.4); }
+  4%   { filter: drop-shadow(0 2px 6px rgba(0,0,0,.7)) drop-shadow(0 0 12px rgba(255,200,80,.6)); }
 }
 .olympus-sym svg {
   width: 100%;
