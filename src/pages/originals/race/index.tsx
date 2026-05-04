@@ -13,6 +13,7 @@ import {
   multiplierForHorse,
   play,
 } from './engine';
+import { fireConfetti } from '../../../lib/confetti';
 
 type Phase = 'idle' | 'racing' | 'done';
 
@@ -45,6 +46,10 @@ export function RaceGame() {
       if (result.win) {
         balance.credit(result.payout);
         sound.play('big-win');
+        fireConfetti({
+          count: 80,
+          colors: ['#1fff7a', '#ffd166', '#ffffff'],
+        });
       } else {
         sound.play('drop');
       }

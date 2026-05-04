@@ -15,6 +15,7 @@ import {
   suitGlyph,
   suitIsRed,
 } from './engine';
+import { fireConfetti } from '../../../lib/confetti';
 
 type Phase = 'idle' | 'dealing' | 'reveal';
 
@@ -63,6 +64,10 @@ export function DragonTigerGame() {
       if (r.payout > bet) {
         balance.credit(r.payout);
         sound.play(r.multiplier >= TIE_PAYOUT ? 'mega-win' : 'big-win');
+        fireConfetti({
+          count: r.multiplier >= TIE_PAYOUT ? 130 : 70,
+          colors: ['#ffd166', '#c8102e', '#1fff7a', '#ffffff'],
+        });
       } else if (r.payout === bet) {
         balance.credit(r.payout); // push refund
         sound.play('tick');
