@@ -48,9 +48,15 @@ export function Home() {
       </section>
 
       <section>
-        <SectionHeader title="Originals" subtitle="More games next iteration" />
+        <SectionHeader title="Originals" subtitle="Stake-style provably-fair games" />
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4">
-          <GameCard title="Dice" subtitle="Coming soon" disabled art={<PlaceholderArt label="🎲" tone="#102b3a" />} />
+          <GameCard
+            to="/originals/dice"
+            title="Dice"
+            subtitle="99% RTP"
+            badge="LIVE"
+            art={<PlaceholderArt label="🎲" tone="#102b3a" />}
+          />
           <GameCard title="Mines" subtitle="Coming soon" disabled art={<PlaceholderArt label="💣" tone="#3a1010" />} />
           <GameCard title="Crash" subtitle="Coming soon" disabled art={<PlaceholderArt label="🚀" tone="#102b3a" />} />
           <GameCard title="Plinko" subtitle="Coming soon" disabled art={<PlaceholderArt label="🟣" tone="#241a3a" />} />

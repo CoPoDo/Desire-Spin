@@ -8,6 +8,7 @@ import { Settings } from './pages/Settings';
 import { ComingSoon } from './components/layout/ComingSoon';
 import { SweetBonanza } from './pages/slots/sweet-bonanza';
 import { GatesOfOlympus } from './pages/slots/gates-of-olympus';
+import { DiceGame } from './pages/originals/dice';
 
 export default function App() {
   return (
@@ -23,6 +24,7 @@ export default function App() {
           path="/slots/gates-of-olympus"
           element={<SlotPageLayout><GatesOfOlympus /></SlotPageLayout>}
         />
+        <Route path="/originals/dice" element={<DiceGame />} />
 
         {/* Lobby + non-game routes — full Layout with sidebar */}
         <Route path="/" element={<Layout><Home /></Layout>} />
