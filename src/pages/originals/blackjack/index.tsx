@@ -15,6 +15,7 @@ import {
   rankLabel,
   stand,
 } from './engine';
+import { fireConfetti } from '../../../lib/confetti';
 
 export function BlackjackGame() {
   const { balance, fairness, sound, history, session } = useGame();
@@ -102,6 +103,9 @@ export function BlackjackGame() {
       if (r.phase !== 'done') return;
       if (r.payout > 0) balance.credit(r.payout);
       const profit = r.payout - r.bet;
+      if (r.outcome === 'player-blackjack' || profit > r.bet) {
+        fireConfetti({ count: r.outcome === 'player-blackjack' ? 130 : 70 });
+      }
       sound.play(
         r.outcome === 'player-blackjack' || profit > r.bet ? 'big-win' :
         profit > 0 ? 'win' :
