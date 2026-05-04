@@ -34,10 +34,10 @@ export function JuanScene() {
         }}
       />
 
-      {/* 2. Distant mesa silhouettes */}
+      {/* 2. Distant mesa silhouettes + cantina building */}
       <svg
         className="absolute inset-x-0"
-        style={{ bottom: '0%', height: '34%', width: '100%' }}
+        style={{ bottom: '0%', height: '38%', width: '100%' }}
         viewBox="0 0 100 50"
         preserveAspectRatio="none"
       >
@@ -50,11 +50,33 @@ export function JuanScene() {
             <stop offset="0%" stopColor="#3a0810" stopOpacity="1" />
             <stop offset="100%" stopColor="#0a0204" stopOpacity="1" />
           </linearGradient>
+          <linearGradient id="jc-cantina" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#5a3018" stopOpacity="1" />
+            <stop offset="100%" stopColor="#1a0a04" stopOpacity="1" />
+          </linearGradient>
         </defs>
         {/* Far flat-topped mesas */}
         <path d="M0,50 L0,30 L8,30 L8,18 L24,18 L24,30 L42,30 L42,22 L62,22 L62,30 L82,30 L82,16 L96,16 L96,30 L100,30 L100,50 Z" fill="url(#jc-mesa-far)" />
-        {/* Near desert ground line */}
+        {/* Cantina building silhouette mid-distance, off-centre right */}
+        <g transform="translate(54 26)">
+          {/* Roof (peaked) */}
+          <path d="M0 4 L 10 -4 L 20 4 L 0 4 Z" fill="url(#jc-cantina)" />
+          {/* Body */}
+          <rect x="0" y="4" width="20" height="12" fill="url(#jc-cantina)" />
+          {/* Door (lit warmly from inside) */}
+          <rect x="8" y="9" width="4" height="7" fill="rgba(255,200,80,.55)" />
+          {/* Windows */}
+          <rect x="2" y="7" width="2.5" height="2.5" fill="rgba(255,200,80,.4)" />
+          <rect x="15" y="7" width="2.5" height="2.5" fill="rgba(255,200,80,.4)" />
+          {/* Porch overhang */}
+          <rect x="-2" y="3" width="24" height="1.2" fill="#1a0a04" />
+        </g>
+        {/* Near desert ground line with some texture */}
         <path d="M0,50 L0,40 Q12,38 24,40 Q40,42 56,40 Q72,38 88,42 Q96,44 100,42 L100,50 Z" fill="url(#jc-mesa-near)" />
+        {/* Tumbleweed line (small dots) */}
+        <circle cx="14" cy="46" r=".4" fill="rgba(255,209,102,.6)" />
+        <circle cx="58" cy="48" r=".4" fill="rgba(255,209,102,.5)" />
+        <circle cx="86" cy="46" r=".5" fill="rgba(255,209,102,.6)" />
       </svg>
 
       {/* 3. Cactus silhouettes left + right */}
@@ -84,6 +106,46 @@ export function JuanScene() {
       >
         🌵
       </div>
+
+      {/* 4a. String of warm fairy lights below the bunting */}
+      <svg
+        className="absolute inset-x-0"
+        style={{ top: '13%', height: '4%', width: '100%' }}
+        viewBox="0 0 100 4"
+        preserveAspectRatio="none"
+      >
+        {/* Sagging string */}
+        <path
+          d="M 0 1 Q 25 3 50 1 T 100 1"
+          fill="none"
+          stroke="rgba(0,0,0,.6)"
+          strokeWidth=".15"
+        />
+        {/* Bulbs along the string */}
+        {Array.from({ length: 18 }).map((_, i) => {
+          const x = (i + 0.5) * (100 / 18);
+          // Mimic the string sag (matches Q curves above)
+          const y =
+            x < 50
+              ? 1 + 1.6 * (1 - Math.abs(x - 25) / 25)
+              : 1 + 1.6 * (1 - Math.abs(x - 75) / 25);
+          const colors = ['#ffd166', '#ff5560', '#1fff7a', '#5fb8ff', '#ffae50'];
+          const color = colors[i % colors.length]!;
+          return (
+            <g key={i}>
+              <circle
+                cx={x}
+                cy={y}
+                r=".5"
+                fill={color}
+                stroke="rgba(0,0,0,.5)"
+                strokeWidth=".05"
+              />
+              <circle cx={x} cy={y} r="1.2" fill={color} opacity=".25" />
+            </g>
+          );
+        })}
+      </svg>
 
       {/* 4. Papel picado bunting + lanterns */}
       <div
