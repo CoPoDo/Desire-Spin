@@ -107,32 +107,11 @@ export function JuanScene() {
       </svg>
 
       {/* 3. Cactus silhouettes left + right */}
-      <div
-        className="absolute select-none"
-        style={{
-          bottom: '6%',
-          left: '4%',
-          fontSize: 'min(64px, 14cqw)',
-          opacity: 0.85,
-          filter: 'drop-shadow(0 0 8px rgba(0,0,0,.6))',
-          color: '#1a0610',
-          // Use emoji silhouette via filter — fallback to actual color if filter unsupported
-        }}
-      >
-        🌵
-      </div>
-      <div
-        className="absolute select-none"
-        style={{
-          bottom: '5%',
-          right: '6%',
-          fontSize: 'min(58px, 13cqw)',
-          opacity: 0.85,
-          filter: 'drop-shadow(0 0 8px rgba(0,0,0,.6))',
-        }}
-      >
-        🌵
-      </div>
+      {/* Cactus silhouettes (SVG) — left + right, asymmetric so they
+       * don't look mirrored. Catch a touch of warm-orange rim from the
+       * sunset. */}
+      <CantinaCactus position={{ bottom: '4%', left: '3%' }} size="min(72px, 15cqw)" />
+      <CantinaCactus position={{ bottom: '3%', right: '5%' }} size="min(60px, 13cqw)" />
 
       {/* 4a. String of warm fairy lights below the bunting */}
       <svg
@@ -247,5 +226,47 @@ export function JuanScene() {
         }}
       />
     </div>
+  );
+}
+
+function CantinaCactus({
+  position,
+  size,
+}: {
+  position: { bottom?: string; left?: string; right?: string };
+  size: string;
+}) {
+  return (
+    <svg
+      className="absolute"
+      style={{
+        ...position,
+        width: size,
+        aspectRatio: '1 / 1.5',
+        filter:
+          'drop-shadow(2px 0 4px rgba(255,140,40,.35)) drop-shadow(0 4px 6px rgba(0,0,0,.65))',
+      }}
+      viewBox="0 0 50 75"
+    >
+      {/* Saguaro silhouette — main trunk + asymmetric arms (one short, one
+       * tall) for natural look. Pure dark fill catches sunset rim only. */}
+      <path
+        d="M 22 75 L 22 38 Q 22 28 18 28 Q 12 28 12 34 L 12 48 Q 12 52 16 52
+           L 18 52 L 18 36 Q 18 30 22 30 Z"
+        fill="#1a0610"
+      />
+      <path
+        d="M 28 75 L 28 28 Q 28 18 34 18 L 38 18 Q 42 18 42 24 L 42 36
+           Q 42 40 38 40 L 36 40 L 36 30 Q 36 26 32 26 Q 28 26 28 32 Z"
+        fill="#1a0610"
+      />
+      {/* Small flower bloom on top of one arm (Mexican fiesta flair) */}
+      <circle cx="38" cy="17" r="1.2" fill="#ff5fa2" opacity=".75" />
+      <circle cx="38" cy="17" r=".4" fill="#ffd166" />
+      {/* Faint ribbed-spine lines down the trunk */}
+      {[24, 30].map((x) => (
+        <line key={x} x1={x} y1="34" x2={x} y2="72" stroke="rgba(255,150,80,.18)" strokeWidth=".4" />
+      ))}
+    </svg>
   );
 }
