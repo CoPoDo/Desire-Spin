@@ -4,6 +4,9 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="manifest" href="/manifest.json" />
+    <!-- Hint to the browser that the Olympus backdrop is coming. Low priority
+         so it doesn't compete with critical app code. CDN cache after first hit. -->
+    <link rel="preload" as="image" href="/olympus-bg.png" fetchpriority="low" />
     <link rel="apple-touch-icon" href="/favicon.svg" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />

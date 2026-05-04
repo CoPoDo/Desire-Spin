@@ -617,9 +617,14 @@ export function ImmersiveSlotView({
             alt=""
             className="absolute inset-0 w-full h-full select-none"
             draggable={false}
+            // If the painted backdrop fails to load, fall back to the
+            // gradient — the game still plays, just no painted scene.
+            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
             style={{
               filter: 'drop-shadow(0 12px 40px rgba(0,0,0,.6))',
               borderRadius: '14px',
+              background:
+                'radial-gradient(60% 100% at 50% 50%, #2a1148 0%, #160628 60%, #050308 100%)',
             }}
           />
           {/* Twinkling stars on top */}
