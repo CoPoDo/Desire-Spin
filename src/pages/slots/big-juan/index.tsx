@@ -1251,41 +1251,43 @@ function BigJuanBackdrop() {
           animationDelay: '-1.2s',
         }}
       />
-      {/* Turnbuckles (red/yellow padding at the corners of the ring) */}
+      {/* Turnbuckles (red/yellow padding at the corners of the ring).
+       *  Pads catch the spotlight in soft pulses so the corner pads
+       *  visibly shine when the lighting passes over them. Top pads
+       *  (red) and bottom pads (gold) use offset delays for variation. */}
       <div
-        className="absolute"
+        className="absolute bj-turnbuckle bj-turnbuckle-red"
         style={{
           top: '13.4%', left: 0, width: '5%', height: '1.6%',
           background: 'linear-gradient(180deg, #ff5560, #c8102e)',
           borderRadius: '0 4px 4px 0',
-          boxShadow: '0 0 6px rgba(255,85,96,.6)',
         }}
       />
       <div
-        className="absolute"
+        className="absolute bj-turnbuckle bj-turnbuckle-red"
         style={{
           top: '13.4%', right: 0, width: '5%', height: '1.6%',
           background: 'linear-gradient(180deg, #ff5560, #c8102e)',
           borderRadius: '4px 0 0 4px',
-          boxShadow: '0 0 6px rgba(255,85,96,.6)',
+          animationDelay: '-1.7s',
         }}
       />
       <div
-        className="absolute"
+        className="absolute bj-turnbuckle bj-turnbuckle-gold"
         style={{
           bottom: '11.4%', left: 0, width: '5%', height: '1.6%',
           background: 'linear-gradient(180deg, #ffd166, #c8932e)',
           borderRadius: '0 4px 4px 0',
-          boxShadow: '0 0 6px rgba(255,209,102,.6)',
+          animationDelay: '-0.8s',
         }}
       />
       <div
-        className="absolute"
+        className="absolute bj-turnbuckle bj-turnbuckle-gold"
         style={{
           bottom: '11.4%', right: 0, width: '5%', height: '1.6%',
           background: 'linear-gradient(180deg, #ffd166, #c8932e)',
           borderRadius: '4px 0 0 4px',
-          boxShadow: '0 0 6px rgba(255,209,102,.6)',
+          animationDelay: '-2.5s',
         }}
       />
       {/* Papel picado bunting at top — triangular SVG pennants on a sagging

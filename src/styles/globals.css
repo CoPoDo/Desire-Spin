@@ -1469,6 +1469,32 @@
   50%      { transform: translate(-50%, -50%) scale(1.04); filter: blur(.4px) brightness(1.08); }
 }
 
+/* Big Juan turnbuckle pads — red top pads + gold bottom pads catch
+ * the spotlights in soft pulses. Two keyframes so each colour pad
+ * uses its own glow tint. animation-delay set inline per pad so the
+ * four corners shine at different times. */
+.bj-turnbuckle {
+  animation-duration: 3.4s;
+  animation-iteration-count: infinite;
+  animation-timing-function: ease-in-out;
+}
+.bj-turnbuckle-red  {
+  box-shadow: 0 0 6px rgba(255,85,96,.6);
+  animation-name: bjTurnbuckleRed;
+}
+.bj-turnbuckle-gold {
+  box-shadow: 0 0 6px rgba(255,209,102,.6);
+  animation-name: bjTurnbuckleGold;
+}
+@keyframes bjTurnbuckleRed {
+  0%, 100% { box-shadow: 0 0 6px  rgba(255,85,96,.6);  }
+  50%      { box-shadow: 0 0 12px rgba(255,85,96,.95); }
+}
+@keyframes bjTurnbuckleGold {
+  0%, 100% { box-shadow: 0 0 6px  rgba(255,209,102,.6);  }
+  50%      { box-shadow: 0 0 12px rgba(255,209,102,.95); }
+}
+
 /* Big Juan ring ropes — gold rope visibly catches the spotlight in
  * waves. Box-shadow pulse cycles brightness/spread so the rope shines
  * brighter when light passes over it. Two ropes use offset delay so
