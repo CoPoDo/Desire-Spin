@@ -408,7 +408,12 @@ export function BigJuan() {
                   boxShadow: '0 0 40px rgba(255,209,102,.9), 0 0 80px rgba(255,85,96,.7)',
                 }}
               >
-                <div className="text-3xl">🎉 BONUS ROUND</div>
+                <div className="text-3xl flex items-center justify-center gap-2">
+                  <span className="inline-block" style={{ width: 36, height: 36 }}>
+                    <PinataSvg />
+                  </span>
+                  BONUS ROUND
+                </div>
                 <div className="text-xl mt-1">{showFsTrigger}× SCATTER</div>
               </div>
             </motion.div>
@@ -968,7 +973,9 @@ export function BigJuan() {
               <div className="flex justify-around mb-4">
                 <div className="flex flex-col items-center px-3 py-2 rounded-xl bg-black/40 border border-[#ffd166]/30">
                   <span className="text-[8px] uppercase tracking-widest text-ink-mute">You get</span>
-                  <span className="text-2xl">🎉</span>
+                  <span className="inline-block" style={{ width: 28, height: 28 }}>
+                    <PinataSvg />
+                  </span>
                   <span className="text-[10px] font-mono font-bold text-[#ffd166]">4× scatter</span>
                 </div>
                 <div className="flex flex-col items-center px-3 py-2 rounded-xl bg-black/40 border border-[#ff8a8a]/30">
@@ -1030,7 +1037,13 @@ export function BigJuan() {
             textShadow: '0 0 8px rgba(0,0,0,.85)',
           }}
         >
-          {lastResult.scatterCount}× 🎉 · {lastResult.scatterMultiplier}× scatter
+          <span className="inline-flex items-center gap-1.5">
+            {lastResult.scatterCount}×
+            <span className="inline-block align-middle" style={{ width: 14, height: 14 }}>
+              <PinataSvg />
+            </span>
+            · {lastResult.scatterMultiplier}× scatter
+          </span>
         </div>
       )}
     </div>
