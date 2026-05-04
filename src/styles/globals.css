@@ -212,6 +212,15 @@
   pointer-events: none;
   z-index: -1;
   filter: blur(8px);
+  /* Slow gold halo breathe so the inner-arch glow visibly intensifies
+   * and recedes — reads as the Olympus archway "alive" with Zeus's
+   * power gathering and releasing. Long 5s cycle so it doesn't feel
+   * like a deliberate effect, just ambient divine presence. */
+  animation: olympusArchGlow 5s ease-in-out infinite;
+}
+@keyframes olympusArchGlow {
+  0%, 100% { opacity: 0.85; }
+  50%      { opacity: 1.15; }
 }
 
 /* Cell well — dark with bronze rim, inner top-light. */
