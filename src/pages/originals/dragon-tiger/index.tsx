@@ -273,7 +273,7 @@ function CardSlot({
           {revealed && card ? (
             <motion.div
               key={`${card.rank}-${card.suit}`}
-              className="absolute inset-0 flex flex-col items-center justify-center"
+              className="absolute inset-0"
               initial={{ rotateY: 90, opacity: 0 }}
               animate={{ rotateY: 0, opacity: 1 }}
               transition={{ duration: 0.35, ease: 'easeOut' }}
@@ -281,10 +281,21 @@ function CardSlot({
                 color: suitIsRed(card.suit) ? '#c8102e' : '#15191f',
               }}
             >
-              <div className="font-display font-extrabold text-5xl leading-none">
-                {rankLabel(card.rank)}
+              {/* Corner pips matching the rest of the card games */}
+              <div className="absolute top-2 left-3 leading-none flex flex-col items-center text-sm font-bold">
+                <span>{rankLabel(card.rank)}</span>
+                <span>{suitGlyph(card.suit)}</span>
               </div>
-              <div className="text-4xl mt-1">{suitGlyph(card.suit)}</div>
+              <div className="absolute bottom-2 right-3 leading-none flex flex-col items-center rotate-180 text-sm font-bold">
+                <span>{rankLabel(card.rank)}</span>
+                <span>{suitGlyph(card.suit)}</span>
+              </div>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <div className="font-display font-extrabold text-5xl leading-none">
+                  {rankLabel(card.rank)}
+                </div>
+                <div className="text-4xl mt-1">{suitGlyph(card.suit)}</div>
+              </div>
             </motion.div>
           ) : (
             <motion.div
