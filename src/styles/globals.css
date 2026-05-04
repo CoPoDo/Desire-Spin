@@ -1318,6 +1318,14 @@
   50%      { transform: rotate(0.7deg)  translateX(1%); }
 }
 
+/* Wolf Gold wolf eye halo — subtle steady pulse so the silhouette
+ * reads as alive watching the moon rather than a dead cardboard
+ * cutout. Continuous gentle r-grow on the halo + opacity lift. */
+@keyframes wolfEyePulse {
+  0%, 100% { r: 0.5;  fill-opacity: 0.35; }
+  50%      { r: 0.75; fill-opacity: 0.7;  }
+}
+
 /* Pharaoh Sphinx eye glow — eyes briefly flash gold every ~7s as if
  * an ancient power stirs for a moment, then returns to dark. Both
  * eyes glow in sync (single being). Cycle stays mostly dark with a

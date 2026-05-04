@@ -131,9 +131,15 @@ export function WolfScene() {
           <path d="M -5 2.4 Q -7 1.5 -7 -0.4 Q -6 0.4 -5.5 1.6" stroke="#02010a" strokeWidth=".7" fill="none" strokeLinecap="round" />
           {/* Subtle moon-glow rim along back */}
           <path d="M -5 2.6 Q -3 1.2 0 1.5 Q 2 1 3 -1" stroke="rgba(220,200,255,.45)" strokeWidth=".2" fill="none" />
-          {/* Glowing amber eye — small dot with halo, sits on the snout */}
+          {/* Glowing amber eye — small dot with halo, sits on the snout.
+           *  The halo pulses subtly so the wolf looks alive watching the
+           *  moon, not a dead silhouette. */}
           <circle cx="3.5" cy="-2.7" r=".18" fill="#ffd166" />
-          <circle cx="3.5" cy="-2.7" r=".5" fill="rgba(255,209,102,.35)" />
+          <circle
+            cx="3.5" cy="-2.7" r=".5"
+            fill="rgba(255,209,102,.35)"
+            style={{ animation: 'wolfEyePulse 2.4s ease-in-out infinite', transformOrigin: '3.5px -2.7px' }}
+          />
           {/* Howl-arcs — two faint curved sound-waves leaving the snout
               and bending toward the moon. Quintessential howling pose. */}
           <path
