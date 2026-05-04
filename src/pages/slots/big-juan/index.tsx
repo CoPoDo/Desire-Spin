@@ -26,6 +26,7 @@ import {
   RoyalSvg,
 } from './symbols';
 import { BigJuanBonusRound } from './BonusRound';
+import { fireConfetti } from '../../../lib/confetti';
 
 const BET_PRESETS = [0.2, 0.5, 1, 2, 5, 10, 20, 50, 100];
 
@@ -167,6 +168,11 @@ export function BigJuan() {
           : 'big';
         setBigWin({ payout, tier });
         setTimeout(() => setBigWin(null), tier === 'epic' ? 4500 : tier === 'mega' ? 3500 : 2700);
+        // Lucha-fiesta chip-shower in cantina/lucha colours.
+        fireConfetti({
+          count: tier === 'epic' ? 160 : tier === 'mega' ? 110 : 75,
+          colors: ['#ff5560', '#ffd166', '#1fff7a', '#5fb8ff', '#c042b8', '#ffffff'],
+        });
       }
     }
     if (r.scatterCount >= 3) {
