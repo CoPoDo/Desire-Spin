@@ -480,6 +480,13 @@ export function ImmersiveSlotView({
 
   const buyCost = useMemo(() => cfg.buyBonusCost * bet, [cfg.buyBonusCost, bet]);
   const inFree = freeSpins !== null;
+  // Sum of multiplier values currently on the grid (live, ticks as they land).
+  // Real Olympus shows this prominently during free spins as TOTAL MULTIPLIER.
+  const gridMultiplierTotal = useMemo(() => {
+    let total = 0;
+    for (const col of grid) for (const cell of col) if (cell.multiplier !== undefined) total += cell.multiplier;
+    return total;
+  }, [grid]);
   const presetIdx = useMemo(() => {
     let idx = 0;
     let dist = Infinity;
@@ -498,24 +505,39 @@ export function ImmersiveSlotView({
 
   return (
     <div className="absolute inset-0 flex flex-col">
-      {/* Persistent free-spins counter — fixed top, shows over the floating
-          top bar during a free-spins session. Real-Olympus parity. */}
+      {/* Persistent free-spins HUD — fixed top, shows over the floating top
+          bar during a free-spins session. Three stats: spin counter, current
+          on-grid multiplier total (sum of all visible orbs), and total won.
+          Real-Olympus parity. */}
       {inFree && freeSpins && (
-        <div className="absolute top-12 left-1/2 -translate-x-1/2 z-30 flex items-center gap-3 px-4 py-1.5 rounded-full olympus-fs-counter">
-          <div className="flex flex-col items-center">
-            <span className="text-[8px] uppercase tracking-widest text-[#FFE0A8]">Free Spins</span>
-            <span className="font-serif italic font-bold text-lg leading-none text-[#ffe9a8] tabular-nums"
+        <div className="absolute top-12 left-1/2 -translate-x-1/2 z-30 flex items-stretch gap-2 px-3 py-1.5 rounded-full olympus-fs-counter whitespace-nowrap">
+          <div className="flex flex-col items-center px-1">
+            <span className="text-[8px] uppercase tracking-widest text-[#FFE0A8]">Spins</span>
+            <span className="font-serif italic font-bold text-base leading-none text-[#ffe9a8] tabular-nums"
                   style={{ textShadow: '0 0 12px rgba(255,200,40,.8)' }}>
               {(freeSpins.total - freeSpins.remaining)}/{freeSpins.total}
             </span>
           </div>
-          <span className="text-[#FFE0A8]/40 text-lg">·</span>
-          <div className="flex flex-col items-center">
-            <span className="text-[8px] uppercase tracking-widest text-[#FFE0A8]">Total Won</span>
+          <span className="text-[#FFE0A8]/40">·</span>
+          <div className="flex flex-col items-center px-1">
+            <span className="text-[8px] uppercase tracking-widest text-[#FFE0A8]">Mult</span>
+            <CountUp
+              value={gridMultiplierTotal}
+              format={(n) => `${n.toFixed(0)}×`}
+              duration={400}
+              className={`font-serif italic font-bold text-base leading-none tabular-nums ${
+                gridMultiplierTotal > 0 ? 'text-[#fff7d6]' : 'text-[#FFE0A8]/60'
+              }`}
+              style={gridMultiplierTotal > 0 ? { textShadow: '0 0 12px rgba(255,200,40,.95)' } : undefined}
+            />
+          </div>
+          <span className="text-[#FFE0A8]/40">·</span>
+          <div className="flex flex-col items-center px-1">
+            <span className="text-[8px] uppercase tracking-widest text-[#FFE0A8]">Won</span>
             <CountUp
               value={freeSpins.running}
               format={fmtCurrency}
-              className="font-serif italic font-bold text-lg leading-none text-[#ffe9a8] tabular-nums"
+              className="font-serif italic font-bold text-base leading-none text-[#ffe9a8] tabular-nums"
               style={{ textShadow: '0 0 12px rgba(255,200,40,.8)' }}
             />
           </div>
