@@ -132,13 +132,23 @@ export function DiamondsGame() {
                   <AnimatePresence>
                     {meta && (
                       <motion.span
+                        className="block"
+                        style={{
+                          width: '54%',
+                          aspectRatio: '1 / 1.15',
+                          // Gem-cut diamond silhouette via clip-path so the
+                          // shape itself communicates "gemstone" instead of
+                          // every gem reusing the 💎 emoji glyph. Background
+                          // gradient varies per gem colour.
+                          clipPath:
+                            'polygon(50% 0%, 90% 35%, 75% 100%, 25% 100%, 10% 35%)',
+                          background: `linear-gradient(180deg, #ffffff 0%, ${meta.color} 50%, rgba(0,0,0,.55) 100%)`,
+                          filter: `drop-shadow(0 0 6px ${meta.color}aa)`,
+                        }}
                         initial={{ scale: 0, rotate: -180 }}
                         animate={{ scale: 1, rotate: 0 }}
                         transition={{ type: 'spring', stiffness: 280, damping: 16 }}
-                        style={{ filter: 'drop-shadow(0 0 4px rgba(0,0,0,.5))' }}
-                      >
-                        {meta.emoji}
-                      </motion.span>
+                      />
                     )}
                   </AnimatePresence>
                 </motion.div>
