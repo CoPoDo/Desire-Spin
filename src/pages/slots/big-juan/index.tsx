@@ -52,6 +52,8 @@ export function BigJuan() {
     seeds: { serverSeed: string; clientSeed: string; nonce: number };
   } | null>(null);
   const [buyBonusConfirm, setBuyBonusConfirm] = useState(false);
+  const [autoplay, setAutoplay] = useState<{ remaining: number; total: number } | null>(null);
+  const [autoplaySheetOpen, setAutoplaySheetOpen] = useState(false);
 
   // Menu / panels
   const [menuOpen, setMenuOpen] = useState(false);
@@ -194,6 +196,22 @@ export function BigJuan() {
 
   const inFs = false; // legacy alias — bonus round replaces the FS auto loop
   const totalCost = bet;
+
+  // Auto-play loop: when active, fires another spin shortly after the
+  // previous one settles. Pauses while in bonus, resumes after.
+  useEffect(() => {
+    if (!autoplay || autoplay.remaining <= 0) return;
+    if (busy || bonus) return;
+    if (balance.balance < bet) {
+      setAutoplay(null);
+      return;
+    }
+    const t = setTimeout(() => {
+      setAutoplay((prev) => prev ? { ...prev, remaining: prev.remaining - 1 } : null);
+      void spin();
+    }, 850);
+    return () => clearTimeout(t);
+  }, [autoplay, busy, bonus, balance.balance, bet, spin]);
   const BUY_BONUS_MULT = 100;
   const buyBonusCost = +(bet * BUY_BONUS_MULT).toFixed(2);
 
@@ -430,7 +448,7 @@ export function BigJuan() {
         </button>
         <button
           onClick={() => setBuyBonusConfirm(true)}
-          disabled={busy || !!bonus || balance.balance < buyBonusCost}
+          disabled={busy || !!bonus || !!autoplay || balance.balance < buyBonusCost}
           aria-label="Buy bonus"
           className="flex flex-col items-center px-2 py-1.5 rounded-xl border disabled:opacity-50"
           style={{
@@ -441,6 +459,28 @@ export function BigJuan() {
           <span className="text-[8px] uppercase tracking-widest text-[#ff8a8a]">Buy</span>
           <span className="text-[9px] font-mono font-bold text-[#ff8a8a] tabular-nums">
             {fmtCurrency(buyBonusCost)}
+          </span>
+        </button>
+        <button
+          onClick={() => {
+            if (autoplay) setAutoplay(null);
+            else setAutoplaySheetOpen(true);
+          }}
+          disabled={busy || !!bonus}
+          aria-label={autoplay ? 'Stop autoplay' : 'Auto-play'}
+          className="flex flex-col items-center px-2 py-1.5 rounded-xl border disabled:opacity-50"
+          style={{
+            background: autoplay
+              ? 'linear-gradient(180deg, rgba(31,255,122,.25), rgba(0,0,0,.4))'
+              : 'rgba(0,0,0,.4)',
+            borderColor: autoplay ? 'rgba(31,255,122,.6)' : 'rgba(255,209,102,.4)',
+          }}
+        >
+          <span className="text-[8px] uppercase tracking-widest" style={{ color: autoplay ? '#9cffa8' : '#ffe0a8' }}>
+            {autoplay ? 'Stop' : 'Auto'}
+          </span>
+          <span className="text-[9px] font-mono font-bold tabular-nums" style={{ color: autoplay ? '#1fff7a' : '#ffd166' }}>
+            {autoplay ? `${autoplay.remaining}` : '...'}
           </span>
         </button>
         <button
@@ -575,6 +615,49 @@ export function BigJuan() {
             seeds={bonus.seeds}
             onClose={resolveBonus}
           />
+        )}
+      </AnimatePresence>
+
+      {/* Autoplay sheet */}
+      <AnimatePresence>
+        {autoplaySheetOpen && (
+          <>
+            <motion.button
+              className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setAutoplaySheetOpen(false)}
+            />
+            <motion.div
+              className="fixed left-0 right-0 bottom-0 z-50 rounded-t-3xl bg-bg-card border-t border-edge p-4 max-w-md mx-auto"
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', stiffness: 280, damping: 30 }}
+            >
+              <div className="text-[10px] uppercase tracking-widest text-ink-mute mb-2 px-1">
+                Auto-play count
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {[10, 25, 50, 100, 250, 500].map((n) => (
+                  <button
+                    key={n}
+                    onClick={() => {
+                      setAutoplay({ remaining: n, total: n });
+                      setAutoplaySheetOpen(false);
+                    }}
+                    className="py-3 rounded-xl font-mono font-bold text-sm tabular-nums bg-bg-elev border border-edge text-ink-dim hover:text-ink"
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
+              <div className="text-[10px] text-ink-mute text-center mt-3">
+                Auto-play pauses during the bonus round and resumes after.
+              </div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
 
