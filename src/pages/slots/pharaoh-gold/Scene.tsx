@@ -192,11 +192,30 @@ export function PharaohScene() {
         </defs>
         {/* Obelisk shaft (slight taper) */}
         <path d="M 4 55 L 4 8 L 5 6 L 6 8 L 6 55 Z" fill="url(#ph-obelisk)" />
-        {/* Pyramidion (small pyramid cap) */}
-        <path d="M 4 8 L 5 4 L 6 8 Z" fill="#7a4a04" />
-        {/* Hieroglyph hint marks */}
+        {/* Pyramidion (small pyramid cap) — gilded gold cap that
+         *  briefly flashes brighter every ~6s as if the setting sun
+         *  catches the gold at exactly the right angle. */}
+        <path
+          d="M 4 8 L 5 4 L 6 8 Z"
+          fill="#7a4a04"
+          style={{ animation: 'pharaohPyramidion 6s ease-in-out infinite' }}
+        />
+        {/* Hieroglyph hint marks — gold inscriptions on the obelisk
+         *  shaft. Each hint mark glints at a different point in the
+         *  cycle so the inscriptions appear to "read" top to bottom. */}
         {[20, 28, 36, 44].map((y, i) => (
-          <rect key={i} x="4.4" y={y} width="1.2" height="2" fill="rgba(255,209,102,.4)" />
+          <rect
+            key={i}
+            x="4.4"
+            y={y}
+            width="1.2"
+            height="2"
+            fill="rgba(255,209,102,.4)"
+            style={{
+              animation: 'pharaohObeliskGlyph 5s ease-in-out infinite',
+              animationDelay: `${i * 0.6}s`,
+            }}
+          />
         ))}
         {/* Base */}
         <rect x="3" y="55" width="4" height="3" fill="#3a1a04" />
