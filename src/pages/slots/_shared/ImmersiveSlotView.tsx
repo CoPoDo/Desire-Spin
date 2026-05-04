@@ -89,7 +89,11 @@ const FRAME_DELAY: Record<string, number> = {
   initialDrop: 850,         // matches col-staggered drop completion
                             //   (5*80ms stagger + 420ms drop = ~820ms)
   lightningStrike: 1500,    // dramatic Zeus pause
-  multipliersLanded: 480,   // subtle orb thump
+  multipliersLanded: 720,   // orb-thump pause — lets the eyes-glow,
+                            // speech bubble, and rumble register before
+                            // the next tumble sweeps them away. Was 480
+                            // which felt rushed (user feedback "bonus
+                            // going way too fast").
   wins: 600,                // winning highlight hold
   tumble: 850,              // matches tumble cells landing in last
                             //   column (5*80ms stagger + 420ms drop ≈
@@ -108,7 +112,9 @@ const FRAME_DELAY: Record<string, number> = {
 const TURBO_MIN_DELAY: Record<string, number> = {
   initialDrop: 380,
   lightningStrike: 800,
-  multipliersLanded: 220,
+  multipliersLanded: 320,   // bumped from 220 to match base frame
+                            // bump — even in turbo, multipliers need a
+                            // beat to register.
   wins: 280,
   tumble: 460,
   scattersWon: 380,
