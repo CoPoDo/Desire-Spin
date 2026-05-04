@@ -373,6 +373,24 @@ function Board({
         {activeBalls.map((b) => (
           <Ball key={b.id} ball={b} W={W} ballRadius={ballRadius} />
         ))}
+
+        {/* Bucket-landing impact ripple — quick expanding ring centred
+         *  on the winning bucket. Fires together with the bucket bounce
+         *  for extra "thump" on every landing. */}
+        {flashingBucket !== null && (
+          <motion.circle
+            key={`ripple-${flashingBucket}`}
+            cx={flashingBucket + 1}
+            cy={bucketY + bucketHeight / 2}
+            r={0.3}
+            fill="none"
+            stroke="rgba(255,255,255,.85)"
+            strokeWidth={0.08}
+            initial={{ r: 0.3, opacity: 0.85 }}
+            animate={{ r: 1.4, opacity: 0 }}
+            transition={{ duration: 0.55, ease: 'easeOut' }}
+          />
+        )}
       </svg>
     </div>
   );
