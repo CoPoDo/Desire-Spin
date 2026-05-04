@@ -2173,7 +2173,12 @@ export function ImmersiveSlotView({
       <AnimatePresence>
         {fsOutroOverlay && (
           <motion.div
-            className="olympus-fs-overlay fixed inset-0 z-[120] flex flex-col items-center justify-center text-center p-6 pointer-events-none"
+            className="fixed inset-0 z-[120] flex flex-col items-center justify-center text-center p-6 pointer-events-none"
+            style={{
+              background: `radial-gradient(ellipse at center, ${cfg.theme.accent}38, rgba(10,4,8,.96) 70%)`,
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
+            }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -2273,7 +2278,16 @@ export function ImmersiveSlotView({
       <AnimatePresence>
         {fsOverlay && (
           <motion.div
-            className="olympus-fs-overlay fixed inset-0 z-[120] flex flex-col items-center justify-center text-center p-6 pointer-events-none"
+            className="fixed inset-0 z-[120] flex flex-col items-center justify-center text-center p-6 pointer-events-none"
+            // Per-slot tinted backdrop for the FS-trigger moment.
+            // Was the shared olympus-fs-overlay (warm amber radial)
+            // — now uses the slot's accent so each game's trigger
+            // moment feels native.
+            style={{
+              background: `radial-gradient(ellipse at center, ${cfg.theme.accent}38, rgba(10,4,8,.96) 70%)`,
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
+            }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
