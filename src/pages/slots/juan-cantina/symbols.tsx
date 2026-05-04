@@ -269,8 +269,107 @@ function makeEmojiSymbol(id: string) {
   };
 }
 
-export const ChilliSymbol = makeEmojiSymbol('chilli');
-export const TacoSymbol = makeEmojiSymbol('taco');
+/** Chili pepper — bright red with green stem, glossy curved body. */
+export function ChilliSymbol() {
+  return (
+    <div className={wrap} style={{ color: '#ff5560' }}>
+      <svg viewBox="0 0 64 64" className="w-full h-full">
+        <defs>
+          <radialGradient id="chl-body" cx="40%" cy="32%" r="65%">
+            <stop offset="0%" stopColor="#ffe0e4" />
+            <stop offset="14%" stopColor="#ffb4b8" />
+            <stop offset="44%" stopColor="#ff5560" />
+            <stop offset="78%" stopColor="#c8102e" />
+            <stop offset="100%" stopColor="#5a0810" />
+          </radialGradient>
+          <linearGradient id="chl-stem" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#7fc950" />
+            <stop offset="100%" stopColor="#2a5a18" />
+          </linearGradient>
+        </defs>
+        {/* Pepper body — long curved teardrop */}
+        <path
+          d="M 24 14 C 16 18 12 32 16 44 C 20 56 36 60 44 52 C 50 46 50 36 46 28 C 42 22 32 18 32 14 Z"
+          fill="url(#chl-body)"
+          stroke="#5a0810"
+          strokeWidth="1.1"
+          strokeLinejoin="round"
+        />
+        {/* Belly highlight (long shine) */}
+        <path
+          d="M 22 22 Q 18 32 22 42"
+          fill="none"
+          stroke="rgba(255,255,255,.55)"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+        />
+        {/* Smaller bright sheen */}
+        <ellipse cx="22" cy="20" rx="2" ry="3" fill="rgba(255,255,255,.7)" />
+        {/* Stem cup */}
+        <path d="M 26 12 Q 32 8 36 14 Q 34 16 26 12 Z" fill="url(#chl-stem)" stroke="#1a3a08" strokeWidth=".5" />
+        {/* Stem stalk */}
+        <path d="M 32 6 Q 30 10 32 14" stroke="url(#chl-stem)" strokeWidth="2" fill="none" strokeLinecap="round" />
+        {/* Stem leaf */}
+        <path d="M 32 8 Q 38 6 40 12" fill="#7fc950" stroke="#2a5a18" strokeWidth=".5" />
+      </svg>
+    </div>
+  );
+}
+
+/** Taco — folded shell with lettuce, meat, tomato peeking out. */
+export function TacoSymbol() {
+  return (
+    <div className={wrap} style={{ color: '#ffae50' }}>
+      <svg viewBox="0 0 64 64" className="w-full h-full">
+        <defs>
+          <linearGradient id="tc-shell" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#fff5c4" />
+            <stop offset="40%" stopColor="#ffae50" />
+            <stop offset="100%" stopColor="#7a4a04" />
+          </linearGradient>
+          <linearGradient id="tc-shell-inner" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#ffd8a8" />
+            <stop offset="100%" stopColor="#a8761a" />
+          </linearGradient>
+        </defs>
+        {/* Outer shell (curved arc, opens upward) */}
+        <path
+          d="M 6 50 Q 32 18 58 50 L 58 56 L 6 56 Z"
+          fill="url(#tc-shell)"
+          stroke="#5a3a04"
+          strokeWidth="1"
+          strokeLinejoin="round"
+        />
+        {/* Inner crease shadow */}
+        <path
+          d="M 14 48 Q 32 24 50 48"
+          fill="none"
+          stroke="rgba(0,0,0,.25)"
+          strokeWidth=".7"
+        />
+        {/* Lettuce ruffles peeking out the top */}
+        <path d="M 14 32 Q 22 26 28 30 Q 34 24 42 30 Q 48 26 52 32 L 52 38 L 14 38 Z" fill="#7fc950" stroke="#2a5a18" strokeWidth=".6" />
+        <path d="M 18 30 L 20 32" stroke="#2a5a18" strokeWidth=".4" />
+        <path d="M 36 28 L 38 30" stroke="#2a5a18" strokeWidth=".4" />
+        {/* Tomato chunks */}
+        <circle cx="24" cy="38" r="1.7" fill="#ff5560" stroke="#7a0810" strokeWidth=".3" />
+        <circle cx="40" cy="36" r="1.5" fill="#ff5560" stroke="#7a0810" strokeWidth=".3" />
+        {/* Meat strips (brown) */}
+        <ellipse cx="32" cy="40" rx="6" ry="1.4" fill="#7a3a08" />
+        <ellipse cx="28" cy="42" rx="3" ry=".9" fill="#5a2808" />
+        <ellipse cx="36" cy="42" rx="3" ry=".9" fill="#5a2808" />
+        {/* Cheese crumbles */}
+        <circle cx="22" cy="42" r=".5" fill="#fff5c4" />
+        <circle cx="34" cy="44" r=".5" fill="#fff5c4" />
+        <circle cx="42" cy="42" r=".5" fill="#fff5c4" />
+        {/* Bottom shell highlight */}
+        <path d="M 8 52 Q 32 50 56 52" fill="none" stroke="rgba(255,255,255,.4)" strokeWidth=".7" />
+        {/* Inner shell tint at bottom */}
+        <path d="M 12 54 Q 32 52 52 54 L 52 56 L 12 56 Z" fill="url(#tc-shell-inner)" opacity=".5" />
+      </svg>
+    </div>
+  );
+}
 export const LimeSymbol = makeEmojiSymbol('lime');
 export const CactusSymbol = makeEmojiSymbol('cactus');
 
