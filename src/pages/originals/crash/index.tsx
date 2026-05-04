@@ -218,26 +218,41 @@ export function CrashGame() {
                 <stop offset="100%" stopColor={lost ? '#ff3d8b' : '#1fff7a'} stopOpacity="0.45" />
               </linearGradient>
             </defs>
-            <path
-              d={(() => {
-                // Draw a curve from (0, 60) to (curveProgress*100, 60 - height)
-                const px = curveProgress * 100;
-                const py = 60 - Math.min(60, Math.log(currentMult) / Math.log(20) * 60);
-                let path = 'M 0 60';
-                for (let i = 0; i <= 30; i++) {
-                  const t = (i / 30) * px;
-                  const m = Math.exp(0.06 * (t / 100) * 60); // approximate
-                  const y = 60 - Math.min(60, Math.log(m) / Math.log(20) * 60);
-                  path += ` L ${t} ${y}`;
-                }
-                path += ` L ${px} ${py} L ${px} 60 Z`;
-                return path;
-              })()}
-              fill="url(#crash-curve)"
-              stroke={lost ? '#ff3d8b' : '#1fff7a'}
-              strokeWidth="0.5"
-              opacity={inGame || won || lost ? 1 : 0.2}
-            />
+            {(() => {
+              // Compute curve once and reuse for both fill path + edge dot
+              const px = curveProgress * 100;
+              const py = 60 - Math.min(60, Math.log(currentMult) / Math.log(20) * 60);
+              let path = 'M 0 60';
+              for (let i = 0; i <= 30; i++) {
+                const t = (i / 30) * px;
+                const m = Math.exp(0.06 * (t / 100) * 60); // approximate
+                const y = 60 - Math.min(60, Math.log(m) / Math.log(20) * 60);
+                path += ` L ${t} ${y}`;
+              }
+              path += ` L ${px} ${py} L ${px} 60 Z`;
+              const edgeColor = lost ? '#ff3d8b' : '#1fff7a';
+              return (
+                <>
+                  <path
+                    d={path}
+                    fill="url(#crash-curve)"
+                    stroke={edgeColor}
+                    strokeWidth="0.5"
+                    opacity={inGame || won || lost ? 1 : 0.2}
+                  />
+                  {/* Bright leading-edge spark following the curve tip — only
+                   *  visible while the round is running; on bust/cashout
+                   *  the curve freezes and the spark disappears. */}
+                  {inGame && (
+                    <>
+                      <circle cx={px} cy={py} r="1.6" fill={edgeColor}
+                        style={{ filter: `drop-shadow(0 0 4px ${edgeColor})` }} />
+                      <circle cx={px} cy={py} r="0.7" fill="#ffffff" />
+                    </>
+                  )}
+                </>
+              );
+            })()}
           </svg>
 
           {/* Center multiplier */}
