@@ -122,13 +122,34 @@ export function RouletteGame() {
             {busy ? (
               <motion.div key="spin" className="text-center">
                 <div className="text-[10px] uppercase tracking-widest text-ink-mute">Spinning</div>
+                {/* Wheel hub with an off-centre ball orbiting around it.
+                 *  The hub is a dark green felt circle (real roulette
+                 *  layout). The ball is positioned at 50% top, then the
+                 *  whole container rotates so the ball appears to orbit. */}
                 <motion.div
-                  className="mt-2 inline-flex items-center justify-center w-16 h-16 rounded-full text-2xl font-mono font-bold"
-                  style={{ background: '#1a1f29', border: '2px solid #2a3142' }}
+                  className="mt-2 relative inline-block w-16 h-16 rounded-full"
+                  style={{
+                    background: 'radial-gradient(circle at 50% 50%, #0a3a1a, #02100a)',
+                    border: '2px solid #2a3142',
+                    boxShadow: 'inset 0 0 12px rgba(0,0,0,.6), 0 4px 8px rgba(0,0,0,.4)',
+                  }}
                   animate={{ rotate: 360 }}
-                  transition={{ repeat: Infinity, ease: 'linear', duration: 0.8 }}
+                  transition={{ repeat: Infinity, ease: 'linear', duration: 0.6 }}
                 >
-                  ⚪
+                  {/* Orbiting ball */}
+                  <span
+                    className="absolute rounded-full"
+                    style={{
+                      top: '4px',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      width: '10px',
+                      height: '10px',
+                      background:
+                        'radial-gradient(circle at 35% 30%, #ffffff, #c8c8c8 70%, #888888)',
+                      boxShadow: '0 0 6px rgba(255,255,255,.85), 0 1px 2px rgba(0,0,0,.6)',
+                    }}
+                  />
                 </motion.div>
               </motion.div>
             ) : winning !== null ? (
