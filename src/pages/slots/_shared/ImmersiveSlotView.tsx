@@ -993,48 +993,34 @@ export function ImmersiveSlotView({
             ))}
           </AnimatePresence>
 
-          {/* Lightning flash over each freshly-landed scatter cell. Real Olympus
-              flashes a vertical bolt down each scatter column at landing. */}
+          {/* Cell halo on each freshly-landed scatter — soft radial glow only.
+              The previous version fired a vertical 3px gold lightning streak
+              down the entire column on every scatter landing; that read as a
+              hard drawn line cutting through the symbols and felt like a
+              rendering artefact rather than an effect. Now it's just a
+              localised sparkle halo around the cell so the player knows a
+              scatter dropped without the screen feeling cut. */}
           <AnimatePresence>
             {scatterFlashes.map((f) => (
               <motion.div
                 key={f.id}
                 className="absolute pointer-events-none z-[6]"
                 style={{
-                  left: `${liveInsets.left + f.col * (liveInsets.width / cfg.cols)}%`,
-                  top: 0,
-                  width: `${liveInsets.width / cfg.cols}%`,
-                  bottom: 0,
+                  left: `${liveInsets.left + (f.col + 0.5) * (liveInsets.width / cfg.cols)}%`,
+                  top: `${liveInsets.top + (f.row + 0.5) * (liveInsets.width / cfg.cols)}%`,
+                  width: `${liveInsets.width / cfg.cols * 1.4}%`,
+                  aspectRatio: '1 / 1',
+                  transform: 'translate(-50%, -50%)',
+                  background:
+                    'radial-gradient(circle at 50% 50%, rgba(255,233,168,0.8) 0%, rgba(255,200,80,.4) 35%, transparent 70%)',
+                  mixBlendMode: 'screen',
+                  filter: 'blur(2px)',
                 }}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: [0, 1, 0.5, 0.9, 0] }}
+                initial={{ scale: 0.5, opacity: 0 }}
+                animate={{ scale: [0.5, 1.1, 1], opacity: [0, 0.85, 0] }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: 0.7, times: [0, 0.08, 0.2, 0.35, 1], ease: 'easeOut' }}
-              >
-                {/* Vertical lightning streak through the column */}
-                <div
-                  className="absolute left-1/2 top-0 bottom-0 -translate-x-1/2"
-                  style={{
-                    width: 3,
-                    background:
-                      'linear-gradient(180deg, transparent 0%, #fffbe1 20%, #ffe9a8 50%, #ffc62a 80%, transparent 100%)',
-                    filter: 'drop-shadow(0 0 16px rgba(255,200,80,.95)) drop-shadow(0 0 32px rgba(255,140,40,.7))',
-                    transform: 'translate(-50%, 0) skewX(-4deg)',
-                  }}
-                />
-                {/* Glow halo around the cell location */}
-                <div
-                  className="absolute left-1/2 -translate-x-1/2"
-                  style={{
-                    top: `${(f.row + 0.5) * 100 / cfg.rows}%`,
-                    width: '120%',
-                    height: '40%',
-                    transform: 'translate(-50%, -50%)',
-                    background: 'radial-gradient(ellipse at center, rgba(255,233,168,.65) 0%, transparent 65%)',
-                    filter: 'blur(2px)',
-                  }}
-                />
-              </motion.div>
+                transition={{ duration: 0.55, ease: 'easeOut' }}
+              />
             ))}
           </AnimatePresence>
 
