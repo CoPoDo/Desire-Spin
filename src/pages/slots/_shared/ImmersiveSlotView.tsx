@@ -435,14 +435,18 @@ export function ImmersiveSlotView({
             // Screen rumble — scaled to the highest multiplier on screen
             // so a 2× drops a small thump and a 100×+ shakes the camera
             // hard. Real Pragmatic Olympus has this exact escalation.
+            // Thunder SFX only on Olympus (Zeus theme); other slots get
+            // the rumble shake only — their own ambient music carries
+            // the moment without an out-of-context thunder crack.
             const maxMult = Math.max(0, ...frame.landings.map((l) => l.value));
+            const isZeus = cfg.id === 'gates-of-olympus';
             if (maxMult >= 100) {
               setOrbRumble('lg');
-              sound.play('thunder');
+              if (isZeus) sound.play('thunder');
               scheduleSpin(() => setOrbRumble(null), 700);
             } else if (maxMult >= 25) {
               setOrbRumble('md');
-              sound.play('thunder');
+              if (isZeus) sound.play('thunder');
               scheduleSpin(() => setOrbRumble(null), 500);
             } else if (maxMult >= 10) {
               setOrbRumble('sm');
