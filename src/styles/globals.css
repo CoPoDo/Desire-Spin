@@ -1209,7 +1209,13 @@
   border-radius: 50%;
   display: grid;
   place-items: center;
-  border: 2px solid rgba(255, 255, 255, 0.85);
+  /* Two-stop border — outer thin dark ring + inner soft white rim. The
+   * real Sweet Bonanza candy bombs have a darker rim that defines them
+   * crisply against the cell + a soft inner highlight ring (the gloss). */
+  border: 1.5px solid rgba(40, 4, 32, 0.85);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.55) inset,
+    0 0 0 2px rgba(40, 4, 32, 0.3);
   animation: bonanzaOrbBreathe 1.6s ease-in-out infinite;
 }
 .bonanza-orb-text {
