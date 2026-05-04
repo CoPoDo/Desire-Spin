@@ -1709,6 +1709,15 @@
   20%  { transform: translate(36vw, 8vh); opacity: 0; }
   100% { transform: translate(36vw, 8vh); opacity: 0; }
 }
+/* Second shooting star going right-to-left so the two stars cross the
+ * sky in different directions. Different total cycle (22s vs 15s) and
+ * different angle so they never travel the same path. */
+@keyframes wolfShootingStarRight {
+  0%   { transform: translate(0, 0); opacity: 0; }
+  3%   { opacity: 1; }
+  20%  { transform: translate(-32vw, 6vh); opacity: 0; }
+  100% { transform: translate(-32vw, 6vh); opacity: 0; }
+}
 
 /* Sweet Bonanza symbol container — vibrant drop-shadow for the candy palette.
  * Larger than Olympus's 78% so the saturated fruits dominate the cell, matching

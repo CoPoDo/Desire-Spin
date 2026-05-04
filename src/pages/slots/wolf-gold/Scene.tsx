@@ -209,8 +209,11 @@ export function WolfScene() {
         }}
       />
 
-      {/* Occasional shooting star streaking across the upper sky.
-       * Long delay (15s cycle) makes it rare/special. */}
+      {/* Two occasional shooting stars on different cycles + delays —
+       * one streaks the upper-left sky, one streaks the upper-right.
+       * Combined 15s + 22s cycles with offset delays mean the player
+       * sees a star roughly every 6-8s without the pattern feeling
+       * regular. */}
       <div
         className="absolute"
         style={{
@@ -222,6 +225,20 @@ export function WolfScene() {
           borderRadius: '1px',
           boxShadow: '0 0 8px rgba(255,255,255,.95), 0 0 16px rgba(167,139,250,.6)',
           animation: 'wolfShootingStar 15s linear infinite',
+          willChange: 'transform, opacity',
+        }}
+      />
+      <div
+        className="absolute"
+        style={{
+          right: '14%',
+          top: '8%',
+          width: '46px',
+          height: '1.6px',
+          background: 'linear-gradient(270deg, transparent, #fff, #d4b8ff)',
+          borderRadius: '1px',
+          boxShadow: '0 0 6px rgba(255,255,255,.85), 0 0 12px rgba(167,139,250,.5)',
+          animation: 'wolfShootingStarRight 22s linear -7s infinite',
           willChange: 'transform, opacity',
         }}
       />
