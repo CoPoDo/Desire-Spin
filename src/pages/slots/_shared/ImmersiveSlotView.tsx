@@ -169,6 +169,13 @@ export function ImmersiveSlotView({
   const playFrames = useCallback(
     async (frames: Frame[], betUsed: number, mode: SpinMode) => {
       let lastGrid: TGrid | null = null;
+      // Track whether we're currently inside a free-spins session (set by
+      // freeSpinsBegin, cleared by freeSpinsEnd). The outer `mode` arg only
+      // tells us how the round STARTED — the inner spins inside playRound's
+      // FS loop emit their own final frames, and those should NOT trigger
+      // base-game bigWin celebrations (the freeSpinsEnd does that once at
+      // the end with the total payout).
+      let inFsLocal = mode === 'free';
       // Brief pre-spin pause so the blur applied at SPIN-click is visible.
       // Skipped under turbo + tap-to-skip — those want maximum speed.
       const presDur = turboRef.current ? (skipRef.current ? 0 : 80) : 180;
@@ -329,6 +336,7 @@ export function ImmersiveSlotView({
           case 'freeSpinsBegin': {
             setFreeSpins({ remaining: frame.total, total: frame.total, running: 0 });
             sound.play('free-spins-trigger');
+            inFsLocal = true;
             break;
           }
           case 'multiplierApplied': {
@@ -342,6 +350,7 @@ export function ImmersiveSlotView({
             setFsOutroOverlay({ totalPayout: frame.totalPayout });
             setTimeout(() => setFsOutroOverlay(null), 2800);
             setFreeSpins(null);
+            inFsLocal = false;
             const tier = winTierFor(frame.totalPayout, betUsed);
             if (tier) {
               setBigWin({ payout: frame.totalPayout, tier });
@@ -350,12 +359,15 @@ export function ImmersiveSlotView({
             break;
           }
           case 'final': {
-            if (mode === 'free') {
+            if (inFsLocal) {
+              // Inside an FS session — decrement remaining + add to running.
+              // Do NOT trigger bigWin per-spin; freeSpinsEnd handles the
+              // session-total celebration.
               setFreeSpins((s) =>
                 s ? { ...s, remaining: Math.max(0, s.remaining - 1), running: s.running + frame.spinPayout } : s,
               );
-            }
-            if (mode === 'base') {
+            } else {
+              // Base spin (no FS triggered, or before FS triggered).
               const tier = winTierFor(frame.spinPayout, betUsed);
               if (tier) {
                 setBigWin({ payout: frame.spinPayout, tier });
