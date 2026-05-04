@@ -123,13 +123,17 @@ export function SicBoGame() {
             {busy && !dice ? (
               <motion.div key="rolling" className="flex gap-3" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                 {[0, 1, 2].map((i) => (
+                  // Real-die rolling: tumble + bounce a proper Die
+                  // component rather than a 🎲 emoji. Each die shows a
+                  // different fixed face so the pips read consistently;
+                  // the rotation + bounce sells the "rolling in mid-air"
+                  // motion.
                   <motion.div
                     key={i}
-                    className="w-14 h-14 rounded-xl bg-bg-elev border border-edge flex items-center justify-center text-3xl font-mono font-bold"
                     animate={{ rotate: [0, 360], y: [0, -8, 0] }}
                     transition={{ duration: 0.4, repeat: Infinity, ease: 'easeInOut', delay: i * 0.08 }}
                   >
-                    🎲
+                    <Die value={[3, 5, 1][i]!} />
                   </motion.div>
                 ))}
               </motion.div>
