@@ -12,7 +12,9 @@ export function WolfScene() {
             'linear-gradient(180deg, #6638c8 0%, #2a1268 30%, #0a0418 65%, #02010a 100%)',
         }}
       />
-      {/* Stars layer */}
+      {/* Stars layer — subtle twinkle on the entire layer so the night
+       *  sky has motion without per-star animation. Slower cycle than
+       *  Olympus's stars to differentiate the two skies. */}
       <div
         className="absolute inset-0"
         style={{
@@ -29,6 +31,7 @@ export function WolfScene() {
           `,
           mixBlendMode: 'screen',
           opacity: 0.9,
+          animation: 'wolfStarsTwinkle 5s ease-in-out infinite',
         }}
       />
       {/* Big silver moon — slow corona breathe so the moonlight reads as

@@ -1562,6 +1562,14 @@
   100% { stroke-dashoffset: -10; }
 }
 
+/* Wolf Gold star-field twinkle — slow opacity wave so the entire
+ * sky has subtle motion. Slower 5s cycle differentiates the moonlit
+ * desert from Olympus's faster (8s) but warmer twinkle. */
+@keyframes wolfStarsTwinkle {
+  0%, 100% { opacity: 0.65; }
+  50%      { opacity: 1;    }
+}
+
 /* Wolf Gold moonlight beam — slow opacity breathe in sync with the
  * moon corona pulse so the beam visibly intensifies as clouds thin
  * and fades as they thicken. Same 7s cycle as wolfMoonCorona. */
