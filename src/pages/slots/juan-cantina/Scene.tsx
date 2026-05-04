@@ -153,43 +153,71 @@ export function JuanScene() {
         })}
       </svg>
 
-      {/* 4. Papel picado bunting + lanterns */}
-      <div
+      {/* 4. Papel picado bunting — triangular pennants on a sagging string,
+       *    rendered as proper SVG flags rather than rectangular blocks.
+       *    Each flag has a small cut-paper diamond in the centre to nod to
+       *    real papel picado's pierced patterns. */}
+      <svg
         className="absolute inset-x-0"
         style={{
-          top: '6%',
-          height: '6%',
-          backgroundImage: `
-            repeating-linear-gradient(
-              90deg,
-              #ff5560 0 6%,
-              transparent 6% 8%,
-              #1fff7a 8% 14%,
-              transparent 14% 16%,
-              #5fb8ff 16% 22%,
-              transparent 22% 24%,
-              #ffd166 24% 30%,
-              transparent 30% 32%,
-              #c042b8 32% 38%,
-              transparent 38% 40%
-            )`,
-          maskImage:
-            'repeating-linear-gradient(90deg, #000 0 6%, transparent 6% 8%, #000 8% 14%, transparent 14% 16%, #000 16% 22%, transparent 22% 24%, #000 24% 30%, transparent 30% 32%, #000 32% 38%, transparent 38% 40%)',
-          WebkitMaskImage:
-            'repeating-linear-gradient(90deg, #000 0 6%, transparent 6% 8%, #000 8% 14%, transparent 14% 16%, #000 16% 22%, transparent 22% 24%, #000 24% 30%, transparent 30% 32%, #000 32% 38%, transparent 38% 40%)',
-          opacity: 0.9,
+          top: '4%',
+          height: '8%',
+          width: '100%',
           filter: 'drop-shadow(0 4px 6px rgba(0,0,0,.4))',
         }}
-      />
-      {/* Bunting string */}
-      <div
-        className="absolute inset-x-0"
-        style={{
-          top: '5%',
-          height: '1px',
-          background: 'rgba(0,0,0,.6)',
-        }}
-      />
+        viewBox="0 0 100 8"
+        preserveAspectRatio="none"
+      >
+        {/* Sagging string */}
+        <path
+          d="M 0 1.2 Q 25 2.6 50 1.6 T 100 1.2"
+          fill="none"
+          stroke="rgba(0,0,0,.65)"
+          strokeWidth=".15"
+        />
+        {(() => {
+          const colors = ['#ff5560', '#1fff7a', '#5fb8ff', '#ffd166', '#c042b8', '#ffae50'];
+          const N = 16;
+          return Array.from({ length: N }).map((_, i) => {
+            const x = (i + 0.5) * (100 / N);
+            const yTop =
+              x < 50
+                ? 1.2 + 1.4 * (1 - Math.abs(x - 25) / 25)
+                : 1.2 + 1.4 * (1 - Math.abs(x - 75) / 25);
+            const w = 100 / N - 0.6;
+            const color = colors[i % colors.length]!;
+            const tipY = yTop + 4.4;
+            const cx = x;
+            const cy = yTop + 2.2;
+            return (
+              <g key={i}>
+                {/* Triangular pennant */}
+                <path
+                  d={`M ${cx - w / 2} ${yTop} L ${cx + w / 2} ${yTop} L ${cx} ${tipY} Z`}
+                  fill={color}
+                  stroke="rgba(0,0,0,.45)"
+                  strokeWidth=".08"
+                  opacity=".92"
+                />
+                {/* Cut-paper diamond hole (real papel picado is pierced) */}
+                <path
+                  d={`M ${cx} ${cy - 0.6} L ${cx + 0.5} ${cy} L ${cx} ${cy + 0.6} L ${cx - 0.5} ${cy} Z`}
+                  fill="rgba(0,0,0,.35)"
+                />
+                {/* Tiny side cuts */}
+                <circle cx={cx - 0.9} cy={cy + 0.2} r=".18" fill="rgba(0,0,0,.3)" />
+                <circle cx={cx + 0.9} cy={cy + 0.2} r=".18" fill="rgba(0,0,0,.3)" />
+                {/* Highlight along the lit edge */}
+                <path
+                  d={`M ${cx - w / 2 + 0.1} ${yTop + 0.15} L ${cx} ${tipY - 0.2}`}
+                  stroke="rgba(255,255,255,.35)"
+                  strokeWidth=".1"
+                />
+              </g>
+            );
+          });
+        })()}
+      </svg>
 
       {/* Stage-light glow behind the reels — warm sunset glow centred on
        * the grid area so the reels feel anchored to the cantina stage. */}
