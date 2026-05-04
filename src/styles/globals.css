@@ -1142,14 +1142,22 @@
   transform: translateZ(0);
   will-change: transform;
 }
+/* Wolf Gold scatter is a coyote — give it a head-back-then-forward
+ * "howling motion" rotation instead of an in-place pulse. Coyotes (and
+ * wolves) tip their heads up to howl at the moon — the rotation cycles
+ * through that motion subtly so the scatter reads as a coyote calling
+ * the next scatter to the grid. */
 .wolf-sym-scatter {
-  animation: wolfScatterPulse 1.7s ease-in-out infinite;
+  animation: wolfScatterHowl 2.2s ease-in-out infinite;
   filter: drop-shadow(0 3px 6px rgba(0,0,0,.7))
           drop-shadow(0 0 14px rgba(167, 139, 250, 0.8));
+  transform-origin: 50% 90%; /* hinge at the paws so the head leads the tilt */
 }
-@keyframes wolfScatterPulse {
-  0%, 100% { transform: scale(1) translateZ(0); opacity: 0.95; }
-  50%      { transform: scale(1.05) translateZ(0); opacity: 1; }
+@keyframes wolfScatterHowl {
+  0%, 100% { transform: rotate(0deg) scale(1) translateZ(0); opacity: 0.95; }
+  35%      { transform: rotate(-5deg) scale(1.04) translateZ(0); opacity: 1; }
+  60%      { transform: rotate(-3deg) scale(1.03) translateZ(0); }
+  85%      { transform: rotate(1deg) scale(1.01) translateZ(0); }
 }
 .wolf-sym-hero {
   animation: wolfHeroPulse 2.0s ease-in-out infinite;
