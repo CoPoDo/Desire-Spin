@@ -1843,22 +1843,63 @@ export function ImmersiveSlotView({
               transition={{ duration: 0.55, times: [0, 0.05, 0.2, 0.3, 0.5] }}
             />
 
-            {/* Single dramatic bolt down the middle of the painted scene */}
-            <motion.div
-              className="absolute left-1/2 -translate-x-1/2"
+            {/* Jagged forked lightning bolt down the centre — real
+                Pragmatic Olympus shows a proper zigzag bolt with a side
+                fork, not a straight bar. SVG strokes give the
+                zigzag-with-fork shape; outer halo + inner bright core
+                stack creates the "lit-from-inside" gold glow. */}
+            <motion.svg
+              className="absolute"
+              viewBox="0 0 20 100"
+              preserveAspectRatio="none"
               style={{
+                left: '50%',
                 top: '5%',
                 bottom: '15%',
-                width: '6px',
-                background:
-                  'linear-gradient(180deg, transparent, #fffbe1 10%, #ffe9a8 30%, #ffc62a 70%, transparent 100%)',
+                width: '10%',
+                transform: 'translateX(-50%)',
                 filter:
-                  'drop-shadow(0 0 30px rgba(255,233,168,1)) drop-shadow(0 0 80px rgba(255,180,40,.85))',
+                  'drop-shadow(0 0 12px rgba(255,233,168,1)) drop-shadow(0 0 40px rgba(255,180,40,.85))',
               }}
               initial={{ opacity: 0, scaleY: 0 }}
               animate={{ opacity: [0, 1, 0.4, 0.9, 0], scaleY: [0.3, 1, 1, 1, 1] }}
               transition={{ duration: 0.6, ease: 'easeOut' }}
-            />
+            >
+              {/* Outer wider yellow halo */}
+              <path
+                d="M 11 0 L 7 28 L 12 32 L 6 58 L 13 62 L 4 100"
+                stroke="#ffe9a8"
+                strokeWidth="3.5"
+                strokeLinejoin="miter"
+                strokeLinecap="round"
+                fill="none"
+              />
+              {/* Inner bright core */}
+              <path
+                d="M 11 0 L 7 28 L 12 32 L 6 58 L 13 62 L 4 100"
+                stroke="#fffbe1"
+                strokeWidth="1.4"
+                strokeLinejoin="miter"
+                strokeLinecap="round"
+                fill="none"
+              />
+              {/* Side fork branching off near the bottom */}
+              <path
+                d="M 6 58 L 18 72 L 14 80"
+                stroke="#ffe9a8"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                fill="none"
+                opacity="0.85"
+              />
+              <path
+                d="M 6 58 L 18 72 L 14 80"
+                stroke="#fffbe1"
+                strokeWidth="0.8"
+                strokeLinecap="round"
+                fill="none"
+              />
+            </motion.svg>
 
             {/* Subtle Zeus area highlight (less intrusive than before) */}
             <motion.div
