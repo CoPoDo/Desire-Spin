@@ -291,13 +291,17 @@ export function BigJuan() {
                       ) ?? false;
                     const sym = symbolById(symId);
                     const justRevealed = revealedReels > reelIdx;
+                    // Cells in the same reel cascade top-to-bottom for that
+                    // "settle" feel — bottom cell lands last, like a real
+                    // mechanical reel decelerating into place.
+                    const cellDelay = justRevealed && busy ? rowIdx * (turbo ? 0.025 : 0.06) : 0;
                     return (
                       <motion.div
                         key={`${cellKey}-${symId}`}
                         className="relative rounded-lg flex items-center justify-center select-none aspect-square"
                         initial={
                           justRevealed && busy
-                            ? { y: -40, opacity: 0, scale: 0.85 }
+                            ? { y: -56, opacity: 0, scale: 0.82 }
                             : false
                         }
                         animate={
@@ -307,11 +311,13 @@ export function BigJuan() {
                               ? { scale: 1, y: 0, opacity: 1 }
                               : { y: 0, opacity: 1, scale: 1 }
                         }
-                        transition={{
-                          duration: isActiveWin ? 0.6 : 0.3,
-                          repeat: isActiveWin ? Infinity : 0,
-                          ease: 'easeOut',
-                        }}
+                        transition={
+                          isActiveWin
+                            ? { duration: 0.6, repeat: Infinity, ease: 'easeInOut' }
+                            : justRevealed && busy
+                              ? { duration: turbo ? 0.18 : 0.34, ease: [0.34, 1.2, 0.5, 1], delay: cellDelay }
+                              : { duration: 0.3, ease: 'easeOut' }
+                        }
                         style={{
                           background: isActiveWin
                             ? `linear-gradient(180deg, ${sym?.color}40, rgba(0,0,0,.35))`
