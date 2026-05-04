@@ -129,6 +129,7 @@ export function ImmersiveSlotView({
   // Welcome splash on first visit — disappears on user interaction or 3.5s.
   // Real Pragmatic Olympus shows a "MAX WIN 5,000×" splash on game load.
   const [welcomeSplash, setWelcomeSplash] = useState<boolean>(true);
+  const [retrigger, setRetrigger] = useState<{ count: number; key: number } | null>(null);
   useEffect(() => {
     const t = setTimeout(() => setWelcomeSplash(false), 3500);
     return () => clearTimeout(t);
@@ -397,8 +398,12 @@ export function ImmersiveSlotView({
               setFsOverlay({ count: frame.count, reason: frame.reason });
               scheduleSpin(() => setFsOverlay(null), 2400);
             } else {
-              // retrigger gets a small "+5" pulse via status, no big overlay
+              // Retrigger — prominent "+5 SPINS!" callout (real Pragmatic
+              // shows this exactly: gold serif italic that springs in,
+              // pulses, fades out within ~1.6s). Status text also updates.
               setStatusMsg(`+${frame.count} retrigger!`);
+              setRetrigger({ count: frame.count, key: Date.now() });
+              scheduleSpin(() => setRetrigger(null), 1600);
             }
             setFreeSpins((s) => {
               if (frame.reason === 'retrigger' && s) {
@@ -1604,6 +1609,47 @@ export function ImmersiveSlotView({
 
       {/* Coin shower for big wins (tier-scaled intensity) */}
       <CoinShower active={bigWin !== null} intensity={bigWin?.tier.intensity ?? 1} />
+
+      {/* === Free-spins retrigger callout — '+5 SPINS!' === */}
+      <AnimatePresence>
+        {retrigger && (
+          <motion.div
+            key={retrigger.key}
+            className="absolute inset-0 pointer-events-none z-[115] flex items-center justify-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="text-center"
+              initial={{ scale: 0.4, y: 30, rotate: -4 }}
+              animate={{
+                scale: [0.4, 1.2, 1, 1.05, 1],
+                y: [30, -8, 0, -4, -2],
+                rotate: [-4, 2, 0, 0, 0],
+              }}
+              transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <div
+                className="font-serif italic font-bold olympus-fs-title"
+                style={{ fontSize: 'clamp(34px, 9vw, 64px)' }}
+              >
+                +{retrigger.count}
+              </div>
+              <div
+                className="font-mono uppercase tracking-[0.3em] font-bold"
+                style={{
+                  fontSize: 'clamp(10px, 2.6vw, 16px)',
+                  color: '#FFE0A8',
+                  textShadow: '0 0 12px rgba(255,200,40,.85), 0 1px 2px rgba(0,0,0,.6)',
+                }}
+              >
+                Free Spins
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* === Lightning Strike (Zeus arm-raise) overlay ===
           Real-Olympus signature feature: dramatic dim, lightning streaks
