@@ -324,6 +324,40 @@ export function SugarRushScene() {
         />
       ))}
 
+      {/* Chocolate / strawberry-glaze river at the very bottom — distinct
+       * candy-ground signature. Shiny brown gradient with a glossy top
+       * highlight and small "drip" wave shapes. */}
+      <svg
+        className="absolute inset-x-0"
+        style={{ bottom: 0, height: '8%', width: '100%' }}
+        viewBox="0 0 100 8"
+        preserveAspectRatio="none"
+      >
+        <defs>
+          <linearGradient id="sr-choc" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#c44a78" />
+            <stop offset="50%" stopColor="#7a2058" />
+            <stop offset="100%" stopColor="#3a0820" />
+          </linearGradient>
+          <linearGradient id="sr-glaze" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="rgba(255,200,232,.85)" />
+            <stop offset="100%" stopColor="rgba(255,200,232,0)" />
+          </linearGradient>
+        </defs>
+        {/* Main puddle base */}
+        <path
+          d="M 0,8 L 0,3 Q 8,1.6 16,3 Q 24,4.4 32,2.4 Q 42,0.8 52,2.4 Q 62,4 72,2.6 Q 82,1.4 92,3 Q 96,3.8 100,3 L 100,8 Z"
+          fill="url(#sr-choc)"
+        />
+        {/* Highlight along the top edge (glossy candy shine) */}
+        <path
+          d="M 0,3 Q 8,1.6 16,3 Q 24,4.4 32,2.4 Q 42,0.8 52,2.4 Q 62,4 72,2.6 Q 82,1.4 92,3 Q 96,3.8 100,3"
+          fill="none"
+          stroke="url(#sr-glaze)"
+          strokeWidth=".4"
+        />
+      </svg>
+
       {/* 7. Vignette + frame */}
       <div
         className="absolute inset-0"
