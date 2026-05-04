@@ -144,7 +144,11 @@ export function TowerGame() {
         </div>
 
         {/* Tower grid (top → bottom, current row highlighted) */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-3">
+        {/* Tower grid — shakes when the player picks a skull tile.
+         *  Same shake-medium utility used by Mines for consistency. */}
+        <div
+          className={`rounded-2xl bg-bg-card border border-edge p-3 ${round?.done && round.hitSkull ? 'shake-medium' : ''}`}
+        >
           <div className="flex flex-col-reverse gap-1">
             {Array.from({ length: ROWS }).map((_, rowIdx) => {
               const tiles = cfg.tiles;
