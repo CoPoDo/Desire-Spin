@@ -1,0 +1,18 @@
+{
+  "name": "Desire-Spin",
+  "short_name": "Desire-Spin",
+  "description": "Play-money casino emulator",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#060311",
+  "theme_color": "#0f1419",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
