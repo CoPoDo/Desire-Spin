@@ -14,6 +14,7 @@ import {
   colorOf,
   play,
 } from './engine';
+import { fireConfetti } from '../../../lib/confetti';
 
 const CHIP_OPTIONS = [1, 5, 10, 50, 100];
 
@@ -92,6 +93,12 @@ export function MiniRouletteGame() {
               ? 'big-win'
               : 'win',
         );
+        if (r.totalReturn >= totalStake * 2) {
+          fireConfetti({
+            count: r.totalReturn >= totalStake * 10 ? 130 : 70,
+            colors: ['#1fff7a', '#c8102e', '#ffd166', '#ffffff'],
+          });
+        }
       } else {
         sound.play('drop');
       }

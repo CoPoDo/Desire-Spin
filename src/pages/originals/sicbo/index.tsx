@@ -14,6 +14,7 @@ import {
   SUM_PAYOUTS,
   play,
 } from './engine';
+import { fireConfetti } from '../../../lib/confetti';
 
 const CHIP_OPTIONS = [1, 5, 10, 50, 100];
 
@@ -95,6 +96,12 @@ export function SicBoGame() {
           r.totalReturn >= totalStake * 10 ? 'mega-win' :
           r.totalReturn >= totalStake * 2 ? 'big-win' : 'win',
         );
+        if (r.totalReturn >= totalStake * 2) {
+          fireConfetti({
+            count: r.totalReturn >= totalStake * 30 ? 130 : 70,
+            colors: ['#c8102e', '#ffd166', '#ffffff'],
+          });
+        }
       } else {
         sound.play('drop');
       }
