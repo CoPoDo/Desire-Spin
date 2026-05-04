@@ -94,11 +94,12 @@ export function PharaohScene() {
         </g>
         {/* Sand foreground */}
         <path d="M0,50 L0,42 Q14,40 28,42 Q44,44 60,42 Q76,40 92,44 Q98,46 100,44 L100,50 Z" fill="url(#ph-sand)" />
-        {/* Hieroglyph dots in the sand */}
+        {/* Tiny gold pebbles in the sand — the previous version used U+13000
+         *  range hieroglyphs which render as missing-glyph boxes without a
+         *  specialised Egyptian font. Keeping the warm pebble flecks gives
+         *  the same scale-marker effect with consistent rendering. */}
         {[10, 22, 50, 70, 88].map((x, i) => (
-          <text key={i} x={x} y="48" fontSize="2" fill="rgba(255,209,102,.4)">
-            {['𓂀', '𓋹', '𓏏', '𓎟', '𓊃'][i]}
-          </text>
+          <circle key={i} cx={x} cy="47.5" r=".35" fill="rgba(255,209,102,.45)" />
         ))}
       </svg>
 
@@ -210,20 +211,85 @@ export function PharaohScene() {
         />
       ))}
 
-      {/* 5. Hieroglyph border bands at top */}
-      <div
-        className="absolute inset-x-0 select-none flex items-center justify-around"
+      {/* 5. Hieroglyph border at top — real SVG glyphs (eye, ankh, scarab,
+       *    ka, lotus) instead of Unicode hieroglyphs. The Unicode block
+       *    (U+13000-U+1342F) renders as missing-glyph boxes on every system
+       *    without a specialised Egyptian font, which we can't ship in a
+       *    static SPA. SVG renders consistently everywhere. */}
+      <svg
+        className="absolute inset-x-0"
         style={{
-          top: '3%',
-          height: '5%',
-          color: 'rgba(255,209,102,.55)',
-          fontSize: 'min(20px, 5cqw)',
-          letterSpacing: '0.2em',
-          textShadow: '0 0 6px rgba(255,200,80,.7)',
+          top: '2%',
+          height: '6%',
+          width: '100%',
+          opacity: 0.7,
+          filter: 'drop-shadow(0 0 6px rgba(255,200,80,.55))',
         }}
+        viewBox="0 0 100 6"
+        preserveAspectRatio="none"
       >
-        𓂀 𓋹 𓏏 𓎟 𓊃 𓋹 𓂀 𓏏 𓎟 𓊃
-      </div>
+        {Array.from({ length: 10 }).map((_, i) => {
+          const cx = 5 + i * 10;
+          const glyph = i % 5;
+          return (
+            <g key={i} transform={`translate(${cx} 3)`} fill="rgba(255,209,102,.85)" stroke="rgba(255,180,40,.6)" strokeWidth=".08">
+              {glyph === 0 && (
+                /* Eye of Horus — eye + brow + tear-line + cheek-curl */
+                <g>
+                  <path d="M -2.4 0 Q 0 -1.4 2.4 0 Q 0 1.2 -2.4 0 Z" />
+                  <circle cx="0" cy="0" r=".55" fill="rgba(60,30,0,.95)" />
+                  <path d="M -2.4 -.6 Q 0 -1.8 2.4 -.6" stroke="rgba(255,209,102,.85)" strokeWidth=".25" fill="none" />
+                  <path d="M -.4 .6 L -.7 1.4" stroke="rgba(255,209,102,.85)" strokeWidth=".22" fill="none" strokeLinecap="round" />
+                  <path d="M 1.7 .4 Q 2.6 1 2 1.6" stroke="rgba(255,209,102,.85)" strokeWidth=".22" fill="none" strokeLinecap="round" />
+                </g>
+              )}
+              {glyph === 1 && (
+                /* Ankh — looped cross (life) */
+                <g>
+                  <ellipse cx="0" cy="-1" rx=".75" ry=".95" fill="none" strokeWidth=".25" />
+                  <line x1="0" y1="0" x2="0" y2="1.8" strokeWidth=".3" />
+                  <line x1="-1" y1=".5" x2="1" y2=".5" strokeWidth=".3" />
+                </g>
+              )}
+              {glyph === 2 && (
+                /* Scarab beetle — domed body + 6 legs */
+                <g>
+                  <ellipse cx="0" cy="0" rx="1.2" ry="1.4" />
+                  <line x1="0" y1="-1.4" x2="0" y2="1.4" stroke="rgba(60,30,0,.6)" strokeWidth=".15" />
+                  <ellipse cx="0" cy="-1.3" rx=".5" ry=".4" fill="rgba(60,30,0,.6)" />
+                  {[-1, 0, 1].map((y) => (
+                    <g key={y}>
+                      <line x1="-1.1" y1={y * 0.7} x2="-1.9" y2={y * 0.7 - .2} strokeWidth=".18" strokeLinecap="round" />
+                      <line x1="1.1" y1={y * 0.7} x2="1.9" y2={y * 0.7 - .2} strokeWidth=".18" strokeLinecap="round" />
+                    </g>
+                  ))}
+                </g>
+              )}
+              {glyph === 3 && (
+                /* Feather of Ma'at — single tall feather */
+                <g>
+                  <path d="M 0 -2 Q -.6 -1 -.6 1 L 0 1.6 L .6 1 Q .6 -1 0 -2 Z" />
+                  <path d="M 0 -1.6 L 0 1.4" stroke="rgba(60,30,0,.5)" strokeWidth=".1" />
+                  {[-1.2, -.6, 0, .6].map((y) => (
+                    <g key={y}>
+                      <line x1="-.55" y1={y} x2="-.15" y2={y + .1} stroke="rgba(60,30,0,.5)" strokeWidth=".08" />
+                      <line x1=".55" y1={y} x2=".15" y2={y + .1} stroke="rgba(60,30,0,.5)" strokeWidth=".08" />
+                    </g>
+                  ))}
+                </g>
+              )}
+              {glyph === 4 && (
+                /* Lotus flower — 3 stylised petals with a stem */
+                <g>
+                  <path d="M -1.4 .5 L 0 -1.6 L 1.4 .5 Q 0 1.2 -1.4 .5 Z" />
+                  <path d="M -.7 .6 L 0 -.8 L .7 .6 Z" fill="rgba(60,30,0,.45)" />
+                  <line x1="0" y1=".8" x2="0" y2="1.7" strokeWidth=".22" />
+                </g>
+              )}
+            </g>
+          );
+        })}
+      </svg>
 
       {/* 6. Vignette */}
       <div
