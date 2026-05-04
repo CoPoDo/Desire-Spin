@@ -147,8 +147,11 @@ export function TreasureGame() {
           </div>
         )}
 
-        {/* 5x5 grid */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-3">
+        {/* 5x5 grid — shakes when the player hits a trap, like Mines/
+         *  Tower/Pump. */}
+        <div
+          className={`rounded-2xl bg-bg-card border border-edge p-3 ${phase === 'lost' ? 'shake-medium' : ''}`}
+        >
           <div className="grid grid-cols-5 gap-2">
             {Array.from({ length: GRID_SIZE }).map((_, i) => {
               const tile = tiles[i] ?? null;
