@@ -13,6 +13,7 @@ import { JuanCantina } from './pages/slots/juan-cantina';
 import { WantedWild } from './pages/slots/wanted-wild';
 import { PharaohGold } from './pages/slots/pharaoh-gold';
 import { WolfGold } from './pages/slots/wolf-gold';
+import { BigJuan } from './pages/slots/big-juan';
 import { DiceGame } from './pages/originals/dice';
 import { LimboGame } from './pages/originals/limbo';
 import { MinesGame } from './pages/originals/mines';
@@ -78,6 +79,10 @@ export default function App() {
         <Route
           path="/slots/wolf-gold"
           element={<SlotPageLayout><WolfGold /></SlotPageLayout>}
+        />
+        <Route
+          path="/slots/big-juan"
+          element={<SlotPageLayout><BigJuan /></SlotPageLayout>}
         />
         <Route path="/originals/dice" element={<DiceGame />} />
         <Route path="/originals/limbo" element={<LimboGame />} />

@@ -39,65 +39,29 @@ export function JuanSymbol() {
             <stop offset="100%" stopColor="#0a0402" />
           </linearGradient>
         </defs>
-        {/* Sombrero — wider brim with traditional curve */}
-        <path
-          d="M2 20 Q 32 28 62 20 Q 60 24 32 26 Q 4 24 2 20 Z"
-          fill="url(#juan-hat)"
-          stroke="#3a2a04"
-          strokeWidth="1.1"
-        />
-        {/* Sombrero crown */}
-        <path
-          d="M20 20 Q 18 4 32 4 Q 46 4 44 20 Q 32 22 20 20 Z"
-          fill="url(#juan-hat)"
-          stroke="#3a2a04"
-          strokeWidth="1.1"
-        />
-        {/* Hat band (red, gold-trimmed) */}
+        <path d="M2 20 Q 32 28 62 20 Q 60 24 32 26 Q 4 24 2 20 Z" fill="url(#juan-hat)" stroke="#3a2a04" strokeWidth="1.1" />
+        <path d="M20 20 Q 18 4 32 4 Q 46 4 44 20 Q 32 22 20 20 Z" fill="url(#juan-hat)" stroke="#3a2a04" strokeWidth="1.1" />
         <path d="M20 19 Q 32 21 44 19 L 44 16 Q 32 14 20 16 Z" fill="url(#juan-band)" stroke="#5a081a" strokeWidth=".5" />
         <path d="M20 16 Q 32 14 44 16" fill="none" stroke="#ffd166" strokeWidth=".4" opacity=".6" />
-        {/* Crown highlight */}
         <ellipse cx="27" cy="11" rx="2.5" ry="5" fill="rgba(255,255,255,.4)" />
-        {/* Decorative pompoms hanging from brim */}
         <circle cx="3" cy="22" r="1.6" fill="#1fff7a" />
         <circle cx="61" cy="22" r="1.6" fill="#5fb8ff" />
-        {/* Face */}
         <ellipse cx="32" cy="36" rx="10.5" ry="12" fill="url(#juan-face)" stroke="#3a1a08" strokeWidth=".8" />
-        {/* Eyebrows */}
         <path d="M25 32 Q 27 31 30 32" stroke="#1a0a04" strokeWidth=".9" fill="none" strokeLinecap="round" />
         <path d="M34 32 Q 37 31 39 32" stroke="#1a0a04" strokeWidth=".9" fill="none" strokeLinecap="round" />
-        {/* Eyes (closed/squinting smile) */}
         <path d="M26 34 Q 28 35 30 34" stroke="#1a0a04" strokeWidth="1" fill="none" strokeLinecap="round" />
         <path d="M34 34 Q 36 35 38 34" stroke="#1a0a04" strokeWidth="1" fill="none" strokeLinecap="round" />
-        {/* Cheeks (warm blush) */}
         <ellipse cx="24" cy="40" rx="2.2" ry="1.4" fill="rgba(255,128,80,.45)" />
         <ellipse cx="40" cy="40" rx="2.2" ry="1.4" fill="rgba(255,128,80,.45)" />
-        {/* Handlebar mustache (curled at ends) */}
-        <path
-          d="M22 42 Q 28 41 32 43 Q 36 41 42 42
-             Q 44 43 44 45 Q 41 44 38 43
-             Q 36 44 32 43 Q 28 44 26 43
-             Q 23 44 20 45 Q 20 43 22 42 Z"
-          fill="#1a0a04"
-          stroke="#000"
-          strokeWidth=".3"
-        />
-        {/* Mustache curl tips */}
+        <path d="M22 42 Q 28 41 32 43 Q 36 41 42 42 Q 44 43 44 45 Q 41 44 38 43 Q 36 44 32 43 Q 28 44 26 43 Q 23 44 20 45 Q 20 43 22 42 Z" fill="#1a0a04" stroke="#000" strokeWidth=".3" />
         <path d="M22 42 Q 19 39 18 41" fill="none" stroke="#1a0a04" strokeWidth="1.2" strokeLinecap="round" />
         <path d="M42 42 Q 45 39 46 41" fill="none" stroke="#1a0a04" strokeWidth="1.2" strokeLinecap="round" />
-        {/* Mouth (subtle smile) */}
         <path d="M29 47 Q 32 48.5 35 47" fill="none" stroke="#5a081a" strokeWidth=".9" strokeLinecap="round" />
-        {/* Charro jacket (dark with silver buttons) */}
         <path d="M16 50 L 32 56 L 48 50 L 48 60 L 16 60 Z" fill="url(#juan-jacket)" stroke="#000" strokeWidth=".7" />
-        {/* Embroidery on lapels */}
         <path d="M22 52 L 26 60" stroke="#ffd166" strokeWidth=".8" opacity=".75" />
         <path d="M42 52 L 38 60" stroke="#ffd166" strokeWidth=".8" opacity=".75" />
-        <path d="M24 54 Q 26 55 26 56" stroke="#ffd166" strokeWidth=".4" fill="none" />
-        <path d="M40 54 Q 38 55 38 56" stroke="#ffd166" strokeWidth=".4" fill="none" />
-        {/* Red bowtie under chin */}
         <path d="M27 50 L 32 52 L 37 50 L 35 54 L 32 53 L 29 54 Z" fill="#c8102e" stroke="#5a081a" strokeWidth=".5" />
         <circle cx="32" cy="52.5" r=".8" fill="#ffd166" />
-        {/* Silver buttons down jacket centre */}
         <circle cx="32" cy="56" r=".9" fill="#dde4f0" stroke="#3a3f4d" strokeWidth=".3" />
         <circle cx="32" cy="58.5" r=".9" fill="#dde4f0" stroke="#3a3f4d" strokeWidth=".3" />
       </svg>

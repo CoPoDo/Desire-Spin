@@ -6,6 +6,7 @@ import { JuanCantinaArt } from './slots/juan-cantina/Art';
 import { WantedWildArt } from './slots/wanted-wild/Art';
 import { PharaohGoldArt } from './slots/pharaoh-gold/Art';
 import { WolfGoldArt } from './slots/wolf-gold/Art';
+import { BigJuanArt } from './slots/big-juan/Art';
 
 export function Home() {
   return (
@@ -70,6 +71,14 @@ export function Home() {
             badge="NEW"
             bg="linear-gradient(180deg, #6638c8 0%, #02010a 100%)"
             art={<WolfGoldArt />}
+          />
+          <GameCard
+            to="/slots/big-juan"
+            title="Big Juan"
+            subtitle="5×4 paylines · Lucha libre"
+            badge="HOT"
+            bg="radial-gradient(80% 60% at 50% 50%, #ff5560 0%, #5a0810 50%, #14040a 100%)"
+            art={<BigJuanArt />}
           />
         </div>
       </section>

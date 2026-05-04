@@ -1,15 +1,12 @@
 import type { SlotConfig } from '../_shared/types';
 
 /**
- * Juan's Cantina — Mexican mariachi-themed pay-anywhere tumble slot.
+ * Juan's Cantina — Mexican mariachi fiesta tumble slot.
  *
  * Reuses the shared 6×5 cluster engine (same as Sweet Bonanza & Sugar
  * Rush). Theme: Juan the mariachi at a sun-baked desert cantina, with
  * sombrero, guitar, tequila, chilli, taco, lime, cactus, sugar skull
  * and a maraca scatter that triggers free spins.
- *
- * Multiplier symbol = a "fiesta firework" (gold/red/white) appearing
- * during tumbles, sticky during free spins (sum-at-end of each chain).
  */
 
 export const juanCantinaConfig: SlotConfig = {
