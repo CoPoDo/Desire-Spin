@@ -16,6 +16,23 @@
 
 let lastSpokeAt = 0;
 const COOLDOWN_MS = 800; // avoid voice-stomping when frames fire fast
+let cachedVoice: SpeechSynthesisVoice | null = null;
+
+// Voices load asynchronously on most browsers — the first
+// getVoices() call returns []. Subscribe to the voiceschanged event
+// so we have a deep voice ready when speakZeus is first called.
+if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+  const pickVoice = () => {
+    const voices = window.speechSynthesis.getVoices();
+    cachedVoice =
+      voices.find((v) =>
+        /male|deep|david|google uk english male|microsoft mark|microsoft david/i.test(v.name),
+      ) ?? null;
+  };
+  pickVoice();
+  // Some browsers fire voiceschanged once voices load
+  window.speechSynthesis.addEventListener?.('voiceschanged', pickVoice);
+}
 
 export function speakZeus(line: string, opts: { pitch?: number; rate?: number; volume?: number } = {}) {
   if (typeof window === 'undefined') return;
@@ -28,13 +45,21 @@ export function speakZeus(line: string, opts: { pitch?: number; rate?: number; v
     u.pitch = opts.pitch ?? 0.4;
     u.rate = opts.rate ?? 0.85;
     u.volume = opts.volume ?? 0.7;
-    // Pick a male / deep voice if available; default voice often
-    // sounds high-pitched even at pitch 0.4 on certain browsers.
-    const voices = window.speechSynthesis.getVoices();
-    const preferred = voices.find((v) =>
-      /male|deep|david|google uk english male|microsoft mark/i.test(v.name),
-    );
-    if (preferred) u.voice = preferred;
+    // Use the cached deep voice picked on voiceschanged. Fallback to
+    // re-scanning if the cache is empty (e.g. first call before
+    // voiceschanged fires).
+    if (cachedVoice) {
+      u.voice = cachedVoice;
+    } else {
+      const voices = window.speechSynthesis.getVoices();
+      const preferred = voices.find((v) =>
+        /male|deep|david|google uk english male|microsoft mark|microsoft david/i.test(v.name),
+      );
+      if (preferred) {
+        u.voice = preferred;
+        cachedVoice = preferred;
+      }
+    }
     window.speechSynthesis.speak(u);
   } catch {
     // Speech synthesis can throw on very locked-down platforms; just
