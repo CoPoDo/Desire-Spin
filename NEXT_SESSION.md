@@ -12,7 +12,7 @@ visual identities — Olympus uses a painted Zeus/arch backdrop image,
 Sweet Bonanza uses a CSS-only candy-cloud scene with tier-coloured
 multiplier bombs.
 
-30 Stake-style "Originals" games ship alongside the two slots. See
+31 Stake-style "Originals" games ship alongside the two slots. See
 the table further down for the full lineup. Plinko is rendered in SVG
 (GPU-cheap animation) and the cell drop in Olympus uses a tween
 instead of spring physics so the tumble stays smooth on mobile.
@@ -173,6 +173,7 @@ with `engine.ts` (game logic) + `index.tsx` (UI).
 | Big Bass  | ~96%   | 5-reel single-payline fishing slot, scatter pays 3+ |
 | Slide     | 99%    | Limbo math + Crash visual — slider builds live to RNG stop |
 | Bingo     | ~90%   | 5×5 card + 12 draws, 12 lines (rows/cols/diagonals + FREE) |
+| Aviator   | 99%    | Crash math + plane-flying visual; cash out before explosion |
 
 All games that make sense (Dice/Limbo/Plinko/Wheel/Crash/Diamonds) ship
 with **Manual / Auto tabs** and auto-bet config (count + stop-on-profit
