@@ -1325,6 +1325,17 @@
   50%      { transform: translate(-50%, -50%) scale(1.04); filter: blur(.4px) brightness(1.08); }
 }
 
+/* Big Juan crowd silhouette bob — heads/shoulders cheering on a short
+ * cycle. Pure scaleY oscillation pivoted at one edge of each band so
+ * the silhouette tops/bottoms (where the heads are) move while the
+ * far edge stays anchored. The two crowd rows pass different cycle
+ * times + a delay so the heads bob out of sync, which reads as a
+ * cheering crowd rather than a synchronised wave. */
+@keyframes bjCrowdBob {
+  0%, 100% { transform: scaleY(1); }
+  50%      { transform: scaleY(1.18); }
+}
+
 /* Big Juan — fiesta confetti sparks drifting up from below */
 @keyframes bigJuanConfetti {
   0%   { transform: translate(0, 100%) rotate(0deg); opacity: 0; }

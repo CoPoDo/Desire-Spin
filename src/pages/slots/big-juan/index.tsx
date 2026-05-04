@@ -1170,10 +1170,20 @@ function BigJuanBackdrop() {
 
       {/* Crowd silhouettes — dark cheering audience beyond the ring ropes,
        * visible top-bottom of the screen. Two rows of bobbing-head shapes
-       * to suggest a packed wrestling arena instead of an empty void. */}
+       * to suggest a packed wrestling arena instead of an empty void.
+       * The two rows now bob in slightly off-sync rhythms (1.4s vs 1.7s)
+       * so the heads look like they're cheering / clapping rather than
+       * sitting frozen. */}
       <svg
         className="absolute inset-x-0"
-        style={{ top: '14%', height: '6%', width: '100%', opacity: 0.55 }}
+        style={{
+          top: '14%',
+          height: '6%',
+          width: '100%',
+          opacity: 0.55,
+          animation: 'bjCrowdBob 1.4s ease-in-out infinite',
+          transformOrigin: '50% 100%',
+        }}
         viewBox="0 0 100 6"
         preserveAspectRatio="none"
       >
@@ -1190,7 +1200,15 @@ function BigJuanBackdrop() {
       </svg>
       <svg
         className="absolute inset-x-0"
-        style={{ bottom: '12%', height: '6%', width: '100%', opacity: 0.55 }}
+        style={{
+          bottom: '12%',
+          height: '6%',
+          width: '100%',
+          opacity: 0.55,
+          animation: 'bjCrowdBob 1.7s ease-in-out infinite',
+          animationDelay: '-0.3s',
+          transformOrigin: '50% 0%',
+        }}
         viewBox="0 0 100 6"
         preserveAspectRatio="none"
       >
