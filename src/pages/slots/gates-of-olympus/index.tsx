@@ -18,6 +18,12 @@ export function GatesOfOlympus() {
       // so grid top = 58.6% − 26.3%/2 = 45.45%.
       // Append ?tune=1 to the URL to dial these in interactively.
       archInsets={{ left: 22, top: 45, width: 56 }}
+      // Real Gates of Olympus during free spins: the sky behind Zeus shifts
+      // to a stormy deep-violet with crackling gold along the horizon (the
+      // "Zeus-summons-thunder" mood). Default tint in the shared component
+      // leans warm purple, which matched Bonanza better than Olympus —
+      // override here with a darker, gold-rim-lit stormy palette.
+      freeSpinsTint="linear-gradient(180deg, rgba(40, 8, 80, 0.32) 0%, rgba(120, 50, 10, 0.22) 30%, rgba(20, 4, 50, 0.42) 70%, rgba(8, 2, 30, 0.55) 100%)"
       renderCell={({ symbolId, multiplier }) => {
         if (multiplier !== undefined) {
           return (
