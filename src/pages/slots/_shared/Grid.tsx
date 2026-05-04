@@ -67,11 +67,15 @@ export function Grid({
                 filter: 'brightness(1.8) saturate(1.4)',
                 transition: { duration: 0.32, ease: [0.4, 0, 0.2, 1] },
               }}
+              // Tween-based drop (cheaper than spring physics on 30 simultaneous
+              // cells with drop-shadow filters) — keeps the bouncy "land + squish"
+              // feel via the multi-keyframe `scale`.
               transition={
                 isNew
-                  ? { type: 'spring', stiffness: 320, damping: 17, mass: 0.9, delay: columnDelay }
+                  ? { duration: 0.42, ease: [0.34, 1.2, 0.5, 1], delay: columnDelay }
                   : { type: 'spring', stiffness: 380, damping: 26 }
               }
+              style={{ willChange: 'transform' }}
               layout
             >
               {renderCell({
