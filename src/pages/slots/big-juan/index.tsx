@@ -455,15 +455,13 @@ export function BigJuan() {
         <button
           onClick={() => spin()}
           disabled={busy || !!bonus || balance.balance < bet || bet <= 0}
-          className="flex-shrink-0 w-[88px] h-[60px] rounded-2xl font-display font-extrabold text-sm uppercase tracking-wider transition active:scale-[0.99]"
+          className={`flex-shrink-0 w-[88px] h-[60px] rounded-2xl font-display font-extrabold text-sm uppercase tracking-wider transition active:scale-[0.99] ${
+            !busy && !bonus ? 'spin-btn-idle' : ''
+          }`}
           style={{
             background: 'linear-gradient(180deg, #ffd166 0%, #c8932e 60%, #5a3a04 100%)',
             color: '#1a0a04',
             border: '2px solid #fff5c4',
-            boxShadow:
-              busy
-                ? '0 4px 12px rgba(0,0,0,.4)'
-                : '0 0 24px rgba(255,209,102,.65), 0 4px 14px rgba(0,0,0,.5)',
           }}
         >
           {busy ? '…' : 'Spin'}

@@ -1098,6 +1098,25 @@
   100% { transform: translate(15px, -120%) rotate(12deg); opacity: 0; }
 }
 
+/* Spin button idle shimmer — subtle gold-glow pulse so the player's eye
+ * is drawn to the action on every slot's bottom bar at rest. */
+@keyframes spinBtnIdle {
+  0%, 100% {
+    box-shadow:
+      0 0 16px rgba(255, 209, 102, 0.55),
+      0 4px 14px rgba(0, 0, 0, 0.5);
+  }
+  50% {
+    box-shadow:
+      0 0 26px rgba(255, 209, 102, 0.85),
+      0 0 44px rgba(255, 174, 80, 0.45),
+      0 4px 14px rgba(0, 0, 0, 0.5);
+  }
+}
+.spin-btn-idle {
+  animation: spinBtnIdle 2.2s ease-in-out infinite;
+}
+
 /* Sweet Bonanza symbol container — vibrant drop-shadow for the candy palette.
  * Larger than Olympus's 78% so the saturated fruits dominate the cell, matching
  * real Sweet Bonanza's punchy filled-cell look. */
