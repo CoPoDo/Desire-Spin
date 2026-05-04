@@ -68,7 +68,7 @@ export const sugarRushConfig: SlotConfig = {
   theme: {
     accent: '#ff7ad9', // hotter pink than Bonanza's softer rose
     glow: 'rgba(255,122,217,0.6)',
-    gridClass: 'grid-bg-bonanza', // reuse the bonanza grid bg for now
-    cellClass: 'cell-bonanza',
+    gridClass: 'grid-bg-sugar',
+    cellClass: 'cell-sugar',
   },
 };
