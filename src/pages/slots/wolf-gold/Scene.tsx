@@ -31,19 +31,23 @@ export function WolfScene() {
           opacity: 0.9,
         }}
       />
-      {/* Big silver moon */}
+      {/* Big silver moon — slow corona breathe so the moonlight reads as
+       *  alive rather than a static decal. Real moons photographed at
+       *  long exposure visibly bloom with a faint corona that subtly
+       *  expands and contracts. */}
       <div
         className="absolute"
         style={{
           left: '70%',
           top: '24%',
-          transform: 'translate(-50%, -50%)',
           width: '32%',
           aspectRatio: '1 / 1',
           background:
             'radial-gradient(circle, rgba(255,255,255,.95) 0%, rgba(220,200,255,.85) 30%, rgba(167,139,250,.4) 55%, transparent 75%)',
           borderRadius: '50%',
           filter: 'blur(.4px)',
+          transform: 'translate(-50%, -50%)',
+          animation: 'wolfMoonCorona 7s ease-in-out infinite',
         }}
       />
       {/* Moon detail (craters via inner radial dots) */}

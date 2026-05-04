@@ -1316,6 +1316,15 @@
   50%      { transform: translate(-50%, -50%) scale(1.02); opacity: 0.4;  }
 }
 
+/* Wolf Gold moon — slow corona breathe. Long-exposure photographs of
+ * full moons show a subtle bloom that pulses; this fakes that with a
+ * gentle scale + slight brightness lift. Translate centre-anchor
+ * preserved inside the keyframe. */
+@keyframes wolfMoonCorona {
+  0%, 100% { transform: translate(-50%, -50%) scale(1);    filter: blur(.4px) brightness(1); }
+  50%      { transform: translate(-50%, -50%) scale(1.04); filter: blur(.4px) brightness(1.08); }
+}
+
 /* Big Juan — fiesta confetti sparks drifting up from below */
 @keyframes bigJuanConfetti {
   0%   { transform: translate(0, 100%) rotate(0deg); opacity: 0; }
