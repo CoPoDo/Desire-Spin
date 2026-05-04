@@ -15,9 +15,9 @@ export function SlotPageLayout({ children }: { children: ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <div className="min-h-[100dvh] w-full overflow-hidden bg-[#060311] text-ink relative">
+    <div className="fixed inset-0 overflow-hidden bg-[#060311] text-ink flex flex-col">
       {/* Floating slim top bar — overlays on top of the painted scene. */}
-      <header className="fixed top-0 left-0 right-0 z-30 flex items-center justify-between gap-2 px-3 pt-[max(env(safe-area-inset-top),8px)] pb-2 bg-gradient-to-b from-black/55 to-transparent">
+      <header className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between gap-2 px-3 pt-[max(env(safe-area-inset-top),6px)] pb-1.5 bg-gradient-to-b from-black/55 to-transparent">
         <Link
           to="/"
           aria-label="Back to lobby"
@@ -103,8 +103,8 @@ export function SlotPageLayout({ children }: { children: ReactNode }) {
         </>
       )}
 
-      {/* The actual game view fills the screen. */}
-      <main className="min-h-[100dvh]">{children}</main>
+      {/* The actual game view fills the screen, after the floating top bar overlays it. */}
+      <main className="flex-1 min-h-0 relative">{children}</main>
 
       <FairnessPanel open={fairnessOpen} onClose={() => setFairnessOpen(false)} />
       <BetHistoryTable open={historyOpen} onClose={() => setHistoryOpen(false)} />

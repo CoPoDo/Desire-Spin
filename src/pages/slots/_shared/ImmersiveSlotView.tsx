@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useGame } from '../../../game-context';
 import { createRng } from '../../../lib/fairness';
@@ -88,6 +89,25 @@ export function ImmersiveSlotView({
   const [betSheetOpen, setBetSheetOpen] = useState(false);
   const aliveRef = useRef(true);
   const busyRef = useRef(false);
+
+  // ----- Tune mode (?tune=1) lets the user dial in the arch coordinates live.
+  // URL params al/at/aw override the configured archInsets. Drag-friendly
+  // sliders appear at the bottom of the screen.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tuneMode = searchParams.get('tune') === '1';
+  const liveInsets = useMemo<{ left: number; top: number; width: number }>(() => ({
+    left: parseFloat(searchParams.get('al') ?? String(archInsets.left)),
+    top: parseFloat(searchParams.get('at') ?? String(archInsets.top)),
+    width: parseFloat(searchParams.get('aw') ?? String(archInsets.width)),
+  }), [searchParams, archInsets]);
+  const setInset = useCallback((key: 'al' | 'at' | 'aw', value: number) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set(key, value.toFixed(1));
+      next.set('tune', '1');
+      return next;
+    }, { replace: true });
+  }, [setSearchParams]);
 
   useEffect(() => {
     aliveRef.current = true;
@@ -276,8 +296,10 @@ export function ImmersiveSlotView({
 
   return (
     <div className="absolute inset-0 flex flex-col">
-      {/* Painted backdrop scene fills available space, preserves aspect ratio. */}
-      <div className="flex-1 flex items-center justify-center overflow-hidden pt-14 pb-2 px-2">
+      {/* Painted backdrop scene fills available space, preserves aspect ratio.
+          pt-12 clears the floating top bar; min-h-0 + overflow-hidden lets the
+          flex-1 area shrink properly so the bottom bar is always in view. */}
+      <div className="flex-1 min-h-0 flex items-center justify-center overflow-hidden pt-12 pb-1 px-2">
         <div
           className="relative h-full"
           style={{
@@ -316,9 +338,9 @@ export function ImmersiveSlotView({
           <div
             className="absolute"
             style={{
-              left: `${archInsets.left}%`,
-              top: `${archInsets.top}%`,
-              width: `${archInsets.width}%`,
+              left: `${liveInsets.left}%`,
+              top: `${liveInsets.top}%`,
+              width: `${liveInsets.width}%`,
             }}
           >
             <Grid grid={grid} cfg={cfg} winning={winning} newKeys={newKeys} renderCell={renderCell} bare />
@@ -332,8 +354,8 @@ export function ImmersiveSlotView({
                 className="absolute pointer-events-none font-serif italic font-bold"
                 style={{
                   color: '#FFE9A8',
-                  left: `${archInsets.left + (m.col + 0.5) * (archInsets.width / cfg.cols)}%`,
-                  top: `${archInsets.top + (m.row + 0.5) * (archInsets.width / cfg.cols)}%`,
+                  left: `${liveInsets.left + (m.col + 0.5) * (liveInsets.width / cfg.cols)}%`,
+                  top: `${liveInsets.top + (m.row + 0.5) * (liveInsets.width / cfg.cols)}%`,
                   textShadow: '0 0 18px rgba(255,200,40,.95)',
                   fontSize: 'clamp(20px, 5vw, 32px)',
                   transform: 'translate(-50%, -50%)',
@@ -549,6 +571,47 @@ export function ImmersiveSlotView({
       </AnimatePresence>
 
       <Paytable open={paytableOpen} onClose={() => setPaytableOpen(false)} cfg={cfg} renderCell={renderCell} />
+
+      {/* ?tune=1 — interactive arch-fit tuner. Drag sliders, see grid move
+          in real time, then tell me the values. */}
+      {tuneMode && (
+        <div
+          className="fixed left-0 right-0 z-[200] p-3 bg-black/85 border-t border-[#ffc62a]/40 backdrop-blur"
+          style={{ bottom: 0 }}
+        >
+          <div className="text-[10px] uppercase tracking-widest text-[#ffe9a8] mb-2 flex items-center justify-between">
+            <span>Tune arch coords (tell me these values)</span>
+            <button
+              className="px-2 py-0.5 rounded bg-bg-card border border-edge text-ink-dim hover:text-ink"
+              onClick={() => setSearchParams(new URLSearchParams(), { replace: true })}
+            >Exit</button>
+          </div>
+          {([
+            ['al', 'Left',  0,  60, 'left'],
+            ['at', 'Top',   10, 75, 'top'],
+            ['aw', 'Width', 30, 90, 'width'],
+          ] as const).map(([key, label, min, max, prop]) => (
+            <div key={key} className="flex items-center gap-3 mb-1">
+              <span className="w-12 text-[11px] font-mono text-ink-dim">{label}</span>
+              <input
+                type="range"
+                min={min}
+                max={max}
+                step={0.5}
+                value={liveInsets[prop]}
+                onChange={(e) => setInset(key, parseFloat(e.target.value))}
+                className="flex-1 accent-[#ffc62a]"
+              />
+              <span className="w-14 text-right text-[11px] font-mono text-[#ffe9a8] tabular-nums">
+                {liveInsets[prop].toFixed(1)}%
+              </span>
+            </div>
+          ))}
+          <div className="text-[10px] font-mono text-ink-mute mt-2">
+            archInsets={`{ left: ${liveInsets.left.toFixed(1)}, top: ${liveInsets.top.toFixed(1)}, width: ${liveInsets.width.toFixed(1)} }`}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
