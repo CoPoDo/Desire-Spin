@@ -5,7 +5,14 @@ import { useGame } from '../../../game-context';
 import { createRng } from '../../../lib/fairness';
 import { fmtCurrency } from '../../../lib/format';
 import { BetInput } from '../_shared/BetInput';
-import { HORSE_COLORS, HORSE_COUNT, multiplierPerHorse, play } from './engine';
+import {
+  HORSE_COLORS,
+  HORSE_COUNT,
+  HORSE_NAMES,
+  HORSE_WEIGHTS,
+  multiplierForHorse,
+  play,
+} from './engine';
 
 type Phase = 'idle' | 'racing' | 'done';
 
@@ -17,7 +24,7 @@ export function RaceGame() {
   const [winner, setWinner] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const mult = multiplierPerHorse();
+  const mult = picked !== null ? multiplierForHorse(picked) : 0;
   const profitOnWin = +(bet * mult - bet).toFixed(2);
 
   const start = useCallback(() => {
@@ -81,7 +88,9 @@ export function RaceGame() {
         <div className="rounded-xl bg-bg-card border border-edge p-3 text-center">
           {phase === 'idle' && (
             <div className="text-[10px] uppercase tracking-widest text-ink-mute">
-              {picked === null ? 'Pick a horse' : `Horse ${picked + 1} · ${mult}× payout`}
+              {picked === null
+                ? 'Pick a horse'
+                : `Horse ${picked + 1} (${HORSE_NAMES[picked]}) · ${mult}× payout`}
             </div>
           )}
           {phase === 'racing' && (
@@ -155,22 +164,32 @@ export function RaceGame() {
             <div>
               <div className="text-[10px] uppercase tracking-widest text-ink-mute mb-1.5">Pick a Horse</div>
               <div className="grid grid-cols-4 gap-1.5">
-                {Array.from({ length: HORSE_COUNT }).map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setPicked(i)}
-                    disabled={busy}
-                    className="py-2 rounded-lg font-mono font-bold text-sm transition disabled:opacity-50"
-                    style={{
-                      background: picked === i ? HORSE_COLORS[i] : 'rgba(42,49,66,.4)',
-                      color: picked === i ? '#0f1419' : '#9aa3b2',
-                      border: picked === i ? '1px solid rgba(255,255,255,.4)' : '1px solid #2a3142',
-                      boxShadow: picked === i ? `0 0 10px ${HORSE_COLORS[i]}77` : undefined,
-                    }}
-                  >
-                    {i + 1}
-                  </button>
-                ))}
+                {Array.from({ length: HORSE_COUNT }).map((_, i) => {
+                  const horseMult = multiplierForHorse(i);
+                  const odds = HORSE_WEIGHTS[i]!;
+                  return (
+                    <button
+                      key={i}
+                      onClick={() => setPicked(i)}
+                      disabled={busy}
+                      className="py-2 rounded-lg font-mono font-bold transition disabled:opacity-50 flex flex-col items-center justify-center"
+                      style={{
+                        background: picked === i ? HORSE_COLORS[i] : 'rgba(42,49,66,.4)',
+                        color: picked === i ? '#0f1419' : '#9aa3b2',
+                        border: picked === i ? '1px solid rgba(255,255,255,.4)' : '1px solid #2a3142',
+                        boxShadow: picked === i ? `0 0 10px ${HORSE_COLORS[i]}77` : undefined,
+                      }}
+                    >
+                      <span className="text-sm leading-none">{i + 1}</span>
+                      <span
+                        className="text-[9px] tabular-nums opacity-90"
+                        style={{ color: picked === i ? 'rgba(15,20,25,.85)' : '#9aa3b2' }}
+                      >
+                        {horseMult}× · {odds}%
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
             <BetInput bet={bet} onBetChange={setBet} disabled={busy} />
