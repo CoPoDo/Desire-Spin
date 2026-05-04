@@ -224,7 +224,17 @@ function Coin({ phase, lastFlip }: { phase: Phase; lastFlip: Side | null }) {
         color: '#0f1419',
       }}
     >
-      {showSide === 'heads' ? 'H' : showSide === 'tails' ? 'T' : '?'}
+      {/* Decorative inner ring (coin's beaded edge) — gives the disc
+       *  some "minted" character so it doesn't read as a flat letter
+       *  on a coloured circle. */}
+      <span
+        className="absolute rounded-full pointer-events-none"
+        style={{
+          inset: '14%',
+          border: '1.5px dashed rgba(0,0,0,.25)',
+        }}
+      />
+      <span className="relative">{showSide === 'heads' ? 'H' : showSide === 'tails' ? 'T' : '?'}</span>
     </motion.div>
   );
 }
