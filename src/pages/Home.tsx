@@ -169,6 +169,13 @@ export function Home() {
             badge="LIVE"
             art={<PlaceholderArt label="🥤" tone="#102b3a" />}
           />
+          <GameCard
+            to="/originals/mini-slot"
+            title="Mini Slot"
+            subtitle="Classic 3-reel"
+            badge="LIVE"
+            art={<PlaceholderArt label="🎰" tone="#3a2010" />}
+          />
         </div>
       </section>
     </div>

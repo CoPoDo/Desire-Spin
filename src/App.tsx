@@ -25,6 +25,7 @@ import { VideoPokerGame } from './pages/originals/video-poker';
 import { CoinFlipGame } from './pages/originals/coin-flip';
 import { PumpGame } from './pages/originals/pump';
 import { CupsGame } from './pages/originals/cups';
+import { MiniSlotGame } from './pages/originals/mini-slot';
 
 export default function App() {
   return (
@@ -57,6 +58,7 @@ export default function App() {
         <Route path="/originals/coin-flip" element={<CoinFlipGame />} />
         <Route path="/originals/pump" element={<PumpGame />} />
         <Route path="/originals/cups" element={<CupsGame />} />
+        <Route path="/originals/mini-slot" element={<MiniSlotGame />} />
 
         {/* Lobby + non-game routes — full Layout with sidebar */}
         <Route path="/" element={<Layout><Home /></Layout>} />

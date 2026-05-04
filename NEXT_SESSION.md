@@ -128,7 +128,7 @@ Hard-coded defaults in `src/pages/slots/gates-of-olympus/index.tsx`:
 
 ## Originals (Stake-style)
 
-17 Stake-style games deployed, all using the shared `OriginalPageLayout`
+18 Stake-style games deployed, all using the shared `OriginalPageLayout`
 (back / title / balance + refill / menu) and the provably-fair RNG via
 `fairness.consumeNonce()`. Each one is in `src/pages/originals/<name>/`
 with `engine.ts` (game logic) + `index.tsx` (UI).
@@ -152,6 +152,7 @@ with `engine.ts` (game logic) + `index.tsx` (UI).
 | Coin Flip | 99%    | Streak heads/tails at 1.98× per correct call, cashout anytime |
 | Pump      | 99%    | Inflate balloon, each pump pop-risk vs growth (Easy 4% → Expert 50%) |
 | 3 Cups    | 99%    | Find the ball under 3/4/5 cups (×2.97/3.96/4.95 payouts) |
+| Mini Slot | ~96%   | Classic 3-reel single-line, 5 weighted symbols, 2-cherry consolation |
 
 All games that make sense (Dice/Limbo/Plinko/Wheel/Crash/Diamonds) ship
 with **Manual / Auto tabs** and auto-bet config (count + stop-on-profit
