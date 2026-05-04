@@ -133,18 +133,40 @@ export function WatermelonSymbol() {
 export function PlumSymbol() {
   return (
     <div className={wrap}>
-      <svg viewBox="0 0 64 64" className="w-full h-full drop-shadow-[0_4px_8px_rgba(110,30,170,0.45)]">
+      <svg viewBox="0 0 64 64" className="w-full h-full">
         <defs>
-          <radialGradient id="pl" cx="35%" cy="35%" r="60%">
-            <stop offset="0%" stopColor="#d6a8ff" />
-            <stop offset="60%" stopColor="#7a35c8" />
-            <stop offset="100%" stopColor="#3b105e" />
+          <radialGradient id="pl" cx="34%" cy="32%" r="68%">
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.85" />
+            <stop offset="20%" stopColor="#e8c8ff" />
+            <stop offset="55%" stopColor="#7a35c8" />
+            <stop offset="85%" stopColor="#3b105e" />
+            <stop offset="100%" stopColor="#180630" />
           </radialGradient>
+          <linearGradient id="pl-stem" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#7fc950" />
+            <stop offset="100%" stopColor="#2a5a18" />
+          </linearGradient>
         </defs>
-        <path d="M32 14 C 18 14 12 28 12 38 C 12 50 22 56 32 56 C 42 56 52 50 52 38 C 52 28 46 14 32 14 Z" fill="url(#pl)" />
-        <path d="M32 16 Q 36 26 32 56" stroke="#3b105e" strokeWidth="1.3" fill="none" />
-        <path d="M32 14 Q 38 8 44 12" stroke="#5a8a3c" strokeWidth="2" fill="none" />
-        <ellipse cx="44" cy="11" rx="6" ry="3" fill="#7fbf52" />
+        {/* Plum body — slightly tear-drop with the indent on top */}
+        <path
+          d="M32 14 C 18 14 12 28 12 38 C 12 50 22 56 32 56 C 42 56 52 50 52 38 C 52 28 46 14 32 14 Z"
+          fill="url(#pl)"
+          stroke="#180630"
+          strokeWidth=".9"
+        />
+        {/* Top indent groove */}
+        <path d="M30 16 Q 32 22 34 16" fill="none" stroke="rgba(0,0,0,.35)" strokeWidth=".7" />
+        {/* Centre crease line (subtle) */}
+        <path d="M32 18 Q 36 30 32 54" fill="none" stroke="rgba(0,0,0,.28)" strokeWidth=".6" />
+        {/* Stem */}
+        <path d="M 32 14 Q 36 8 42 10" stroke="url(#pl-stem)" strokeWidth="2.4" fill="none" strokeLinecap="round" />
+        {/* Leaf */}
+        <path d="M 40 8 Q 50 6 50 14 Q 44 16 40 8 Z" fill="#7fc950" stroke="#2a5a18" strokeWidth=".5" />
+        <path d="M 42 10 Q 47 11 49 13" stroke="#2a5a18" strokeWidth=".4" fill="none" />
+        {/* Big highlight */}
+        <ellipse cx="22" cy="26" rx="6" ry="3.5" fill="rgba(255,255,255,.55)" transform="rotate(-22 22 26)" />
+        {/* Small specular */}
+        <circle cx="22" cy="32" r="1.2" fill="rgba(255,255,255,.55)" />
       </svg>
     </div>
   );
@@ -233,18 +255,57 @@ export function BlueberrySymbol() {
 }
 
 export function BananaSymbol() {
+  // Bunch of three bananas stuck together at the stem (matches Pragmatic's
+  // real Bonanza banana cluster — three clinging to a single brown stalk).
   return (
     <div className={wrap}>
-      <svg viewBox="0 0 64 64" className="w-full h-full drop-shadow-[0_4px_8px_rgba(220,180,30,0.5)]">
+      <svg viewBox="0 0 64 64" className="w-full h-full">
         <defs>
-          <linearGradient id="bn" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#fff3a3" />
-            <stop offset="50%" stopColor="#ffd24a" />
-            <stop offset="100%" stopColor="#a37306" />
+          <linearGradient id="bn-skin" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#fff8b8" />
+            <stop offset="35%" stopColor="#ffd24a" />
+            <stop offset="80%" stopColor="#c8932e" />
+            <stop offset="100%" stopColor="#5a3a04" />
+          </linearGradient>
+          <linearGradient id="bn-stem" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#7a4d04" />
+            <stop offset="100%" stopColor="#1a0a02" />
           </linearGradient>
         </defs>
-        <path d="M10 20 C 14 38 24 52 50 50 C 50 48 50 46 48 44 C 30 44 22 32 18 18 Z" fill="url(#bn)" stroke="#7a4d04" strokeWidth="1.4" />
-        <path d="M50 50 L 56 56" stroke="#3b2a06" strokeWidth="3" strokeLinecap="round" />
+        {/* Back banana (rotated more) */}
+        <path
+          d="M 10 22 C 12 38 22 52 48 52 L 50 48 C 30 46 20 34 16 20 Z"
+          fill="url(#bn-skin)"
+          stroke="#7a4d04"
+          strokeWidth="1"
+          strokeLinejoin="round"
+          opacity=".95"
+        />
+        {/* Middle banana */}
+        <path
+          d="M 8 18 C 12 36 22 50 50 50 L 52 46 C 30 44 20 32 14 16 Z"
+          fill="url(#bn-skin)"
+          stroke="#7a4d04"
+          strokeWidth="1.1"
+          strokeLinejoin="round"
+        />
+        {/* Front banana (most prominent, with gloss highlight) */}
+        <path
+          d="M 6 14 C 12 34 22 48 52 48 L 54 44 C 30 42 20 30 12 12 Z"
+          fill="url(#bn-skin)"
+          stroke="#7a4d04"
+          strokeWidth="1.2"
+          strokeLinejoin="round"
+        />
+        {/* Long highlight */}
+        <path d="M 12 18 Q 22 36 44 44" fill="none" stroke="rgba(255,255,255,.45)" strokeWidth="1.2" strokeLinecap="round" />
+        {/* Subtle ridge marks down the front banana */}
+        <path d="M 16 20 Q 26 38 48 44" fill="none" stroke="rgba(122,77,4,.4)" strokeWidth=".4" />
+        {/* Stem (single brown stalk holding the bunch) */}
+        <path d="M 50 44 L 58 58" stroke="url(#bn-stem)" strokeWidth="3" strokeLinecap="round" />
+        <path d="M 52 46 L 56 50" stroke="rgba(255,209,102,.4)" strokeWidth="1" strokeLinecap="round" />
+        {/* Tiny tip on each banana */}
+        <ellipse cx="11" cy="14" rx="1" ry="1.4" fill="#5a3a04" transform="rotate(-30 11 14)" />
       </svg>
     </div>
   );
