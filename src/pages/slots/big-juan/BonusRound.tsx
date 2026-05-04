@@ -10,6 +10,7 @@ import {
   bonusRollOne,
   isFilled,
 } from './engine';
+import { fireConfetti } from '../../../lib/confetti';
 
 /** Big Juan bonus respins mini-grid (3×3, Money-Train-style hold-and-win).
  *
@@ -43,6 +44,18 @@ export function BigJuanBonusRound({ bet, scatterCount, seeds, onClose }: BonusRo
    *  empty cells so the player visibly sees them spinning before the
    *  result lands (matches real Pragmatic Hold-and-Spin). */
   const [rolling, setRolling] = useState(false);
+
+  // Fiesta confetti shower fires once the bonus completes, scaled to
+  // the size of the win. Real Pragmatic Big Juan ends the bonus with
+  // a celebratory chip-shower; same here.
+  useEffect(() => {
+    if (!finished) return;
+    const tier = totalMult >= 500 ? 'epic' : totalMult >= 100 ? 'big' : 'small';
+    fireConfetti({
+      count: tier === 'epic' ? 200 : tier === 'big' ? 130 : 80,
+      colors: ['#ff5560', '#ffd166', '#1fff7a', '#5fb8ff', '#c042b8', '#ffae50', '#ffffff'],
+    });
+  }, [finished, totalMult]);
 
   // Single shared RNG for the whole bonus — all rolls draw from it sequentially
   // so the entire bonus is reproducible from the trigger nonce.
@@ -218,7 +231,9 @@ export function BigJuanBonusRound({ bet, scatterCount, seeds, onClose }: BonusRo
         </div>
       </div>
 
-      {/* Finish overlay */}
+      {/* Finish overlay — fiesta celebration with Spanish flair.
+       *  Real Pragmatic Big Juan rings out the bonus with mariachi
+       *  music + a "¡VIVA!" celebration banner; we mirror that beat. */}
       <AnimatePresence>
         {finished && (
           <motion.div
@@ -226,44 +241,66 @@ export function BigJuanBonusRound({ bet, scatterCount, seeds, onClose }: BonusRo
             initial={{ opacity: 0, backdropFilter: 'blur(0px)' }}
             animate={{ opacity: 1, backdropFilter: 'blur(8px)' }}
             transition={{ duration: 0.4 }}
-            style={{ background: 'rgba(0,0,0,.65)' }}
+            style={{
+              background:
+                'radial-gradient(70% 50% at 50% 38%, rgba(255,209,102,.25), rgba(0,0,0,.78) 70%)',
+            }}
           >
             <motion.div
-              className="font-display font-extrabold text-3xl mb-2"
-              initial={{ scale: 0.5, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ type: 'spring', stiffness: 280, damping: 16 }}
+              className="font-display font-extrabold text-2xl mb-1 tracking-widest"
+              initial={{ scale: 0.4, opacity: 0, y: -10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              transition={{ type: 'spring', stiffness: 280, damping: 14 }}
               style={{
-                background: 'linear-gradient(180deg, #ffd166, #ff5560)',
+                background: 'linear-gradient(180deg, #fff5c4 0%, #ffd166 50%, #ff5560 100%)',
                 WebkitBackgroundClip: 'text',
                 backgroundClip: 'text',
                 color: 'transparent',
-                filter: 'drop-shadow(0 0 22px rgba(255,209,102,.85)) drop-shadow(0 4px 8px rgba(0,0,0,.5))',
+                filter: 'drop-shadow(0 0 28px rgba(255,209,102,.95)) drop-shadow(0 0 48px rgba(255,85,96,.6)) drop-shadow(0 4px 8px rgba(0,0,0,.6))',
               }}
             >
-              BONUS COMPLETE
+              {totalMult >= 500 ? '¡VIVA BIG JUAN!' : totalMult >= 100 ? '¡FIESTA!' : '¡GRACIAS!'}
             </motion.div>
-            <div
-              className="font-mono font-extrabold text-4xl tabular-nums mb-6"
+            <motion.div
+              className="font-display font-extrabold text-lg mb-3 uppercase tracking-[0.3em]"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
               style={{
+                color: '#FFE0A8',
+                textShadow: '0 2px 6px rgba(0,0,0,.7)',
+              }}
+            >
+              Bonus Complete
+            </motion.div>
+            <motion.div
+              className="font-mono font-extrabold tabular-nums mb-6"
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.35, type: 'spring', stiffness: 240, damping: 16 }}
+              style={{
+                fontSize: 'clamp(36px, 11vw, 64px)',
                 color: '#ffd166',
-                textShadow: '0 0 28px rgba(255,209,102,.85), 0 4px 8px rgba(0,0,0,.6)',
+                textShadow: '0 0 32px rgba(255,209,102,.95), 0 0 56px rgba(255,85,96,.6), 0 4px 8px rgba(0,0,0,.7)',
               }}
             >
               {fmtCurrency(totalPayout)}
-            </div>
-            <button
+            </motion.div>
+            <motion.button
               onClick={() => onClose(totalMult)}
-              className="px-6 py-3 rounded-2xl font-display font-extrabold text-base uppercase tracking-wider"
+              className="px-8 py-3.5 rounded-2xl font-display font-extrabold text-base uppercase tracking-wider"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
               style={{
                 background: 'linear-gradient(180deg, #ffd166 0%, #c8932e 60%, #5a3a04 100%)',
                 color: '#1a0a04',
                 border: '2px solid #fff5c4',
-                boxShadow: '0 0 24px rgba(255,209,102,.65), 0 4px 14px rgba(0,0,0,.5)',
+                boxShadow: '0 0 28px rgba(255,209,102,.7), 0 4px 14px rgba(0,0,0,.55)',
               }}
             >
               Collect
-            </button>
+            </motion.button>
           </motion.div>
         )}
       </AnimatePresence>
