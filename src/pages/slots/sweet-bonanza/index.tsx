@@ -18,6 +18,12 @@ export function SweetBonanza() {
       // Bonanza-specific FS tint — warm magenta+rose overlay (vs Olympus's
       // amber+purple). Real Pragmatic warms the scene during free spins.
       freeSpinsTint="linear-gradient(180deg, rgba(160, 30, 90, 0.18) 0%, rgba(120, 40, 140, 0.34) 50%, rgba(40, 10, 60, 0.42) 100%)"
+      // Real Sweet Bonanza's FS trigger animation rains hearts + lollipops
+      // across the screen — the lightning bolts that ImmersiveSlotView
+      // defaults to (Olympus heritage) make zero sense for a candy-land
+      // slot. Override with a heart glyph and the iconic Bonanza banner.
+      fsTriggerGlyph="❤"
+      fsTriggerTitle="SWEET BONANZA!"
       maxWinLabel="21,100×"
       renderCell={({ symbolId, multiplier }) => {
         if (multiplier !== undefined) {
