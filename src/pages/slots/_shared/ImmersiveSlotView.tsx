@@ -125,6 +125,7 @@ export function ImmersiveSlotView({
   const [bigWin, setBigWin] = useState<{ payout: number; tier: WinTier } | null>(null);
   const [paytableOpen, setPaytableOpen] = useState(false);
   const [floatingMults, setFloatingMults] = useState<MultiplierLanding[]>([]);
+  const [orbImpacts, setOrbImpacts] = useState<{ id: string; col: number; row: number }[]>([]);
   const [clusterPopups, setClusterPopups] = useState<{ id: string; col: number; row: number; payout: number }[]>([]);
   const [prespin, setPrespin] = useState<boolean>(false);
   const [scatterFlashes, setScatterFlashes] = useState<{ id: string; col: number; row: number }[]>([]);
@@ -225,9 +226,13 @@ export function ImmersiveSlotView({
             // multiplier orbs onto the board. Dramatic full-screen overlay.
             sound.play('lightning-strike');
             setLightningStrike(true);
-            // Stagger orb thunks during the strike for impact.
+            // Stagger orb thunks + impact rings during the strike for impact.
             for (let i = 0; i < frame.landings.length; i++) {
-              setTimeout(() => sound.play('multiplier'), 600 + i * 110);
+              const l = frame.landings[i]!;
+              setTimeout(() => {
+                sound.play('multiplier');
+                setOrbImpacts((prev) => [...prev, { id: `oi-ls-${l.key}-${i}`, col: l.col, row: l.row }]);
+              }, 600 + i * 110);
             }
             // Apply the new grid (with multipliers) about 80% through the
             // strike animation so the orbs visually appear during the boom.
@@ -236,8 +241,9 @@ export function ImmersiveSlotView({
               setGrid(frame.grid);
               lastGrid = frame.grid;
             }, 600);
-            // Hide overlay near the end of the frame delay.
-            setTimeout(() => setLightningStrike(false), 1300);
+            // Clear impacts + hide overlay near the end of the frame delay.
+            setTimeout(() => setOrbImpacts([]), 1700);
+            setTimeout(() => setLightningStrike(false), 1700);
             break;
           }
           case 'wins': {
@@ -273,6 +279,15 @@ export function ImmersiveSlotView({
             setGrid(frame.grid);
             lastGrid = frame.grid;
             sound.play('multiplier');
+            // Impact rings — each orb gets an expanding gold ring at its
+            // landing position. Real Olympus shows a similar shockwave.
+            const impacts = frame.landings.map((l) => ({
+              id: `oi-${l.key}`,
+              col: l.col,
+              row: l.row,
+            }));
+            setOrbImpacts(impacts);
+            setTimeout(() => setOrbImpacts([]), 700);
             break;
           }
           case 'tumble': {
@@ -417,6 +432,7 @@ export function ImmersiveSlotView({
       skipRef.current = false; // reset skip on each spin
       setBigWin(null);
       setFloatingMults([]);
+      setOrbImpacts([]);
       setClusterPopups([]);
       setScatterFlashes([]);
       setAnticipation(0);
@@ -696,23 +712,50 @@ export function ImmersiveSlotView({
             <Grid grid={grid} cfg={cfg} winning={winning} newKeys={newKeys} renderCell={renderCell} bare />
           </div>
 
-          {/* Floating multipliers overlay */}
+          {/* Multiplier orb impact rings — expand outward from each landing
+              cell with a fading glow. Real Olympus shows a shockwave on
+              every orb drop. */}
+          <AnimatePresence>
+            {orbImpacts.map((imp) => (
+              <motion.div
+                key={imp.id}
+                className="absolute pointer-events-none rounded-full z-[6]"
+                style={{
+                  left: `${liveInsets.left + (imp.col + 0.5) * (liveInsets.width / cfg.cols)}%`,
+                  top: `${liveInsets.top + (imp.row + 0.5) * (liveInsets.width / cfg.cols)}%`,
+                  width: `${liveInsets.width / cfg.cols * 1.4}%`,
+                  aspectRatio: '1 / 1',
+                  transform: 'translate(-50%, -50%)',
+                  background:
+                    'radial-gradient(circle at 50% 50%, rgba(255,233,168,0.9) 0%, rgba(255,200,40,0.6) 30%, rgba(255,140,40,0.3) 55%, transparent 70%)',
+                  mixBlendMode: 'screen',
+                }}
+                initial={{ scale: 0.2, opacity: 0 }}
+                animate={{ scale: [0.2, 1.0, 1.6], opacity: [0, 1, 0] }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+              />
+            ))}
+          </AnimatePresence>
+
+          {/* Floating multiplier value text — flies out of each orb landing */}
           <AnimatePresence>
             {floatingMults.map((m) => (
               <motion.div
                 key={`fm-${m.key}`}
-                className="absolute pointer-events-none font-serif italic font-bold"
+                className="absolute pointer-events-none font-serif italic font-bold z-[7]"
                 style={{
                   color: '#FFE9A8',
                   left: `${liveInsets.left + (m.col + 0.5) * (liveInsets.width / cfg.cols)}%`,
                   top: `${liveInsets.top + (m.row + 0.5) * (liveInsets.width / cfg.cols)}%`,
-                  textShadow: '0 0 18px rgba(255,200,40,.95)',
+                  textShadow: '0 0 18px rgba(255,200,40,.95), 0 2px 4px rgba(0,0,0,.7)',
                   fontSize: 'clamp(20px, 5vw, 32px)',
                   transform: 'translate(-50%, -50%)',
                 }}
-                initial={{ scale: 0.4, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.5, opacity: 0 }}
+                initial={{ scale: 0.4, opacity: 0, y: 10 }}
+                animate={{ scale: [0.4, 1.4, 1], opacity: [0, 1, 1], y: 0 }}
+                exit={{ scale: 0.6, opacity: 0, y: -8 }}
+                transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
               >
                 {m.value}×
               </motion.div>
