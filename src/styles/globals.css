@@ -1318,6 +1318,17 @@
   50%      { transform: rotate(0.7deg)  translateX(1%); }
 }
 
+/* Pharaoh Sphinx eye glow — eyes briefly flash gold every ~7s as if
+ * an ancient power stirs for a moment, then returns to dark. Both
+ * eyes glow in sync (single being). Cycle stays mostly dark with a
+ * 5% peak so it reads as rare and mystical. */
+@keyframes pharaohSphinxEye {
+  0%, 100% { fill: #1a0a04; }
+  47%      { fill: #1a0a04; }
+  50%      { fill: #ffd166; filter: drop-shadow(0 0 1.4px rgba(255,209,102,1)); }
+  53%      { fill: #1a0a04; }
+}
+
 /* Wanted saloon gas-lamp flicker — irregular opacity step pattern
  * approximates a gas-fed flame catching small drafts. Two windows
  * use different cycle times + a delay so they flicker independently. */

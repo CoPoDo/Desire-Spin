@@ -122,9 +122,20 @@ export function PharaohScene() {
           <line x1="13" y1="0" x2="23" y2="0" stroke="#7a4a0a" strokeWidth=".25" />
           {/* Face cavity (lit by sun) */}
           <rect x="14" y="-2" width="6" height="4" fill="#a87042" />
-          {/* Eye + nose hint */}
-          <circle cx="16.5" cy="-0.5" r=".3" fill="#1a0a04" />
-          <circle cx="18.5" cy="-0.5" r=".3" fill="#1a0a04" />
+          {/* Eye + nose hint — Sphinx eyes briefly glow gold every ~7s
+           *  as if a sacred power awakens for an instant. Reads as a
+           *  mythic detail on closer inspection without distracting
+           *  from gameplay. */}
+          <circle
+            cx="16.5" cy="-0.5" r=".3"
+            fill="#1a0a04"
+            style={{ animation: 'pharaohSphinxEye 7s ease-in-out infinite' }}
+          />
+          <circle
+            cx="18.5" cy="-0.5" r=".3"
+            fill="#1a0a04"
+            style={{ animation: 'pharaohSphinxEye 7s ease-in-out infinite' }}
+          />
           <line x1="17.5" y1="0.5" x2="17.5" y2="1.4" stroke="#1a0a04" strokeWidth=".18" />
           {/* Cobra uraeus on forehead */}
           <ellipse cx="17.5" cy="-3.5" rx=".7" ry=".4" fill="#ffd166" />
