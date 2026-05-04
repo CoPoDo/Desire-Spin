@@ -138,7 +138,7 @@ export function KenoGame() {
                   key={n}
                   onClick={() => togglePick(n)}
                   disabled={busy}
-                  className="aspect-square rounded-md flex items-center justify-center font-mono font-bold text-xs sm:text-sm transition-all active:scale-95 relative"
+                  className={`aspect-square rounded-md flex items-center justify-center font-mono font-bold text-xs sm:text-sm transition-all active:scale-95 relative ${drawn ? 'keno-cell-pop' : ''}`}
                   style={{
                     background: isHit
                       ? 'linear-gradient(180deg, #1fff7a, #0a7a3a)'

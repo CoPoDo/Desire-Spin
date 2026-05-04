@@ -1377,6 +1377,18 @@
   100% { opacity: 0; }
 }
 
+/* Keno cell pop — fires once when a number transitions to drawn.
+ * Brief overshoot scale + back-to-1 so the number visibly "lands"
+ * on the grid instead of changing colour silently. */
+.keno-cell-pop {
+  animation: kenoCellPop 380ms cubic-bezier(.34, 1.56, .64, 1);
+}
+@keyframes kenoCellPop {
+  0%   { transform: scale(0.7); }
+  60%  { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+
 /* Screen-shake utility classes (ported from House Edge). Apply to any
  * container — translates + tiny rotation cycles for ~0.35s/0.55s/0.9s
  * to convey tiered impact on big-win moments. Loops once and ends
