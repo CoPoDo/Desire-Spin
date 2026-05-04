@@ -2099,8 +2099,12 @@ export function ImmersiveSlotView({
             onClick={() => setWelcomeSplash(false)}
             className="fixed inset-0 z-[150] flex flex-col items-center justify-center text-center p-6"
             style={{
-              background:
-                'radial-gradient(ellipse at center, rgba(80,30,10,.92), rgba(15,5,5,.98) 70%)',
+              // Welcome splash background tinted with the slot's accent —
+              // each game gets a backdrop in its own colour family rather
+              // than the shared warm-brown that read as Olympus regardless
+              // of which slot was loading. Ellipse: dim accent at centre →
+              // near-black at the edges keeps focus on the game-name text.
+              background: `radial-gradient(ellipse at center, ${cfg.theme.accent}28, rgba(10,4,8,.97) 70%)`,
               backdropFilter: 'blur(8px)',
               WebkitBackdropFilter: 'blur(8px)',
             }}
