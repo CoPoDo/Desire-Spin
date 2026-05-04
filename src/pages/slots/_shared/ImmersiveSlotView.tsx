@@ -268,24 +268,31 @@ export function ImmersiveSlotView({
             // multiplier orbs onto the board. Dramatic full-screen overlay.
             sound.play('lightning-strike');
             setLightningStrike(true);
+            // Schedule timings scale with turbo / skip so orbs land BEFORE
+            // the frame ends and the overlay clears, regardless of speed.
+            const lsBase = 1500; // matches lightningStrike frame delay range
+            const speedFactor = skipRef.current ? 0.4 : turboRef.current ? 0.65 : 1.0;
+            const orbStart = lsBase * 0.4 * speedFactor;
+            const orbStep = 110 * speedFactor;
+            const overlayClear = lsBase * 0.85 * speedFactor;
             // Stagger orb thunks + impact rings during the strike for impact.
             for (let i = 0; i < frame.landings.length; i++) {
               const l = frame.landings[i]!;
               scheduleSpin(() => {
                 sound.play('multiplier');
                 setOrbImpacts((prev) => [...prev, { id: `oi-ls-${l.key}-${i}`, col: l.col, row: l.row }]);
-              }, 600 + i * 110);
+              }, orbStart + i * orbStep);
             }
-            // Apply the new grid (with multipliers) about 80% through the
+            // Apply the new grid (with multipliers) about 40% through the
             // strike animation so the orbs visually appear during the boom.
             scheduleSpin(() => {
               setFloatingMults(frame.landings);
               setGrid(frame.grid);
               lastGrid = frame.grid;
-            }, 600);
+            }, orbStart);
             // Clear impacts + hide overlay near the end of the frame delay.
-            scheduleSpin(() => setOrbImpacts([]), 1700);
-            scheduleSpin(() => setLightningStrike(false), 1700);
+            scheduleSpin(() => setOrbImpacts([]), overlayClear + 200);
+            scheduleSpin(() => setLightningStrike(false), overlayClear);
             break;
           }
           case 'wins': {
