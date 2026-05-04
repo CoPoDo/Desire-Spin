@@ -1180,16 +1180,23 @@ export function ImmersiveSlotView({
               <span className="text-[#fff7d6] flex items-center justify-center" style={{ filter: 'drop-shadow(0 0 8px rgba(255,200,80,.95))' }}>
                 <StopIcon size={26} />
               </span>
-            ) : busy ? (
-              inFree ? (
-                <span className="spin-btn-text">{freeSpins!.remaining}</span>
-              ) : (
-                <span className="text-[#fff7d6] flex items-center justify-center animate-spin" style={{ filter: 'drop-shadow(0 0 8px rgba(255,200,80,.95))' }}>
-                  <SpinArrowIcon size={28} />
+            ) : inFree && freeSpins ? (
+              // FS mode — show remaining count prominently. Real Pragmatic
+              // shows the FS counter on the spin button during bonus.
+              <span className="flex flex-col items-center justify-center leading-none">
+                <span className="font-serif italic font-extrabold text-[#fff7d6] tabular-nums"
+                      style={{ fontSize: 'clamp(20px, 5.2vw, 30px)', textShadow: '0 0 10px rgba(255,200,80,.95), 0 1px 0 rgba(60,30,5,.7)' }}>
+                  {freeSpins.remaining}
                 </span>
-              )
-            ) : inFree ? (
-              <span className="spin-btn-text">{freeSpins!.remaining}</span>
+                <span className="font-mono text-[#fff7d6]/70 leading-none mt-0.5"
+                      style={{ fontSize: 'clamp(7px, 1.8vw, 10px)', letterSpacing: '0.18em', textShadow: '0 1px 0 rgba(60,30,5,.6)' }}>
+                  FREE
+                </span>
+              </span>
+            ) : busy ? (
+              <span className="text-[#fff7d6] flex items-center justify-center animate-spin" style={{ filter: 'drop-shadow(0 0 8px rgba(255,200,80,.95))' }}>
+                <SpinArrowIcon size={28} />
+              </span>
             ) : (
               <span className="text-[#fff7d6] flex items-center justify-center" style={{ filter: 'drop-shadow(0 0 10px rgba(255,200,80,.95))' }}>
                 <SpinArrowIcon size={32} strokeWidth={2.6} />
