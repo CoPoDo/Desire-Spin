@@ -1714,19 +1714,21 @@ export function ImmersiveSlotView({
             disabled={busy || inFree || autoplay !== null || balance.balance < buyCost}
             className="w-full px-2 py-1.5 rounded-lg disabled:opacity-40 disabled:saturate-50 relative overflow-hidden"
             style={{
-              background:
-                'linear-gradient(180deg, #ff5cd7 0%, #b03dff 35%, #5a1ea8 70%, #2c1147 100%)',
+              // Theme-tinted Buy Bonus button — bright accent at top
+              // fading into a deeper anchor at the bottom. Was a fixed
+              // magenta/purple gradient that clashed with non-Bonanza
+              // palettes (Olympus gold, Wanted rust, etc.).
+              background: `linear-gradient(180deg, ${cfg.theme.accent} 0%, ${cfg.theme.accent}c0 35%, rgba(20,8,30,.7) 70%, rgba(20,8,30,.95) 100%)`,
               border: '1.5px solid #ffd37a',
-              boxShadow:
-                'inset 0 1px 0 rgba(255,233,168,.55), inset 0 -2px 0 rgba(40,8,80,.55), 0 0 14px rgba(176,61,255,.55), 0 4px 8px rgba(0,0,0,.5)',
+              boxShadow: `inset 0 1px 0 rgba(255,233,168,.55), inset 0 -2px 0 rgba(20,8,30,.55), 0 0 14px ${cfg.theme.glow}, 0 4px 8px rgba(0,0,0,.5)`,
             }}
           >
             <div className="text-[8px] font-bold uppercase tracking-[0.18em] text-[#fff7d6] leading-none"
-                 style={{ textShadow: '0 1px 0 rgba(40,8,80,.7), 0 0 6px rgba(255,200,80,.7)' }}>
+                 style={{ textShadow: '0 1px 0 rgba(20,8,30,.7), 0 0 6px rgba(255,200,80,.7)' }}>
               Buy Free Spins
             </div>
             <div className="text-[11px] font-mono font-bold text-[#fff7d6] mt-0.5 leading-none tabular-nums"
-                 style={{ textShadow: '0 1px 0 rgba(40,8,80,.7), 0 0 6px rgba(255,200,80,.95)' }}>
+                 style={{ textShadow: '0 1px 0 rgba(20,8,30,.7), 0 0 6px rgba(255,200,80,.95)' }}>
               {fmtCurrency(buyCost)}
             </div>
           </button>
