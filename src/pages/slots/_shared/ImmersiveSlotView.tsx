@@ -77,33 +77,36 @@ export type ImmersiveSlotViewProps = {
   fsTriggerTitle?: string;
 };
 
-// Frame delays — tuned to feel snappy. Real Pragmatic Olympus FS spins
-// take 4-6 seconds each; previous values clocked under 3s so the
-// bonus felt like it flew by. Bumped pacing on every FS-relevant
-// frame so the multiplier reveals + scatter pays + FS award + total
-// breathe properly. Base spins still feel snappy because turbo + skip
-// shortcuts apply on top of these.
+// Frame delays — tuned so the cells visually FINISH landing before the
+// next frame fires. Cell drop in Grid.tsx uses 0.42s easing + a
+// per-column 0.05s stagger, so a 6-col grid takes ~670ms for the last
+// column to settle. Earlier 320ms initialDrop / 260ms tumble was way
+// too fast — the wins/tumble frame fired before the cells finished
+// dropping, so highlights painted on top of still-falling symbols.
+// The FS frames stay long for dramatic pacing (audited in earlier pass).
 const FRAME_DELAY: Record<string, number> = {
-  initialDrop: 320,         // drop + settle
+  initialDrop: 700,         // matches col-staggered drop completion (~670ms)
   lightningStrike: 1500,    // dramatic Zeus pause
-  multipliersLanded: 480,   // subtle orb thump (slightly longer)
+  multipliersLanded: 480,   // subtle orb thump
   wins: 600,                // winning highlight hold
-  tumble: 260,              // clear + new drops settle
+  tumble: 540,              // matches tumble cells landing (300ms drop +
+                            //   stagger), was 260 — way too quick
   scattersWon: 750,         // scatter pay flash
   freeSpinsAwarded: 1100,   // award announcement
   freeSpinsBegin: 950,      // FS session start
   freeSpinsEnd: 1300,       // FS total reveal
-  multiplierApplied: 1200,  // total ×N reveal — was 850, way too quick
+  multiplierApplied: 1200,  // total ×N reveal
   final: 0,
 };
 
-// Per-frame minimum delay so turbo doesn't make things janky.
+// Per-frame minimum delay so turbo doesn't make things janky. Turbo
+// mode shortens these but keeps animations from overlapping.
 const TURBO_MIN_DELAY: Record<string, number> = {
-  initialDrop: 160,
+  initialDrop: 380,
   lightningStrike: 800,
   multipliersLanded: 220,
   wins: 280,
-  tumble: 150,
+  tumble: 280,
   scattersWon: 380,
   freeSpinsAwarded: 700,
   freeSpinsBegin: 600,
