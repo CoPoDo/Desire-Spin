@@ -2449,7 +2449,8 @@ export function ImmersiveSlotView({
               {maxWinLabel}
             </motion.div>
             <motion.div
-              className="absolute bottom-12 left-1/2 -translate-x-1/2 text-[10px] uppercase tracking-[0.3em] text-[#FFE0A8]/70"
+              className="absolute bottom-12 left-1/2 -translate-x-1/2 text-[10px] uppercase tracking-[0.3em]"
+              style={{ color: `${cfg.theme.accent}b3` }}
               initial={{ opacity: 0 }}
               animate={{ opacity: [0.45, 0.85, 0.45] }}
               transition={{ delay: 1, duration: 1.5, repeat: Infinity }}
