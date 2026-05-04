@@ -55,6 +55,11 @@ export function BigJuan() {
   const [bigWin, setBigWin] = useState<{ payout: number; tier: 'big' | 'mega' | 'epic' } | null>(null);
   const [paytableOpen, setPaytableOpen] = useState(false);
   const [turbo, setTurbo] = useState(false);
+  const [welcomeSplash, setWelcomeSplash] = useState(true);
+  useEffect(() => {
+    const t = setTimeout(() => setWelcomeSplash(false), 3500);
+    return () => clearTimeout(t);
+  }, []);
 
   // Big Juan only owns its game-specific UI state (paytable, autoplay,
   // bonus, big-win). Sound / Stats / History / Fairness / Settings are
@@ -738,6 +743,82 @@ export function BigJuan() {
               </div>
             </motion.div>
           </>
+        )}
+      </AnimatePresence>
+
+      {/* Welcome splash — first 3.5s after page load, dismissible by tap */}
+      <AnimatePresence>
+        {welcomeSplash && (
+          <motion.button
+            type="button"
+            onClick={() => setWelcomeSplash(false)}
+            className="absolute inset-0 z-[150] flex flex-col items-center justify-center text-center p-6"
+            style={{
+              background:
+                'radial-gradient(ellipse at center, rgba(120,16,46,.92), rgba(15,5,5,.98) 70%)',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
+            }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4 }}
+          >
+            <motion.div
+              className="font-display font-extrabold text-5xl md:text-7xl mb-2"
+              initial={{ scale: 0.4, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              transition={{ type: 'spring', stiffness: 220, damping: 16 }}
+              style={{
+                background: 'linear-gradient(180deg, #fff5c4 0%, #ffd166 35%, #ff5560 75%, #c8102e 100%)',
+                WebkitBackgroundClip: 'text',
+                backgroundClip: 'text',
+                color: 'transparent',
+                filter: 'drop-shadow(0 0 28px rgba(255,209,102,.85)) drop-shadow(0 4px 8px rgba(0,0,0,.6))',
+              }}
+            >
+              BIG JUAN
+            </motion.div>
+            <motion.div
+              className="font-mono uppercase tracking-[0.32em] text-[#FFE0A8] text-[11px] mb-6"
+              initial={{ y: 10, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.2 }}
+            >
+              Provably fair · play money
+            </motion.div>
+            <motion.div
+              className="font-mono uppercase tracking-[0.32em] text-[#FFE0A8] text-[10px] mb-1"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4 }}
+            >
+              Max Win
+            </motion.div>
+            <motion.div
+              className="font-display font-extrabold text-3xl md:text-5xl"
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.5, type: 'spring', stiffness: 220, damping: 14 }}
+              style={{
+                background: 'linear-gradient(180deg, #fff5c4 0%, #ffd166 60%, #c8932e 100%)',
+                WebkitBackgroundClip: 'text',
+                backgroundClip: 'text',
+                color: 'transparent',
+                filter: 'drop-shadow(0 0 22px rgba(255,209,102,.85))',
+              }}
+            >
+              2,600×
+            </motion.div>
+            <motion.div
+              className="absolute bottom-12 left-1/2 -translate-x-1/2 text-[10px] uppercase tracking-[0.3em] text-[#FFE0A8]/70"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: [0.45, 0.85, 0.45] }}
+              transition={{ delay: 1, duration: 1.5, repeat: Infinity }}
+            >
+              Tap to begin
+            </motion.div>
+          </motion.button>
         )}
       </AnimatePresence>
 
