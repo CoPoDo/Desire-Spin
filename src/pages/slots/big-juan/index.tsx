@@ -1261,6 +1261,36 @@ function BigJuanBackdrop() {
           opacity: 0.85,
         }}
       />
+      {/* Floating confetti sparks — small coloured rectangles drift up
+       * from the bottom in the fiesta palette. Adds ambient lucha-arena
+       * energy without competing with the reels. */}
+      {[
+        { left: '8%',  size: 5, dur: 8,  delay: 0,    color: '#ff5560' },
+        { left: '18%', size: 4, dur: 10, delay: 2.4,  color: '#1fff7a' },
+        { left: '32%', size: 6, dur: 9,  delay: 4.0,  color: '#ffd166' },
+        { left: '46%', size: 4, dur: 11, delay: 1.2,  color: '#5fb8ff' },
+        { left: '58%', size: 5, dur: 8.5, delay: 5.6, color: '#c042b8' },
+        { left: '72%', size: 4, dur: 9.5, delay: 0.8, color: '#ff5560' },
+        { left: '84%', size: 6, dur: 10.5, delay: 3.6, color: '#ffd166' },
+        { left: '92%', size: 4, dur: 8,  delay: 6.4,  color: '#1fff7a' },
+      ].map((c, i) => (
+        <div
+          key={i}
+          className="absolute"
+          style={{
+            left: c.left,
+            bottom: '-10%',
+            width: `${c.size}px`,
+            height: `${c.size * 1.8}px`,
+            background: c.color,
+            borderRadius: '1px',
+            boxShadow: `0 0 4px ${c.color}aa`,
+            animation: `bigJuanConfetti ${c.dur}s linear ${c.delay}s infinite`,
+            mixBlendMode: 'screen',
+          }}
+        />
+      ))}
+
       {/* Vignette */}
       <div
         className="absolute inset-0"

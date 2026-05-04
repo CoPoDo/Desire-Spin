@@ -1123,6 +1123,14 @@
   100% { transform: translate(110vw, -8px) rotate(720deg); opacity: 0; }
 }
 
+/* Big Juan — fiesta confetti sparks drifting up from below */
+@keyframes bigJuanConfetti {
+  0%   { transform: translate(0, 100%) rotate(0deg); opacity: 0; }
+  10%  { opacity: 0.9; }
+  90%  { opacity: 0.9; }
+  100% { transform: translate(20px, -110%) rotate(540deg); opacity: 0; }
+}
+
 /* Sweet Bonanza symbol container — vibrant drop-shadow for the candy palette.
  * Larger than Olympus's 78% so the saturated fruits dominate the cell, matching
  * real Sweet Bonanza's punchy filled-cell look. */
