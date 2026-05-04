@@ -367,8 +367,12 @@ export function ZeusBoltSymbol() {
 }
 
 export function OlympusMultiplierSymbol({ value }: { value: number; accent?: string }) {
+  // Larger fonts for higher-value orbs (visually communicates impact even
+  // before the player reads the number). Real Pragmatic does this too —
+  // 500x orbs are visibly chunkier than 2x ones.
+  const tier = value >= 100 ? 'huge' : value >= 25 ? 'big' : 'normal';
   return (
-    <div className="olympus-orb">
+    <div className={`olympus-orb olympus-orb-${tier}`}>
       <span className="olympus-orb-text">{value}×</span>
     </div>
   );
