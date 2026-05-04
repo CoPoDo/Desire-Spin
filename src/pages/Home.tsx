@@ -48,7 +48,7 @@ export function Home() {
       </section>
 
       <section>
-        <SectionHeader title="Originals" subtitle="29 Stake-style provably-fair games" />
+        <SectionHeader title="Originals" subtitle="30 Stake-style provably-fair games" />
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
           <GameCard
             to="/originals/dice"
@@ -252,6 +252,13 @@ export function Home() {
             subtitle="Live multiplier slide"
             badge="LIVE"
             art={<PlaceholderArt label="📈" tone="#1a3a30" />}
+          />
+          <GameCard
+            to="/originals/bingo"
+            title="Bingo"
+            subtitle="5×5 lines + draws"
+            badge="LIVE"
+            art={<PlaceholderArt label="🎱" tone="#3a1030" />}
           />
         </div>
       </section>
