@@ -1452,6 +1452,14 @@
   100% { stroke-dashoffset: -10; }
 }
 
+/* Wolf Gold moonlight beam — slow opacity breathe in sync with the
+ * moon corona pulse so the beam visibly intensifies as clouds thin
+ * and fades as they thicken. Same 7s cycle as wolfMoonCorona. */
+@keyframes wolfMoonBeamBreathe {
+  0%, 100% { opacity: 0.85; }
+  50%      { opacity: 1.1;  }
+}
+
 /* Wolf Gold moon — slow corona breathe. Long-exposure photographs of
  * full moons show a subtle bloom that pulses; this fakes that with a
  * gentle scale + slight brightness lift. Translate centre-anchor

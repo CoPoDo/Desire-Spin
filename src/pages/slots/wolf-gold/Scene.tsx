@@ -68,7 +68,10 @@ export function WolfScene() {
 
       {/* Moonlight beam — soft cone of pale-violet light from the moon
        * down toward the wolf-on-ridge area. Adds dramatic theatrical
-       * lighting and ties the moon visually to the wolf silhouette. */}
+       * lighting and ties the moon visually to the wolf silhouette.
+       * Slow opacity breathe so the beam visibly intensifies as
+       * passing clouds thin out, then fades as they thicken. Pairs
+       * with the moon corona pulse (Pass 10) for a unified breath. */}
       <div
         className="absolute pointer-events-none"
         style={{
@@ -81,6 +84,7 @@ export function WolfScene() {
           clipPath: 'polygon(40% 0%, 60% 0%, 100% 100%, 0% 100%)',
           mixBlendMode: 'screen',
           filter: 'blur(2px)',
+          animation: 'wolfMoonBeamBreathe 7s ease-in-out infinite',
         }}
       />
 
