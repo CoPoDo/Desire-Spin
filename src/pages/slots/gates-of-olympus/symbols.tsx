@@ -20,9 +20,12 @@ const SYMBOL_COLOR: Record<string, string> = {
   'zeus-bolt': '#FFE9A8',
 };
 
-function Wrap({ id, children }: { id: string; children: React.ReactNode }) {
+function Wrap({ id, children, scatter }: { id: string; children: React.ReactNode; scatter?: boolean }) {
   return (
-    <div className="olympus-sym" style={{ color: SYMBOL_COLOR[id] ?? '#FFE9A8' }}>
+    <div
+      className={`olympus-sym${scatter ? ' olympus-sym-scatter' : ''}`}
+      style={{ color: SYMBOL_COLOR[id] ?? '#FFE9A8' }}
+    >
       {children}
     </div>
   );
@@ -211,7 +214,7 @@ export const BlueGemSymbol = makeGem('gem-blue');
 
 export function ZeusBoltSymbol() {
   return (
-    <Wrap id="zeus-bolt">
+    <Wrap id="zeus-bolt" scatter>
       <svg viewBox="0 0 64 64" fill="none">
         <defs>
           <linearGradient id="zb-bolt" x1="0" y1="0" x2="0" y2="1">
@@ -220,20 +223,31 @@ export function ZeusBoltSymbol() {
             <stop offset="100%" stopColor="#FF8A20" />
           </linearGradient>
           <radialGradient id="zb-ring" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="rgba(0,0,0,.7)" />
-            <stop offset="60%" stopColor="rgba(60,30,5,.6)" />
+            <stop offset="0%" stopColor="rgba(40,20,2,.55)" />
+            <stop offset="55%" stopColor="rgba(120,80,20,.4)" />
             <stop offset="100%" stopColor="rgba(255,200,80,.0)" />
           </radialGradient>
+          <radialGradient id="zb-glow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="rgba(255,233,168,.55)" />
+            <stop offset="60%" stopColor="rgba(255,200,80,.18)" />
+            <stop offset="100%" stopColor="rgba(255,200,80,0)" />
+          </radialGradient>
         </defs>
+        {/* Inner glow */}
+        <circle cx="32" cy="32" r="30" fill="url(#zb-glow)" />
         {/* Outer halo */}
         <circle cx="32" cy="32" r="28" fill="url(#zb-ring)" />
-        <circle cx="32" cy="32" r="28" fill="none" stroke="#FFC850" strokeWidth="1.5" opacity=".75" />
-        <circle cx="32" cy="32" r="24" fill="none" stroke="rgba(255,255,255,.2)" strokeWidth="1" />
+        <circle cx="32" cy="32" r="28" fill="none" stroke="#FFC850" strokeWidth="1.6" opacity=".85" />
+        <circle cx="32" cy="32" r="24" fill="none" stroke="rgba(255,255,255,.25)" strokeWidth="1" />
         {/* Lightning bolt */}
         <path d="M32 6 L 18 32 L 28 32 L 22 58 L 46 26 L 34 26 L 40 6 Z"
               fill="url(#zb-bolt)" stroke="#7A3A04" strokeWidth="1.2" strokeLinejoin="round" />
         {/* Bolt highlight */}
         <path d="M32 8 L 22 30 L 28 30" fill="none" stroke="rgba(255,255,255,.6)" strokeWidth="1.5" strokeLinecap="round" />
+        {/* Sparkles */}
+        <circle cx="14" cy="14" r="1.2" fill="#fff" opacity=".9" />
+        <circle cx="50" cy="14" r="1" fill="#fff" opacity=".75" />
+        <circle cx="50" cy="52" r="1.4" fill="#fff" opacity=".85" />
       </svg>
     </Wrap>
   );

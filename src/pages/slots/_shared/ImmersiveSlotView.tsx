@@ -449,6 +449,23 @@ export function ImmersiveSlotView({
     [ante, balance, bet, cfg, fairness, history, playFrames, sound],
   );
 
+  // Ambient lightning — every 12-30s a faint distant lightning flash flickers
+  // across the painted scene's sky area. Pure atmosphere, independent of
+  // any game event. Real Pragmatic Olympus has stormy ambient effects too.
+  const [ambientLightning, setAmbientLightning] = useState<number>(0);
+  useEffect(() => {
+    let timer: number;
+    const schedule = () => {
+      const wait = 12000 + Math.random() * 18000; // 12–30s
+      timer = window.setTimeout(() => {
+        setAmbientLightning((n) => n + 1);
+        schedule();
+      }, wait);
+    };
+    schedule();
+    return () => clearTimeout(timer);
+  }, []);
+
   // Switch music intensity to match game state (base / free spins).
   // Tracks change immediately when entering or exiting a free-spins session.
   const fsActive = freeSpins !== null;
@@ -597,6 +614,22 @@ export function ImmersiveSlotView({
               animation: 'olympusStars 8s ease-in-out infinite',
             }}
           />
+          {/* Ambient distant lightning — flashes every 12-30s in the sky */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={`amb-${ambientLightning}`}
+              className="absolute inset-x-0 top-0 pointer-events-none"
+              style={{ height: '30%' }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: [0, 0.35, 0, 0.55, 0, 0.2, 0] }}
+              transition={{ duration: 0.8, times: [0, 0.05, 0.15, 0.25, 0.45, 0.6, 1], ease: 'easeOut' }}
+            >
+              <div className="absolute inset-0" style={{
+                background: `linear-gradient(180deg, rgba(255,253,225,${ambientLightning ? 1 : 0}) 0%, rgba(255,200,80,.6) 30%, transparent 100%)`,
+                mixBlendMode: 'screen',
+              }} />
+            </motion.div>
+          </AnimatePresence>
           {/* Grid positioned inside the arch. The blur+darken on .prespin
               gives a "reels stopping" feel right before initialDrop. */}
           <div

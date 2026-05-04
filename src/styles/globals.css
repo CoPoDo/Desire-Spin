@@ -211,6 +211,25 @@
     drop-shadow(0 0 6px rgba(0, 0, 0, 0.4));
   transform: translateZ(0);
 }
+/* Scatter symbol always pulses subtly so it draws the eye even at rest. */
+.olympus-sym-scatter {
+  animation: scatterIdlePulse 1.6s ease-in-out infinite;
+}
+@keyframes scatterIdlePulse {
+  0%, 100% {
+    filter:
+      drop-shadow(0 2px 4px rgba(0, 0, 0, 0.55))
+      drop-shadow(0 0 8px rgba(255, 200, 80, 0.5));
+    transform: scale(1) translateZ(0);
+  }
+  50% {
+    filter:
+      drop-shadow(0 2px 4px rgba(0, 0, 0, 0.55))
+      drop-shadow(0 0 18px rgba(255, 200, 80, 0.95))
+      drop-shadow(0 0 32px rgba(255, 140, 40, 0.7));
+    transform: scale(1.04) translateZ(0);
+  }
+}
 .olympus-sym svg {
   width: 100%;
   height: 100%;
