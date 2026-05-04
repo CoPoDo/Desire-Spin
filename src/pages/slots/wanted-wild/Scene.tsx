@@ -12,18 +12,21 @@ export function WantedScene() {
             'linear-gradient(180deg, #f5b06a 0%, #d8442a 18%, #8a1818 38%, #2a0810 70%, #0a0204 100%)',
         }}
       />
-      {/* Big sun (low) */}
+      {/* Big sun (low) — subtle heat-shimmer pulse so the dusk sky feels
+       *  alive instead of a static gradient. Long 5s cycle. */}
       <div
         className="absolute"
         style={{
           left: '50%',
           top: '38%',
-          transform: 'translate(-50%, -50%)',
           width: '52%',
           aspectRatio: '1 / 1',
           background:
             'radial-gradient(circle, rgba(255,200,120,.55) 0%, rgba(220,80,60,.4) 30%, transparent 65%)',
           filter: 'blur(2px)',
+          animation: 'wantedSunHaze 5s ease-in-out infinite',
+          transform: 'translate(-50%, -50%)',
+          transformOrigin: 'center',
         }}
       />
 
