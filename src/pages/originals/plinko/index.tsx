@@ -111,10 +111,12 @@ export function PlinkoGame() {
           />
         </div>
 
-        {recentResults.length > 0 && (
-          <div className="flex items-center gap-1.5 overflow-x-auto py-1">
-            <span className="text-[10px] uppercase tracking-widest text-ink-mute mr-1 flex-shrink-0">Recent</span>
-            {recentResults.map((r) => (
+        <div className="flex items-center gap-1.5 overflow-x-auto py-1 min-h-[30px]">
+          <span className="text-[10px] uppercase tracking-widest text-ink-mute mr-1 flex-shrink-0">
+            Recent
+          </span>
+          {recentResults.length > 0 ? (
+            recentResults.map((r) => (
               <span
                 key={r.id}
                 className={`font-mono font-semibold text-xs tabular-nums px-2 py-1 rounded-lg flex-shrink-0 ${
@@ -129,9 +131,11 @@ export function PlinkoGame() {
               >
                 {r.multiplier.toFixed(2)}×
               </span>
-            ))}
-          </div>
-        )}
+            ))
+          ) : (
+            <span className="text-[10px] text-ink-mute italic">no drops yet</span>
+          )}
+        </div>
 
         <div className="rounded-2xl bg-bg-card border border-edge p-4 space-y-3">
           <ManualAutoTabs mode={mode} onChange={setMode} disabled={autoActive} />
@@ -181,6 +185,7 @@ export function PlinkoGame() {
             <button
               onClick={() => void drop()}
               disabled={balance.balance < bet || bet <= 0}
+              style={{ touchAction: 'manipulation' }}
               className="w-full py-3.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
             >
               Drop · {fmtCurrency(bet)}
@@ -251,12 +256,14 @@ function Board({
   const bucketHeight = H - bucketY - 0.2;
 
   return (
-    <div className="relative w-full" style={{ aspectRatio: `${W} / ${H}` }}>
+    <div
+      className="relative w-full overflow-hidden"
+      style={{ aspectRatio: `${W} / ${H}` }}
+    >
       <svg
         viewBox={`0 0 ${W} ${H}`}
         preserveAspectRatio="xMidYMid meet"
         className="absolute inset-0 w-full h-full"
-        style={{ overflow: 'visible' }}
       >
         <defs>
           <radialGradient id="plinko-peg" cx="38%" cy="32%" r="60%">
