@@ -57,15 +57,40 @@ export function PharaohScene() {
         {/* Small pyramid left */}
         <path d="M 8 50 L 22 28 L 36 50 Z" fill="url(#ph-pyramid)" opacity=".9" />
         <path d="M 22 28 L 36 50 L 30 50 Z" fill="url(#ph-pyramid-shade)" />
-        {/* Sphinx silhouette (small, left of centre) */}
-        <g transform="translate(40 38)">
-          {/* Body */}
-          <path d="M0 12 L 0 8 L 4 4 L 16 4 L 16 12 Z" fill="#3a1a04" />
-          {/* Headdress */}
-          <path d="M-2 4 L 4 -4 L 8 -4 L 8 4 Z" fill="#5a3a0a" stroke="#1a0a02" strokeWidth=".2" />
-          {/* Face */}
-          <rect x="4" y="-2" width="6" height="6" fill="#a8761a" />
-          <circle cx="6" cy="0" r=".4" fill="#1a0a04" />
+        {/* Great Sphinx silhouette — sits between the small left pyramid
+         * and the big back pyramid. Properly sized + detailed so the iconic
+         * silhouette reads cleanly: lion body crouched on plinth, raised
+         * head with nemes headdress + face. */}
+        <g transform="translate(36 30)">
+          {/* Plinth / paws line */}
+          <rect x="-12" y="14" width="32" height="3" fill="#2a1404" />
+          {/* Lion body (crouched, paws extended) */}
+          <path
+            d="M -10 14 L -10 10 Q -10 6 -6 6 L 12 6 L 14 4 L 14 10 L 16 12 L 16 14 Z"
+            fill="#3a1a04"
+            stroke="#1a0a02"
+            strokeWidth=".2"
+          />
+          {/* Front paws */}
+          <rect x="-10" y="13" width="3" height="2" fill="#1a0a02" />
+          <rect x="-5" y="13" width="3" height="2" fill="#1a0a02" />
+          {/* Neck / chin */}
+          <path d="M 12 6 L 12 2 L 18 2 L 18 4 L 14 4 Z" fill="#3a1a04" />
+          {/* Nemes headdress (striped) */}
+          <path d="M 12 -4 L 22 -4 L 24 2 L 18 2 L 12 2 Z" fill="#5a3a0a" stroke="#1a0a02" strokeWidth=".2" />
+          {/* Stripe on headdress */}
+          <line x1="14" y1="-2" x2="22" y2="-2" stroke="#7a4a0a" strokeWidth=".25" />
+          <line x1="13" y1="0" x2="23" y2="0" stroke="#7a4a0a" strokeWidth=".25" />
+          {/* Face cavity (lit by sun) */}
+          <rect x="14" y="-2" width="6" height="4" fill="#a87042" />
+          {/* Eye + nose hint */}
+          <circle cx="16.5" cy="-0.5" r=".3" fill="#1a0a04" />
+          <circle cx="18.5" cy="-0.5" r=".3" fill="#1a0a04" />
+          <line x1="17.5" y1="0.5" x2="17.5" y2="1.4" stroke="#1a0a04" strokeWidth=".18" />
+          {/* Cobra uraeus on forehead */}
+          <ellipse cx="17.5" cy="-3.5" rx=".7" ry=".4" fill="#ffd166" />
+          {/* Ceremonial false beard */}
+          <rect x="16.5" y="2" width="2" height="2.5" fill="#5a3a0a" />
         </g>
         {/* Sand foreground */}
         <path d="M0,50 L0,42 Q14,40 28,42 Q44,44 60,42 Q76,40 92,44 Q98,46 100,44 L100,50 Z" fill="url(#ph-sand)" />
