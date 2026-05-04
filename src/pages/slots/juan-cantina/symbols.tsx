@@ -224,51 +224,6 @@ export function TequilaSymbol() {
   );
 }
 
-const SYMBOL_COLOR: Record<string, string> = {
-  chilli: '#ff5560',
-  taco:   '#ffae50',
-  lime:   '#1fff7a',
-  cactus: '#5a8a3c',
-};
-
-const SYMBOL_EMOJI: Record<string, string> = {
-  chilli: '🌶️',
-  taco:   '🌮',
-  lime:   '🍋',
-  cactus: '🌵',
-};
-
-function makeEmojiSymbol(id: string) {
-  const color = SYMBOL_COLOR[id] ?? '#ffae50';
-  const emoji = SYMBOL_EMOJI[id] ?? '?';
-  return function EmojiSymbol() {
-    return (
-      <div className={wrap} style={{ color }}>
-        <div className="relative w-full h-full flex items-center justify-center">
-          <div
-            className="absolute inset-2 rounded-full"
-            style={{
-              background:
-                `radial-gradient(circle at 35% 30%, ${color}55, ${color}20 60%, transparent 80%)`,
-              filter: 'blur(2px)',
-            }}
-          />
-          <span
-            className="relative select-none"
-            style={{
-              fontSize: '70%',
-              filter: `drop-shadow(0 4px 6px rgba(0,0,0,.6)) drop-shadow(0 0 8px ${color}88)`,
-              lineHeight: 1,
-            }}
-          >
-            {emoji}
-          </span>
-        </div>
-      </div>
-    );
-  };
-}
-
 /** Chili pepper — bright red with green stem, glossy curved body. */
 export function ChilliSymbol() {
   return (
@@ -370,8 +325,103 @@ export function TacoSymbol() {
     </div>
   );
 }
-export const LimeSymbol = makeEmojiSymbol('lime');
-export const CactusSymbol = makeEmojiSymbol('cactus');
+/** Lime — half-cut citrus showing the wedge segments inside. */
+export function LimeSymbol() {
+  return (
+    <div className={wrap} style={{ color: '#1fff7a' }}>
+      <svg viewBox="0 0 64 64" className="w-full h-full">
+        <defs>
+          <radialGradient id="lm-flesh" cx="50%" cy="50%" r="55%">
+            <stop offset="0%" stopColor="#e8ffd0" />
+            <stop offset="55%" stopColor="#9bdf66" />
+            <stop offset="100%" stopColor="#3a8a1a" />
+          </radialGradient>
+          <linearGradient id="lm-rind" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#3acf60" />
+            <stop offset="50%" stopColor="#1fff7a" />
+            <stop offset="100%" stopColor="#0a6a18" />
+          </linearGradient>
+        </defs>
+        {/* Outer rind */}
+        <circle cx="32" cy="32" r="22" fill="url(#lm-rind)" stroke="#0a6a18" strokeWidth="1.2" />
+        {/* Inner flesh */}
+        <circle cx="32" cy="32" r="18" fill="url(#lm-flesh)" stroke="rgba(58,138,26,.6)" strokeWidth=".8" />
+        {/* Lime wedge segments — 8 lines radiating from centre */}
+        {Array.from({ length: 8 }).map((_, i) => {
+          const angle = (i * Math.PI) / 4;
+          const x1 = 32 + Math.cos(angle) * 4;
+          const y1 = 32 + Math.sin(angle) * 4;
+          const x2 = 32 + Math.cos(angle) * 17;
+          const y2 = 32 + Math.sin(angle) * 17;
+          return (
+            <line
+              key={i}
+              x1={x1}
+              y1={y1}
+              x2={x2}
+              y2={y2}
+              stroke="#fff5e0"
+              strokeWidth="1.2"
+              strokeLinecap="round"
+              opacity=".85"
+            />
+          );
+        })}
+        {/* Centre pulp dot */}
+        <circle cx="32" cy="32" r="2.4" fill="#fff5e0" stroke="#3a8a1a" strokeWidth=".5" />
+        {/* Highlight (top-left specular) */}
+        <ellipse cx="22" cy="22" rx="5" ry="3" fill="rgba(255,255,255,.5)" transform="rotate(-30 22 22)" />
+      </svg>
+    </div>
+  );
+}
+
+/** Cactus — saguaro silhouette with small spines, in a sandy ground. */
+export function CactusSymbol() {
+  return (
+    <div className={wrap} style={{ color: '#5a8a3c' }}>
+      <svg viewBox="0 0 64 64" className="w-full h-full">
+        <defs>
+          <linearGradient id="cct-body" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#9bdf66" />
+            <stop offset="50%" stopColor="#5a8a3c" />
+            <stop offset="100%" stopColor="#1a3a08" />
+          </linearGradient>
+          <linearGradient id="cct-pot" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#a8761a" />
+            <stop offset="100%" stopColor="#3a1a04" />
+          </linearGradient>
+        </defs>
+        {/* Main trunk */}
+        <rect x="26" y="14" width="12" height="36" rx="6" fill="url(#cct-body)" stroke="#1a3a08" strokeWidth="1" />
+        {/* Left arm */}
+        <path d="M 26 28 L 18 28 Q 14 28 14 32 L 14 38 Q 14 42 18 42 L 22 42" fill="url(#cct-body)" stroke="#1a3a08" strokeWidth="1" strokeLinejoin="round" />
+        {/* Right arm */}
+        <path d="M 38 24 L 46 24 Q 50 24 50 28 L 50 36 Q 50 40 46 40 L 42 40" fill="url(#cct-body)" stroke="#1a3a08" strokeWidth="1" strokeLinejoin="round" />
+        {/* Spines / stripes — vertical thin lines */}
+        {[28, 32, 36].map((x, i) => (
+          <line key={`t-${i}`} x1={x} y1="18" x2={x} y2="48" stroke="#1a3a08" strokeWidth=".4" opacity=".55" />
+        ))}
+        <line x1="16" y1="32" x2="16" y2="40" stroke="#1a3a08" strokeWidth=".4" opacity=".55" />
+        <line x1="48" y1="28" x2="48" y2="38" stroke="#1a3a08" strokeWidth=".4" opacity=".55" />
+        {/* Small needle dots */}
+        {[
+          [28, 22], [36, 22], [28, 30], [36, 30], [28, 38], [36, 38],
+          [16, 36], [48, 32], [48, 36],
+        ].map(([x, y], i) => (
+          <circle key={`n-${i}`} cx={x} cy={y} r=".3" fill="#fff5e0" />
+        ))}
+        {/* Pink flower bloom on top */}
+        <circle cx="32" cy="14" r="2.5" fill="#ff5fa2" stroke="#7a124d" strokeWidth=".4" />
+        <circle cx="32" cy="14" r="1" fill="#ffd166" />
+        {/* Pot at base */}
+        <path d="M 22 50 L 42 50 L 40 60 L 24 60 Z" fill="url(#cct-pot)" stroke="#1a0a04" strokeWidth=".7" />
+        {/* Pot rim highlight */}
+        <rect x="22" y="50" width="20" height="2" fill="rgba(255,209,102,.35)" />
+      </svg>
+    </div>
+  );
+}
 
 /** Sugar skull (calavera) — Day of the Dead style with marigold flower
  *  in the forehead, decorated swirls around the eye sockets, and pink
