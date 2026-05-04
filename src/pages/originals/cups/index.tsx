@@ -12,6 +12,7 @@ import {
   multiplierFor,
   play,
 } from './engine';
+import { fireConfetti } from '../../../lib/confetti';
 
 const DIFFICULTIES: Difficulty[] = ['easy', 'medium', 'hard'];
 type Phase = 'idle' | 'shuffling' | 'pick' | 'reveal';
@@ -55,6 +56,9 @@ export function CupsGame() {
       if (r.win) {
         balance.credit(r.payout);
         sound.play(r.multiplier >= 4 ? 'big-win' : 'win');
+        fireConfetti({
+          count: r.multiplier >= 4 ? 110 : 60,
+        });
       } else {
         sound.play('drop');
       }
