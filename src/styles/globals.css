@@ -1392,6 +1392,14 @@
   50%      { transform: translate(-50%, -50%) scale(1.04); filter: blur(.4px) brightness(1.08); }
 }
 
+/* Big Juan arena spotlights — slow opacity lift so the stage lighting
+ * pulses with the announcer's rhythm. Subtle so it reads as ambient
+ * stadium lighting rather than a deliberate effect. */
+@keyframes bjSpotlightPulse {
+  0%, 100% { opacity: 0.85; }
+  50%      { opacity: 1;    }
+}
+
 /* Big Juan crowd silhouette bob — heads/shoulders cheering on a short
  * cycle. Pure scaleY oscillation pivoted at one edge of each band so
  * the silhouette tops/bottoms (where the heads are) move while the

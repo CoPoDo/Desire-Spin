@@ -1139,7 +1139,10 @@ function BigJuanBackdrop() {
             'radial-gradient(80% 60% at 50% 38%, #ff5560 0%, #5a0810 40%, #14040a 75%, #02010a 100%)',
         }}
       />
-      {/* Spotlight rays */}
+      {/* Spotlight rays — two top-corner cones + a centre stage glow.
+       *  Real arena spotlights pulse with the ring announcer's beats;
+       *  the soft brightness lift here reads as the lighting board
+       *  swelling to highlight the action. */}
       <div
         className="absolute inset-0"
         style={{
@@ -1149,6 +1152,7 @@ function BigJuanBackdrop() {
             radial-gradient(60% 30% at 50% 60%, rgba(255,209,102,.18), transparent 75%)
           `,
           mixBlendMode: 'screen',
+          animation: 'bjSpotlightPulse 3.4s ease-in-out infinite',
         }}
       />
       {/* Centre spotlight beam — bright gold radial behind the reel area
