@@ -91,8 +91,10 @@ const FRAME_DELAY: Record<string, number> = {
   lightningStrike: 1500,    // dramatic Zeus pause
   multipliersLanded: 480,   // subtle orb thump
   wins: 600,                // winning highlight hold
-  tumble: 540,              // matches tumble cells landing (300ms drop +
-                            //   stagger), was 260 — way too quick
+  tumble: 850,              // matches tumble cells landing in last
+                            //   column (5*80ms stagger + 420ms drop ≈
+                            //   820ms). Was 540 — last column was still
+                            //   landing when the next frame fired.
   scattersWon: 750,         // scatter pay flash
   freeSpinsAwarded: 1100,   // award announcement
   freeSpinsBegin: 950,      // FS session start
@@ -108,7 +110,7 @@ const TURBO_MIN_DELAY: Record<string, number> = {
   lightningStrike: 800,
   multipliersLanded: 220,
   wins: 280,
-  tumble: 280,
+  tumble: 460,
   scattersWon: 380,
   freeSpinsAwarded: 700,
   freeSpinsBegin: 600,
