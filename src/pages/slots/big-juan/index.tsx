@@ -59,6 +59,7 @@ export function BigJuan() {
   const [autoplaySheetOpen, setAutoplaySheetOpen] = useState(false);
   const [bigWin, setBigWin] = useState<{ payout: number; tier: 'big' | 'mega' | 'epic' } | null>(null);
   const [paytableOpen, setPaytableOpen] = useState(false);
+  const [turbo, setTurbo] = useState(false);
 
   // Menu / panels
   const [menuOpen, setMenuOpen] = useState(false);
@@ -116,9 +117,10 @@ export function BigJuan() {
     const rng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
     const r = play(rng, false);
 
-    // Reveal reels left-to-right
+    // Reveal reels left-to-right (turbo cuts the stagger by 70%).
+    const reelStagger = turbo ? 70 : 220;
     for (let reel = 0; reel < 5; reel++) {
-      await new Promise<void>((res) => setTimeout(res, 220));
+      await new Promise<void>((res) => setTimeout(res, reelStagger));
       setGrid((prev) => {
         const next = [...prev];
         next[reel] = r.grid[reel]!;
@@ -200,7 +202,7 @@ export function BigJuan() {
     });
     session.recordSpin(bet, payout, false);
     setBusy(false);
-  }, [busy, bonus, bet, balance, fairness, sound, history, session]);
+  }, [busy, bonus, bet, balance, fairness, sound, history, session, turbo]);
 
   /** Bonus round resolved — pay the total mult × bet and clear bonus state. */
   const resolveBonus = useCallback((totalBonusMult: number) => {
@@ -303,6 +305,18 @@ export function BigJuan() {
             className="px-2 py-1 rounded-full bg-accent text-bg text-[10px] font-bold uppercase tracking-wider"
           >
             +1k
+          </button>
+          <button
+            aria-label="Turbo"
+            onClick={() => setTurbo((t) => !t)}
+            className="flex items-center justify-center w-9 h-9 rounded-full backdrop-blur-sm border text-base"
+            style={{
+              background: turbo ? 'rgba(31,255,122,.2)' : 'rgba(20,20,30,.6)',
+              borderColor: turbo ? 'rgba(31,255,122,.6)' : 'rgba(255,255,255,.15)',
+              color: turbo ? '#1fff7a' : '#9aa3b2',
+            }}
+          >
+            ⚡
           </button>
           <button
             aria-label="Menu"
