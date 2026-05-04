@@ -128,7 +128,7 @@ Hard-coded defaults in `src/pages/slots/gates-of-olympus/index.tsx`:
 
 ## Originals (Stake-style)
 
-25 Stake-style games deployed, all using the shared `OriginalPageLayout`
+26 Stake-style games deployed, all using the shared `OriginalPageLayout`
 (back / title / balance + refill / menu) and the provably-fair RNG via
 `fairness.consumeNonce()`. Each one is in `src/pages/originals/<name>/`
 with `engine.ts` (game logic) + `index.tsx` (UI).
@@ -160,6 +160,7 @@ with `engine.ts` (game logic) + `index.tsx` (UI).
 | Sic Bo    | 99%    | 3-dice classic, multi-bet board (Small/Big/Triple/Total) |
 | Mini Roulette | 99% | 13-pocket wheel (0+1-12), straight 12.87× / outside 2.145× |
 | Scratch   | 99%    | 3×3 instant-win, match 3 symbols (0.5× → 200×) |
+| Penalty   | 99%    | Pick goal zone, beat keeper, 1.125×–1.65× by zone risk |
 
 All games that make sense (Dice/Limbo/Plinko/Wheel/Crash/Diamonds) ship
 with **Manual / Auto tabs** and auto-bet config (count + stop-on-profit
