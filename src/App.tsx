@@ -54,35 +54,35 @@ export default function App() {
         {/* Slot games — fullscreen immersive layout, no sidebar/footer */}
         <Route
           path="/slots/sweet-bonanza"
-          element={<SlotPageLayout><SweetBonanza /></SlotPageLayout>}
+          element={<SlotPageLayout title="Sweet Bonanza"><SweetBonanza /></SlotPageLayout>}
         />
         <Route
           path="/slots/gates-of-olympus"
-          element={<SlotPageLayout><GatesOfOlympus /></SlotPageLayout>}
+          element={<SlotPageLayout title="Gates of Olympus"><GatesOfOlympus /></SlotPageLayout>}
         />
         <Route
           path="/slots/sugar-rush"
-          element={<SlotPageLayout><SugarRush /></SlotPageLayout>}
+          element={<SlotPageLayout title="Sugar Rush"><SugarRush /></SlotPageLayout>}
         />
         <Route
           path="/slots/juan-cantina"
-          element={<SlotPageLayout><JuanCantina /></SlotPageLayout>}
+          element={<SlotPageLayout title="Juan's Cantina"><JuanCantina /></SlotPageLayout>}
         />
         <Route
           path="/slots/wanted-wild"
-          element={<SlotPageLayout><WantedWild /></SlotPageLayout>}
+          element={<SlotPageLayout title="Wanted Dead or a Wild"><WantedWild /></SlotPageLayout>}
         />
         <Route
           path="/slots/pharaoh-gold"
-          element={<SlotPageLayout><PharaohGold /></SlotPageLayout>}
+          element={<SlotPageLayout title="Pharaoh's Gold"><PharaohGold /></SlotPageLayout>}
         />
         <Route
           path="/slots/wolf-gold"
-          element={<SlotPageLayout><WolfGold /></SlotPageLayout>}
+          element={<SlotPageLayout title="Wolf Gold"><WolfGold /></SlotPageLayout>}
         />
         <Route
           path="/slots/big-juan"
-          element={<SlotPageLayout><BigJuan /></SlotPageLayout>}
+          element={<SlotPageLayout title="Big Juan"><BigJuan /></SlotPageLayout>}
         />
         <Route path="/originals/dice" element={<DiceGame />} />
         <Route path="/originals/limbo" element={<LimboGame />} />

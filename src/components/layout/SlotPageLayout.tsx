@@ -8,9 +8,16 @@ import { SessionStatsPanel } from '../SessionStatsPanel';
 import { BackIcon, MenuDotsIcon } from '../ui/icons';
 
 /** Full-screen immersive layout for a slot game page. No sidebar, no footer.
- *  A compact floating top bar shows balance + back link + sound toggle.
- *  Designed for mobile-first portrait phones. */
-export function SlotPageLayout({ children }: { children: ReactNode }) {
+ *  A compact floating top bar shows back link / game title / balance +
+ *  refill / menu — matching the Originals top-bar pattern so the lobby
+ *  feels unified. */
+export function SlotPageLayout({
+  children,
+  title,
+}: {
+  children: ReactNode;
+  title?: string;
+}) {
   const { balance, sound } = useGame();
   const [fairnessOpen, setFairnessOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -43,7 +50,22 @@ export function SlotPageLayout({ children }: { children: ReactNode }) {
           <BackIcon size={20} strokeWidth={2.4} />
         </Link>
 
-        <div className="flex-1 flex items-center justify-center gap-1">
+        <div className="flex-1 flex items-center justify-center gap-1.5">
+          {title && (
+            <div
+              className="font-display font-extrabold text-sm sm:text-base whitespace-nowrap mr-1.5"
+              style={{
+                background: 'linear-gradient(180deg, #fff5c4 0%, #ffd166 60%, #c8932e 100%)',
+                WebkitBackgroundClip: 'text',
+                backgroundClip: 'text',
+                color: 'transparent',
+                filter: 'drop-shadow(0 2px 4px rgba(0,0,0,.55))',
+                letterSpacing: '0.04em',
+              }}
+            >
+              {title}
+            </div>
+          )}
           <div
             className="px-3 py-1 rounded-full bg-black/45 backdrop-blur-sm border border-[#ffc62a]/35 flex items-center gap-2"
             style={{ boxShadow: '0 0 18px rgba(255,198,42,.18)' }}
