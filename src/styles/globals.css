@@ -593,6 +593,129 @@
   background: linear-gradient(180deg, rgba(255, 232, 244, 0.08) 0%, transparent 28%);
   pointer-events: none;
 }
+
+/* ==========================================================================
+   JUAN'S CANTINA — Mexican mariachi theme. Sun-baked desert palette.
+   ========================================================================== */
+.cell-juan {
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(255, 174, 80, 0.32), transparent 65%),
+    linear-gradient(180deg, rgba(80, 30, 8, 0.78) 0%, rgba(40, 14, 2, 0.85) 100%);
+  border: 1px solid rgba(255, 174, 80, 0.32);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 224, 168, 0.22),
+    inset 0 -8px 18px rgba(0, 0, 0, 0.45),
+    inset 0 0 0 1px rgba(255, 174, 80, 0.07),
+    0 6px 18px rgba(0, 0, 0, 0.45);
+  border-radius: 12px;
+  position: relative;
+}
+.cell-juan::before {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255, 232, 168, 0.10) 0%, transparent 28%);
+  pointer-events: none;
+}
+.cell-juan.win {
+  animation: juanWin 620ms ease-out;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 224, 168, 0.55),
+    inset 0 0 24px rgba(255, 174, 80, 0.45),
+    0 0 24px rgba(255, 174, 80, 0.6);
+}
+@keyframes juanWin {
+  0% { transform: scale(1); filter: brightness(1); }
+  50% { transform: scale(1.07); filter: brightness(1.55) saturate(1.25); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
+
+/* Juan symbol container — shared with bonanza-sym semantics but its own
+ * tinted drop-shadow so the gold/red palette reads. */
+.juan-sym {
+  width: 92%;
+  height: 92%;
+  display: grid;
+  place-items: center;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.65)) saturate(1.1);
+  transform: translateZ(0);
+  will-change: transform;
+}
+/* Maraca scatter pulses to draw the eye */
+.juan-sym-scatter {
+  animation: juanScatterPulse 1.7s ease-in-out infinite;
+  filter: drop-shadow(0 3px 6px rgba(0,0,0,.65))
+          drop-shadow(0 0 14px rgba(255, 200, 80, 0.7));
+}
+@keyframes juanScatterPulse {
+  0%, 100% { transform: scale(1) translateZ(0); opacity: 0.95; }
+  50%      { transform: scale(1.05) translateZ(0); opacity: 1; }
+}
+/* Juan (top-pay) gently pulses like a cantina spotlight */
+.juan-sym-hero {
+  animation: juanHeroPulse 1.9s ease-in-out infinite;
+}
+@keyframes juanHeroPulse {
+  0%, 100% { transform: scale(1) translateZ(0); }
+  50%      { transform: scale(1.05) translateZ(0); }
+}
+
+/* Juan multiplier orb — fiesta-firework: yellow→red→burgundy */
+.juan-orb {
+  position: relative;
+  width: 88%;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 0.95) 0%, rgba(255, 240, 168, 0.85) 12%, transparent 28%),
+    radial-gradient(circle at 50% 55%, #fff8c4 0%, #ffae50 22%, #ff5560 50%, #c8102e 78%, #5a0810 100%);
+  border: 2px solid rgba(255, 232, 168, 0.85);
+  box-shadow:
+    inset 0 0 18px rgba(255, 174, 80, 0.6),
+    inset 0 -6px 12px rgba(50, 8, 8, 0.6),
+    0 0 14px rgba(255, 174, 80, 0.85),
+    0 0 32px rgba(200, 16, 46, 0.55),
+    0 8px 18px rgba(0, 0, 0, 0.6);
+  animation: bonanzaOrbBreathe 1.6s ease-in-out infinite;
+}
+.juan-orb-text {
+  font-family: 'Cherry Bomb One', 'Fredoka', system-ui, sans-serif;
+  font-weight: 800;
+  font-size: clamp(0.78rem, 2.2cqw, 1.95rem);
+  color: #fff;
+  text-shadow:
+    0 0 4px rgba(0, 0, 0, 0.85),
+    0 2px 4px rgba(0, 0, 0, 0.85),
+    0 0 12px rgba(255, 200, 80, 0.7);
+  letter-spacing: -0.02em;
+}
+.juan-orb-big {
+  border-width: 3px;
+  background:
+    radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 1) 0%, rgba(255, 240, 200, 0.95) 12%, transparent 28%),
+    radial-gradient(circle at 50% 55%, #fff8c4 0%, #ffd166 18%, #ff5560 45%, #c8102e 75%, #3a0408 100%);
+  box-shadow:
+    inset 0 0 24px rgba(255, 209, 102, 0.85),
+    inset 0 -8px 14px rgba(40, 4, 4, 0.7),
+    0 0 24px rgba(255, 174, 80, 0.95),
+    0 0 48px rgba(200, 16, 46, 0.65),
+    0 10px 22px rgba(0, 0, 0, 0.6);
+}
+.juan-orb-huge {
+  border-width: 3px;
+  background:
+    radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 1) 0%, rgba(255, 248, 200, 0.95) 10%, transparent 28%),
+    radial-gradient(circle at 50% 55%, #fffbe0 0%, #ffd166 18%, #ff7a30 45%, #c8102e 70%, #2a0408 100%);
+  box-shadow:
+    inset 0 0 28px rgba(255, 200, 80, 0.95),
+    inset 0 -10px 16px rgba(58, 4, 4, 0.8),
+    0 0 32px rgba(255, 174, 80, 1),
+    0 0 64px rgba(200, 16, 46, 0.8),
+    0 12px 28px rgba(0, 0, 0, 0.7);
+}
 .cell-bonanza.win {
   animation: bonanzaWin 620ms ease-out;
   box-shadow:

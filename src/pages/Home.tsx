@@ -2,6 +2,7 @@ import { GameCard } from '../components/layout/GameCard';
 import { BonanzaArt } from './slots/sweet-bonanza/Art';
 import { OlympusArt } from './slots/gates-of-olympus/Art';
 import { SugarRushArt } from './slots/sugar-rush/Art';
+import { JuanCantinaArt } from './slots/juan-cantina/Art';
 
 export function Home() {
   return (
@@ -28,10 +29,12 @@ export function Home() {
             art={<OlympusArt />}
           />
           <GameCard
-            title="Big Bass Bonanza"
-            subtitle="Coming soon"
-            disabled
-            art={<PlaceholderArt label="🎣" tone="#10334a" />}
+            to="/slots/juan-cantina"
+            title="Juan's Cantina"
+            subtitle="Tumble · Mexican fiesta"
+            badge="NEW"
+            bg="linear-gradient(180deg, #ff8a40 0%, #6a142e 100%)"
+            art={<JuanCantinaArt />}
           />
           <GameCard
             to="/slots/sugar-rush"

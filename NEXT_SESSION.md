@@ -4,8 +4,8 @@ A running note for whoever (Claude or human) picks up this repo next.
 
 ## Status
 
-**Gates of Olympus**, **Sweet Bonanza** and **Sugar Rush** now run on
-the ImmersiveSlotView shell (full-screen layout, big-win celebration, free
+**Gates of Olympus**, **Sweet Bonanza**, **Sugar Rush** and **Juan's
+Cantina** now run on the ImmersiveSlotView shell (full-screen layout, big-win celebration, free
 spins HUD, buy bonus, ante bet, autoplay, turbo, tap-to-skip, fairness
 panel, coin shower, etc). They share an engine but have their own
 visual identities — Olympus uses a painted Zeus/arch backdrop image,
