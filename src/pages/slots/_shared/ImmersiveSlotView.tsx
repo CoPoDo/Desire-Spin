@@ -144,6 +144,20 @@ export function ImmersiveSlotView({
   const aliveRef = useRef(true);
   const busyRef = useRef(false);
   const turboRef = useRef(turbo);
+  // Track every state-mutating setTimeout we schedule during a spin so we
+  // can clear them at the start of the NEXT spin. Without this, a stale
+  // "clear scatterFlashes after 1100ms" from spin N could clobber state
+  // mid-spin (N+1) — visible bug where flashes/orbs vanish unexpectedly.
+  const spinTimers = useRef<number[]>([]);
+  const scheduleSpin = useCallback((fn: () => void, ms: number): number => {
+    const id = window.setTimeout(fn, ms);
+    spinTimers.current.push(id);
+    return id;
+  }, []);
+  const clearSpinTimers = useCallback(() => {
+    for (const id of spinTimers.current) clearTimeout(id);
+    spinTimers.current = [];
+  }, []);
   useEffect(() => { turboRef.current = turbo; saveJson('turbo', turbo); }, [turbo]);
 
   // ----- Tune mode (?tune=1) lets the user dial in the arch coordinates live.
@@ -170,6 +184,7 @@ export function ImmersiveSlotView({
     return () => {
       aliveRef.current = false;
       music.stop(); // stop music when leaving the slot page
+      clearSpinTimers();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -211,14 +226,14 @@ export function ImmersiveSlotView({
               }));
               setScatterFlashes(flashes);
               for (let i = 0; i < scatterPositions.length; i++) {
-                setTimeout(() => sound.play('scatter-land'), 100 + i * 130);
+                scheduleSpin(() => sound.play('scatter-land'), 100 + i * 130);
               }
               // Set anticipation level: 2 = subtle tease, 3+ = full anticipation
               if (scatterPositions.length >= 2) {
                 setAnticipation(scatterPositions.length);
                 if (scatterPositions.length >= 3) sound.play('thunder');
               }
-              setTimeout(() => setScatterFlashes([]), 1100);
+              scheduleSpin(() => setScatterFlashes([]), 1100);
             }
             break;
           }
@@ -230,21 +245,21 @@ export function ImmersiveSlotView({
             // Stagger orb thunks + impact rings during the strike for impact.
             for (let i = 0; i < frame.landings.length; i++) {
               const l = frame.landings[i]!;
-              setTimeout(() => {
+              scheduleSpin(() => {
                 sound.play('multiplier');
                 setOrbImpacts((prev) => [...prev, { id: `oi-ls-${l.key}-${i}`, col: l.col, row: l.row }]);
               }, 600 + i * 110);
             }
             // Apply the new grid (with multipliers) about 80% through the
             // strike animation so the orbs visually appear during the boom.
-            setTimeout(() => {
+            scheduleSpin(() => {
               setFloatingMults(frame.landings);
               setGrid(frame.grid);
               lastGrid = frame.grid;
             }, 600);
             // Clear impacts + hide overlay near the end of the frame delay.
-            setTimeout(() => setOrbImpacts([]), 1700);
-            setTimeout(() => setLightningStrike(false), 1700);
+            scheduleSpin(() => setOrbImpacts([]), 1700);
+            scheduleSpin(() => setLightningStrike(false), 1700);
             break;
           }
           case 'wins': {
@@ -288,7 +303,7 @@ export function ImmersiveSlotView({
               row: l.row,
             }));
             setOrbImpacts(impacts);
-            setTimeout(() => setOrbImpacts([]), 700);
+            scheduleSpin(() => setOrbImpacts([]), 700);
             break;
           }
           case 'tumble': {
@@ -318,9 +333,9 @@ export function ImmersiveSlotView({
               }));
               setScatterFlashes(flashes);
               for (let i = 0; i < newScatters.length; i++) {
-                setTimeout(() => sound.play('scatter-land'), 80 + i * 110);
+                scheduleSpin(() => sound.play('scatter-land'), 80 + i * 110);
               }
-              setTimeout(() => setScatterFlashes([]), 900);
+              scheduleSpin(() => setScatterFlashes([]), 900);
             }
             const totalScatters = countScattersInGrid(frame.grid, cfg.scatterId);
             if (totalScatters >= 2) {
@@ -347,7 +362,7 @@ export function ImmersiveSlotView({
             sound.play('free-spins-trigger');
             if (frame.reason !== 'retrigger') {
               setFsOverlay({ count: frame.count, reason: frame.reason });
-              setTimeout(() => setFsOverlay(null), 2400);
+              scheduleSpin(() => setFsOverlay(null), 2400);
             } else {
               // retrigger gets a small "+5" pulse via status, no big overlay
               setStatusMsg(`+${frame.count} retrigger!`);
@@ -375,7 +390,7 @@ export function ImmersiveSlotView({
             sound.play('free-spins-end');
             // Show outro overlay summarizing the FS session win.
             setFsOutroOverlay({ totalPayout: frame.totalPayout });
-            setTimeout(() => setFsOutroOverlay(null), 2800);
+            scheduleSpin(() => setFsOutroOverlay(null), 2800);
             setFreeSpins(null);
             inFsLocal = false;
             const tier = winTierFor(frame.totalPayout, betUsed);
@@ -431,6 +446,7 @@ export function ImmersiveSlotView({
       busyRef.current = true;
       setBusy(true);
       skipRef.current = false; // reset skip on each spin
+      clearSpinTimers(); // kill any stale scheduled state mutations
       setBigWin(null);
       setFloatingMults([]);
       setOrbImpacts([]);
