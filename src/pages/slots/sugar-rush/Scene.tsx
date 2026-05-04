@@ -298,9 +298,18 @@ export function SugarRushScene() {
         <ellipse cx="32" cy="52" rx="4" ry="5" fill="url(#sr-gb)" stroke="#5a0828" strokeWidth=".6" />
         {/* Face */}
         <circle cx="22" cy="13" r="1.2" fill="#1a0a04" />
-        <circle cx="28" cy="13" r="1.2" fill="#1a0a04" />
+        {/* Right eye periodically winks — gummy bear gives the player
+         *  a cheeky cantina-vibe greeting every ~5s. ScaleY to 0 for
+         *  a 5% slice of the cycle so it reads as a quick blink. */}
+        <circle
+          cx="28" cy="13" r="1.2" fill="#1a0a04"
+          style={{ animation: 'sugarBearWink 5s ease-in-out infinite', transformOrigin: '28px 13px' }}
+        />
         <circle cx="22" cy="13" r=".4" fill="#fff" />
-        <circle cx="28" cy="13" r=".4" fill="#fff" />
+        <circle
+          cx="28" cy="13" r=".4" fill="#fff"
+          style={{ animation: 'sugarBearWink 5s ease-in-out infinite', transformOrigin: '28px 13px' }}
+        />
         {/* Tiny nose */}
         <circle cx="25" cy="16" r=".7" fill="#5a0828" />
         {/* Smile */}

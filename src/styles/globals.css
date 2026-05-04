@@ -1735,6 +1735,14 @@
   0%, 100% { transform: scale(1) translateZ(0); opacity: 0.95; }
   50%      { transform: scale(1.05) translateZ(0); opacity: 1; }
 }
+/* Sugar Rush gummy bear wink — right eye briefly closes via scaleY
+ * for a 5% slice of a 5s cycle. Reads as a cheeky wink rather than a
+ * blink (left eye stays open). */
+@keyframes sugarBearWink {
+  0%, 92%, 100% { transform: scaleY(1); }
+  95%, 97%      { transform: scaleY(0.05); }
+}
+
 /* Sugar Rush top-pay donut — gentle pulse + slow rotate so the hero
  * symbol visibly stands out from the cupcake/popsicle/gummy bear
  * supporting cast. The rotation is slow enough to read as the donut
