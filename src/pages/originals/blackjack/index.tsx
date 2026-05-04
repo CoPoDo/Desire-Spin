@@ -248,7 +248,7 @@ function CardView({ card, hidden, delay = 0 }: { card?: Card; hidden?: boolean; 
         initial={{ y: -20, opacity: 0, rotateY: 90 }}
         animate={{ y: 0, opacity: 1, rotateY: 0 }}
         transition={{ delay: delay / 1000, type: 'spring', stiffness: 240, damping: 20 }}
-        className="w-16 h-24 rounded-xl flex items-center justify-center"
+        className="relative w-16 h-24 rounded-xl flex items-center justify-center"
         style={{
           background:
             'repeating-linear-gradient(45deg, #2a3142, #2a3142 4px, #1a1f29 4px, #1a1f29 8px)',
@@ -256,7 +256,18 @@ function CardView({ card, hidden, delay = 0 }: { card?: Card; hidden?: boolean; 
           boxShadow: '0 8px 18px rgba(0,0,0,.5)',
         }}
       >
-        <span className="text-2xl text-ink-mute">⚡</span>
+        {/* Gold diamond ornament — proper card-back filigree instead
+         *  of a ⚡ emoji placeholder. */}
+        <div
+          className="rotate-45"
+          style={{
+            width: 18,
+            height: 18,
+            background: 'linear-gradient(135deg, #ffd166, #c8932e)',
+            border: '1px solid rgba(255,209,102,.65)',
+            boxShadow: 'inset 0 1px 0 rgba(255,255,255,.4)',
+          }}
+        />
       </motion.div>
     );
   }
@@ -267,7 +278,7 @@ function CardView({ card, hidden, delay = 0 }: { card?: Card; hidden?: boolean; 
       initial={{ y: -30, opacity: 0, rotateY: 180 }}
       animate={{ y: 0, opacity: 1, rotateY: 0 }}
       transition={{ delay: delay / 1000, type: 'spring', stiffness: 240, damping: 20 }}
-      className="w-16 h-24 rounded-xl flex flex-col items-center justify-center select-none font-bold"
+      className="relative w-16 h-24 rounded-xl select-none font-bold"
       style={{
         background: 'linear-gradient(180deg, #f5f0e4, #e8dfc9)',
         border: '2px solid #c8932e',
@@ -275,8 +286,21 @@ function CardView({ card, hidden, delay = 0 }: { card?: Card; hidden?: boolean; 
         color: red ? '#c8102e' : '#1a0f00',
       }}
     >
-      <div className="text-2xl leading-none">{rankLabel(card.rank)}</div>
-      <div className="text-xl mt-0.5">{card.suit}</div>
+      {/* Top-left corner pip */}
+      <div className="absolute top-1 left-1 leading-none flex flex-col items-center text-[10px]">
+        <span>{rankLabel(card.rank)}</span>
+        <span>{card.suit}</span>
+      </div>
+      {/* Bottom-right corner pip (rotated) */}
+      <div className="absolute bottom-1 right-1 leading-none flex flex-col items-center rotate-180 text-[10px]">
+        <span>{rankLabel(card.rank)}</span>
+        <span>{card.suit}</span>
+      </div>
+      {/* Centre rank + suit */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <div className="text-2xl leading-none">{rankLabel(card.rank)}</div>
+        <div className="text-xl mt-0.5">{card.suit}</div>
+      </div>
     </motion.div>
   );
 }
