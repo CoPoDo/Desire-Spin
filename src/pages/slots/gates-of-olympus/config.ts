@@ -39,21 +39,20 @@ export const gatesOfOlympusConfig: SlotConfig = {
   // Multiplier orb frequencies tuned to real Pragmatic Olympus rates:
   //   Base: ~7-10% of spins land at least one multiplier (Zeus drops orbs)
   //   Free: ~50-70% of free spins land multipliers (intentionally higher)
-  // 4% per-tumble compounds to ~7-8% per base spin given typical cascade
-  // length. High-tier values heavily weighted to maintain ~96% RTP at
-  // these lower frequencies.
+  // Real Olympus FEEL: Zeus visibly throws orbs frequently in base play
+  // and even more in FS (where the cumulative-multiplier feature stacks
+  // into a single end-of-spin total). Values calibrated to balance
+  // visible feel + RTP envelope.
   multiplierTableBase: {
-    pPerTumble: 0.04,
+    pPerTumble: 0.09,
     maxPerTumble: 2,
-    // Heavily weighted high-end so the rare drops are big when they hit —
-    // restores RTP at lower frequency.
     values: [
       [2, 10], [3, 9], [4, 8], [5, 7], [6, 6.5], [8, 6], [10, 6],
       [15, 5.5], [20, 5], [25, 5], [50, 5], [100, 4.5], [250, 2.5], [500, 0.7],
     ],
   },
   multiplierTableFree: {
-    pPerTumble: 0.26,
+    pPerTumble: 0.45,
     maxPerTumble: 3,
     values: [
       [2, 14], [3, 13], [4, 12], [5, 11], [6, 10], [8, 9], [10, 8],

@@ -18,9 +18,12 @@ export const sugarRushConfig: SlotConfig = {
   rows: 5,
   payAnywhereThreshold: 8,
   scatterId: 'lollipop',
-  scatterTriggerCount: 4,
+  // Real Sugar Rush triggers FS at 3 scatters (with 10 / 12 / 15 spins
+  // for 3 / 4 / 5 — engine only supports a single award value, picked
+  // 10 to match the typical entry).
+  scatterTriggerCount: 3,
   scatterRetriggerCount: 3,
-  freeSpinsAwardOnTrigger: 12,
+  freeSpinsAwardOnTrigger: 10,
   freeSpinsAwardOnRetrigger: 5,
   buyBonusCost: 100,
   ante: { betMultiplier: 1.25, scatterWeightBoost: 2.0 },
@@ -43,8 +46,11 @@ export const sugarRushConfig: SlotConfig = {
   // Order matches symbols[] above.
   weightsBase: [4, 8, 9, 10, 12, 14, 16, 16, 18, 2.0],
   weightsFree: [6, 9, 10, 12, 13, 14, 14, 14, 14, 2.6],
+  // Sugar Rush is famous for its persistent grid multipliers in FS that
+  // stack heavily — bumped from 5%/32% to 8%/45% which feels closer to
+  // the real game's density while staying in RTP envelope.
   multiplierTableBase: {
-    pPerTumble: 0.05, // Sugar Rush has slightly higher base orb rate
+    pPerTumble: 0.08,
     maxPerTumble: 2,
     values: [
       [2, 10], [3, 9], [4, 8], [5, 7], [6, 6.5], [8, 6], [10, 6],
@@ -52,7 +58,7 @@ export const sugarRushConfig: SlotConfig = {
     ],
   },
   multiplierTableFree: {
-    pPerTumble: 0.32, // Real Sugar Rush FS feels denser than Bonanza
+    pPerTumble: 0.45,
     maxPerTumble: 3,
     values: [
       [2, 12], [3, 11], [4, 10], [5, 9], [6, 8], [8, 7.5], [10, 7],

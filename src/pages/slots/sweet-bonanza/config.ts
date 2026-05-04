@@ -92,10 +92,14 @@ export const sweetBonanzaConfig: SlotConfig = {
   // Calibrated for ~96.5% RTP and ~0.4% scatter trigger rate.
   weightsBase: [4, 8, 9, 10, 12, 14, 16, 16, 18, 2.0],
   weightsFree: [6, 9, 10, 12, 13, 14, 14, 14, 14, 2.6],
-  // Multiplier frequencies tuned to real Pragmatic Sweet Bonanza rates
-  // (~7-10% base, ~50-70% in free spins).
+  // Multiplier frequencies — calibrated to real Sweet Bonanza FEEL while
+  // keeping RTP in the 96-98% test envelope:
+  //   - Base game: 7% per tumble (real game ~10% but at our orb-EV those
+  //     rates push RTP > 1.5, so tuned slightly down to match the actual
+  //     payout RTP target rather than exact orb frequency)
+  //   - Free spins: 40% per tumble (real game ~65-70% but again EV-balanced)
   multiplierTableBase: {
-    pPerTumble: 0.04,
+    pPerTumble: 0.07,
     maxPerTumble: 2,
     values: [
       [2, 10], [3, 9], [4, 8], [5, 7], [6, 6.5], [8, 6], [10, 6],
@@ -103,7 +107,7 @@ export const sweetBonanzaConfig: SlotConfig = {
     ],
   },
   multiplierTableFree: {
-    pPerTumble: 0.28,
+    pPerTumble: 0.40,
     maxPerTumble: 3,
     values: [
       [2, 12], [3, 11], [4, 10], [5, 9], [6, 8], [8, 7.5], [10, 7],
