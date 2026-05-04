@@ -1252,32 +1252,67 @@ function BigJuanBackdrop() {
           boxShadow: '0 0 6px rgba(255,209,102,.6)',
         }}
       />
-      {/* Papel picado bunting at top */}
-      <div
+      {/* Papel picado bunting at top — triangular SVG pennants on a sagging
+       *  string. Matches the Cantina scene's bunting so the two
+       *  Mexican-themed slots visually share the same fiesta language. */}
+      <svg
         className="absolute inset-x-0"
         style={{
-          top: '5%',
-          height: '5%',
-          background: `repeating-linear-gradient(
-            90deg,
-            #ff5560 0 6%,
-            transparent 6% 8%,
-            #1fff7a 8% 14%,
-            transparent 14% 16%,
-            #5fb8ff 16% 22%,
-            transparent 22% 24%,
-            #ffd166 24% 30%,
-            transparent 30% 32%,
-            #c042b8 32% 38%,
-            transparent 38% 40%
-          )`,
-          maskImage:
-            'repeating-linear-gradient(90deg, #000 0 6%, transparent 6% 8%, #000 8% 14%, transparent 14% 16%, #000 16% 22%, transparent 22% 24%, #000 24% 30%, transparent 30% 32%, #000 32% 38%, transparent 38% 40%)',
-          WebkitMaskImage:
-            'repeating-linear-gradient(90deg, #000 0 6%, transparent 6% 8%, #000 8% 14%, transparent 14% 16%, #000 16% 22%, transparent 22% 24%, #000 24% 30%, transparent 30% 32%, #000 32% 38%, transparent 38% 40%)',
-          opacity: 0.85,
+          top: '3%',
+          height: '7%',
+          width: '100%',
+          filter: 'drop-shadow(0 4px 6px rgba(0,0,0,.4))',
+          opacity: 0.92,
         }}
-      />
+        viewBox="0 0 100 7"
+        preserveAspectRatio="none"
+      >
+        {/* Sagging string */}
+        <path
+          d="M 0 1 Q 25 2.4 50 1.4 T 100 1"
+          fill="none"
+          stroke="rgba(0,0,0,.6)"
+          strokeWidth=".15"
+        />
+        {(() => {
+          const colors = ['#ff5560', '#1fff7a', '#5fb8ff', '#ffd166', '#c042b8', '#ffae50'];
+          const N = 16;
+          return Array.from({ length: N }).map((_, i) => {
+            const x = (i + 0.5) * (100 / N);
+            const yTop =
+              x < 50
+                ? 1 + 1.4 * (1 - Math.abs(x - 25) / 25)
+                : 1 + 1.4 * (1 - Math.abs(x - 75) / 25);
+            const w = 100 / N - 0.6;
+            const color = colors[i % colors.length]!;
+            const tipY = yTop + 4;
+            const cx = x;
+            const cy = yTop + 2;
+            return (
+              <g key={i}>
+                <path
+                  d={`M ${cx - w / 2} ${yTop} L ${cx + w / 2} ${yTop} L ${cx} ${tipY} Z`}
+                  fill={color}
+                  stroke="rgba(0,0,0,.45)"
+                  strokeWidth=".08"
+                  opacity=".92"
+                />
+                <path
+                  d={`M ${cx} ${cy - 0.55} L ${cx + 0.45} ${cy} L ${cx} ${cy + 0.55} L ${cx - 0.45} ${cy} Z`}
+                  fill="rgba(0,0,0,.35)"
+                />
+                <circle cx={cx - 0.85} cy={cy + 0.2} r=".16" fill="rgba(0,0,0,.3)" />
+                <circle cx={cx + 0.85} cy={cy + 0.2} r=".16" fill="rgba(0,0,0,.3)" />
+                <path
+                  d={`M ${cx - w / 2 + 0.1} ${yTop + 0.15} L ${cx} ${tipY - 0.2}`}
+                  stroke="rgba(255,255,255,.35)"
+                  strokeWidth=".1"
+                />
+              </g>
+            );
+          });
+        })()}
+      </svg>
       {/* Floating confetti sparks — small coloured rectangles drift up
        * from the bottom in the fiesta palette. Adds ambient lucha-arena
        * energy without competing with the reels. */}
