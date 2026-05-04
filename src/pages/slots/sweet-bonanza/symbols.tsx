@@ -8,17 +8,32 @@ const scatterWrap = 'bonanza-sym bonanza-sym-scatter';
 
 export function HeartSymbol() {
   return (
-    <div className={wrap}>
-      <svg viewBox="0 0 64 64" className="w-full h-full drop-shadow-[0_4px_8px_rgba(255,40,90,0.4)]">
+    <div className={`${wrap} bonanza-sym-heart`}>
+      <svg viewBox="0 0 64 64" className="w-full h-full">
         <defs>
-          <radialGradient id="hr" cx="50%" cy="40%" r="60%">
-            <stop offset="0%" stopColor="#ffd2e1" />
-            <stop offset="60%" stopColor="#ff3d6b" />
-            <stop offset="100%" stopColor="#a8123a" />
+          <radialGradient id="hr" cx="50%" cy="38%" r="65%">
+            <stop offset="0%" stopColor="#fff5f9" />
+            <stop offset="22%" stopColor="#ffb4c8" />
+            <stop offset="55%" stopColor="#ff3d6b" />
+            <stop offset="85%" stopColor="#c8123a" />
+            <stop offset="100%" stopColor="#5a081a" />
+          </radialGradient>
+          <radialGradient id="hr-glint" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" />
+            <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
           </radialGradient>
         </defs>
-        <path d="M32 56 C 8 38 4 22 18 14 C 26 10 32 16 32 22 C 32 16 38 10 46 14 C 60 22 56 38 32 56 Z" fill="url(#hr)" stroke="#7a0c2c" strokeWidth="1.5" />
-        <ellipse cx="22" cy="22" rx="6" ry="4" fill="#fff" opacity="0.55" />
+        <path
+          d="M32 56 C 8 38 4 22 18 14 C 26 10 32 16 32 22 C 32 16 38 10 46 14 C 60 22 56 38 32 56 Z"
+          fill="url(#hr)"
+          stroke="#5a081a"
+          strokeWidth="1.4"
+          strokeLinejoin="round"
+        />
+        {/* Big highlight */}
+        <ellipse cx="22" cy="20" rx="7" ry="4.5" fill="rgba(255,255,255,.65)" />
+        {/* Small sparkle */}
+        <circle cx="40" cy="30" r="3" fill="url(#hr-glint)" />
       </svg>
     </div>
   );

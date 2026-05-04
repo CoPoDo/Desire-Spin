@@ -618,15 +618,27 @@
   75%      { transform: translateY(4px)  rotate(-3deg); }
 }
 
-/* Sweet Bonanza symbol container — vibrant drop-shadow for the candy palette */
+/* Sweet Bonanza symbol container — vibrant drop-shadow for the candy palette.
+ * Larger than Olympus's 78% so the saturated fruits dominate the cell, matching
+ * real Sweet Bonanza's punchy filled-cell look. */
 .bonanza-sym {
-  width: 82%;
-  height: 82%;
+  width: 92%;
+  height: 92%;
   display: grid;
   place-items: center;
-  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.55));
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.55)) saturate(1.08);
   transform: translateZ(0);
   will-change: transform;
+}
+/* The heart is Bonanza's top-paying symbol — pulses gently like the real
+ * game so it visibly stands out from the fruit. Transform-only keyframes
+ * keep the cost negligible during cascades. */
+.bonanza-sym-heart {
+  animation: bonanzaHeartPulse 1.8s ease-in-out infinite;
+}
+@keyframes bonanzaHeartPulse {
+  0%, 100% { transform: scale(1) translateZ(0); }
+  50%      { transform: scale(1.06) translateZ(0); }
 }
 /* Lollipop scatter — pulses to draw the eye (transform-only, GPU-cheap) */
 .bonanza-sym-scatter {
