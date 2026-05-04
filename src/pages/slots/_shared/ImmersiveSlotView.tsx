@@ -2257,15 +2257,27 @@ export function ImmersiveSlotView({
             transition={{ duration: 0.35 }}
           >
             <motion.div
-              className="olympus-fs-sub text-[10px] md:text-sm mb-2"
+              className="text-[10px] md:text-sm mb-2 uppercase tracking-[0.42em] font-mono font-bold"
+              style={{
+                color: cfg.theme.accent,
+                textShadow: `0 0 14px ${cfg.theme.glow}, 0 2px 4px rgba(0,0,0,.5)`,
+              }}
               initial={{ y: -8, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
             >
               Free Spins Complete
             </motion.div>
             <motion.div
-              className="olympus-fs-title"
-              style={{ fontSize: 'clamp(28px, 8vw, 56px)' }}
+              className="font-serif italic font-bold"
+              style={{
+                fontSize: 'clamp(28px, 8vw, 56px)',
+                background: `linear-gradient(180deg, #ffffff 0%, #fff5dc 30%, ${cfg.theme.accent} 65%, rgba(0,0,0,.55) 100%)`,
+                WebkitBackgroundClip: 'text',
+                backgroundClip: 'text',
+                color: 'transparent',
+                filter: `drop-shadow(0 0 24px ${cfg.theme.glow}) drop-shadow(0 4px 8px rgba(0,0,0,.6))`,
+                letterSpacing: '-0.02em',
+              }}
               initial={{ scale: 0.5, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ type: 'spring', stiffness: 220, damping: 14 }}
