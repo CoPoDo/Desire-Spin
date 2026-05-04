@@ -8,6 +8,7 @@ import { Settings } from './pages/Settings';
 import { ComingSoon } from './components/layout/ComingSoon';
 import { SweetBonanza } from './pages/slots/sweet-bonanza';
 import { GatesOfOlympus } from './pages/slots/gates-of-olympus';
+import { SugarRush } from './pages/slots/sugar-rush';
 import { DiceGame } from './pages/originals/dice';
 import { LimboGame } from './pages/originals/limbo';
 import { MinesGame } from './pages/originals/mines';
@@ -53,6 +54,10 @@ export default function App() {
         <Route
           path="/slots/gates-of-olympus"
           element={<SlotPageLayout><GatesOfOlympus /></SlotPageLayout>}
+        />
+        <Route
+          path="/slots/sugar-rush"
+          element={<SlotPageLayout><SugarRush /></SlotPageLayout>}
         />
         <Route path="/originals/dice" element={<DiceGame />} />
         <Route path="/originals/limbo" element={<LimboGame />} />

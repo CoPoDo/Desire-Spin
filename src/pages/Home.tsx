@@ -1,6 +1,7 @@
 import { GameCard } from '../components/layout/GameCard';
 import { BonanzaArt } from './slots/sweet-bonanza/Art';
 import { OlympusArt } from './slots/gates-of-olympus/Art';
+import { SugarRushArt } from './slots/sugar-rush/Art';
 
 export function Home() {
   return (
@@ -33,10 +34,12 @@ export function Home() {
             art={<PlaceholderArt label="🎣" tone="#10334a" />}
           />
           <GameCard
+            to="/slots/sugar-rush"
             title="Sugar Rush"
-            subtitle="Coming soon"
-            disabled
-            art={<PlaceholderArt label="🍭" tone="#3a124a" />}
+            subtitle="Tumble · Sweet & sticky"
+            badge="NEW"
+            bg="linear-gradient(180deg, #ff7ad9 0%, #5a1c70 100%)"
+            art={<SugarRushArt />}
           />
           <GameCard
             title="Wanted Dead or a Wild"
