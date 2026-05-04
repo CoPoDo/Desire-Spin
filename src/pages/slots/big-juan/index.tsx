@@ -9,7 +9,10 @@ import { FairnessPanel } from '../../../components/fairness/FairnessPanel';
 import { BetHistoryTable } from '../../../components/fairness/BetHistoryTable';
 import { SessionStatsPanel } from '../../../components/SessionStatsPanel';
 import {
+  JACKPOTS,
   PAYLINES,
+  PAYLINE_COUNT,
+  SYMBOLS,
   type Grid as TGrid,
   type SpinResult,
   type WinLine,
@@ -55,6 +58,7 @@ export function BigJuan() {
   const [autoplay, setAutoplay] = useState<{ remaining: number; total: number } | null>(null);
   const [autoplaySheetOpen, setAutoplaySheetOpen] = useState(false);
   const [bigWin, setBigWin] = useState<{ payout: number; tier: 'big' | 'mega' | 'epic' } | null>(null);
+  const [paytableOpen, setPaytableOpen] = useState(false);
 
   // Menu / panels
   const [menuOpen, setMenuOpen] = useState(false);
@@ -580,6 +584,13 @@ export function BigJuan() {
               <span className="text-ink-dim">{sound.enabled ? 'On' : 'Off'}</span>
             </button>
             <button
+              onClick={() => { setPaytableOpen(true); setMenuOpen(false); }}
+              className="w-full flex items-center justify-between px-4 py-3 text-sm hover:bg-bg-hover border-t border-edge"
+            >
+              <span>Pay table</span>
+              <span className="text-ink-dim">›</span>
+            </button>
+            <button
               onClick={() => { setStatsOpen(true); setMenuOpen(false); }}
               className="w-full flex items-center justify-between px-4 py-3 text-sm hover:bg-bg-hover border-t border-edge"
             >
@@ -624,6 +635,179 @@ export function BigJuan() {
             seeds={bonus.seeds}
             onClose={resolveBonus}
           />
+        )}
+      </AnimatePresence>
+
+      {/* Pay table modal */}
+      <AnimatePresence>
+        {paytableOpen && (
+          <>
+            <motion.button
+              className="fixed inset-0 z-[150] bg-black/70 backdrop-blur-sm"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setPaytableOpen(false)}
+            />
+            <motion.div
+              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[160] w-[min(94vw,440px)] max-h-[88vh] overflow-y-auto rounded-2xl p-5"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 280, damping: 24 }}
+              style={{
+                background:
+                  'linear-gradient(180deg, #2a0810 0%, #5a0810 50%, #14040a 100%)',
+                border: '2px solid #c8932e',
+                boxShadow: '0 0 32px rgba(255,209,102,.4), 0 16px 32px rgba(0,0,0,.6)',
+              }}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div
+                  className="font-display font-extrabold text-xl"
+                  style={{
+                    background: 'linear-gradient(180deg, #ffd166 0%, #ff5560 80%)',
+                    WebkitBackgroundClip: 'text',
+                    backgroundClip: 'text',
+                    color: 'transparent',
+                  }}
+                >
+                  PAY TABLE
+                </div>
+                <button
+                  onClick={() => setPaytableOpen(false)}
+                  className="text-ink-mute hover:text-ink text-xl px-2"
+                  aria-label="Close"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Game info card */}
+              <div className="rounded-xl p-3 mb-4 bg-black/40 border border-[#ffd166]/30">
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div>
+                    <div className="text-[8px] uppercase tracking-widest text-ink-mute">RTP</div>
+                    <div className="font-mono font-bold text-sm text-[#ffd166]">96.7%</div>
+                  </div>
+                  <div>
+                    <div className="text-[8px] uppercase tracking-widest text-ink-mute">Volatility</div>
+                    <div className="font-mono font-bold text-sm text-[#ff5560]">High</div>
+                  </div>
+                  <div>
+                    <div className="text-[8px] uppercase tracking-widest text-ink-mute">Max win</div>
+                    <div className="font-mono font-bold text-sm text-[#ffd166]">2,600×</div>
+                  </div>
+                </div>
+                <div className="mt-3 text-center">
+                  <span className="text-[9px] uppercase tracking-widest text-ink-mute">Lines</span>
+                  <span className="ml-2 font-mono font-bold text-sm text-ink">{PAYLINE_COUNT}</span>
+                  <span className="mx-2 text-ink-mute">·</span>
+                  <span className="text-[9px] uppercase tracking-widest text-ink-mute">Grid</span>
+                  <span className="ml-2 font-mono font-bold text-sm text-ink">5×4</span>
+                </div>
+              </div>
+
+              {/* Symbol pays — top tier first */}
+              <div className="text-[10px] uppercase tracking-widest text-ink-mute mb-2">
+                Symbol pays · 3 / 4 / 5 of a kind on a payline
+              </div>
+              <div className="space-y-1.5 mb-4">
+                {SYMBOLS.filter((s) => s.pay).map((s) => (
+                  <div
+                    key={s.id}
+                    className="flex items-center gap-2 px-2 py-1.5 rounded-lg"
+                    style={{
+                      background: 'rgba(0,0,0,.35)',
+                      border: '1px solid rgba(255,209,102,.15)',
+                    }}
+                  >
+                    <span className="w-8 h-8 flex items-center justify-center">
+                      <span style={{ filter: `drop-shadow(0 0 4px ${s.color}aa)` }}>
+                        {renderBigJuanSymbol(s.id)}
+                      </span>
+                    </span>
+                    <span className="flex-1 text-xs text-ink-dim capitalize">
+                      {s.id === 'A' || s.id === 'K' || s.id === 'Q' || s.id === 'J' || s.id === '10'
+                        ? s.id
+                        : s.id.replace('_', ' ')}
+                    </span>
+                    <span className="font-mono font-bold text-xs tabular-nums" style={{ color: s.color }}>
+                      {s.pay![3]}× · {s.pay![4]}× · {s.pay![5]}×
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Wild + scatter */}
+              <div className="text-[10px] uppercase tracking-widest text-ink-mute mb-2">
+                Specials
+              </div>
+              <div
+                className="rounded-lg p-3 mb-2"
+                style={{
+                  background: 'rgba(255,85,96,.15)',
+                  border: '1px solid rgba(255,85,96,.4)',
+                }}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="w-8 h-8">{renderBigJuanSymbol('chilli')}</span>
+                  <span className="font-bold text-sm text-[#ff8a8a]">Chilli WILD</span>
+                </div>
+                <div className="text-[10px] text-ink-dim mt-1 leading-relaxed">
+                  Substitutes for any non-scatter symbol. <strong className="text-[#ff8a8a]">Wild Switch:</strong> when 6+ identical
+                  symbols land entirely on reels 2-4, all of them turn into wilds — sudden multi-line
+                  hits.
+                </div>
+              </div>
+              <div
+                className="rounded-lg p-3 mb-4"
+                style={{
+                  background: 'rgba(255,209,102,.12)',
+                  border: '1px solid rgba(255,209,102,.4)',
+                }}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="w-8 h-8">{renderBigJuanSymbol('pinata')}</span>
+                  <span className="font-bold text-sm text-[#ffd166]">Piñata SCATTER</span>
+                </div>
+                <div className="text-[10px] text-ink-dim mt-1 leading-relaxed">
+                  3+ piñatas anywhere trigger the bonus respins round. Scatter pays 2× / 10× / 50×
+                  for 3 / 4 / 5. Bonus starts with 10 / 12 / 14 respins.
+                </div>
+              </div>
+
+              {/* Jackpots */}
+              <div className="text-[10px] uppercase tracking-widest text-ink-mute mb-2">
+                Bonus jackpots (× bet)
+              </div>
+              <div className="grid grid-cols-4 gap-2">
+                {(['mini', 'minor', 'major', 'grand'] as const).map((tier) => {
+                  const c = tier === 'grand' ? '#ff5560'
+                    : tier === 'major' ? '#ffae50'
+                    : tier === 'minor' ? '#a78bfa'
+                    : '#5fb8ff';
+                  return (
+                    <div
+                      key={tier}
+                      className="flex flex-col items-center px-2 py-2 rounded-lg"
+                      style={{
+                        background: `${c}15`,
+                        border: `1px solid ${c}66`,
+                      }}
+                    >
+                      <span className="text-[9px] uppercase tracking-widest" style={{ color: c }}>
+                        {tier}
+                      </span>
+                      <span className="font-mono font-bold text-sm tabular-nums mt-0.5" style={{ color: c }}>
+                        {JACKPOTS[tier]}×
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
 
