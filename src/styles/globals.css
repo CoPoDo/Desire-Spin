@@ -145,6 +145,31 @@
   0%, 100% { opacity: 0.4; }
   50% { opacity: 0.9; }
 }
+/* Zeus-power flicker — a rare, subtle warm flash centred behind the
+ * archway. Mostly invisible, then briefly pulses bright as if Zeus is
+ * gathering thunder behind the temple. Long cycle (12s) keeps it from
+ * feeling animated; it's an ambient breath of "something divine is
+ * watching" rather than a constant effect. */
+.olympus-scene::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(40% 30% at 50% 30%, rgba(255, 220, 130, 0.18), transparent 70%);
+  mix-blend-mode: screen;
+  animation: olympusZeusFlicker 12s ease-in-out infinite;
+  opacity: 0;
+  z-index: 1;
+}
+@keyframes olympusZeusFlicker {
+  0%, 70%, 100% { opacity: 0; }
+  72%           { opacity: 0.85; }
+  73%           { opacity: 0.2; }
+  74%           { opacity: 0.95; }
+  76%           { opacity: 0.15; }
+  82%           { opacity: 0; }
+}
 
 /* The reel grid sits inside the archway opening. The image's arch interior
    roughly spans:
