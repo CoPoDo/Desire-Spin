@@ -189,6 +189,11 @@ export function ImmersiveSlotView({
   // line via lib/zeusVoice so the moment lands as "the god has
   // spoken" rather than just "a glow appeared".
   const [zeusEyesGlow, setZeusEyesGlow] = useState<boolean>(false);
+  /** Visible Zeus speech-bubble callout. Pairs with the spoken voice
+   *  line so players who have audio muted (or who use a browser without
+   *  reliable SpeechSynthesis) still see Zeus's pronouncement. The
+   *  speakZeusWithCallout() wrapper below sets this whenever it speaks. */
+  const [zeusCallout, setZeusCallout] = useState<{ text: string; key: number } | null>(null);
   const [scatterFlashes, setScatterFlashes] = useState<{ id: string; col: number; row: number }[]>([]);
   const [anticipation, setAnticipation] = useState<number>(0); // current scatter count if >= 3
   const [fsOverlay, setFsOverlay] = useState<{ count: number; reason: 'scatter' | 'retrigger' | 'buy' } | null>(null);
@@ -225,6 +230,16 @@ export function ImmersiveSlotView({
     spinTimers.current = [];
   }, []);
   useEffect(() => { turboRef.current = turbo; saveJson('turbo', turbo); }, [turbo]);
+
+  // Speak a Zeus line AND show it as a visible callout — paired so the
+  // moment lands even if browser SpeechSynthesis doesn't play. Callout
+  // auto-clears after 1500ms; speakZeus has its own cooldown internally.
+  const speakAndShout = useCallback((line: string) => {
+    speakZeus(line);
+    setZeusCallout({ text: line, key: Date.now() });
+    const t = setTimeout(() => setZeusCallout(null), 1600);
+    spinTimers.current.push(t);
+  }, []);
 
   // ----- Tune mode (?tune=1) lets the user dial in the arch coordinates live.
   // URL params al/at/aw override the configured archInsets. Drag-friendly
@@ -326,7 +341,7 @@ export function ImmersiveSlotView({
             setLightningStrike(true);
             if (cfg.id === 'gates-of-olympus') {
               setZeusEyesGlow(true);
-              speakZeus(zeusLineFor('lightningStrike'));
+              speakAndShout(zeusLineFor('lightningStrike'));
               scheduleSpin(() => setZeusEyesGlow(false), 1400);
             }
             // Schedule timings scale with turbo / skip so orbs land BEFORE
@@ -395,7 +410,7 @@ export function ImmersiveSlotView({
             // lib/zeusVoice.
             if (cfg.id === 'gates-of-olympus') {
               setZeusEyesGlow(true);
-              speakZeus(zeusLineFor('multiplierLanded'));
+              speakAndShout(zeusLineFor('multiplierLanded'));
               scheduleSpin(() => setZeusEyesGlow(false), 1100);
               // Lightning-bolt TRAIL from Zeus's hand (top-left ~18%/22%)
               // to each orb landing — real Olympus shows electric arcs
@@ -510,7 +525,7 @@ export function ImmersiveSlotView({
             sound.play('free-spins-trigger');
             if (cfg.id === 'gates-of-olympus') {
               setZeusEyesGlow(true);
-              speakZeus(zeusLineFor('freeSpinsTrigger'));
+              speakAndShout(zeusLineFor('freeSpinsTrigger'));
               scheduleSpin(() => setZeusEyesGlow(false), 1800);
             }
             if (frame.reason !== 'retrigger') {
@@ -543,7 +558,7 @@ export function ImmersiveSlotView({
             setStatusMsg(`×${fmtMultiplier(frame.sumOfMultipliers)} → ${fmtCurrency(frame.finalPayout)}`);
             if (cfg.id === 'gates-of-olympus' && frame.sumOfMultipliers >= 50) {
               setZeusEyesGlow(true);
-              speakZeus(zeusLineFor('bigWin'));
+              speakAndShout(zeusLineFor('bigWin'));
               scheduleSpin(() => setZeusEyesGlow(false), 1500);
             }
             // Real-game-style reveal: pop a centered "TOTAL ×N" banner
@@ -570,7 +585,7 @@ export function ImmersiveSlotView({
               sound.play(tier.sound);
               if (cfg.id === 'gates-of-olympus' && tier.intensity >= 1.7) {
                 setZeusEyesGlow(true);
-                speakZeus(zeusLineFor('bigWin'));
+                speakAndShout(zeusLineFor('bigWin'));
                 scheduleSpin(() => setZeusEyesGlow(false), 1800);
               }
             }
@@ -592,7 +607,7 @@ export function ImmersiveSlotView({
                 sound.play(tier.sound);
                 if (cfg.id === 'gates-of-olympus' && tier.intensity >= 1.7) {
                   setZeusEyesGlow(true);
-                  speakZeus(zeusLineFor('bigWin'));
+                  speakAndShout(zeusLineFor('bigWin'));
                   scheduleSpin(() => setZeusEyesGlow(false), 1800);
                 }
               } else if (cfg.id === 'gates-of-olympus' && Math.random() < 0.18) {
@@ -605,7 +620,7 @@ export function ImmersiveSlotView({
                 // the player sees the eye-glow + voice within a few
                 // spins, not waiting for rare events to fire.
                 setZeusEyesGlow(true);
-                speakZeus(zeusLineFor('multiplierLanded'));
+                speakAndShout(zeusLineFor('multiplierLanded'));
                 scheduleSpin(() => setZeusEyesGlow(false), 1100);
               }
             }
@@ -658,6 +673,7 @@ export function ImmersiveSlotView({
       setFsMultReveal(null);
       setZeusBolts([]);
       setOrbRumble(null);
+      setZeusCallout(null);
       // Pre-spin: blur+darken the previous grid for ~180ms so the swap to
       // the new grid feels like a real "reels stopped" transition.
       setPrespin(true);
@@ -1096,6 +1112,58 @@ export function ImmersiveSlotView({
                           boxShadow:
                             '0 0 12px #ff3030, 0 0 28px rgba(255,40,40,.95), 0 0 56px rgba(200,16,46,.8)',
                           mixBlendMode: 'screen',
+                        }}
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              )}
+              {/* Zeus speech-bubble callout — visible Spanish-style hand-
+               *  drawn comic bubble positioned next to Zeus's mouth that
+               *  shows the spoken line so players who can't hear the TTS
+               *  voice still see the pronouncement. Positioned on the
+               *  right of Zeus's face (~24%, ~14%) so it doesn't overlap
+               *  with the eyes-glow but still reads as "from him". */}
+              {cfg.id === 'gates-of-olympus' && (
+                <AnimatePresence>
+                  {zeusCallout && (
+                    <motion.div
+                      key={zeusCallout.key}
+                      className="absolute pointer-events-none z-[12]"
+                      style={{ left: '23%', top: '7%' }}
+                      initial={{ opacity: 0, scale: 0.5, y: 8 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.85 }}
+                      transition={{ type: 'spring', stiffness: 320, damping: 18 }}
+                    >
+                      <div
+                        className="font-display font-extrabold uppercase tracking-wider px-3 py-1.5 rounded-lg whitespace-nowrap"
+                        style={{
+                          fontSize: 'clamp(11px, 2.2vw, 16px)',
+                          background: 'linear-gradient(180deg, #fffbe1 0%, #ffe9a8 60%, #c8932e 100%)',
+                          color: '#1a0a04',
+                          border: '2px solid #fffbe1',
+                          boxShadow:
+                            '0 0 18px rgba(255,233,168,.85), 0 0 36px rgba(255,200,80,.55), 0 4px 8px rgba(0,0,0,.5)',
+                          letterSpacing: '0.08em',
+                          textShadow: '0 1px 1px rgba(255,255,255,.5)',
+                        }}
+                      >
+                        {zeusCallout.text}
+                      </div>
+                      {/* Speech-bubble tail pointing at Zeus's mouth */}
+                      <div
+                        className="absolute"
+                        style={{
+                          left: '-6px',
+                          top: '50%',
+                          width: 0,
+                          height: 0,
+                          borderTop: '6px solid transparent',
+                          borderBottom: '6px solid transparent',
+                          borderRight: '8px solid #fffbe1',
+                          transform: 'translateY(-50%)',
+                          filter: 'drop-shadow(-2px 0 0 #c8932e)',
                         }}
                       />
                     </motion.div>
