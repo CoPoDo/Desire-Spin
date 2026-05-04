@@ -47,6 +47,7 @@ export function BigJuan() {
     scatterCount: number;
     seeds: { serverSeed: string; clientSeed: string; nonce: number };
   } | null>(null);
+  const [buyBonusConfirm, setBuyBonusConfirm] = useState(false);
 
   // Menu / panels
   const [menuOpen, setMenuOpen] = useState(false);
@@ -189,6 +190,24 @@ export function BigJuan() {
 
   const inFs = false; // legacy alias — bonus round replaces the FS auto loop
   const totalCost = bet;
+  const BUY_BONUS_MULT = 100;
+  const buyBonusCost = +(bet * BUY_BONUS_MULT).toFixed(2);
+
+  const buyBonus = useCallback(() => {
+    if (busy || bonus) return;
+    if (balance.balance < buyBonusCost) return;
+    sound.play('click');
+    balance.debit(buyBonusCost);
+    setBuyBonusConfirm(false);
+    // Buy-bonus simulates a 4-scatter trigger (the medium-quality entry)
+    const seeds = fairness.consumeNonce();
+    setShowFsTrigger(4);
+    sound.play('free-spins-trigger');
+    setTimeout(() => {
+      setShowFsTrigger(null);
+      setBonus({ scatterCount: 4, seeds });
+    }, 1600);
+  }, [busy, bonus, balance, buyBonusCost, fairness, sound]);
 
   return (
     <div
@@ -406,6 +425,21 @@ export function BigJuan() {
           </span>
         </button>
         <button
+          onClick={() => setBuyBonusConfirm(true)}
+          disabled={busy || !!bonus || balance.balance < buyBonusCost}
+          aria-label="Buy bonus"
+          className="flex flex-col items-center px-2 py-1.5 rounded-xl border disabled:opacity-50"
+          style={{
+            background: 'linear-gradient(180deg, rgba(255,85,96,.25), rgba(0,0,0,.4))',
+            borderColor: 'rgba(255,85,96,.6)',
+          }}
+        >
+          <span className="text-[8px] uppercase tracking-widest text-[#ff8a8a]">Buy</span>
+          <span className="text-[9px] font-mono font-bold text-[#ff8a8a] tabular-nums">
+            {fmtCurrency(buyBonusCost)}
+          </span>
+        </button>
+        <button
           onClick={() => spin()}
           disabled={busy || !!bonus || balance.balance < bet || bet <= 0}
           className="flex-1 max-w-[160px] mx-auto py-3.5 rounded-2xl font-display font-extrabold text-base uppercase tracking-wider transition active:scale-[0.99]"
@@ -537,6 +571,86 @@ export function BigJuan() {
             seeds={bonus.seeds}
             onClose={resolveBonus}
           />
+        )}
+      </AnimatePresence>
+
+      {/* Buy bonus confirmation */}
+      <AnimatePresence>
+        {buyBonusConfirm && (
+          <>
+            <motion.button
+              className="fixed inset-0 z-[150] bg-black/70 backdrop-blur-sm"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setBuyBonusConfirm(false)}
+              aria-label="Cancel buy bonus"
+            />
+            <motion.div
+              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[160] w-[min(92vw,360px)] rounded-2xl p-5"
+              initial={{ scale: 0.85, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 280, damping: 22 }}
+              style={{
+                background:
+                  'radial-gradient(80% 60% at 50% 38%, #c8102e 0%, #5a0810 60%, #14040a 100%)',
+                border: '2px solid #ffd166',
+                boxShadow: '0 0 32px rgba(255,85,96,.55), 0 16px 32px rgba(0,0,0,.6)',
+              }}
+            >
+              <div
+                className="font-display font-extrabold text-2xl text-center mb-2"
+                style={{
+                  background: 'linear-gradient(180deg, #ffd166, #ff5560)',
+                  WebkitBackgroundClip: 'text',
+                  backgroundClip: 'text',
+                  color: 'transparent',
+                  filter: 'drop-shadow(0 2px 4px rgba(0,0,0,.6))',
+                }}
+              >
+                BUY BONUS
+              </div>
+              <div className="text-[10px] uppercase tracking-widest text-[#ffe0a8] text-center mb-4">
+                Skip the wait. Enter the bonus.
+              </div>
+              <div className="flex justify-around mb-4">
+                <div className="flex flex-col items-center px-3 py-2 rounded-xl bg-black/40 border border-[#ffd166]/30">
+                  <span className="text-[8px] uppercase tracking-widest text-ink-mute">You get</span>
+                  <span className="text-2xl">🎉</span>
+                  <span className="text-[10px] font-mono font-bold text-[#ffd166]">4× scatter</span>
+                </div>
+                <div className="flex flex-col items-center px-3 py-2 rounded-xl bg-black/40 border border-[#ff8a8a]/30">
+                  <span className="text-[8px] uppercase tracking-widest text-ink-mute">Cost</span>
+                  <span className="font-mono font-bold text-lg text-[#ff8a8a] tabular-nums">
+                    {fmtCurrency(buyBonusCost)}
+                  </span>
+                  <span className="text-[10px] text-ink-mute">{BUY_BONUS_MULT}× bet</span>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setBuyBonusConfirm(false)}
+                  className="flex-1 py-3 rounded-xl bg-bg-elev border border-edge text-ink-dim font-bold text-xs uppercase tracking-wider"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={buyBonus}
+                  disabled={balance.balance < buyBonusCost}
+                  className="flex-[2] py-3 rounded-xl font-display font-extrabold text-sm uppercase tracking-wider disabled:opacity-50"
+                  style={{
+                    background: 'linear-gradient(180deg, #ffd166 0%, #c8932e 60%, #5a3a04 100%)',
+                    color: '#1a0a04',
+                    border: '2px solid #fff5c4',
+                    boxShadow: '0 0 18px rgba(255,209,102,.5)',
+                  }}
+                >
+                  Buy · {fmtCurrency(buyBonusCost)}
+                </button>
+              </div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
       {/* totalCost is currently unused but kept for future side-bet/ante. */}
