@@ -132,6 +132,29 @@ function RulesTab({ cfg }: { cfg: SlotConfig }) {
 function FeaturesTab({ cfg }: { cfg: SlotConfig }) {
   return (
     <div className="space-y-4 text-sm leading-relaxed">
+      <div className="card bg-bg-elev/60 p-4">
+        <div className="grid grid-cols-3 gap-3 text-center">
+          <div>
+            <div className="text-[10px] uppercase tracking-widest text-ink-mute">RTP</div>
+            <div className="font-mono font-bold text-base text-[#ffe9a8] mt-0.5">~96.5%</div>
+          </div>
+          <div>
+            <div className="text-[10px] uppercase tracking-widest text-ink-mute">Volatility</div>
+            <div className="text-[#ffc62a] mt-0.5 leading-none flex justify-center gap-0.5">
+              {/* 5/5 stars matching real game's high-volatility rating */}
+              {[0, 1, 2, 3, 4].map((i) => (
+                <span key={i}
+                      style={{ filter: 'drop-shadow(0 0 6px rgba(255,200,40,.7))' }}>★</span>
+              ))}
+            </div>
+            <div className="text-[9px] text-ink-mute mt-0.5">High</div>
+          </div>
+          <div>
+            <div className="text-[10px] uppercase tracking-widest text-ink-mute">Max Win</div>
+            <div className="font-mono font-bold text-base text-[#ffe9a8] mt-0.5">5,000×</div>
+          </div>
+        </div>
+      </div>
       <Section title="Free Spins">
         Land {cfg.scatterTriggerCount}+ scatters anywhere to trigger {' '}
         <strong className="text-[#ffe9a8]">{cfg.freeSpinsAwardOnTrigger} free spins</strong>.
