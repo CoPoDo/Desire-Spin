@@ -515,15 +515,24 @@ export function ImmersiveSlotView({
   }, [fsActive]);
 
   // Duck music briefly during big-win celebrations + auto-dismiss the
-  // overlay after a duration scaled by tier intensity. Replaces the prior
-  // onAnimationComplete-setTimeout pattern, which leaked across overlapping
-  // bigWin firings (a second bigWin would inherit the first's stale timer
-  // and dismiss too early).
+  // overlay after a duration scaled by tier intensity. Plus coin-drop tinkles
+  // staggered through the coin shower so each visible coin has audio impact.
   useEffect(() => {
     if (!bigWin) return;
-    music.duck(2200 + bigWin.tier.intensity * 400, 0.2);
-    const t = setTimeout(() => setBigWin(null), 2200 + bigWin.tier.intensity * 400);
-    return () => clearTimeout(t);
+    const totalMs = 2200 + bigWin.tier.intensity * 400;
+    music.duck(totalMs, 0.2);
+    // Spaced coin tink sounds during the shower (more for bigger wins)
+    const coinCount = Math.min(20, Math.round(8 + bigWin.tier.intensity * 4));
+    const coinTimers: number[] = [];
+    for (let i = 0; i < coinCount; i++) {
+      const at = 200 + (i / coinCount) * (totalMs - 800) + Math.random() * 80;
+      coinTimers.push(window.setTimeout(() => sound.play('coin'), at));
+    }
+    const dismissT = setTimeout(() => setBigWin(null), totalMs);
+    return () => {
+      clearTimeout(dismissT);
+      coinTimers.forEach(clearTimeout);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bigWin]);
 

@@ -48,6 +48,10 @@ export function Grid({
           if (!cell) return <div key={`empty-${idx}`} className={cellClass} />;
           const isWin = winning.has(`${c}:${r}`);
           const isNew = newKeys.has(cell.key);
+          // Per-column stagger: leftmost column drops first, then the next,
+          // etc. — matches real Pragmatic's left-to-right reel reveal. Adds
+          // a few hundred ms of cinematic pacing without hurting overall flow.
+          const columnDelay = isNew ? c * 0.05 : 0;
           return (
             <motion.div
               key={cell.key}
@@ -65,7 +69,7 @@ export function Grid({
               }}
               transition={
                 isNew
-                  ? { type: 'spring', stiffness: 320, damping: 17, mass: 0.9 }
+                  ? { type: 'spring', stiffness: 320, damping: 17, mass: 0.9, delay: columnDelay }
                   : { type: 'spring', stiffness: 380, damping: 26 }
               }
               layout
