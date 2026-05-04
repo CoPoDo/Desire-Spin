@@ -348,21 +348,23 @@
   animation: olympusOrbBreathe 1.6s ease-in-out infinite,
              olympusOrbStickyHalo 2.2s ease-in-out infinite;
 }
-/* Bonanza orbs gain a magenta-rose sticky halo during free spins so persistent
+/* Bonanza orbs gain a tier-tinted sticky halo during free spins so persistent
  * multipliers visually pop against the candy backdrop. */
 .olympus-fs-mode .bonanza-orb {
   animation: bonanzaOrbBreathe 1.6s ease-in-out infinite,
              bonanzaOrbStickyHalo 2.2s ease-in-out infinite;
 }
 @keyframes bonanzaOrbStickyHalo {
-  0%, 100% {
-    filter: drop-shadow(0 0 4px rgba(255, 95, 162, 0.4));
-  }
-  50% {
-    filter: drop-shadow(0 0 14px rgba(255, 95, 162, 0.85))
-            drop-shadow(0 0 26px rgba(255, 200, 80, 0.4));
-  }
+  0%, 100% { filter: drop-shadow(0 0 4px currentColor); }
+  50%      { filter: drop-shadow(0 0 14px currentColor)
+                     drop-shadow(0 0 26px currentColor); }
 }
+/* `currentColor` for the halo — set per-tier via the colour swatch. */
+.bonanza-orb-pink   { color: rgba(255, 95, 162, 0.85); }
+.bonanza-orb-purple { color: rgba(167, 139, 250, 0.85); }
+.bonanza-orb-blue   { color: rgba(95, 184, 255, 0.85); }
+.bonanza-orb-gold   { color: rgba(255, 209, 102, 0.95); }
+.bonanza-orb-fire   { color: rgba(255, 95, 162, 1); }
 @keyframes olympusOrbStickyHalo {
   0%, 100% {
     filter: drop-shadow(0 0 4px rgba(167, 139, 250, 0.4));
@@ -637,7 +639,14 @@
   50%      { transform: scale(1.05) translateZ(0); opacity: 1; }
 }
 
-/* Sweet Bonanza multiplier orb — vibrant gradient candy bomb */
+/* Sweet Bonanza multiplier orb — vibrant gradient candy bomb.
+ * Colour escalates with value (matches Pragmatic's real-game tiers):
+ *   Pink     2× – 5×       low/common
+ *   Purple   6× – 10×      uncommon
+ *   Blue    12× – 25×      rare
+ *   Gold    50× – 100×     epic
+ *   Fire   ≥ 200×          legendary (gold→red gradient)
+ */
 .bonanza-orb {
   position: relative;
   width: 88%;
@@ -645,49 +654,83 @@
   border-radius: 50%;
   display: grid;
   place-items: center;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  animation: bonanzaOrbBreathe 1.6s ease-in-out infinite;
+}
+.bonanza-orb-text {
+  font-family: 'Cherry Bomb One', 'Fredoka', system-ui, sans-serif;
+  font-weight: 800;
+  font-size: clamp(0.78rem, 2.2cqw, 1.95rem);
+  color: #fff;
+  text-shadow:
+    0 0 4px rgba(0, 0, 0, 0.85),
+    0 2px 4px rgba(0, 0, 0, 0.85),
+    0 0 12px rgba(255, 255, 255, 0.5);
+  letter-spacing: -0.02em;
+}
+
+/* Tier 1 — pink (2-5×) */
+.bonanza-orb-pink {
   background:
     radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 0.95) 0%, rgba(255, 220, 240, 0.85) 12%, transparent 28%),
     radial-gradient(circle at 50% 55%, #ffe0f4 0%, #ff5fa2 22%, #c41a72 55%, #6a0c3e 80%, #2a0418 100%);
-  border: 2px solid rgba(255, 232, 244, 0.85);
   box-shadow:
     inset 0 0 18px rgba(255, 95, 162, 0.55),
     inset 0 -6px 12px rgba(58, 4, 32, 0.6),
     0 0 14px rgba(255, 95, 162, 0.7),
     0 0 32px rgba(196, 26, 114, 0.55),
     0 8px 18px rgba(0, 0, 0, 0.55);
-  animation: bonanzaOrbBreathe 1.6s ease-in-out infinite;
 }
-.bonanza-orb-text {
-  font-family: 'Cherry Bomb One', 'Fredoka', system-ui, sans-serif;
-  font-weight: 800;
-  font-size: clamp(0.8rem, 2.4cqw, 2rem);
-  color: #fff;
-  text-shadow:
-    0 0 4px rgba(255, 95, 162, 0.9),
-    0 2px 4px rgba(0, 0, 0, 0.85),
-    0 0 12px rgba(255, 232, 244, 0.6);
-  letter-spacing: -0.02em;
-}
-.bonanza-orb-big {
-  border-width: 3px;
-  box-shadow:
-    inset 0 0 22px rgba(255, 95, 162, 0.7),
-    inset 0 -8px 14px rgba(58, 4, 32, 0.7),
-    0 0 22px rgba(255, 95, 162, 0.85),
-    0 0 44px rgba(196, 26, 114, 0.7),
-    0 10px 22px rgba(0, 0, 0, 0.6);
-}
-.bonanza-orb-huge {
-  border-width: 3px;
+/* Tier 2 — purple (6-10×) */
+.bonanza-orb-purple {
   background:
-    radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 0.95) 0%, rgba(255, 232, 168, 0.9) 12%, transparent 28%),
-    radial-gradient(circle at 50% 55%, #fff5e6 0%, #ffc850 22%, #ff5560 50%, #ff2a8c 75%, #5a0824 100%);
+    radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 0.95) 0%, rgba(232, 220, 255, 0.85) 12%, transparent 28%),
+    radial-gradient(circle at 50% 55%, #f0e0ff 0%, #b87aff 22%, #7d3cff 55%, #3a1873 80%, #170a30 100%);
   box-shadow:
-    inset 0 0 26px rgba(255, 200, 80, 0.8),
+    inset 0 0 18px rgba(125, 60, 255, 0.6),
+    inset 0 -6px 12px rgba(23, 10, 48, 0.6),
+    0 0 14px rgba(167, 139, 250, 0.85),
+    0 0 32px rgba(125, 60, 255, 0.6),
+    0 8px 18px rgba(0, 0, 0, 0.55);
+}
+/* Tier 3 — blue (12-25×) */
+.bonanza-orb-blue {
+  background:
+    radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 0.95) 0%, rgba(220, 240, 255, 0.85) 12%, transparent 28%),
+    radial-gradient(circle at 50% 55%, #e0f4ff 0%, #5fb8ff 22%, #1a72c4 55%, #0c3a6a 80%, #02101e 100%);
+  box-shadow:
+    inset 0 0 20px rgba(95, 184, 255, 0.6),
+    inset 0 -6px 14px rgba(2, 16, 30, 0.6),
+    0 0 16px rgba(95, 184, 255, 0.85),
+    0 0 36px rgba(34, 211, 238, 0.55),
+    0 8px 20px rgba(0, 0, 0, 0.55);
+  border-width: 2.5px;
+}
+/* Tier 4 — gold (50-100×) */
+.bonanza-orb-gold {
+  background:
+    radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 1) 0%, rgba(255, 248, 200, 0.95) 12%, transparent 30%),
+    radial-gradient(circle at 50% 55%, #fffbe0 0%, #ffd166 22%, #c8932e 55%, #6a4a08 82%, #20140a 100%);
+  box-shadow:
+    inset 0 0 24px rgba(255, 209, 102, 0.85),
+    inset 0 -8px 14px rgba(50, 35, 8, 0.7),
+    0 0 22px rgba(255, 209, 102, 0.95),
+    0 0 44px rgba(255, 174, 50, 0.7),
+    0 10px 22px rgba(0, 0, 0, 0.6);
+  border-width: 3px;
+}
+/* Tier 5 — fire (200-500×) — gold core blazing into red-pink halo */
+.bonanza-orb-fire {
+  background:
+    radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 1) 0%, rgba(255, 240, 200, 0.95) 10%, transparent 28%),
+    radial-gradient(circle at 50% 55%, #fff5e6 0%, #ffc850 18%, #ff5560 45%, #ff2a8c 72%, #6a0820 100%);
+  box-shadow:
+    inset 0 0 26px rgba(255, 200, 80, 0.85),
     inset 0 -10px 16px rgba(58, 4, 24, 0.8),
-    0 0 30px rgba(255, 95, 162, 1),
-    0 0 60px rgba(255, 200, 80, 0.7),
+    0 0 32px rgba(255, 95, 162, 1),
+    0 0 64px rgba(255, 200, 80, 0.75),
     0 12px 28px rgba(0, 0, 0, 0.7);
+  border-width: 3px;
 }
 @keyframes bonanzaOrbBreathe {
   0%, 100% { transform: scale(1) translateZ(0); }

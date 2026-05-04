@@ -240,9 +240,14 @@ export function LollipopSymbol() {
 }
 
 export function MultiplierSymbol({ value }: { value: number; accent?: string }) {
-  // Tiered presentation — bigger, brighter orbs for higher multiplier values
-  // (matches real Sweet Bonanza's chunkier 100×/500× bombs).
-  const tier = value >= 100 ? 'huge' : value >= 25 ? 'big' : 'normal';
+  // Colour escalates with multiplier value — matches real Sweet Bonanza's
+  // visible tier system (low pink → high gold/fire bombs).
+  const tier =
+    value >= 200 ? 'fire'
+    : value >= 50  ? 'gold'
+    : value >= 12  ? 'blue'
+    : value >= 6   ? 'purple'
+    :                'pink';
   return (
     <motion.div
       className="w-full h-full flex items-center justify-center"
