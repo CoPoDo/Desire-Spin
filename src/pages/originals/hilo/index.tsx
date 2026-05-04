@@ -228,9 +228,13 @@ export function HiloGame() {
 
 function CardView({ card, big = false, faded = false }: { card: Card; big?: boolean; faded?: boolean }) {
   const red = card.suit === '♥' || card.suit === '♦';
+  // Real playing cards have corner pips (small rank+suit in opposite
+  // corners) so the card is readable when fanned in a hand. Adding
+  // them makes our card visibly closer to a real-deck card and
+  // distinct from a generic "tile with letter on it".
   return (
     <div
-      className={`rounded-xl flex flex-col items-center justify-center select-none font-bold ${
+      className={`relative rounded-xl select-none font-bold ${
         big ? 'w-32 h-44' : 'w-16 h-24'
       } ${faded ? 'opacity-50' : ''}`}
       style={{
@@ -240,10 +244,27 @@ function CardView({ card, big = false, faded = false }: { card: Card; big?: bool
         color: red ? '#c8102e' : '#1a0f00',
       }}
     >
-      <div className={big ? 'text-5xl leading-none' : 'text-2xl leading-none'}>
-        {rankLabel(card.rank)}
+      {/* Top-left corner pip */}
+      <div
+        className={`absolute leading-none flex flex-col items-center ${big ? 'top-1.5 left-2 text-base' : 'top-1 left-1 text-[10px]'}`}
+      >
+        <span>{rankLabel(card.rank)}</span>
+        <span className={big ? 'text-sm' : 'text-[10px]'}>{card.suit}</span>
       </div>
-      <div className={big ? 'text-3xl mt-1' : 'text-xl mt-0.5'}>{card.suit}</div>
+      {/* Bottom-right corner pip (rotated) */}
+      <div
+        className={`absolute leading-none flex flex-col items-center rotate-180 ${big ? 'bottom-1.5 right-2 text-base' : 'bottom-1 right-1 text-[10px]'}`}
+      >
+        <span>{rankLabel(card.rank)}</span>
+        <span className={big ? 'text-sm' : 'text-[10px]'}>{card.suit}</span>
+      </div>
+      {/* Centre rank + suit (bigger) */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <div className={big ? 'text-5xl leading-none' : 'text-2xl leading-none'}>
+          {rankLabel(card.rank)}
+        </div>
+        <div className={big ? 'text-3xl mt-1' : 'text-xl mt-0.5'}>{card.suit}</div>
+      </div>
     </div>
   );
 }
