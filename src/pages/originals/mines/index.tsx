@@ -13,6 +13,7 @@ import {
   reveal,
   startRound,
 } from './engine';
+import { fireConfetti } from '../../../lib/confetti';
 
 /** Stake-style Mines: 5×5 grid, choose mine count, reveal safe gems one at
  *  a time, cash out before hitting a mine. */
@@ -71,6 +72,14 @@ export function MinesGame() {
     const next = cashOut(round);
     setRound(next);
     balance.credit(next.payout);
+    // Confetti scaled to multiplier — small for low cashouts, big for
+    // brave 20×+ holdouts.
+    if (currentMult >= 1.5) {
+      fireConfetti({
+        count: currentMult >= 20 ? 130 : currentMult >= 5 ? 80 : 50,
+        colors: ['#1fff7a', '#ffd166', '#22d3ee', '#ffffff'],
+      });
+    }
     history.record({
       game: 'Mines',
       bet: round.bet,
