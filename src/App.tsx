@@ -11,6 +11,7 @@ import { GatesOfOlympus } from './pages/slots/gates-of-olympus';
 import { SugarRush } from './pages/slots/sugar-rush';
 import { JuanCantina } from './pages/slots/juan-cantina';
 import { WantedWild } from './pages/slots/wanted-wild';
+import { PharaohGold } from './pages/slots/pharaoh-gold';
 import { DiceGame } from './pages/originals/dice';
 import { LimboGame } from './pages/originals/limbo';
 import { MinesGame } from './pages/originals/mines';
@@ -68,6 +69,10 @@ export default function App() {
         <Route
           path="/slots/wanted-wild"
           element={<SlotPageLayout><WantedWild /></SlotPageLayout>}
+        />
+        <Route
+          path="/slots/pharaoh-gold"
+          element={<SlotPageLayout><PharaohGold /></SlotPageLayout>}
         />
         <Route path="/originals/dice" element={<DiceGame />} />
         <Route path="/originals/limbo" element={<LimboGame />} />

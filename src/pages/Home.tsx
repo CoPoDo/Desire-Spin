@@ -4,6 +4,7 @@ import { OlympusArt } from './slots/gates-of-olympus/Art';
 import { SugarRushArt } from './slots/sugar-rush/Art';
 import { JuanCantinaArt } from './slots/juan-cantina/Art';
 import { WantedWildArt } from './slots/wanted-wild/Art';
+import { PharaohGoldArt } from './slots/pharaoh-gold/Art';
 
 export function Home() {
   return (
@@ -52,6 +53,14 @@ export function Home() {
             badge="NEW"
             bg="linear-gradient(180deg, #d8442a 0%, #2a0810 100%)"
             art={<WantedWildArt />}
+          />
+          <GameCard
+            to="/slots/pharaoh-gold"
+            title="Pharaoh's Gold"
+            subtitle="Tumble · Egyptian gold"
+            badge="NEW"
+            bg="linear-gradient(180deg, #ffd166 0%, #14051a 100%)"
+            art={<PharaohGoldArt />}
           />
         </div>
       </section>
