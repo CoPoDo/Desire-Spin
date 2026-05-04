@@ -16,6 +16,13 @@ import {
   play,
   symbolById,
 } from './engine';
+import {
+  BigJuanSvg,
+  DiabloSvg,
+  SombreroSvg,
+  ChilliSvg,
+  PinataSvg,
+} from './symbols';
 
 const BET_PRESETS = [0.2, 0.5, 1, 2, 5, 10, 20, 50, 100];
 
@@ -316,14 +323,14 @@ export function BigJuan() {
                         }}
                       >
                         <span
-                          className="text-2xl sm:text-3xl"
+                          className="block w-[78%] h-[78%] sm:w-[82%] sm:h-[82%]"
                           style={{
                             filter: isActiveWin
                               ? `drop-shadow(0 0 12px ${sym?.color})`
                               : 'drop-shadow(0 2px 4px rgba(0,0,0,.6))',
                           }}
                         >
-                          {sym?.emoji ?? symId}
+                          {renderBigJuanSymbol(symId)}
                         </span>
                       </motion.div>
                     );
@@ -558,6 +565,33 @@ export function BigJuan() {
           {lastResult.scatterCount}× 🎉 · {lastResult.scatterMultiplier}× scatter
         </div>
       )}
+    </div>
+  );
+}
+
+/** Render the appropriate symbol art for a cell. Heroes get full SVG;
+ *  the rest fall back to emoji on a tinted disc. */
+function renderBigJuanSymbol(symId: string) {
+  switch (symId) {
+    case 'juan':     return <BigJuanSvg />;
+    case 'diablo':   return <DiabloSvg />;
+    case 'sombrero': return <SombreroSvg />;
+    case 'chilli':   return <ChilliSvg />;
+    case 'pinata':   return <PinataSvg />;
+  }
+  // Fallback: emoji on a disc
+  const sym = symbolById(symId);
+  if (!sym) return null;
+  return (
+    <div
+      className="w-full h-full flex items-center justify-center select-none"
+      style={{
+        background:
+          `radial-gradient(circle at 35% 30%, ${sym.color}55, ${sym.color}20 60%, transparent 80%)`,
+        borderRadius: '50%',
+      }}
+    >
+      <span style={{ fontSize: '78%', color: sym.color }}>{sym.emoji}</span>
     </div>
   );
 }
