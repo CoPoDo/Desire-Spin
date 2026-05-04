@@ -8,58 +8,98 @@ const wrap = 'juan-sym';
 const heroWrap = 'juan-sym juan-sym-hero';
 const scatterWrap = 'juan-sym juan-sym-scatter';
 
-/** Juan the Mariachi — the top-tier character. Drawn as a stylised
- *  portrait: dark hair / mustache, pinkish-tan face, bold sombrero
- *  and red bandana.
- */
+/** Juan the Mariachi — top-tier character. Drawn as a stylised portrait
+ *  with a wide sombrero (red band), tan face with curled handlebar
+ *  mustache, charro jacket with silver-button trim, and red bowtie. */
 export function JuanSymbol() {
   return (
     <div className={heroWrap} style={{ color: '#ffae50' }}>
       <svg viewBox="0 0 64 64" className="w-full h-full">
         <defs>
           <linearGradient id="juan-hat" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#ffd166" />
-            <stop offset="55%" stopColor="#c8932e" />
-            <stop offset="100%" stopColor="#5a3a04" />
+            <stop offset="0%" stopColor="#fff5c4" />
+            <stop offset="40%" stopColor="#ffd166" />
+            <stop offset="80%" stopColor="#a8761a" />
+            <stop offset="100%" stopColor="#3a2a04" />
           </linearGradient>
-          <radialGradient id="juan-face" cx="50%" cy="42%" r="55%">
-            <stop offset="0%" stopColor="#ffe4c4" />
-            <stop offset="60%" stopColor="#d4985f" />
-            <stop offset="100%" stopColor="#7a4a2a" />
+          <radialGradient id="juan-face" cx="50%" cy="38%" r="58%">
+            <stop offset="0%" stopColor="#ffe9c4" />
+            <stop offset="55%" stopColor="#d4985f" />
+            <stop offset="100%" stopColor="#5a3018" />
           </radialGradient>
           <linearGradient id="juan-band" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="#c8102e" />
-            <stop offset="50%" stopColor="#ff5560" />
+            <stop offset="0%" stopColor="#7a0810" />
+            <stop offset="35%" stopColor="#ff5560" />
+            <stop offset="65%" stopColor="#c8102e" />
             <stop offset="100%" stopColor="#7a0810" />
           </linearGradient>
+          <linearGradient id="juan-jacket" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#3a1a04" />
+            <stop offset="60%" stopColor="#1a0a02" />
+            <stop offset="100%" stopColor="#0a0402" />
+          </linearGradient>
         </defs>
-        {/* Sombrero brim (huge oval) */}
-        <ellipse cx="32" cy="22" rx="26" ry="6" fill="url(#juan-hat)" stroke="#5a3a04" strokeWidth="1.2" />
+        {/* Sombrero — wider brim with traditional curve */}
+        <path
+          d="M2 20 Q 32 28 62 20 Q 60 24 32 26 Q 4 24 2 20 Z"
+          fill="url(#juan-hat)"
+          stroke="#3a2a04"
+          strokeWidth="1.1"
+        />
         {/* Sombrero crown */}
-        <path d="M22 22 Q 22 6 32 6 Q 42 6 42 22 Z" fill="url(#juan-hat)" stroke="#5a3a04" strokeWidth="1.2" />
-        {/* Hat band (red) */}
-        <rect x="22" y="20" width="20" height="3" fill="url(#juan-band)" stroke="rgba(122,8,16,.6)" strokeWidth=".4" />
-        {/* Hat stitching detail */}
-        <path d="M8 22 Q 32 28 56 22" fill="none" stroke="#5a3a04" strokeWidth=".5" opacity=".6" />
+        <path
+          d="M20 20 Q 18 4 32 4 Q 46 4 44 20 Q 32 22 20 20 Z"
+          fill="url(#juan-hat)"
+          stroke="#3a2a04"
+          strokeWidth="1.1"
+        />
+        {/* Hat band (red, gold-trimmed) */}
+        <path d="M20 19 Q 32 21 44 19 L 44 16 Q 32 14 20 16 Z" fill="url(#juan-band)" stroke="#5a081a" strokeWidth=".5" />
+        <path d="M20 16 Q 32 14 44 16" fill="none" stroke="#ffd166" strokeWidth=".4" opacity=".6" />
+        {/* Crown highlight */}
+        <ellipse cx="27" cy="11" rx="2.5" ry="5" fill="rgba(255,255,255,.4)" />
+        {/* Decorative pompoms hanging from brim */}
+        <circle cx="3" cy="22" r="1.6" fill="#1fff7a" />
+        <circle cx="61" cy="22" r="1.6" fill="#5fb8ff" />
         {/* Face */}
-        <ellipse cx="32" cy="36" rx="11" ry="13" fill="url(#juan-face)" stroke="#5a3a1a" strokeWidth=".8" />
-        {/* Eyes */}
-        <ellipse cx="28" cy="34" rx="1.2" ry="1.5" fill="#1a1f29" />
-        <ellipse cx="36" cy="34" rx="1.2" ry="1.5" fill="#1a1f29" />
-        {/* Eye shines */}
-        <circle cx="27.5" cy="33.5" r=".4" fill="#fff" />
-        <circle cx="35.5" cy="33.5" r=".4" fill="#fff" />
-        {/* Mustache (curly) */}
-        <path d="M24 42 Q 28 40 32 42 Q 36 40 40 42 Q 38 46 32 44 Q 26 46 24 42 Z" fill="#1a1f29" stroke="#000" strokeWidth=".4" />
-        <path d="M22 42 Q 24 39 27 41" fill="none" stroke="#1a1f29" strokeWidth="1.2" strokeLinecap="round" />
-        <path d="M42 42 Q 40 39 37 41" fill="none" stroke="#1a1f29" strokeWidth="1.2" strokeLinecap="round" />
-        {/* Mouth (smile) */}
-        <path d="M28 47 Q 32 49 36 47" fill="none" stroke="#5a081a" strokeWidth=".8" strokeLinecap="round" />
-        {/* Bandana / shirt collar */}
-        <path d="M20 50 L 32 56 L 44 50 L 44 60 L 20 60 Z" fill="url(#juan-band)" stroke="#5a081a" strokeWidth=".7" />
-        {/* Shirt buttons */}
-        <circle cx="32" cy="56" r=".7" fill="#ffd166" />
-        <circle cx="32" cy="58.5" r=".7" fill="#ffd166" />
+        <ellipse cx="32" cy="36" rx="10.5" ry="12" fill="url(#juan-face)" stroke="#3a1a08" strokeWidth=".8" />
+        {/* Eyebrows */}
+        <path d="M25 32 Q 27 31 30 32" stroke="#1a0a04" strokeWidth=".9" fill="none" strokeLinecap="round" />
+        <path d="M34 32 Q 37 31 39 32" stroke="#1a0a04" strokeWidth=".9" fill="none" strokeLinecap="round" />
+        {/* Eyes (closed/squinting smile) */}
+        <path d="M26 34 Q 28 35 30 34" stroke="#1a0a04" strokeWidth="1" fill="none" strokeLinecap="round" />
+        <path d="M34 34 Q 36 35 38 34" stroke="#1a0a04" strokeWidth="1" fill="none" strokeLinecap="round" />
+        {/* Cheeks (warm blush) */}
+        <ellipse cx="24" cy="40" rx="2.2" ry="1.4" fill="rgba(255,128,80,.45)" />
+        <ellipse cx="40" cy="40" rx="2.2" ry="1.4" fill="rgba(255,128,80,.45)" />
+        {/* Handlebar mustache (curled at ends) */}
+        <path
+          d="M22 42 Q 28 41 32 43 Q 36 41 42 42
+             Q 44 43 44 45 Q 41 44 38 43
+             Q 36 44 32 43 Q 28 44 26 43
+             Q 23 44 20 45 Q 20 43 22 42 Z"
+          fill="#1a0a04"
+          stroke="#000"
+          strokeWidth=".3"
+        />
+        {/* Mustache curl tips */}
+        <path d="M22 42 Q 19 39 18 41" fill="none" stroke="#1a0a04" strokeWidth="1.2" strokeLinecap="round" />
+        <path d="M42 42 Q 45 39 46 41" fill="none" stroke="#1a0a04" strokeWidth="1.2" strokeLinecap="round" />
+        {/* Mouth (subtle smile) */}
+        <path d="M29 47 Q 32 48.5 35 47" fill="none" stroke="#5a081a" strokeWidth=".9" strokeLinecap="round" />
+        {/* Charro jacket (dark with silver buttons) */}
+        <path d="M16 50 L 32 56 L 48 50 L 48 60 L 16 60 Z" fill="url(#juan-jacket)" stroke="#000" strokeWidth=".7" />
+        {/* Embroidery on lapels */}
+        <path d="M22 52 L 26 60" stroke="#ffd166" strokeWidth=".8" opacity=".75" />
+        <path d="M42 52 L 38 60" stroke="#ffd166" strokeWidth=".8" opacity=".75" />
+        <path d="M24 54 Q 26 55 26 56" stroke="#ffd166" strokeWidth=".4" fill="none" />
+        <path d="M40 54 Q 38 55 38 56" stroke="#ffd166" strokeWidth=".4" fill="none" />
+        {/* Red bowtie under chin */}
+        <path d="M27 50 L 32 52 L 37 50 L 35 54 L 32 53 L 29 54 Z" fill="#c8102e" stroke="#5a081a" strokeWidth=".5" />
+        <circle cx="32" cy="52.5" r=".8" fill="#ffd166" />
+        {/* Silver buttons down jacket centre */}
+        <circle cx="32" cy="56" r=".9" fill="#dde4f0" stroke="#3a3f4d" strokeWidth=".3" />
+        <circle cx="32" cy="58.5" r=".9" fill="#dde4f0" stroke="#3a3f4d" strokeWidth=".3" />
       </svg>
     </div>
   );
