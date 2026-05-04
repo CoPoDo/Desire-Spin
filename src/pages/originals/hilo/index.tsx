@@ -12,6 +12,7 @@ import {
   lowerMult,
   rankLabel,
 } from './engine';
+import { fireConfetti } from '../../../lib/confetti';
 
 type Phase = 'idle' | 'playing' | 'lost';
 
@@ -88,6 +89,11 @@ export function HiloGame() {
     sound.play('big-win');
     const payout = +(bet * accumMult).toFixed(2);
     balance.credit(payout);
+    if (accumMult >= 2) {
+      fireConfetti({
+        count: accumMult >= 20 ? 130 : accumMult >= 5 ? 80 : 50,
+      });
+    }
     history.record({
       game: 'Hilo',
       bet,
