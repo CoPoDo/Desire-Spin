@@ -181,6 +181,21 @@ export function SlideGame() {
               }}
               transition={{ duration: 0.06 }}
             />
+            {/* Leading-edge spark while the slider is climbing — same
+             *  pattern as Crash's curve tip spark. Disappears on stop. */}
+            {phase === 'sliding' && (
+              <div
+                className="absolute top-1/2 -translate-y-1/2 rounded-full pointer-events-none z-20"
+                style={{
+                  left: `calc(${sliderProgress * 100}% - 6px)`,
+                  width: 12,
+                  height: 12,
+                  background: 'radial-gradient(circle, #ffffff 30%, #ffd166 70%, transparent 100%)',
+                  boxShadow: '0 0 8px rgba(255,209,102,.95), 0 0 16px rgba(31,255,122,.6)',
+                  transition: 'left 60ms linear',
+                }}
+              />
+            )}
             {/* Target marker */}
             <div
               className="absolute top-0 bottom-0 w-0.5 z-10"
