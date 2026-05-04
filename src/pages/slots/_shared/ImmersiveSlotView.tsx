@@ -119,6 +119,7 @@ export function ImmersiveSlotView({
   const [paytableOpen, setPaytableOpen] = useState(false);
   const [floatingMults, setFloatingMults] = useState<MultiplierLanding[]>([]);
   const [clusterPopups, setClusterPopups] = useState<{ id: string; col: number; row: number; payout: number }[]>([]);
+  const [prespin, setPrespin] = useState<boolean>(false);
   const [scatterFlashes, setScatterFlashes] = useState<{ id: string; col: number; row: number }[]>([]);
   const [anticipation, setAnticipation] = useState<number>(0); // current scatter count if >= 3
   const [fsOverlay, setFsOverlay] = useState<{ count: number; reason: 'scatter' | 'retrigger' | 'buy' } | null>(null);
@@ -168,6 +169,10 @@ export function ImmersiveSlotView({
   const playFrames = useCallback(
     async (frames: Frame[], betUsed: number, mode: SpinMode) => {
       let lastGrid: TGrid | null = null;
+      // Brief pre-spin pause so the blur applied at SPIN-click is visible.
+      // Skipped under turbo + tap-to-skip — those want maximum speed.
+      const presDur = turboRef.current ? (skipRef.current ? 0 : 80) : 180;
+      if (presDur > 0) await sleep(presDur);
       for (const frame of frames) {
         if (!aliveRef.current) return;
         switch (frame.kind) {
@@ -177,6 +182,7 @@ export function ImmersiveSlotView({
             setNewKeys(keys);
             setGrid(frame.grid);
             setWinning(new Set());
+            setPrespin(false); // clear blur — fresh reels are dropping
             lastGrid = frame.grid;
             sound.play('drop');
             // Detect scatter cells; play scatter-land sound + lightning flash
@@ -393,6 +399,9 @@ export function ImmersiveSlotView({
       setAnticipation(0);
       setStatusMsg('');
       setWinTotal(0);
+      // Pre-spin: blur+darken the previous grid for ~180ms so the swap to
+      // the new grid feels like a real "reels stopped" transition.
+      setPrespin(true);
       sound.play('spin');
       // Kick off background music on first user interaction (browser autoplay
       // policy requires a user gesture). switchIntensity is no-op if already
@@ -588,13 +597,17 @@ export function ImmersiveSlotView({
               animation: 'olympusStars 8s ease-in-out infinite',
             }}
           />
-          {/* Grid positioned inside the arch */}
+          {/* Grid positioned inside the arch. The blur+darken on .prespin
+              gives a "reels stopping" feel right before initialDrop. */}
           <div
             className="absolute"
             style={{
               left: `${liveInsets.left}%`,
               top: `${liveInsets.top}%`,
               width: `${liveInsets.width}%`,
+              filter: prespin ? 'blur(4px) brightness(0.65)' : undefined,
+              transform: prespin ? 'scale(0.98)' : undefined,
+              transition: 'filter 160ms ease-out, transform 160ms ease-out',
             }}
           >
             <Grid grid={grid} cfg={cfg} winning={winning} newKeys={newKeys} renderCell={renderCell} bare />
