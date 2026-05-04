@@ -415,33 +415,71 @@ function Ball({
   const { rows } = ball;
   const path = ball.drop.path;
 
-  // Build cx/cy keyframes through the peg field.
+  // Build cx/cy keyframes through the peg field. For each peg-row we
+  // emit TWO keyframes: the peg-contact point and a tiny "bounce-out"
+  // just below it, slightly overshooting in the next direction. Real
+  // Stake Plinko has the ball visibly kick off each peg rather than
+  // smoothly arcing through the gaps; the overshoot keyframe sells
+  // that contact moment.
   const cxKeys: number[] = [W / 2];
   const cyKeys: number[] = [0.3];
   let curX = W / 2;
   for (let i = 0; i < rows; i++) {
-    curX += path[i] === 'R' ? 0.5 : -0.5;
+    const dir = path[i] === 'R' ? 1 : -1;
+    // Peg contact — ball arrives at the peg position.
     cxKeys.push(curX);
     cyKeys.push(i + 1.5);
+    // Bounce-out — ball kicks off the peg with a small lateral
+    // overshoot in the upcoming direction, sells the rebound.
+    cxKeys.push(curX + dir * 0.08);
+    cyKeys.push(i + 1.62);
+    // Update position for next row.
+    curX += dir * 0.5;
   }
   // Settle into bucket — extra cy below bottom row.
   cxKeys.push(curX);
   cyKeys.push(rows + 2.7);
 
-  // Duration & gravity feel: linear `times` plus easeIn = accelerating drop.
-  const dur = rows * 0.11 + 0.25;
-  const times = cxKeys.map((_, i) => i / (cxKeys.length - 1));
+  // Gravity-based times: free-fall gives time ∝ sqrt(distance), so
+  // each successive row takes less time than the previous. Real Plinko
+  // visibly accelerates through the peg field; the previous linear
+  // times + easeIn was a coarse approximation. sqrt(i)/sqrt(N) gives
+  // a clearer "weight" feel.
+  const N = cxKeys.length - 1;
+  const times = cxKeys.map((_, i) => Math.sqrt(i) / Math.sqrt(N));
+
+  // Total fall duration scales with sqrt(rows) since deeper boards
+  // take more time as gravity accumulates velocity.
+  const dur = Math.sqrt(rows) * 0.32 + 0.3;
 
   return (
-    <motion.circle
-      r={ballRadius}
-      fill="url(#plinko-ball)"
-      stroke="rgba(90, 8, 16, .8)"
-      strokeWidth={0.03}
-      filter="url(#plinko-ball-glow)"
-      initial={{ cx: cxKeys[0], cy: cyKeys[0] }}
-      animate={{ cx: cxKeys, cy: cyKeys }}
-      transition={{ duration: dur, times, ease: 'easeIn' }}
-    />
+    <>
+      {/* Motion trail — three ghost circles trailing the ball at
+       *  small delays + decreasing opacity. Real Stake Plinko shows
+       *  a faint motion blur during fast falls; we approximate with
+       *  delayed semi-transparent copies. */}
+      {[0.04, 0.09, 0.14].map((delay, i) => (
+        <motion.circle
+          key={`trail-${i}`}
+          r={ballRadius * (0.95 - i * 0.10)}
+          fill="url(#plinko-ball)"
+          opacity={0.4 - i * 0.10}
+          initial={{ cx: cxKeys[0], cy: cyKeys[0] }}
+          animate={{ cx: cxKeys, cy: cyKeys }}
+          transition={{ duration: dur, times, ease: 'linear', delay }}
+        />
+      ))}
+      {/* Main ball */}
+      <motion.circle
+        r={ballRadius}
+        fill="url(#plinko-ball)"
+        stroke="rgba(90, 8, 16, .8)"
+        strokeWidth={0.03}
+        filter="url(#plinko-ball-glow)"
+        initial={{ cx: cxKeys[0], cy: cyKeys[0] }}
+        animate={{ cx: cxKeys, cy: cyKeys }}
+        transition={{ duration: dur, times, ease: 'linear' }}
+      />
+    </>
   );
 }
