@@ -118,6 +118,38 @@ export function WantedScene() {
         🌾
       </div>
 
+      {/* Rolling tumbleweed across the foreground (signature western
+          ambient touch). Two staggered instances at different sizes so it
+          feels organic rather than a single repeating sprite. */}
+      <div
+        className="absolute select-none"
+        style={{
+          bottom: '8%',
+          left: 0,
+          fontSize: 'min(22px, 5cqw)',
+          color: '#7a4a18',
+          filter: 'drop-shadow(0 2px 4px rgba(0,0,0,.5)) sepia(.6) saturate(1.4)',
+          animation: 'wantedTumbleweed 22s linear infinite',
+          willChange: 'transform, opacity',
+        }}
+      >
+        🪴
+      </div>
+      <div
+        className="absolute select-none"
+        style={{
+          bottom: '6%',
+          left: 0,
+          fontSize: 'min(18px, 4cqw)',
+          color: '#7a4a18',
+          filter: 'drop-shadow(0 2px 4px rgba(0,0,0,.5)) sepia(.6) saturate(1.4)',
+          animation: 'wantedTumbleweed 30s linear 14s infinite',
+          willChange: 'transform, opacity',
+        }}
+      >
+        🪴
+      </div>
+
       {/* 4. Sparkle dust + dust motes */}
       <div
         className="absolute inset-0"
