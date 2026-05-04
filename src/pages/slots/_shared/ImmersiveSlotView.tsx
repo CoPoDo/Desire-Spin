@@ -117,10 +117,13 @@ export function ImmersiveSlotView({
   const [paytableOpen, setPaytableOpen] = useState(false);
   const [floatingMults, setFloatingMults] = useState<MultiplierLanding[]>([]);
   const [clusterPopups, setClusterPopups] = useState<{ id: string; col: number; row: number; payout: number }[]>([]);
+  const [scatterFlashes, setScatterFlashes] = useState<{ id: string; col: number; row: number }[]>([]);
+  const [anticipation, setAnticipation] = useState<number>(0); // current scatter count if >= 3
   const [fsOverlay, setFsOverlay] = useState<{ count: number; reason: 'scatter' | 'retrigger' | 'buy' } | null>(null);
   const [fsOutroOverlay, setFsOutroOverlay] = useState<{ totalPayout: number } | null>(null);
   const [lightningStrike, setLightningStrike] = useState<boolean>(false);
   const [betSheetOpen, setBetSheetOpen] = useState(false);
+  const [buyBonusOpen, setBuyBonusOpen] = useState(false);
   const [turbo, setTurbo] = useState<boolean>(() => loadJson<boolean>('turbo', false));
   const [autoplay, setAutoplay] = useState<{ remaining: number; infinite: boolean } | null>(null);
   const [autoplaySheetOpen, setAutoplaySheetOpen] = useState(false);
@@ -170,12 +173,24 @@ export function ImmersiveSlotView({
             setWinning(new Set());
             lastGrid = frame.grid;
             sound.play('drop');
-            // Detect scatters in initial grid; play scatter-land sound for each.
-            const scatters = countScattersInGrid(frame.grid, cfg.scatterId);
-            if (scatters > 0) {
-              for (let i = 0; i < scatters; i++) {
-                setTimeout(() => sound.play('scatter-land'), i * 110);
+            // Detect scatter cells; play scatter-land sound + lightning flash
+            // over each one staggered. >=3 triggers anticipation effect.
+            const scatterPositions = scatterPositionsInGrid(frame.grid, cfg.scatterId);
+            if (scatterPositions.length > 0) {
+              const flashes = scatterPositions.map((p, i) => ({
+                id: `sf-init-${i}-${Math.random().toString(36).slice(2, 6)}`,
+                col: p.col,
+                row: p.row,
+              }));
+              setScatterFlashes(flashes);
+              for (let i = 0; i < scatterPositions.length; i++) {
+                setTimeout(() => sound.play('scatter-land'), 100 + i * 130);
               }
+              if (scatterPositions.length >= 3) {
+                setAnticipation(scatterPositions.length);
+                sound.play('thunder');
+              }
+              setTimeout(() => setScatterFlashes([]), 1100);
             }
             break;
           }
@@ -236,6 +251,37 @@ export function ImmersiveSlotView({
             const fresh = new Set<string>();
             for (const col of frame.grid) for (const c of col) {
               if (!oldKeys.has(c.key)) fresh.add(c.key);
+            }
+            // Detect any newly-tumbled-in scatter cells (key not in old grid)
+            // and flash lightning over them. Updates anticipation if needed.
+            const newScatters: { col: number; row: number }[] = [];
+            for (let c = 0; c < frame.grid.length; c++) {
+              const col = frame.grid[c]!;
+              for (let r = 0; r < col.length; r++) {
+                const cell = col[r]!;
+                if (cell.symbolId === cfg.scatterId && fresh.has(cell.key)) {
+                  newScatters.push({ col: c, row: r });
+                }
+              }
+            }
+            if (newScatters.length > 0) {
+              const flashes = newScatters.map((p, i) => ({
+                id: `sf-tum-${i}-${Math.random().toString(36).slice(2, 6)}`,
+                col: p.col,
+                row: p.row,
+              }));
+              setScatterFlashes(flashes);
+              for (let i = 0; i < newScatters.length; i++) {
+                setTimeout(() => sound.play('scatter-land'), 80 + i * 110);
+              }
+              setTimeout(() => setScatterFlashes([]), 900);
+            }
+            const totalScatters = countScattersInGrid(frame.grid, cfg.scatterId);
+            if (totalScatters >= 3) {
+              setAnticipation(totalScatters);
+              if (newScatters.length > 0) sound.play('thunder');
+            } else {
+              setAnticipation(0);
             }
             setNewKeys(fresh);
             setFloatingMults([]);
@@ -337,6 +383,8 @@ export function ImmersiveSlotView({
       setBigWin(null);
       setFloatingMults([]);
       setClusterPopups([]);
+      setScatterFlashes([]);
+      setAnticipation(0);
       setStatusMsg('');
       setWinTotal(0);
       sound.play('spin');
@@ -529,6 +577,85 @@ export function ImmersiveSlotView({
             ))}
           </AnimatePresence>
 
+          {/* Lightning flash over each freshly-landed scatter cell. Real Olympus
+              flashes a vertical bolt down each scatter column at landing. */}
+          <AnimatePresence>
+            {scatterFlashes.map((f) => (
+              <motion.div
+                key={f.id}
+                className="absolute pointer-events-none z-[6]"
+                style={{
+                  left: `${liveInsets.left + f.col * (liveInsets.width / cfg.cols)}%`,
+                  top: 0,
+                  width: `${liveInsets.width / cfg.cols}%`,
+                  bottom: 0,
+                }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: [0, 1, 0.5, 0.9, 0] }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.7, times: [0, 0.08, 0.2, 0.35, 1], ease: 'easeOut' }}
+              >
+                {/* Vertical lightning streak through the column */}
+                <div
+                  className="absolute left-1/2 top-0 bottom-0 -translate-x-1/2"
+                  style={{
+                    width: 3,
+                    background:
+                      'linear-gradient(180deg, transparent 0%, #fffbe1 20%, #ffe9a8 50%, #ffc62a 80%, transparent 100%)',
+                    filter: 'drop-shadow(0 0 16px rgba(255,200,80,.95)) drop-shadow(0 0 32px rgba(255,140,40,.7))',
+                    transform: 'translate(-50%, 0) skewX(-4deg)',
+                  }}
+                />
+                {/* Glow halo around the cell location */}
+                <div
+                  className="absolute left-1/2 -translate-x-1/2"
+                  style={{
+                    top: `${(f.row + 0.5) * 100 / cfg.rows}%`,
+                    width: '120%',
+                    height: '40%',
+                    transform: 'translate(-50%, -50%)',
+                    background: 'radial-gradient(ellipse at center, rgba(255,233,168,.65) 0%, transparent 65%)',
+                    filter: 'blur(2px)',
+                  }}
+                />
+              </motion.div>
+            ))}
+          </AnimatePresence>
+
+          {/* Anticipation: pulsing amber-red border + dim when 3+ scatters
+              are visible (one away from a free spins trigger). Real Olympus
+              has the same tension-build during cascades. */}
+          <AnimatePresence>
+            {anticipation >= 3 && (
+              <motion.div
+                className="absolute inset-0 pointer-events-none z-[4] rounded-2xl"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
+                <motion.div
+                  className="absolute inset-0 rounded-2xl"
+                  style={{
+                    boxShadow: 'inset 0 0 80px rgba(255,140,40,.55), inset 0 0 24px rgba(255,40,40,.4)',
+                  }}
+                  animate={{ opacity: [0.55, 0.95, 0.55] }}
+                  transition={{ duration: 1.1, repeat: Infinity, ease: 'easeInOut' }}
+                />
+                <div
+                  className="absolute top-2 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full font-mono font-bold text-[11px] text-[#fff7d6] uppercase tracking-widest"
+                  style={{
+                    background: 'linear-gradient(180deg, rgba(255,180,40,.85), rgba(180,40,40,.65))',
+                    border: '1px solid rgba(255,233,168,.6)',
+                    boxShadow: '0 0 18px rgba(255,140,40,.7)',
+                    textShadow: '0 0 8px rgba(255,200,40,.9), 0 1px 2px rgba(0,0,0,.6)',
+                  }}
+                >
+                  {anticipation} scatters · 1 from bonus!
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* Win amount popup over each winning cluster (real Olympus parity).
               Positioned at the centroid of the winning cells. */}
           <AnimatePresence>
@@ -668,7 +795,7 @@ export function ImmersiveSlotView({
             >+</button>
           </div>
           <button
-            onClick={() => runRound('buy')}
+            onClick={() => setBuyBonusOpen(true)}
             disabled={busy || inFree || autoplay !== null || balance.balance < buyCost}
             className="w-full px-2 py-1 rounded-lg bg-gradient-to-b from-[#5a2a8a] to-[#2c1147] border border-[#a78bfa]/40 text-[#e6d4ff] text-[10px] font-bold uppercase tracking-wider disabled:opacity-40 disabled:saturate-50"
             style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,.18), 0 0 14px rgba(167,139,250,.25)' }}
@@ -729,6 +856,95 @@ export function ImmersiveSlotView({
           </label>
         </div>
       </div>
+
+      {/* Buy Bonus confirmation dialog (real Olympus parity).
+          Shows guaranteed FS count + cost + warning before charging the user. */}
+      <AnimatePresence>
+        {buyBonusOpen && (
+          <>
+            <motion.button
+              aria-label="Close buy bonus"
+              onClick={() => setBuyBonusOpen(false)}
+              className="fixed inset-0 z-[140] bg-black/75 backdrop-blur-sm"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            />
+            <motion.div
+              role="dialog"
+              aria-modal="true"
+              className="fixed inset-x-4 top-1/2 -translate-y-1/2 z-[145] max-w-sm mx-auto rounded-3xl overflow-hidden"
+              style={{
+                background:
+                  'radial-gradient(ellipse at 50% 0%, rgba(120,60,20,.55), rgba(20,5,10,.95) 70%), linear-gradient(180deg, #1a0f36 0%, #0a0716 60%, #050308 100%)',
+                border: '2px solid rgba(255,198,42,.55)',
+                boxShadow:
+                  'inset 0 1px 0 rgba(255,233,168,.35), 0 0 60px rgba(255,180,40,.3), 0 24px 80px rgba(0,0,0,.7)',
+              }}
+              initial={{ opacity: 0, scale: 0.7, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.85 }}
+              transition={{ type: 'spring', stiffness: 260, damping: 22 }}
+            >
+              {/* Decorative lightning bolts in the corners */}
+              <span className="absolute top-3 left-3 text-2xl" style={{ color: '#FFE9A8', textShadow: '0 0 12px rgba(255,200,40,.9)' }}>⚡</span>
+              <span className="absolute top-3 right-3 text-2xl" style={{ color: '#FFE9A8', textShadow: '0 0 12px rgba(255,200,40,.9)' }}>⚡</span>
+
+              <div className="p-6 pt-10 text-center">
+                <div className="font-serif italic font-bold olympus-fs-title mb-1" style={{ fontSize: 'clamp(22px, 6vw, 32px)' }}>
+                  Buy Free Spins
+                </div>
+                <div className="olympus-fs-sub text-[10px] mb-5">Skip the wait. Enter the bonus.</div>
+
+                <div className="card bg-bg-elev/60 p-4 mb-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-ink-dim uppercase tracking-wider">You Get</span>
+                    <span className="font-serif italic font-bold text-2xl text-[#ffe9a8]"
+                          style={{ textShadow: '0 0 12px rgba(255,200,40,.7)' }}>
+                      {cfg.freeSpinsAwardOnTrigger} Free Spins
+                    </span>
+                  </div>
+                  <div className="border-t border-edge" />
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-ink-dim uppercase tracking-wider">Cost</span>
+                    <span className="font-mono font-bold text-2xl text-ink">
+                      {fmtCurrency(buyCost)}
+                    </span>
+                  </div>
+                  <div className="text-[10px] text-ink-mute">
+                    {cfg.buyBonusCost}× your current bet ({fmtCurrency(bet)})
+                  </div>
+                </div>
+
+                <p className="text-[11px] text-ink-mute mb-4 leading-relaxed">
+                  In free spins, multipliers persist on the grid and sum to apply at the
+                  end of each spin. Average return ≈ {fmtCurrency(buyCost * 0.96)}, but
+                  variance is high.
+                </p>
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setBuyBonusOpen(false)}
+                    className="flex-1 py-3 rounded-xl bg-bg-hover border border-edge text-ink-dim font-semibold"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    disabled={balance.balance < buyCost}
+                    onClick={() => {
+                      setBuyBonusOpen(false);
+                      runRound('buy');
+                    }}
+                    className="btn-olympus btn flex-1 py-3 disabled:opacity-50"
+                  >
+                    Confirm
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* Autoplay sheet */}
       {autoplaySheetOpen && (
@@ -1035,6 +1251,17 @@ function countScattersInGrid(grid: TGrid, scatterId: string): number {
   let n = 0;
   for (const col of grid) for (const cell of col) if (cell.symbolId === scatterId) n++;
   return n;
+}
+
+function scatterPositionsInGrid(grid: TGrid, scatterId: string): { col: number; row: number }[] {
+  const out: { col: number; row: number }[] = [];
+  for (let c = 0; c < grid.length; c++) {
+    const col = grid[c]!;
+    for (let r = 0; r < col.length; r++) {
+      if (col[r]!.symbolId === scatterId) out.push({ col: c, row: r });
+    }
+  }
+  return out;
 }
 
 /** Real Pragmatic Olympus win tiers, by payout-to-bet ratio. */
