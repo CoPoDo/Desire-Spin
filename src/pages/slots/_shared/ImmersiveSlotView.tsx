@@ -507,6 +507,11 @@ export function ImmersiveSlotView({
             if (tier) {
               setBigWin({ payout: frame.totalPayout, tier });
               sound.play(tier.sound);
+              if (cfg.id === 'gates-of-olympus' && tier.intensity >= 1.7) {
+                setZeusEyesGlow(true);
+                speakZeus(zeusLineFor('bigWin'));
+                scheduleSpin(() => setZeusEyesGlow(false), 1800);
+              }
             }
             break;
           }
@@ -524,6 +529,11 @@ export function ImmersiveSlotView({
               if (tier) {
                 setBigWin({ payout: frame.spinPayout, tier });
                 sound.play(tier.sound);
+                if (cfg.id === 'gates-of-olympus' && tier.intensity >= 1.7) {
+                  setZeusEyesGlow(true);
+                  speakZeus(zeusLineFor('bigWin'));
+                  scheduleSpin(() => setZeusEyesGlow(false), 1800);
+                }
               }
             }
             break;
