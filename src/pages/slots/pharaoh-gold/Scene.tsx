@@ -12,18 +12,21 @@ export function PharaohScene() {
             'linear-gradient(180deg, #ffd166 0%, #ff8a40 26%, #c8492a 52%, #5a142e 78%, #14051a 100%)',
         }}
       />
-      {/* Sun */}
+      {/* Sun — slow heat-haze pulse, matching the desert-shimmer effect
+       *  on Wanted's dusk sun. Long 5.5s cycle so it reads as ambient
+       *  heat distortion over the dunes. */}
       <div
         className="absolute"
         style={{
           left: '50%',
           top: '34%',
-          transform: 'translate(-50%, -50%)',
           width: '50%',
           aspectRatio: '1 / 1',
           background:
             'radial-gradient(circle, rgba(255,250,200,.78) 0%, rgba(255,200,80,.4) 30%, transparent 65%)',
           filter: 'blur(2px)',
+          transform: 'translate(-50%, -50%)',
+          animation: 'pharaohSunHaze 5.5s ease-in-out infinite',
         }}
       />
 

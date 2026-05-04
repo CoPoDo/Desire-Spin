@@ -1376,6 +1376,14 @@
   50%      { transform: translate(-50%, -50%) scale(1.04); opacity: 1; }
 }
 
+/* Pharaoh sun heat-haze — matches Wanted's wantedSunHaze in shape +
+ * pacing but slightly slower (5.5s vs 5s) to differentiate the two
+ * desert scenes. Translate centre-anchor preserved inside keyframe. */
+@keyframes pharaohSunHaze {
+  0%, 100% { transform: translate(-50%, -50%) scale(1);    opacity: 0.95; }
+  50%      { transform: translate(-50%, -50%) scale(1.05); opacity: 1;    }
+}
+
 /* Pharaoh sky Eye of Horus watermark — slow opacity breathing so the
  * sacred watcher seems to "open and close" subtly. Translate component
  * preserved inside the keyframe. */
