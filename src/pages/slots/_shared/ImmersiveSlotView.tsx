@@ -490,9 +490,16 @@ export function ImmersiveSlotView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fsActive]);
 
-  // Duck music briefly during big-win celebrations.
+  // Duck music briefly during big-win celebrations + auto-dismiss the
+  // overlay after a duration scaled by tier intensity. Replaces the prior
+  // onAnimationComplete-setTimeout pattern, which leaked across overlapping
+  // bigWin firings (a second bigWin would inherit the first's stale timer
+  // and dismiss too early).
   useEffect(() => {
-    if (bigWin) music.duck(2200 + bigWin.tier.intensity * 400, 0.2);
+    if (!bigWin) return;
+    music.duck(2200 + bigWin.tier.intensity * 400, 0.2);
+    const t = setTimeout(() => setBigWin(null), 2200 + bigWin.tier.intensity * 400);
+    return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bigWin]);
 
@@ -861,9 +868,6 @@ export function ImmersiveSlotView({
                     damping: 12,
                     duration: 0.6,
                   }}
-                  onAnimationComplete={() =>
-                    setTimeout(() => setBigWin(null), 2200 + bigWin.tier.intensity * 400)
-                  }
                 >
                   <motion.div
                     className="font-serif italic font-bold olympus-fs-title"
