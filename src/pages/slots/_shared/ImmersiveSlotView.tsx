@@ -55,6 +55,8 @@ export type ImmersiveSlotViewProps = {
   };
   /** Optional bet preset list. */
   betPresets?: number[];
+  /** Max win shown on the welcome splash (e.g. "5,000×"). */
+  maxWinLabel?: string;
 };
 
 // Frame delays calibrated against real Pragmatic Olympus mobile pacing
@@ -110,6 +112,7 @@ export function ImmersiveSlotView({
   backdropAspect,
   archInsets,
   betPresets = DEFAULT_PRESETS,
+  maxWinLabel = '5,000×',
 }: ImmersiveSlotViewProps) {
   const { balance, fairness, history, sound, session } = useGame();
   const music = useMusic({ soundEnabled: sound.enabled });
@@ -123,6 +126,13 @@ export function ImmersiveSlotView({
   const [statusMsg, setStatusMsg] = useState<string>('');
   const [freeSpins, setFreeSpins] = useState<{ remaining: number; total: number; running: number } | null>(null);
   const [bigWin, setBigWin] = useState<{ payout: number; tier: WinTier } | null>(null);
+  // Welcome splash on first visit — disappears on user interaction or 3.5s.
+  // Real Pragmatic Olympus shows a "MAX WIN 5,000×" splash on game load.
+  const [welcomeSplash, setWelcomeSplash] = useState<boolean>(true);
+  useEffect(() => {
+    const t = setTimeout(() => setWelcomeSplash(false), 3500);
+    return () => clearTimeout(t);
+  }, []);
   const [paytableOpen, setPaytableOpen] = useState(false);
   const [floatingMults, setFloatingMults] = useState<MultiplierLanding[]>([]);
   const [orbImpacts, setOrbImpacts] = useState<{ id: string; col: number; row: number }[]>([]);
@@ -1763,6 +1773,69 @@ export function ImmersiveSlotView({
       </AnimatePresence>
 
       <Paytable open={paytableOpen} onClose={() => setPaytableOpen(false)} cfg={cfg} renderCell={renderCell} />
+
+      {/* Welcome splash — first 3.5s after page load, dismissible by tap.
+          Real Pragmatic shows the game name + max win on every load. */}
+      <AnimatePresence>
+        {welcomeSplash && (
+          <motion.button
+            type="button"
+            onClick={() => setWelcomeSplash(false)}
+            className="fixed inset-0 z-[150] flex flex-col items-center justify-center text-center p-6"
+            style={{
+              background:
+                'radial-gradient(ellipse at center, rgba(80,30,10,.92), rgba(15,5,5,.98) 70%)',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
+            }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4 }}
+          >
+            <motion.div
+              className="font-serif italic font-bold olympus-fs-title text-4xl md:text-6xl mb-2"
+              initial={{ scale: 0.4, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              transition={{ type: 'spring', stiffness: 220, damping: 16 }}
+            >
+              {cfg.name}
+            </motion.div>
+            <motion.div
+              className="olympus-fs-sub text-xs md:text-base mb-8"
+              initial={{ y: 10, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.2 }}
+            >
+              Provably fair · play money
+            </motion.div>
+            <motion.div
+              className="font-mono uppercase tracking-[0.32em] text-[#FFE0A8] text-[11px] mb-1"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4 }}
+            >
+              Max Win
+            </motion.div>
+            <motion.div
+              className="font-serif italic font-bold olympus-fs-title text-3xl md:text-5xl"
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.5, type: 'spring', stiffness: 220, damping: 14 }}
+            >
+              {maxWinLabel}
+            </motion.div>
+            <motion.div
+              className="absolute bottom-12 left-1/2 -translate-x-1/2 text-[10px] uppercase tracking-[0.3em] text-[#FFE0A8]/70"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: [0.45, 0.85, 0.45] }}
+              transition={{ delay: 1, duration: 1.5, repeat: Infinity }}
+            >
+              Tap to begin
+            </motion.div>
+          </motion.button>
+        )}
+      </AnimatePresence>
 
       {/* ?tune=1 — interactive arch-fit tuner. Drag sliders, see grid move
           in real time, then tell me the values. */}
