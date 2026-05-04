@@ -151,6 +151,11 @@ export function ImmersiveSlotView({
   const [anticipation, setAnticipation] = useState<number>(0); // current scatter count if >= 3
   const [fsOverlay, setFsOverlay] = useState<{ count: number; reason: 'scatter' | 'retrigger' | 'buy' } | null>(null);
   const [fsOutroOverlay, setFsOutroOverlay] = useState<{ totalPayout: number } | null>(null);
+  // Mid-spin "TOTAL ×N" reveal that fires once per FS spin where multiplier
+  // orbs sum together. Real Sweet Bonanza & Gates of Olympus show a
+  // dramatic cumulative-multiplier number on screen at the end of every
+  // FS spin where orbs were present — this banner mirrors that beat.
+  const [fsMultReveal, setFsMultReveal] = useState<{ sumOfMultipliers: number; finalPayout: number } | null>(null);
   const [lightningStrike, setLightningStrike] = useState<boolean>(false);
   const [betSheetOpen, setBetSheetOpen] = useState(false);
   const [buyBonusOpen, setBuyBonusOpen] = useState(false);
@@ -430,6 +435,12 @@ export function ImmersiveSlotView({
           case 'multiplierApplied': {
             sound.play('mega-win');
             setStatusMsg(`×${fmtMultiplier(frame.sumOfMultipliers)} → ${fmtCurrency(frame.finalPayout)}`);
+            // Real-game-style reveal: pop a centered "TOTAL ×N" banner
+            // summing all sticky orbs on the grid, then fade. The banner
+            // auto-clears in well under the 850ms frame-delay so the next
+            // frame plays without overlap.
+            setFsMultReveal({ sumOfMultipliers: frame.sumOfMultipliers, finalPayout: frame.finalPayout });
+            scheduleSpin(() => setFsMultReveal(null), turboRef.current ? 380 : 720);
             break;
           }
           case 'freeSpinsEnd': {
@@ -1894,6 +1905,63 @@ export function ImmersiveSlotView({
               transition={{ delay: 0.18, type: 'spring' }}
             >
               {fmtCurrency(fsOutroOverlay.totalPayout)}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Mid-spin total-multiplier reveal — shown briefly at the end of
+          each FS spin where orbs summed. Theme-tinted via cfg.theme.accent
+          so each slot's reveal feels native (gold for Olympus, hot pink
+          for Bonanza, etc.). Pure CSS animation; no engine changes. */}
+      <AnimatePresence>
+        {fsMultReveal && (
+          <motion.div
+            className="fixed inset-0 z-[115] flex items-center justify-center pointer-events-none"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
+          >
+            <motion.div
+              className="flex flex-col items-center"
+              initial={{ scale: 0.4, opacity: 0 }}
+              animate={{ scale: [0.4, 1.18, 1], opacity: 1 }}
+              exit={{ scale: 1.05, opacity: 0 }}
+              transition={{ duration: 0.45, ease: [0.34, 1.6, 0.64, 1] }}
+            >
+              <div
+                className="font-mono uppercase tracking-widest"
+                style={{
+                  fontSize: 'clamp(10px, 2vw, 14px)',
+                  color: cfg.theme.accent,
+                  textShadow: `0 0 12px ${cfg.theme.glow}`,
+                }}
+              >
+                Total Multiplier
+              </div>
+              <div
+                className="font-mono font-black leading-none mt-1"
+                style={{
+                  fontSize: 'clamp(64px, 16vw, 144px)',
+                  color: '#fffbe1',
+                  WebkitTextStroke: `2px ${cfg.theme.accent}`,
+                  textShadow: `0 0 32px ${cfg.theme.glow}, 0 0 64px ${cfg.theme.glow}, 0 6px 14px rgba(0,0,0,.7)`,
+                  letterSpacing: '-0.04em',
+                }}
+              >
+                ×{fmtMultiplier(fsMultReveal.sumOfMultipliers)}
+              </div>
+              <div
+                className="font-mono font-bold mt-2"
+                style={{
+                  fontSize: 'clamp(18px, 4.5vw, 32px)',
+                  color: cfg.theme.accent,
+                  textShadow: `0 0 16px ${cfg.theme.glow}, 0 4px 8px rgba(0,0,0,.6)`,
+                }}
+              >
+                {fmtCurrency(fsMultReveal.finalPayout)}
+              </div>
             </motion.div>
           </motion.div>
         )}
