@@ -843,6 +843,11 @@ export function ImmersiveSlotView({
               disabled={busy || inFree}
               className="w-8 h-8 rounded-full bg-bg-card border border-edge text-ink-dim hover:bg-bg-hover disabled:opacity-40 flex items-center justify-center text-base leading-none"
             >↻</button>
+            <button
+              aria-label="Game info / paytable"
+              onClick={() => setPaytableOpen(true)}
+              className="w-8 h-8 rounded-full bg-bg-card border border-edge text-ink-dim hover:bg-bg-hover flex items-center justify-center text-sm leading-none font-serif italic font-bold"
+            >i</button>
           </div>
           <label className="flex items-center gap-1.5 cursor-pointer text-[10px] uppercase tracking-wider text-ink-dim w-full justify-center">
             <input
