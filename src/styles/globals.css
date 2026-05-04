@@ -1436,6 +1436,14 @@
   53%      { fill: #1a0a04; }
 }
 
+/* Wanted scene poster (set-dressing, not the scatter) — slow paper
+ * flutter pinned at the top nail. Smaller rotation range than the
+ * scatter flutter so it stays in the background. */
+@keyframes wantedScenePoster {
+  0%, 100% { transform: rotate(-1deg); }
+  50%      { transform: rotate(1.2deg); }
+}
+
 /* Wanted SALOON sign — slow gold reflection breathe. Filter-driven
  * brightness wave reads as the gold lettering catching the dusk sun
  * in waves. Long 4.2s cycle keeps it ambient. */

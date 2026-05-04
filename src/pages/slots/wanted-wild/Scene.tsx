@@ -148,7 +148,11 @@ export function WantedScene() {
       {/* 3. Cactus silhouette + nailed WANTED poster on a fence post */}
       <WantedCactus position={{ bottom: '5%', left: '4%' }} size="min(54px, 12cqw)" />
 
-      {/* Nailed WANTED poster on a fence post (right of the cactus) */}
+      {/* Nailed WANTED poster on a fence post (right of the cactus).
+       *  The poster is nailed at the very top so the bottom edge
+       *  catches the wind and rustles. Same flutter pattern as the
+       *  scatter poster (Pass 9) but slower + more subtle since this
+       *  is set-dressing, not a focus element. */}
       <svg
         className="absolute"
         style={{
@@ -158,6 +162,8 @@ export function WantedScene() {
           aspectRatio: '1 / 1.5',
           filter: 'drop-shadow(0 4px 6px rgba(0,0,0,.6))',
           opacity: 0.92,
+          animation: 'wantedScenePoster 5s ease-in-out infinite',
+          transformOrigin: '50% 6%',
         }}
         viewBox="0 0 30 45"
       >
