@@ -59,48 +59,45 @@ export type ImmersiveSlotViewProps = {
   maxWinLabel?: string;
 };
 
-// Frame delays calibrated against real Pragmatic Olympus mobile pacing
-// (measured from gameplay videos — the values represent how long that
-// frame's animation should remain on screen before the next frame fires).
+// Frame delays — tuned to feel snappy. Earlier values dragged spins out;
+// real Pragmatic Olympus is significantly faster than I had it.
 const FRAME_DELAY: Record<string, number> = {
-  initialDrop: 480,        // real ~500: drop + settle
-  lightningStrike: 2000,   // real ~2000-2500: dramatic Zeus pause
-  multipliersLanded: 650,  // real ~600-700: orb fall + bounce
-  wins: 800,               // real ~700-900: hold winning highlight
-  tumble: 400,             // real ~400-500: clear + new drops settle
-  scattersWon: 900,        // scatter pay flash
-  freeSpinsAwarded: 1300,  // award announcement
-  freeSpinsBegin: 1200,    // FS session start drumroll
-  freeSpinsEnd: 1500,      // FS total reveal
-  multiplierApplied: 1200, // total multiplier × payout reveal
+  initialDrop: 320,        // drop + settle
+  lightningStrike: 1300,   // dramatic Zeus pause (was 2000ms — too long)
+  multipliersLanded: 380,  // subtle orb thump
+  wins: 520,               // brief winning highlight hold
+  tumble: 260,             // clear + new drops settle
+  scattersWon: 600,        // scatter pay flash
+  freeSpinsAwarded: 950,   // award announcement
+  freeSpinsBegin: 800,     // FS session start
+  freeSpinsEnd: 1100,      // FS total reveal
+  multiplierApplied: 850,  // total multiplier × payout reveal
   final: 0,
 };
 
-// Per-frame minimum delay so turbo doesn't make things janky (avoids stacking
-// multiple state changes within a single render frame which can drop animations).
+// Per-frame minimum delay so turbo doesn't make things janky.
 const TURBO_MIN_DELAY: Record<string, number> = {
-  initialDrop: 200,
-  lightningStrike: 900, // Lightning Strike never goes super fast — too iconic
-  multipliersLanded: 280,
-  wins: 320,
-  tumble: 200,
-  scattersWon: 400,
-  freeSpinsAwarded: 800,
-  freeSpinsBegin: 700,
-  freeSpinsEnd: 900,
-  multiplierApplied: 600,
+  initialDrop: 160,
+  lightningStrike: 700,
+  multipliersLanded: 180,
+  wins: 240,
+  tumble: 150,
+  scattersWon: 300,
+  freeSpinsAwarded: 600,
+  freeSpinsBegin: 500,
+  freeSpinsEnd: 700,
+  multiplierApplied: 450,
 };
 
 const TURBO_FACTOR = 0.30;
 const SKIP_DELAY_FACTOR = 0.05;
-// Big visual moments are never skippable past these floors — keeps the
-// celebration legible even when the user is mashing.
+// Big visual moments are never skippable past these floors.
 const SKIP_MIN_DELAY: Record<string, number> = {
-  lightningStrike: 600,
-  freeSpinsAwarded: 400,
-  freeSpinsBegin: 350,
-  freeSpinsEnd: 450,
-  multiplierApplied: 350,
+  lightningStrike: 500,
+  freeSpinsAwarded: 320,
+  freeSpinsBegin: 260,
+  freeSpinsEnd: 360,
+  multiplierApplied: 260,
 };
 const DEFAULT_PRESETS = [0.2, 0.5, 1, 2, 5, 10, 20, 50, 100];
 const AUTOPLAY_OPTIONS = [10, 25, 50, 100, 0] as const; // 0 = infinite
@@ -913,9 +910,9 @@ export function ImmersiveSlotView({
             )}
           </AnimatePresence>
 
-          {/* Multiplier orb impact rings — expand outward from each landing
-              cell with a fading glow. Real Olympus shows a shockwave on
-              every orb drop. */}
+          {/* Multiplier orb impact rings — much subtler now. The previous
+              big gold ring on every orb drop was visually noisy. Now just
+              a faint quick flash centered on the landing cell. */}
           <AnimatePresence>
             {orbImpacts.map((imp) => (
               <motion.div
@@ -924,17 +921,17 @@ export function ImmersiveSlotView({
                 style={{
                   left: `${liveInsets.left + (imp.col + 0.5) * (liveInsets.width / cfg.cols)}%`,
                   top: `${liveInsets.top + (imp.row + 0.5) * (liveInsets.width / cfg.cols)}%`,
-                  width: `${liveInsets.width / cfg.cols * 1.4}%`,
+                  width: `${liveInsets.width / cfg.cols * 0.9}%`,
                   aspectRatio: '1 / 1',
                   transform: 'translate(-50%, -50%)',
                   background:
-                    'radial-gradient(circle at 50% 50%, rgba(255,233,168,0.9) 0%, rgba(255,200,40,0.6) 30%, rgba(255,140,40,0.3) 55%, transparent 70%)',
+                    'radial-gradient(circle at 50% 50%, rgba(255,233,168,0.55) 0%, rgba(255,200,40,0.25) 50%, transparent 75%)',
                   mixBlendMode: 'screen',
                 }}
-                initial={{ scale: 0.2, opacity: 0 }}
-                animate={{ scale: [0.2, 1.0, 1.6], opacity: [0, 1, 0] }}
+                initial={{ scale: 0.5, opacity: 0 }}
+                animate={{ scale: [0.5, 1.1], opacity: [0, 0.7, 0] }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+                transition={{ duration: 0.35, ease: 'easeOut' }}
               />
             ))}
           </AnimatePresence>
@@ -1726,99 +1723,61 @@ export function ImmersiveSlotView({
         )}
       </AnimatePresence>
 
-      {/* === Lightning Strike (Zeus arm-raise) overlay ===
-          Real-Olympus signature feature: dramatic dim, lightning streaks
-          across the screen radiating from Zeus's position, Zeus area glows
-          brightly (he's the source), and multiplier orbs slam onto the
-          board (handled by the playFrames staggered timeouts). */}
+      {/* === Lightning Strike: simplified for clarity ===
+          A single bright white flash + bolt + screen shake. No dim overlay,
+          no title — the player should just see Zeus strike and orbs slam in,
+          not be confused by a layered overlay obscuring the board. */}
       <AnimatePresence>
         {lightningStrike && (
           <motion.div
-            className="fixed inset-0 z-[110] pointer-events-none flex items-center justify-center overflow-hidden"
+            className="absolute inset-0 z-[110] pointer-events-none overflow-hidden rounded-[14px]"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.18 }}
+            transition={{ duration: 0.12 }}
           >
-            {/* Dim background */}
-            <div className="absolute inset-0" style={{
-              background:
-                'radial-gradient(ellipse at center, rgba(80,30,10,.55) 0%, rgba(0,0,0,.85) 65%)',
-            }} />
+            {/* Single white screen flash — quick, then gone */}
+            <motion.div
+              className="absolute inset-0 bg-white"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: [0, 0.7, 0, 0.25, 0] }}
+              transition={{ duration: 0.55, times: [0, 0.05, 0.2, 0.3, 0.5] }}
+            />
 
-            {/* Bright Zeus-area highlight — the painted Zeus statue lives in
-                the upper-left of the backdrop. A localized warm radial
-                makes him visibly the source of the lightning. */}
+            {/* Single dramatic bolt down the middle of the painted scene */}
+            <motion.div
+              className="absolute left-1/2 -translate-x-1/2"
+              style={{
+                top: '5%',
+                bottom: '15%',
+                width: '6px',
+                background:
+                  'linear-gradient(180deg, transparent, #fffbe1 10%, #ffe9a8 30%, #ffc62a 70%, transparent 100%)',
+                filter:
+                  'drop-shadow(0 0 30px rgba(255,233,168,1)) drop-shadow(0 0 80px rgba(255,180,40,.85))',
+              }}
+              initial={{ opacity: 0, scaleY: 0 }}
+              animate={{ opacity: [0, 1, 0.4, 0.9, 0], scaleY: [0.3, 1, 1, 1, 1] }}
+              transition={{ duration: 0.6, ease: 'easeOut' }}
+            />
+
+            {/* Subtle Zeus area highlight (less intrusive than before) */}
             <motion.div
               className="absolute"
               style={{
-                left: '-10%',
-                top: '-5%',
-                width: '60%',
-                height: '60%',
+                left: '-5%',
+                top: '0%',
+                width: '45%',
+                height: '50%',
                 background:
-                  'radial-gradient(ellipse at 30% 30%, rgba(255,233,168,0.7) 0%, rgba(255,200,80,0.45) 25%, rgba(255,140,40,0.18) 50%, transparent 75%)',
+                  'radial-gradient(ellipse at 30% 30%, rgba(255,233,168,0.5) 0%, rgba(255,200,80,0.25) 35%, transparent 70%)',
                 mixBlendMode: 'screen',
-                filter: 'blur(4px)',
+                filter: 'blur(6px)',
               }}
-              initial={{ opacity: 0, scale: 0.6 }}
-              animate={{ opacity: [0, 1, 0.85, 1, 0.7], scale: [0.6, 1, 0.95, 1, 1] }}
-              transition={{ duration: 1.2, times: [0, 0.15, 0.4, 0.6, 1], ease: 'easeOut' }}
-            />
-
-            {/* Lightning bolts — radiating from upper-left (Zeus's bolt)
-                toward the grid area in three diverging directions. */}
-            {[0, 1, 2].map((i) => {
-              // Each bolt starts near Zeus (upper-left) and angles down-right
-              const startX = 18 + Math.random() * 8;
-              const angle = -8 + i * 12;
-              return (
-                <motion.div
-                  key={i}
-                  className="absolute"
-                  style={{
-                    left: `${startX}%`,
-                    top: '12%',
-                    bottom: '20%',
-                    width: '3px',
-                    background:
-                      'linear-gradient(180deg, transparent, #fffbe1 8%, #ffe9a8 25%, #ffc62a 65%, transparent 100%)',
-                    filter:
-                      'drop-shadow(0 0 24px rgba(255,200,80,.95)) drop-shadow(0 0 60px rgba(255,140,40,.8))',
-                    transform: `skewX(${angle}deg) translateX(${i * 80}px)`,
-                    transformOrigin: 'top',
-                  }}
-                  initial={{ opacity: 0, scaleY: 0 }}
-                  animate={{ opacity: [0, 1, 0.9, 0], scaleY: [0.4, 1, 1, 1] }}
-                  transition={{ duration: 0.55, delay: i * 0.18, ease: 'easeOut' }}
-                />
-              );
-            })}
-
-            {/* Screen flash */}
-            <motion.div
-              className="absolute inset-0 bg-[#fffbe1]"
               initial={{ opacity: 0 }}
-              animate={{ opacity: [0, 0.55, 0, 0.3, 0] }}
-              transition={{ duration: 0.7, times: [0, 0.05, 0.18, 0.25, 0.4] }}
+              animate={{ opacity: [0, 0.85, 0.4] }}
+              transition={{ duration: 0.7, ease: 'easeOut' }}
             />
-
-            {/* "LIGHTNING STRIKE" title */}
-            <motion.div
-              className="relative z-10 text-center"
-              initial={{ scale: 0.5, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 220, damping: 16, delay: 0.3 }}
-            >
-              <div className="font-serif italic font-bold olympus-fs-title"
-                   style={{ fontSize: 'clamp(34px, 9vw, 64px)' }}>
-                LIGHTNING<br/>STRIKE
-              </div>
-              <div className="olympus-fs-sub mt-2 text-[10px] md:text-sm">
-                Zeus has spoken
-              </div>
-            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

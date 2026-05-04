@@ -144,12 +144,11 @@ export function useSound() {
           noiseBurst(160, 1200, 0.05, 0);
           break;
         case 'lightning-strike':
-          // Dramatic Zeus moment: low rumble → sharp crack → hiss tail
-          tone(80, 350, 'sawtooth', 0.06, 40);
-          noiseBurst(180, 600, 0.13, 60); // initial thunder rumble
-          noiseBurst(80, 4000, 0.18, 200); // sharp crack
-          noiseBurst(500, 1200, 0.05, 240); // hiss tail
-          tone(220, 80, 'square', 0.04, 2000, 220); // electric zing
+          // Single dramatic thunder crack — short and decisive (real
+          // Pragmatic doesn't layer rumble + hiss + zing on every strike).
+          noiseBurst(60, 5000, 0.16, 0); // sharp crack
+          noiseBurst(220, 800, 0.09, 30); // brief rumble tail
+          tone(60, 200, 'sawtooth', 0.04, 35);
           break;
         case 'thunder':
           tone(60, 600, 'sawtooth', 0.04, 30);
