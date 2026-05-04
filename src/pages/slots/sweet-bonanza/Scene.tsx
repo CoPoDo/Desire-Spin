@@ -314,7 +314,10 @@ export function BonanzaScene() {
         <ellipse cx="16" cy="16" rx="1.8" ry="1.2" fill="rgba(255,255,255,.55)" />
       </svg>
 
-      {/* 7. Drifting heart particles — Sweet Bonanza signature ambient */}
+      {/* 7. Drifting heart particles — Sweet Bonanza signature ambient.
+       *    SVG hearts (not emoji) so the colour comes from the candy
+       *    palette instead of the OS's red emoji rendering, which would
+       *    fight the pink-pastel sky. */}
       {[
         { left: '12%', size: 14, dur: 9, delay: 0,    color: '#ff7ad9' },
         { left: '24%', size: 10, dur: 11, delay: 2.4, color: '#ffaad0' },
@@ -324,22 +327,30 @@ export function BonanzaScene() {
         { left: '82%', size: 11, dur: 10.5, delay: 5.6, color: '#ff7ad9' },
         { left: '92%', size: 13, dur: 9.5, delay: 0.8, color: '#ffaad0' },
       ].map((h, i) => (
-        <div
+        <svg
           key={i}
-          className="absolute select-none"
+          className="absolute"
+          viewBox="0 0 24 22"
           style={{
             left: h.left,
             bottom: '-10%',
-            fontSize: `${h.size}px`,
-            color: h.color,
+            width: `${h.size}px`,
+            height: `${h.size}px`,
             filter: `drop-shadow(0 0 6px ${h.color}aa)`,
             animation: `bonanzaHeartDrift ${h.dur}s linear ${h.delay}s infinite`,
             mixBlendMode: 'screen',
             willChange: 'transform, opacity',
           }}
         >
-          ❤
-        </div>
+          <path
+            d="M 12 21 L 2.4 11.4 Q -1 7.4 2 3.6 Q 5.4 -0.4 9.4 2.4 L 12 4.4 L 14.6 2.4 Q 18.6 -0.4 22 3.6 Q 25 7.4 21.6 11.4 Z"
+            fill={h.color}
+            stroke="rgba(255,255,255,.45)"
+            strokeWidth=".5"
+          />
+          {/* Inner highlight gives the heart a candy-glaze sheen */}
+          <ellipse cx="7" cy="6" rx="2" ry="1.4" fill="rgba(255,255,255,.55)" />
+        </svg>
       ))}
 
       {/* 8. Vignette + soft pink-edge frame */}
