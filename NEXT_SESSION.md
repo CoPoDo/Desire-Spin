@@ -126,19 +126,37 @@ so anyone can dial in the grid placement live and report the values.
 Hard-coded defaults in `src/pages/slots/gates-of-olympus/index.tsx`:
 `archInsets={{ left: 22, top: 45, width: 56 }}`.
 
+## Originals (Stake-style)
+
+Five new games deployed alongside Olympus, all using the shared
+`OriginalPageLayout` (back / title / balance + refill / menu) and the
+provably-fair RNG via `fairness.consumeNonce()`:
+
+| Game   | RTP | Mechanic |
+|--------|-----|----------|
+| Dice   | 99% | Slider over/under target, 0-100 roll |
+| Limbo  | 99% | Set target multiplier, RNG must beat it |
+| Mines  | 99% | 5×5 grid, reveal gems, dodge mines, cash out |
+| Crash  | 99% | Multiplier rises from 1×, cash out before bust |
+| Plinko | 99% | Drop ball through pegs, lands in payout bucket |
+
+Shared components in `src/pages/originals/_shared/`:
+- `BetInput` — bet amount + ½ / 2× / Max
+- `AutoBetController` — Manual / Auto tabs, auto-bet config (count,
+  stop-on-profit, stop-on-loss), live progress display, and a
+  `useAutoBetRunner` hook that loops the game's `runOnce()` async fn
+
+All originals support Manual / Auto modes. Crash has a vertical bust-
+history bar chart (last 20 rounds, log-scaled, color-tiered). Mines has
+a "Pick Random" button. Plinko supports concurrent ball drops.
+
 ## Likely next priorities
 
 1. **Sweet Bonanza immersive port** — currently uses the old card layout.
-   The `ImmersiveSlotView` API already accepts `backdropSrc` +
-   `backdropAspect` + `archInsets` so it just needs an SB backdrop image
-   and an entry update.
-2. **Dice / Mines / Crash / Plinko** — placeholders in the lobby.
-3. **Volume sliders** — currently only on/off. Real game has continuous
-   sliders for SFX + music separately.
-4. **Long-press symbol tooltip** — quick paytable preview without
-   opening the full Game Info modal.
-5. **Image optimization** — backdrop is 2.4MB PNG; could WebP for ~70%
-   smaller (Vercel can serve via `<picture>`).
+2. **More Originals** — Wheel, Hilo, Keno, Tower, Roulette.
+3. **Volume sliders** — separate SFX + music sliders.
+4. **Long-press symbol tooltip** — quick paytable preview.
+5. **Image optimization** — backdrop is 2.4MB PNG; could WebP.
 
 ## How to deploy
 Vercel auto-deploys on every push. Lobby URL is the production URL
