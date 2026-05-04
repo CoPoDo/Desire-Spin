@@ -102,8 +102,28 @@ export function WolfScene() {
           </linearGradient>
         </defs>
         <path d="M0,50 L0,30 L10,30 L10,18 L26,18 L26,30 L46,30 L46,22 L66,22 L66,30 L82,30 L82,16 L96,16 L96,30 L100,30 L100,50 Z" fill="url(#wf-mesa-far)" />
+        {/* Moonlight rim on the top edge of the back mesas — pale violet
+         *  highlight where the silhouette meets the sky, suggesting the
+         *  full moon catches the limestone tops. Stroke draws ONLY the
+         *  upper outline (no fill, no bottom edge) by re-tracing just
+         *  the tops of the path. */}
+        <path
+          d="M0,30 L10,30 L10,18 L26,18 L26,30 L46,30 L46,22 L66,22 L66,30 L82,30 L82,16 L96,16 L96,30 L100,30"
+          fill="none"
+          stroke="rgba(220,200,255,.45)"
+          strokeWidth=".25"
+          strokeLinejoin="round"
+        />
         {/* Foreground ridge */}
         <path d="M0,50 L0,42 Q14,40 28,42 Q44,44 60,42 Q76,40 92,44 L100,42 L100,50 Z" fill="url(#wf-near)" />
+        {/* Moonlight rim on foreground ridge top */}
+        <path
+          d="M0,42 Q14,40 28,42 Q44,44 60,42 Q76,40 92,44 L100,42"
+          fill="none"
+          stroke="rgba(220,200,255,.32)"
+          strokeWidth=".2"
+          strokeLinejoin="round"
+        />
         {/* Howling wolf silhouette on the ridge — sized so it reads at
          * any reasonable viewport. Sits in the moonlight beam. Now with
          * a glowing amber eye + visible howl-arcs curving toward the moon
