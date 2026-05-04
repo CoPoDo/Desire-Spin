@@ -62,14 +62,16 @@ export function Grid({
               initial={isNew ? { y: -90, opacity: 0, scale: 0.85 } : false}
               animate={{ y: 0, opacity: 1, scale: isNew ? [0.85, 1.05, 0.97, 1] : 1 }}
               // Win → tumble: cell puffs out with a softer brightness lift
-              // then fades. Earlier values (brightness 1.8 / saturate 1.4)
-              // read as a harsh flash on every winning cell — gentler now so
-              // the cascade feels smooth instead of strobed.
+              // then fades. 0.4s lingers on the winning cell long enough
+              // for the player to register WHICH symbols matched before
+              // they clear. Earlier 0.3s was a touch fast — by the time
+              // the eye tracked to a cluster, half its cells had already
+              // disappeared.
               exit={{
                 scale: 1.22,
                 opacity: 0,
                 filter: 'brightness(1.35) saturate(1.15)',
-                transition: { duration: 0.3, ease: [0.4, 0, 0.2, 1] },
+                transition: { duration: 0.4, ease: [0.4, 0, 0.2, 1] },
               }}
               // Tween-based drop (cheaper than spring physics on 30 simultaneous
               // cells with drop-shadow filters) — keeps the bouncy "land + squish"
