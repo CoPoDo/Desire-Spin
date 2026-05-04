@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { loadJson, saveJson } from '../../../lib/storage';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -40,9 +40,15 @@ import {
 export type ImmersiveSlotViewProps = {
   cfg: SlotConfig;
   renderCell: CellRenderer;
-  /** URL to the painted backdrop image (e.g. /olympus-bg.png). */
-  backdropSrc: string;
-  /** Native pixel dimensions of the backdrop image, used to lock aspect ratio. */
+  /** URL to the painted backdrop image (e.g. /olympus-bg.png). Omit to use
+   *  `backdropElement` instead — useful for games whose scene is rendered
+   *  in CSS rather than a single painted image. */
+  backdropSrc?: string;
+  /** CSS-rendered scene to use in place of `backdropSrc`. Sized via
+   *  `backdropAspect`. */
+  backdropElement?: ReactNode;
+  /** Native pixel dimensions of the backdrop image (or virtual canvas if
+   *  using `backdropElement`), used to lock the aspect ratio of the stage. */
   backdropAspect: { w: number; h: number };
   /** Where to place the reel grid inside the image, as percentages. */
   archInsets: {
@@ -57,6 +63,9 @@ export type ImmersiveSlotViewProps = {
   betPresets?: number[];
   /** Max win shown on the welcome splash (e.g. "5,000×"). */
   maxWinLabel?: string;
+  /** Optional custom free-spins backdrop tint (pure CSS background). When
+   *  omitted, a warm purple/amber Olympus-style overlay is used. */
+  freeSpinsTint?: string;
 };
 
 // Frame delays — tuned to feel snappy. Earlier values dragged spins out;
@@ -106,7 +115,9 @@ export function ImmersiveSlotView({
   cfg,
   renderCell,
   backdropSrc,
+  backdropElement,
   backdropAspect,
+  freeSpinsTint,
   archInsets,
   betPresets = DEFAULT_PRESETS,
   maxWinLabel = '5,000×',
@@ -773,21 +784,42 @@ export function ImmersiveSlotView({
             maxWidth: '100%',
           }}
         >
-          <img
-            src={backdropSrc}
-            alt=""
-            className="absolute inset-0 w-full h-full select-none"
-            draggable={false}
-            // If the painted backdrop fails to load, fall back to the
-            // gradient — the game still plays, just no painted scene.
-            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-            style={{
-              filter: 'drop-shadow(0 12px 40px rgba(0,0,0,.6))',
-              borderRadius: '14px',
-              background:
-                'radial-gradient(60% 100% at 50% 50%, #2a1148 0%, #160628 60%, #050308 100%)',
-            }}
-          />
+          {backdropSrc ? (
+            <img
+              src={backdropSrc}
+              alt=""
+              className="absolute inset-0 w-full h-full select-none"
+              draggable={false}
+              // If the painted backdrop fails to load, fall back to the
+              // gradient — the game still plays, just no painted scene.
+              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+              style={{
+                filter: 'drop-shadow(0 12px 40px rgba(0,0,0,.6))',
+                borderRadius: '14px',
+                background:
+                  'radial-gradient(60% 100% at 50% 50%, #2a1148 0%, #160628 60%, #050308 100%)',
+              }}
+            />
+          ) : backdropElement ? (
+            <div
+              className="absolute inset-0 w-full h-full overflow-hidden"
+              style={{
+                borderRadius: '14px',
+                boxShadow: '0 12px 40px rgba(0,0,0,.6)',
+              }}
+            >
+              {backdropElement}
+            </div>
+          ) : (
+            <div
+              className="absolute inset-0 w-full h-full"
+              style={{
+                borderRadius: '14px',
+                background:
+                  'radial-gradient(60% 100% at 50% 50%, #2a1148 0%, #160628 60%, #050308 100%)',
+              }}
+            />
+          )}
           {/* Free-spins backdrop tint — adds a deeper purple/amber overlay
               during FS sessions so the scene feels visibly shifted into a
               higher-stakes mode. Real Pragmatic darkens + warms the bg
@@ -802,6 +834,7 @@ export function ImmersiveSlotView({
                 transition={{ duration: 0.6 }}
                 style={{
                   background:
+                    freeSpinsTint ??
                     'linear-gradient(180deg, rgba(120, 40, 10, 0.18) 0%, rgba(60, 10, 80, 0.32) 50%, rgba(20, 5, 40, 0.4) 100%)',
                   mixBlendMode: 'multiply',
                 }}

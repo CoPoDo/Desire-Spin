@@ -577,3 +577,93 @@
   50% { transform: scale(1.07); filter: brightness(1.5) saturate(1.2); }
   100% { transform: scale(1); filter: brightness(1); }
 }
+
+/* Sweet Bonanza ambient animations — sparkle dust + floating candy */
+@keyframes bonanzaSparkle {
+  0%, 100% { opacity: 0.55; transform: translateY(0); }
+  50%      { opacity: 1.0;  transform: translateY(-2px); }
+}
+@keyframes bonanzaFloat {
+  0%, 100% { transform: translateY(0)   rotate(0deg); }
+  25%      { transform: translateY(-6px) rotate(3deg); }
+  50%      { transform: translateY(0)   rotate(0deg); }
+  75%      { transform: translateY(4px)  rotate(-3deg); }
+}
+
+/* Sweet Bonanza symbol container — vibrant drop-shadow for the candy palette */
+.bonanza-sym {
+  width: 82%;
+  height: 82%;
+  display: grid;
+  place-items: center;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.55));
+  transform: translateZ(0);
+  will-change: transform;
+}
+/* Lollipop scatter — pulses to draw the eye (transform-only, GPU-cheap) */
+.bonanza-sym-scatter {
+  animation: bonanzaScatterPulse 1.7s ease-in-out infinite;
+  filter: drop-shadow(0 3px 6px rgba(0,0,0,.55))
+          drop-shadow(0 0 14px rgba(255, 200, 230, 0.7));
+}
+@keyframes bonanzaScatterPulse {
+  0%, 100% { transform: scale(1) translateZ(0); opacity: 0.95; }
+  50%      { transform: scale(1.05) translateZ(0); opacity: 1; }
+}
+
+/* Sweet Bonanza multiplier orb — vibrant gradient candy bomb */
+.bonanza-orb {
+  position: relative;
+  width: 88%;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 0.95) 0%, rgba(255, 220, 240, 0.85) 12%, transparent 28%),
+    radial-gradient(circle at 50% 55%, #ffe0f4 0%, #ff5fa2 22%, #c41a72 55%, #6a0c3e 80%, #2a0418 100%);
+  border: 2px solid rgba(255, 232, 244, 0.85);
+  box-shadow:
+    inset 0 0 18px rgba(255, 95, 162, 0.55),
+    inset 0 -6px 12px rgba(58, 4, 32, 0.6),
+    0 0 14px rgba(255, 95, 162, 0.7),
+    0 0 32px rgba(196, 26, 114, 0.55),
+    0 8px 18px rgba(0, 0, 0, 0.55);
+  animation: bonanzaOrbBreathe 1.6s ease-in-out infinite;
+}
+.bonanza-orb-text {
+  font-family: 'Cherry Bomb One', 'Fredoka', system-ui, sans-serif;
+  font-weight: 800;
+  font-size: clamp(0.8rem, 2.4cqw, 2rem);
+  color: #fff;
+  text-shadow:
+    0 0 4px rgba(255, 95, 162, 0.9),
+    0 2px 4px rgba(0, 0, 0, 0.85),
+    0 0 12px rgba(255, 232, 244, 0.6);
+  letter-spacing: -0.02em;
+}
+.bonanza-orb-big {
+  border-width: 3px;
+  box-shadow:
+    inset 0 0 22px rgba(255, 95, 162, 0.7),
+    inset 0 -8px 14px rgba(58, 4, 32, 0.7),
+    0 0 22px rgba(255, 95, 162, 0.85),
+    0 0 44px rgba(196, 26, 114, 0.7),
+    0 10px 22px rgba(0, 0, 0, 0.6);
+}
+.bonanza-orb-huge {
+  border-width: 3px;
+  background:
+    radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 0.95) 0%, rgba(255, 232, 168, 0.9) 12%, transparent 28%),
+    radial-gradient(circle at 50% 55%, #fff5e6 0%, #ffc850 22%, #ff5560 50%, #ff2a8c 75%, #5a0824 100%);
+  box-shadow:
+    inset 0 0 26px rgba(255, 200, 80, 0.8),
+    inset 0 -10px 16px rgba(58, 4, 24, 0.8),
+    0 0 30px rgba(255, 95, 162, 1),
+    0 0 60px rgba(255, 200, 80, 0.7),
+    0 12px 28px rgba(0, 0, 0, 0.7);
+}
+@keyframes bonanzaOrbBreathe {
+  0%, 100% { transform: scale(1) translateZ(0); }
+  50%      { transform: scale(1.04) translateZ(0); }
+}

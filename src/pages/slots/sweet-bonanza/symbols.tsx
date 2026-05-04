@@ -1,6 +1,10 @@
 import { motion } from 'framer-motion';
 
-const wrap = 'w-full h-full p-1.5 flex items-center justify-center';
+/** Standard wrapper for non-scatter symbols — the `.bonanza-sym` CSS class
+ *  drives drop-shadow + GPU promotion (matches the Olympus pattern). */
+const wrap = 'bonanza-sym';
+/** Scatter (lollipop) wrapper adds the idle pulse + extra glow. */
+const scatterWrap = 'bonanza-sym bonanza-sym-scatter';
 
 export function HeartSymbol() {
   return (
@@ -196,43 +200,58 @@ export function BlueCandySymbol() {
 
 export function LollipopSymbol() {
   return (
-    <div className={wrap}>
-      <svg viewBox="0 0 64 64" className="w-full h-full drop-shadow-[0_4px_8px_rgba(255,90,160,0.6)]">
+    <div className={scatterWrap}>
+      <svg viewBox="0 0 64 64" className="w-full h-full">
         <defs>
-          <radialGradient id="lp" cx="40%" cy="40%" r="60%">
-            <stop offset="0%" stopColor="#ffe7f1" />
+          <radialGradient id="lp-disc" cx="38%" cy="36%" r="65%">
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" />
+            <stop offset="20%" stopColor="#ffe7f1" />
             <stop offset="55%" stopColor="#ff5fa2" />
-            <stop offset="100%" stopColor="#7a124d" />
+            <stop offset="85%" stopColor="#a8124d" />
+            <stop offset="100%" stopColor="#4a0824" />
           </radialGradient>
+          <radialGradient id="lp-swirl" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#fff5fb" stopOpacity="0.95" />
+            <stop offset="100%" stopColor="#fff5fb" stopOpacity="0" />
+          </radialGradient>
+          <linearGradient id="lp-stick" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#fff5fb" />
+            <stop offset="100%" stopColor="#a8a29e" />
+          </linearGradient>
         </defs>
-        <path d="M32 18 C 18 18 14 32 18 40 C 22 50 32 52 36 50 C 44 46 46 36 42 28 C 40 22 36 18 32 18 Z" fill="url(#lp)" />
-        <path d="M32 52 L 30 60 L 38 60 L 36 52 Z" fill="#ffe7f1" />
-        <path d="M22 28 Q 32 24 40 30" stroke="#ffe7f1" strokeWidth="2" fill="none" />
+        {/* Halo ring */}
+        <circle cx="32" cy="28" r="22" fill="rgba(255,200,230,.15)" />
+        {/* Disc */}
+        <circle cx="32" cy="28" r="18" fill="url(#lp-disc)" stroke="#5a0828" strokeWidth="1" />
+        {/* Swirl pattern — concentric arcs giving the classic spiral candy look */}
+        <path d="M32 14 A 14 14 0 0 1 46 28 A 14 14 0 0 1 32 42 A 14 14 0 0 1 18 28 A 14 14 0 0 1 32 14 Z"
+              fill="none" stroke="#fff" strokeWidth="1" opacity=".55" />
+        <path d="M32 18 A 10 10 0 0 1 42 28 A 10 10 0 0 1 32 38 A 10 10 0 0 1 22 28 A 10 10 0 0 1 32 18 Z"
+              fill="none" stroke="#fff" strokeWidth="1.2" opacity=".75" />
+        <path d="M32 22 A 6 6 0 0 1 38 28 A 6 6 0 0 1 32 34 A 6 6 0 0 1 26 28 A 6 6 0 0 1 32 22 Z"
+              fill="none" stroke="#fff" strokeWidth="1.4" opacity=".9" />
+        {/* Big highlight */}
+        <ellipse cx="26" cy="22" rx="5" ry="3" fill="rgba(255,255,255,.7)" />
+        {/* Stick */}
+        <rect x="30" y="46" width="4" height="14" rx="1.5" fill="url(#lp-stick)" stroke="#5a4a30" strokeWidth=".6" />
       </svg>
     </div>
   );
 }
 
-export function MultiplierSymbol({ value, accent }: { value: number; accent: string }) {
+export function MultiplierSymbol({ value }: { value: number; accent?: string }) {
+  // Tiered presentation — bigger, brighter orbs for higher multiplier values
+  // (matches real Sweet Bonanza's chunkier 100×/500× bombs).
+  const tier = value >= 100 ? 'huge' : value >= 25 ? 'big' : 'normal';
   return (
     <motion.div
-      className="w-full h-full p-1 flex items-center justify-center"
-      initial={{ scale: 0.6, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
+      className="w-full h-full flex items-center justify-center"
+      initial={{ scale: 0.5, opacity: 0, rotate: -8 }}
+      animate={{ scale: 1, opacity: 1, rotate: 0 }}
       transition={{ type: 'spring', stiffness: 360, damping: 18 }}
     >
-      <div
-        className="rounded-full font-display font-extrabold flex items-center justify-center text-base sm:text-lg md:text-xl lg:text-2xl"
-        style={{
-          background: `radial-gradient(circle at 35% 30%, #fff, ${accent} 60%, #1a0a0a 100%)`,
-          color: '#1a0a0a',
-          width: '88%',
-          aspectRatio: '1 / 1',
-          boxShadow: `0 0 22px ${accent}80, 0 4px 12px rgba(0,0,0,0.6)`,
-          border: '2px solid rgba(255,255,255,0.85)',
-        }}
-      >
-        {value}×
+      <div className={`bonanza-orb bonanza-orb-${tier}`}>
+        <span className="bonanza-orb-text">{value}×</span>
       </div>
     </motion.div>
   );
