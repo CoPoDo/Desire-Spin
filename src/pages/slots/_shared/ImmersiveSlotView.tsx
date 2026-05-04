@@ -1861,26 +1861,45 @@ export function ImmersiveSlotView({
               aria-modal="true"
               className="fixed inset-x-4 top-1/2 -translate-y-1/2 z-[145] max-w-sm mx-auto rounded-3xl overflow-hidden"
               style={{
-                background:
-                  'radial-gradient(ellipse at 50% 0%, rgba(120,60,20,.55), rgba(20,5,10,.95) 70%), linear-gradient(180deg, #1a0f36 0%, #0a0716 60%, #050308 100%)',
-                border: '2px solid rgba(255,198,42,.55)',
-                boxShadow:
-                  'inset 0 1px 0 rgba(255,233,168,.35), 0 0 60px rgba(255,180,40,.3), 0 24px 80px rgba(0,0,0,.7)',
+                // Theme-tinted dialog backdrop. Was hardcoded Olympus
+                // amber + amethyst.
+                background: `radial-gradient(ellipse at 50% 0%, ${cfg.theme.accent}40, rgba(15,8,12,.96) 70%), linear-gradient(180deg, ${cfg.theme.accent}20 0%, rgba(8,4,8,.95) 60%, rgba(4,2,4,1) 100%)`,
+                border: `2px solid ${cfg.theme.accent}8c`,
+                boxShadow: `inset 0 1px 0 ${cfg.theme.accent}55, 0 0 60px ${cfg.theme.glow}, 0 24px 80px rgba(0,0,0,.7)`,
               }}
               initial={{ opacity: 0, scale: 0.7, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.85 }}
               transition={{ type: 'spring', stiffness: 260, damping: 22 }}
             >
-              {/* Decorative lightning bolts in the corners */}
-              <span className="absolute top-3 left-3 text-2xl" style={{ color: '#FFE9A8', textShadow: '0 0 12px rgba(255,200,40,.9)' }}>⚡</span>
-              <span className="absolute top-3 right-3 text-2xl" style={{ color: '#FFE9A8', textShadow: '0 0 12px rgba(255,200,40,.9)' }}>⚡</span>
+              {/* Corner decoration — uses the slot's FS-trigger glyph
+               *  (lightning for Olympus, chili for Cantina, sheriff star
+               *  for Wanted, etc.) so the buy-bonus dialog matches the
+               *  game's theme. */}
+              <span className="absolute top-3 left-3 text-2xl" style={{ color: cfg.theme.accent, textShadow: `0 0 12px ${cfg.theme.glow}` }}>{fsTriggerGlyph}</span>
+              <span className="absolute top-3 right-3 text-2xl" style={{ color: cfg.theme.accent, textShadow: `0 0 12px ${cfg.theme.glow}` }}>{fsTriggerGlyph}</span>
 
               <div className="p-6 pt-10 text-center">
-                <div className="font-serif italic font-bold olympus-fs-title mb-1" style={{ fontSize: 'clamp(22px, 6vw, 32px)' }}>
+                <div
+                  className="font-serif italic font-bold mb-1"
+                  style={{
+                    fontSize: 'clamp(22px, 6vw, 32px)',
+                    background: `linear-gradient(180deg, #ffffff 0%, #fff5dc 30%, ${cfg.theme.accent} 65%, rgba(0,0,0,.55) 100%)`,
+                    WebkitBackgroundClip: 'text',
+                    backgroundClip: 'text',
+                    color: 'transparent',
+                    filter: `drop-shadow(0 0 18px ${cfg.theme.glow}) drop-shadow(0 4px 6px rgba(0,0,0,.6))`,
+                    letterSpacing: '-0.02em',
+                  }}
+                >
                   Buy Free Spins
                 </div>
-                <div className="olympus-fs-sub text-[10px] mb-5">Skip the wait. Enter the bonus.</div>
+                <div
+                  className="text-[10px] mb-5 uppercase tracking-[0.3em]"
+                  style={{ color: `${cfg.theme.accent}c8` }}
+                >
+                  Skip the wait. Enter the bonus.
+                </div>
 
                 <div className="card bg-bg-elev/60 p-4 mb-4 space-y-3">
                   <div className="flex items-center justify-between">
