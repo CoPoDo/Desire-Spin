@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { loadJson, saveJson } from '../../../lib/storage';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useGame } from '../../../game-context';
 import { createRng } from '../../../lib/fairness';
@@ -62,7 +63,10 @@ const FRAME_DELAY = {
   final: 0,
 } as const;
 
+const TURBO_FACTOR = 0.30;
+const SKIP_DELAY_FACTOR = 0.05;
 const DEFAULT_PRESETS = [0.2, 0.5, 1, 2, 5, 10, 20, 50, 100];
+const AUTOPLAY_OPTIONS = [10, 25, 50, 100, 0] as const; // 0 = infinite
 
 export function ImmersiveSlotView({
   cfg,
@@ -87,8 +91,16 @@ export function ImmersiveSlotView({
   const [floatingMults, setFloatingMults] = useState<MultiplierLanding[]>([]);
   const [fsOverlay, setFsOverlay] = useState<{ count: number; reason: 'scatter' | 'retrigger' | 'buy' } | null>(null);
   const [betSheetOpen, setBetSheetOpen] = useState(false);
+  const [turbo, setTurbo] = useState<boolean>(() => loadJson<boolean>('turbo', false));
+  const [autoplay, setAutoplay] = useState<{ remaining: number; infinite: boolean } | null>(null);
+  const [autoplaySheetOpen, setAutoplaySheetOpen] = useState(false);
+  // Skip flag — when set true mid-spin, the playFrames loop fast-forwards to
+  // the end with near-zero delays. Real-Olympus parity: tap-to-skip cascades.
+  const skipRef = useRef(false);
   const aliveRef = useRef(true);
   const busyRef = useRef(false);
+  const turboRef = useRef(turbo);
+  useEffect(() => { turboRef.current = turbo; saveJson('turbo', turbo); }, [turbo]);
 
   // ----- Tune mode (?tune=1) lets the user dial in the arch coordinates live.
   // URL params al/at/aw override the configured archInsets. Drag-friendly
@@ -210,7 +222,9 @@ export function ImmersiveSlotView({
             break;
           }
         }
-        const delay = FRAME_DELAY[frame.kind] ?? 200;
+        let delay = FRAME_DELAY[frame.kind] ?? 200;
+        if (turboRef.current) delay *= TURBO_FACTOR;
+        if (skipRef.current) delay *= SKIP_DELAY_FACTOR;
         if (delay > 0) await sleep(delay);
       }
     },
@@ -229,6 +243,7 @@ export function ImmersiveSlotView({
       }
       busyRef.current = true;
       setBusy(true);
+      skipRef.current = false; // reset skip on each spin
       setBigWin(null);
       setFloatingMults([]);
       setStatusMsg('');
@@ -276,6 +291,30 @@ export function ImmersiveSlotView({
     [ante, balance, bet, cfg, fairness, history, playFrames, sound],
   );
 
+  // Auto-play loop: when autoplay state is set, the effect kicks off
+  // sequential spins, decrementing the counter each time, until exhausted,
+  // out of balance, or the user stops it. Doesn't run during free spins
+  // (those self-execute inside playRound's frames).
+  useEffect(() => {
+    if (!autoplay || busyRef.current || freeSpins) return;
+    const adjBet = ante ? +(bet * cfg.ante.betMultiplier).toFixed(2) : bet;
+    if (balance.balance < adjBet) {
+      setAutoplay(null);
+      return;
+    }
+    const t = setTimeout(() => {
+      runRound('spin').then(() => {
+        setAutoplay((s) => {
+          if (!s) return null;
+          if (s.infinite) return s;
+          const remaining = s.remaining - 1;
+          return remaining > 0 ? { ...s, remaining } : null;
+        });
+      });
+    }, 200);
+    return () => clearTimeout(t);
+  }, [autoplay, busy, freeSpins, ante, balance.balance, bet, cfg.ante.betMultiplier, runRound]);
+
   const buyCost = useMemo(() => cfg.buyBonusCost * bet, [cfg.buyBonusCost, bet]);
   const inFree = freeSpins !== null;
   const presetIdx = useMemo(() => {
@@ -296,10 +335,38 @@ export function ImmersiveSlotView({
 
   return (
     <div className="absolute inset-0 flex flex-col">
+      {/* Persistent free-spins counter — fixed top, shows over the floating
+          top bar during a free-spins session. Real-Olympus parity. */}
+      {inFree && freeSpins && (
+        <div className="absolute top-12 left-1/2 -translate-x-1/2 z-30 flex items-center gap-3 px-4 py-1.5 rounded-full olympus-fs-counter">
+          <div className="flex flex-col items-center">
+            <span className="text-[8px] uppercase tracking-widest text-[#FFE0A8]">Free Spins</span>
+            <span className="font-serif italic font-bold text-lg leading-none text-[#ffe9a8] tabular-nums"
+                  style={{ textShadow: '0 0 12px rgba(255,200,40,.8)' }}>
+              {(freeSpins.total - freeSpins.remaining)}/{freeSpins.total}
+            </span>
+          </div>
+          <span className="text-[#FFE0A8]/40 text-lg">·</span>
+          <div className="flex flex-col items-center">
+            <span className="text-[8px] uppercase tracking-widest text-[#FFE0A8]">Total Won</span>
+            <span className="font-serif italic font-bold text-lg leading-none text-[#ffe9a8] tabular-nums"
+                  style={{ textShadow: '0 0 12px rgba(255,200,40,.8)' }}>
+              {fmtCurrency(freeSpins.running)}
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Painted backdrop scene fills available space, preserves aspect ratio.
           pt-12 clears the floating top bar; min-h-0 + overflow-hidden lets the
-          flex-1 area shrink properly so the bottom bar is always in view. */}
-      <div className="flex-1 min-h-0 flex items-center justify-center overflow-hidden pt-12 pb-1 px-2">
+          flex-1 area shrink properly so the bottom bar is always in view.
+          Tapping anywhere during an active spin fast-forwards animations. */}
+      <button
+        type="button"
+        onClick={() => { if (busyRef.current) { skipRef.current = true; } }}
+        className="flex-1 min-h-0 flex items-center justify-center overflow-hidden pt-12 pb-1 px-2 cursor-default focus:outline-none"
+        aria-label={busy ? 'Tap to skip animation' : 'Reels'}
+      >
         <div
           className="relative h-full"
           style={{
@@ -400,89 +467,155 @@ export function ImmersiveSlotView({
             )}
           </AnimatePresence>
         </div>
-      </div>
+      </button>
 
       {/* Status row above the bottom bar */}
-      <div className="flex items-center justify-between px-4 h-7 text-[11px] font-mono">
+      <div className="flex items-center justify-between px-4 h-6 text-[11px] font-mono">
         <span className="text-ink-dim">
-          Last win <span className={winTotal > 0 ? 'text-[#ffe9a8]' : 'text-ink-mute'}>{fmtCurrency(winTotal)}</span>
+          Last win <span className={winTotal > 0 ? 'text-[#ffe9a8] font-semibold' : 'text-ink-mute'}>{fmtCurrency(winTotal)}</span>
         </span>
-        {inFree ? (
-          <span className="olympus-fs-counter px-2 py-0.5 rounded text-[#ffe9a8]">
-            FS {(freeSpins!.total - freeSpins!.remaining)}/{freeSpins!.total} · won {fmtCurrency(freeSpins!.running)}
+        {statusMsg ? (
+          <span className="text-[#ffe9a8] truncate max-w-[60vw]">{statusMsg}</span>
+        ) : autoplay ? (
+          <span className="text-[#ffe9a8] flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#ffc62a] animate-pulse" />
+            AUTO {autoplay.infinite ? '∞' : autoplay.remaining}
           </span>
-        ) : statusMsg ? (
-          <span className="text-[#ffe9a8]">{statusMsg}</span>
         ) : null}
       </div>
 
       {/* Bottom action bar — Pragmatic-style mobile spin controls */}
       <div
-        className="flex items-stretch justify-between gap-2 px-3 pt-2 pb-[max(env(safe-area-inset-bottom),10px)] bg-gradient-to-t from-black/80 via-black/55 to-transparent"
+        className="flex items-stretch justify-between gap-2 px-3 pt-2 pb-[max(env(safe-area-inset-bottom),10px)] bg-gradient-to-t from-black/85 via-black/55 to-transparent"
       >
-        {/* Bet stepper */}
-        <div className="flex flex-col items-center justify-center min-w-[88px]">
-          <div className="text-[9px] uppercase tracking-[0.18em] text-ink-mute">Bet</div>
+        {/* Left column: bet stepper + buy bonus stacked */}
+        <div className="flex flex-col items-center justify-end gap-1.5 min-w-[96px]">
           <div className="flex items-center gap-1 mt-0.5">
             <button
               aria-label="Decrease bet"
               onClick={stepDown}
-              disabled={busy || presetIdx === 0}
-              className="w-7 h-7 rounded-full bg-bg-card border border-edge text-ink hover:bg-bg-hover disabled:opacity-40 flex items-center justify-center text-base leading-none"
+              disabled={busy || autoplay !== null || presetIdx === 0}
+              className="w-8 h-8 rounded-full bg-bg-card border border-edge text-ink hover:bg-bg-hover disabled:opacity-40 flex items-center justify-center text-lg leading-none"
             >−</button>
             <button
               onClick={() => setBetSheetOpen(true)}
-              disabled={busy}
-              className="font-mono font-semibold text-sm tabular-nums text-[#ffe9a8] min-w-[52px] text-center"
-              style={{ textShadow: '0 0 10px rgba(255,200,40,.5)' }}
+              disabled={busy || autoplay !== null}
+              className="flex flex-col items-center"
             >
-              {fmtCurrency(bet)}
+              <span className="text-[8px] uppercase tracking-[0.2em] text-ink-mute leading-none">Bet</span>
+              <span className="font-mono font-semibold text-sm tabular-nums text-[#ffe9a8] min-w-[52px] text-center"
+                    style={{ textShadow: '0 0 10px rgba(255,200,40,.5)' }}>
+                {fmtCurrency(bet)}
+              </span>
             </button>
             <button
               aria-label="Increase bet"
               onClick={stepUp}
-              disabled={busy || presetIdx === betPresets.length - 1}
-              className="w-7 h-7 rounded-full bg-bg-card border border-edge text-ink hover:bg-bg-hover disabled:opacity-40 flex items-center justify-center text-base leading-none"
+              disabled={busy || autoplay !== null || presetIdx === betPresets.length - 1}
+              className="w-8 h-8 rounded-full bg-bg-card border border-edge text-ink hover:bg-bg-hover disabled:opacity-40 flex items-center justify-center text-lg leading-none"
             >+</button>
           </div>
-        </div>
-
-        {/* Big round SPIN button */}
-        <button
-          aria-label={inFree ? 'Free spin' : 'Spin'}
-          onClick={() => runRound('spin')}
-          disabled={busy || balance.balance < (ante ? bet * cfg.ante.betMultiplier : bet)}
-          className="spin-btn flex-shrink-0"
-        >
-          <span className="spin-btn-inner">
-            <span className="spin-btn-text">
-              {busy ? (inFree ? `${freeSpins!.remaining}` : '…') : inFree ? freeSpins!.remaining : 'SPIN'}
-            </span>
-          </span>
-        </button>
-
-        {/* Buy bonus + ante toggle */}
-        <div className="flex flex-col items-center justify-center min-w-[88px] gap-1">
           <button
             onClick={() => runRound('buy')}
-            disabled={busy || inFree || balance.balance < buyCost}
-            className="w-full px-2 py-1.5 rounded-lg bg-gradient-to-b from-[#5a2a8a] to-[#2c1147] border border-[#a78bfa]/40 text-[#e6d4ff] text-[11px] font-bold uppercase tracking-wider disabled:opacity-40 disabled:saturate-50"
+            disabled={busy || inFree || autoplay !== null || balance.balance < buyCost}
+            className="w-full px-2 py-1 rounded-lg bg-gradient-to-b from-[#5a2a8a] to-[#2c1147] border border-[#a78bfa]/40 text-[#e6d4ff] text-[10px] font-bold uppercase tracking-wider disabled:opacity-40 disabled:saturate-50"
             style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,.18), 0 0 14px rgba(167,139,250,.25)' }}
           >
             Buy {cfg.buyBonusCost}×
           </button>
-          <label className="flex items-center gap-1.5 cursor-pointer text-[10px] uppercase tracking-wider text-ink-dim">
+        </div>
+
+        {/* Big round SPIN button (or stop button when autoplaying) */}
+        <button
+          aria-label={autoplay ? 'Stop autoplay' : inFree ? 'Free spin' : 'Spin'}
+          onClick={() => {
+            if (autoplay) { setAutoplay(null); return; }
+            runRound('spin');
+          }}
+          disabled={!autoplay && (busy || balance.balance < (ante ? bet * cfg.ante.betMultiplier : bet))}
+          className="spin-btn flex-shrink-0"
+        >
+          <span className="spin-btn-inner">
+            <span className="spin-btn-text">
+              {autoplay
+                ? 'STOP'
+                : busy
+                  ? (inFree ? `${freeSpins!.remaining}` : '…')
+                  : inFree ? freeSpins!.remaining : 'SPIN'}
+            </span>
+          </span>
+        </button>
+
+        {/* Right column: turbo + auto + ante */}
+        <div className="flex flex-col items-center justify-end gap-1.5 min-w-[96px]">
+          <div className="flex items-center gap-1.5">
+            <button
+              aria-label={turbo ? 'Turbo on' : 'Turbo off'}
+              onClick={() => setTurbo((t) => !t)}
+              className={`w-8 h-8 rounded-full border flex items-center justify-center text-base leading-none transition ${
+                turbo
+                  ? 'bg-gradient-to-b from-[#ffc62a] to-[#c8932e] border-[#ffe9a8] text-[#1a0f00] shadow-[0_0_14px_rgba(255,198,42,.6)]'
+                  : 'bg-bg-card border-edge text-ink-dim'
+              }`}
+            >⚡</button>
+            <button
+              aria-label="Auto play"
+              onClick={() => setAutoplaySheetOpen(true)}
+              disabled={busy || inFree}
+              className="w-8 h-8 rounded-full bg-bg-card border border-edge text-ink-dim hover:bg-bg-hover disabled:opacity-40 flex items-center justify-center text-base leading-none"
+            >↻</button>
+          </div>
+          <label className="flex items-center gap-1.5 cursor-pointer text-[10px] uppercase tracking-wider text-ink-dim w-full justify-center">
             <input
               type="checkbox"
               checked={ante}
               onChange={(e) => setAnte(e.target.checked)}
-              disabled={busy || inFree}
+              disabled={busy || inFree || autoplay !== null}
               className="accent-[#ffc62a] w-3 h-3"
             />
             Ante
           </label>
         </div>
       </div>
+
+      {/* Autoplay sheet */}
+      {autoplaySheetOpen && (
+        <>
+          <button
+            aria-label="Close autoplay menu"
+            onClick={() => setAutoplaySheetOpen(false)}
+            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+          />
+          <div className="fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl bg-bg-card border-t border-edge p-4 pb-[max(env(safe-area-inset-bottom),16px)] animate-rise">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-display font-bold">Auto-play</h3>
+              <button onClick={() => setAutoplaySheetOpen(false)} className="text-ink-dim text-xl">✕</button>
+            </div>
+            <p className="text-xs text-ink-dim mb-3">
+              The reels spin automatically with the current bet. Tap STOP at any time, or it'll
+              pause if your balance dips below the bet.
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              {AUTOPLAY_OPTIONS.map((n) => (
+                <button
+                  key={n}
+                  onClick={() => {
+                    setAutoplay({ remaining: n === 0 ? 0 : n, infinite: n === 0 });
+                    setAutoplaySheetOpen(false);
+                  }}
+                  className="py-3 rounded-xl font-mono font-semibold text-sm bg-bg-elev border border-edge text-ink hover:bg-bg-hover"
+                >
+                  {n === 0 ? '∞' : n}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => setAutoplaySheetOpen(false)}
+              className="mt-3 w-full py-2.5 rounded-xl bg-bg-hover text-ink-dim text-sm"
+            >Cancel</button>
+          </div>
+        </>
+      )}
 
       {/* Bet preset sheet */}
       {betSheetOpen && (
