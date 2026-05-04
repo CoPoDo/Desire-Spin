@@ -54,6 +54,7 @@ export function BigJuan() {
   const [buyBonusConfirm, setBuyBonusConfirm] = useState(false);
   const [autoplay, setAutoplay] = useState<{ remaining: number; total: number } | null>(null);
   const [autoplaySheetOpen, setAutoplaySheetOpen] = useState(false);
+  const [bigWin, setBigWin] = useState<{ payout: number; tier: 'big' | 'mega' | 'epic' } | null>(null);
 
   // Menu / panels
   const [menuOpen, setMenuOpen] = useState(false);
@@ -146,6 +147,14 @@ export function BigJuan() {
         r.totalMultiplier >= 100 ? 'mega-win' :
         r.totalMultiplier >= 10 ? 'big-win' : 'win',
       );
+      // Big-win celebration overlay for substantial multipliers.
+      if (r.totalMultiplier >= 50) {
+        const tier = r.totalMultiplier >= 500 ? 'epic'
+          : r.totalMultiplier >= 200 ? 'mega'
+          : 'big';
+        setBigWin({ payout, tier });
+        setTimeout(() => setBigWin(null), tier === 'epic' ? 4500 : tier === 'mega' ? 3500 : 2700);
+      }
     }
     if (r.scatterCount >= 3) {
       // Trigger the BONUS ROUND (3×3 hold-and-win mini-grid). Show the
@@ -615,6 +624,62 @@ export function BigJuan() {
             seeds={bonus.seeds}
             onClose={resolveBonus}
           />
+        )}
+      </AnimatePresence>
+
+      {/* Big-win celebration overlay */}
+      <AnimatePresence>
+        {bigWin && (
+          <motion.div
+            className="fixed inset-0 z-[170] flex flex-col items-center justify-center pointer-events-none"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              background:
+                bigWin.tier === 'epic'
+                  ? 'radial-gradient(70% 60% at 50% 45%, rgba(255,209,102,.4) 0%, rgba(200,16,46,.55) 40%, rgba(0,0,0,.85) 100%)'
+                  : bigWin.tier === 'mega'
+                    ? 'radial-gradient(70% 60% at 50% 45%, rgba(255,209,102,.32) 0%, rgba(0,0,0,.78) 100%)'
+                    : 'radial-gradient(70% 60% at 50% 45%, rgba(255,209,102,.22) 0%, rgba(0,0,0,.7) 100%)',
+              backdropFilter: 'blur(2px)',
+            }}
+          >
+            <motion.div
+              className="font-display font-extrabold mb-2 text-center"
+              initial={{ scale: 0.4, opacity: 0, rotate: -8 }}
+              animate={{ scale: 1, opacity: 1, rotate: 0 }}
+              exit={{ scale: 1.15, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 260, damping: 14 }}
+              style={{
+                fontSize: bigWin.tier === 'epic' ? 'clamp(36px, 11vw, 64px)' : bigWin.tier === 'mega' ? 'clamp(32px, 9vw, 56px)' : 'clamp(28px, 8vw, 48px)',
+                background: bigWin.tier === 'epic'
+                  ? 'linear-gradient(180deg, #fff5c4 0%, #ffd166 30%, #ff5560 65%, #c8102e 100%)'
+                  : 'linear-gradient(180deg, #fff5c4 0%, #ffd166 50%, #c8932e 100%)',
+                WebkitBackgroundClip: 'text',
+                backgroundClip: 'text',
+                color: 'transparent',
+                filter: bigWin.tier === 'epic'
+                  ? 'drop-shadow(0 0 28px rgba(255,209,102,.95)) drop-shadow(0 0 48px rgba(255,85,96,.7)) drop-shadow(0 4px 8px rgba(0,0,0,.6))'
+                  : 'drop-shadow(0 0 24px rgba(255,209,102,.9)) drop-shadow(0 4px 8px rgba(0,0,0,.6))',
+              }}
+            >
+              {bigWin.tier === 'epic' ? 'EPIC WIN!' : bigWin.tier === 'mega' ? 'MEGA WIN!' : 'BIG WIN!'}
+            </motion.div>
+            <motion.div
+              className="font-mono font-extrabold tabular-nums"
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.25, type: 'spring', stiffness: 240, damping: 16 }}
+              style={{
+                fontSize: 'clamp(28px, 8vw, 56px)',
+                color: '#ffd166',
+                textShadow: '0 0 32px rgba(255,209,102,.95), 0 0 64px rgba(255,85,96,.65), 0 4px 8px rgba(0,0,0,.6)',
+              }}
+            >
+              {fmtCurrency(bigWin.payout)}
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
 
