@@ -78,17 +78,32 @@ export function JuanScene() {
           <text x="12" y="11.9" textAnchor="middle" fontSize="1.7" fontFamily="serif" fontWeight="800" fill="#ffd166">
             CANTINA
           </text>
-          {/* Door (warmly lit from inside, double-doors centred) */}
-          <rect x="10" y="13.5" width="4" height="6.5" fill="rgba(255,200,80,.6)" stroke="#0a0204" strokeWidth=".15" />
+          {/* Door (warmly lit from inside, double-doors centred). The
+           *  warm amber spill from the doorway flickers like the candles
+           *  inside catching air through the open frame. */}
+          <rect
+            x="10" y="13.5" width="4" height="6.5"
+            fill="rgba(255,200,80,.6)" stroke="#0a0204" strokeWidth=".15"
+            style={{ animation: 'cantinaWindowFlicker 2.2s ease-in-out infinite' }}
+          />
           <line x1="12" y1="13.5" x2="12" y2="20" stroke="#0a0204" strokeWidth=".2" />
           {/* Door window panels */}
           <rect x="10.4" y="14" width="1.2" height="1.8" fill="rgba(255,232,168,.7)" />
           <rect x="12.4" y="14" width="1.2" height="1.8" fill="rgba(255,232,168,.7)" />
-          {/* Side windows (tall, lit) */}
-          <rect x="3" y="13" width="3" height="4" fill="rgba(255,200,80,.5)" stroke="#0a0204" strokeWidth=".15" />
+          {/* Side windows (tall, lit) — flicker independently with
+           *  different cycles so the candles inside seem distinct. */}
+          <rect
+            x="3" y="13" width="3" height="4"
+            fill="rgba(255,200,80,.5)" stroke="#0a0204" strokeWidth=".15"
+            style={{ animation: 'cantinaWindowFlicker 1.9s ease-in-out -0.4s infinite' }}
+          />
           <line x1="4.5" y1="13" x2="4.5" y2="17" stroke="#0a0204" strokeWidth=".15" />
           <line x1="3" y1="15" x2="6" y2="15" stroke="#0a0204" strokeWidth=".15" />
-          <rect x="18" y="13" width="3" height="4" fill="rgba(255,200,80,.5)" stroke="#0a0204" strokeWidth=".15" />
+          <rect
+            x="18" y="13" width="3" height="4"
+            fill="rgba(255,200,80,.5)" stroke="#0a0204" strokeWidth=".15"
+            style={{ animation: 'cantinaWindowFlicker 2.5s ease-in-out -1.1s infinite' }}
+          />
           <line x1="19.5" y1="13" x2="19.5" y2="17" stroke="#0a0204" strokeWidth=".15" />
           <line x1="18" y1="15" x2="21" y2="15" stroke="#0a0204" strokeWidth=".15" />
           {/* Porch railing posts */}

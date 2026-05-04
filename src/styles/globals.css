@@ -1401,6 +1401,18 @@
   50%      { transform: translate(-50%, -50%) scale(1.02); opacity: 0.4;  }
 }
 
+/* Cantina building windows + door — candle/oil flicker, similar to
+ * Wanted's saloon gas lamps but with a slightly warmer pattern. Three
+ * separate windows use different cycle timings so each candle seems
+ * to catch a different draught. */
+@keyframes cantinaWindowFlicker {
+  0%, 100% { fill-opacity: 0.55; }
+  20%      { fill-opacity: 0.42; }
+  40%      { fill-opacity: 0.7;  }
+  62%      { fill-opacity: 0.5;  }
+  82%      { fill-opacity: 0.65; }
+}
+
 /* Cantina door lantern — oil-lamp flame flicker. Combines opacity
  * variation + r-value variation so the lantern dot grows / shrinks
  * subtly while flickering. Steeper irregular pattern reads as flame
