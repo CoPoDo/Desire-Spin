@@ -70,5 +70,12 @@ export const sugarRushConfig: SlotConfig = {
     glow: 'rgba(255,122,217,0.6)',
     gridClass: 'grid-bg-sugar',
     cellClass: 'cell-sugar',
+    // Real Sugar Rush is a cluster-pays slot (7×7 in the original) where
+    // winning cells POP in place rather than fall — the cells visibly
+    // shrink-vanish like sugar bubbles bursting. The pre-spin transition
+    // mirrors that: existing candies puff out (scale 0.86 + opacity 0)
+    // instead of falling like Bonanza's tumble cascade. Then new candies
+    // drop in from above.
+    prespinStyle: 'puff',
   },
 };
