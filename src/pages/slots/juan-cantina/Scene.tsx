@@ -73,9 +73,15 @@ export function JuanScene() {
           {/* Clay-tile awning (curved orange terracotta strip) */}
           <path d="M -2 7 L 26 7 L 25 9 L -1 9 Z" fill="#a83a14" stroke="#5a1a04" strokeWidth=".15" />
           <path d="M -1 7 L 25 7" stroke="rgba(255,180,80,.5)" strokeWidth=".25" />
-          {/* CANTINA sign (gold rectangle on facade) */}
+          {/* CANTINA sign (gold rectangle on facade) — gold lettering
+           *  catches the dusk sun in slow waves, matching Wanted's
+           *  SALOON sign treatment. */}
           <rect x="6" y="10" width="12" height="2.5" fill="#3a1a04" stroke="#ffd166" strokeWidth=".25" />
-          <text x="12" y="11.9" textAnchor="middle" fontSize="1.7" fontFamily="serif" fontWeight="800" fill="#ffd166">
+          <text
+            x="12" y="11.9" textAnchor="middle" fontSize="1.7"
+            fontFamily="serif" fontWeight="800" fill="#ffd166"
+            style={{ animation: 'cantinaSignGlow 4.6s ease-in-out infinite' }}
+          >
             CANTINA
           </text>
           {/* Door (warmly lit from inside, double-doors centred). The

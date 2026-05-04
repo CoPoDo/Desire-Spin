@@ -1523,6 +1523,13 @@
   50%      { transform: translate(-50%, -50%) scale(1.02); opacity: 0.4;  }
 }
 
+/* Cantina CANTINA sign — slow gold reflection breathe, matches the
+ * Wanted SALOON sign treatment. */
+@keyframes cantinaSignGlow {
+  0%, 100% { filter: drop-shadow(0 0 .4px rgba(255,209,102,.35)) brightness(1);    }
+  50%      { filter: drop-shadow(0 0 1.4px rgba(255,232,168,.85)) brightness(1.18); }
+}
+
 /* Cantina cactus bloom — slow open/close pulse on the pink flower
  * resting atop the cactus arm. Looks like a desert flower expanding
  * + relaxing in dusk light. */
