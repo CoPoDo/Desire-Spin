@@ -12,6 +12,7 @@ import { DiceGame } from './pages/originals/dice';
 import { LimboGame } from './pages/originals/limbo';
 import { MinesGame } from './pages/originals/mines';
 import { CrashGame } from './pages/originals/crash';
+import { PlinkoGame } from './pages/originals/plinko';
 
 export default function App() {
   return (
@@ -31,6 +32,7 @@ export default function App() {
         <Route path="/originals/limbo" element={<LimboGame />} />
         <Route path="/originals/mines" element={<MinesGame />} />
         <Route path="/originals/crash" element={<CrashGame />} />
+        <Route path="/originals/plinko" element={<PlinkoGame />} />
 
         {/* Lobby + non-game routes — full Layout with sidebar */}
         <Route path="/" element={<Layout><Home /></Layout>} />

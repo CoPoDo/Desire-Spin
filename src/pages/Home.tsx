@@ -78,7 +78,13 @@ export function Home() {
             badge="LIVE"
             art={<PlaceholderArt label="📈" tone="#102b3a" />}
           />
-          <GameCard title="Plinko" subtitle="Coming soon" disabled art={<PlaceholderArt label="🟣" tone="#241a3a" />} />
+          <GameCard
+            to="/originals/plinko"
+            title="Plinko"
+            subtitle="Drop the ball"
+            badge="LIVE"
+            art={<PlaceholderArt label="🟣" tone="#241a3a" />}
+          />
         </div>
       </section>
     </div>
