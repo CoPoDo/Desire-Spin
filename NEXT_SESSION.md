@@ -128,7 +128,7 @@ Hard-coded defaults in `src/pages/slots/gates-of-olympus/index.tsx`:
 
 ## Originals (Stake-style)
 
-13 Stake-style games deployed, all using the shared `OriginalPageLayout`
+15 Stake-style games deployed, all using the shared `OriginalPageLayout`
 (back / title / balance + refill / menu) and the provably-fair RNG via
 `fairness.consumeNonce()`. Each one is in `src/pages/originals/<name>/`
 with `engine.ts` (game logic) + `index.tsx` (UI).
@@ -148,6 +148,8 @@ with `engine.ts` (game logic) + `index.tsx` (UI).
 | Blackjack | 99.5%  | Hit/Stand/Double, dealer stands on 17, BJ pays 3:2 |
 | Baccarat  | ~98.9% | Punto Banco rules, multi-bet (Player/Banker/Tie) |
 | Diamonds  | 99%    | 5-gem match, 7-tier rarity, 1000× max payout |
+| Video Poker | 99.5% | Jacks or Better 5-card draw with hold/draw + paytable |
+| Coin Flip | 99%    | Streak heads/tails at 1.98× per correct call, cashout anytime |
 
 All games that make sense (Dice/Limbo/Plinko/Wheel/Crash/Diamonds) ship
 with **Manual / Auto tabs** and auto-bet config (count + stop-on-profit

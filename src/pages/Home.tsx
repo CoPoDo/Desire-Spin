@@ -48,8 +48,8 @@ export function Home() {
       </section>
 
       <section>
-        <SectionHeader title="Originals" subtitle="Stake-style provably-fair games" />
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4">
+        <SectionHeader title="Originals" subtitle="15 Stake-style provably-fair games" />
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
           <GameCard
             to="/originals/dice"
             title="Dice"
