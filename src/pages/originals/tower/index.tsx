@@ -15,6 +15,7 @@ import {
   pickTile,
   startRound,
 } from './engine';
+import { fireConfetti } from '../../../lib/confetti';
 
 const DIFFICULTIES: Difficulty[] = ['easy', 'medium', 'hard', 'expert', 'master'];
 
@@ -84,6 +85,11 @@ export function TowerGame() {
     const next = cashOut(round);
     setRound(next);
     balance.credit(next.payout);
+    if (currentMult >= 1.5) {
+      fireConfetti({
+        count: currentMult >= 50 ? 130 : currentMult >= 10 ? 80 : 50,
+      });
+    }
     history.record({
       game: 'Tower',
       bet: round.bet,
