@@ -400,24 +400,67 @@ export function LollipopSymbol() {
   );
 }
 
+/** Tiered colour gradient for the Sugar Rush heart multiplier — escalates
+ *  from soft pink → magenta → red → orange-fire as the value goes up. */
+function heartTier(value: number) {
+  if (value >= 200) return { stops: ['#fffbe0', '#ffd166', '#ff5560', '#c8102e', '#5a0810'], glow: 'rgba(255,200,80,1)', stroke: '#5a0810' };
+  if (value >= 50)  return { stops: ['#fff5e0', '#ffe0a8', '#ffae50', '#c8102e', '#5a0810'], glow: 'rgba(255,174,80,.95)', stroke: '#5a0810' };
+  if (value >= 12)  return { stops: ['#fff5fb', '#ffaad0', '#ff5fa2', '#c41a72', '#5a0828'], glow: 'rgba(255,95,162,.95)', stroke: '#5a0828' };
+  if (value >= 6)   return { stops: ['#fff5fb', '#ffd1e2', '#ff7ad9', '#c042b8', '#5a124a'], glow: 'rgba(255,122,217,.85)', stroke: '#5a124a' };
+  return { stops: ['#fff5fb', '#ffd1e2', '#ffaad0', '#ff7ad9', '#a8124d'], glow: 'rgba(255,170,208,.85)', stroke: '#7a1c4a' };
+}
+
 export function MultiplierSymbol({ value }: { value: number; accent?: string }) {
-  // Reuse Bonanza's tiered orb classes — same colour escalation.
-  const tier =
-    value >= 200 ? 'fire'
-    : value >= 50  ? 'gold'
-    : value >= 12  ? 'blue'
-    : value >= 6   ? 'purple'
-    :                'pink';
+  // Real Sugar Rush's multiplier symbols are HEART-SHAPED candy hearts,
+  // not the round orbs Sweet Bonanza uses. Sugar Rush gets its own SVG
+  // heart with theme-tiered candy colours so it's visibly distinct.
+  const t = heartTier(value);
+  const id = `sr-mult-${value}`;
   return (
     <motion.div
-      className="w-full h-full flex items-center justify-center"
-      initial={{ scale: 0.5, opacity: 0, rotate: -8 }}
-      animate={{ scale: 1, opacity: 1, rotate: 0 }}
-      transition={{ type: 'spring', stiffness: 360, damping: 18 }}
+      className="w-full h-full flex items-center justify-center relative"
+      initial={{ scale: 0.4, opacity: 0, rotate: -10 }}
+      animate={{ scale: [0.4, 1.18, 1], opacity: 1, rotate: 0 }}
+      transition={{ duration: 0.45, ease: [0.34, 1.6, 0.64, 1] }}
     >
-      <div className={`bonanza-orb bonanza-orb-${tier}`}>
-        <span className="bonanza-orb-text">{value}×</span>
-      </div>
+      <svg viewBox="0 0 64 64" className="w-[92%] h-[92%]"
+        style={{ filter: `drop-shadow(0 0 10px ${t.glow}) drop-shadow(0 4px 6px rgba(0,0,0,.55))` }}
+      >
+        <defs>
+          <radialGradient id={id} cx="38%" cy="32%" r="68%">
+            <stop offset="0%" stopColor={t.stops[0]} stopOpacity="0.95" />
+            <stop offset="20%" stopColor={t.stops[1]} />
+            <stop offset="55%" stopColor={t.stops[2]} />
+            <stop offset="85%" stopColor={t.stops[3]} />
+            <stop offset="100%" stopColor={t.stops[4]} />
+          </radialGradient>
+        </defs>
+        {/* Candy-heart silhouette */}
+        <path
+          d="M 32 56 C 8 38 4 22 18 14 C 26 10 32 16 32 22 C 32 16 38 10 46 14 C 60 22 56 38 32 56 Z"
+          fill={`url(#${id})`}
+          stroke={t.stroke}
+          strokeWidth="1.4"
+          strokeLinejoin="round"
+        />
+        {/* Glaze highlight */}
+        <ellipse cx="22" cy="20" rx="6" ry="3.6" fill="rgba(255,255,255,.62)" />
+        {/* Tiny sparkle */}
+        <circle cx="42" cy="28" r="1.6" fill="rgba(255,255,255,.85)" />
+      </svg>
+      <span
+        className="absolute font-mono font-black"
+        style={{
+          fontSize: 'clamp(0.7rem, 2.2cqw, 1.85rem)',
+          color: '#fff',
+          textShadow:
+            `0 1px 2px rgba(0,0,0,.85), 0 0 6px ${t.glow}, 0 0 14px ${t.glow}`,
+          letterSpacing: '-0.04em',
+          marginTop: '-2%',
+        }}
+      >
+        {value}×
+      </span>
     </motion.div>
   );
 }
