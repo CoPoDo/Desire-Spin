@@ -314,18 +314,36 @@ export function BananaSymbol() {
 export function PinkCandySymbol() {
   return (
     <div className={wrap}>
-      <svg viewBox="0 0 64 64" className="w-full h-full drop-shadow-[0_4px_8px_rgba(255,90,160,0.45)]">
+      <svg viewBox="0 0 64 64" className="w-full h-full">
         <defs>
-          <radialGradient id="pc" cx="35%" cy="35%" r="60%">
-            <stop offset="0%" stopColor="#ffd1e2" />
-            <stop offset="60%" stopColor="#ff5fa2" />
-            <stop offset="100%" stopColor="#9b1d52" />
+          <radialGradient id="pc" cx="38%" cy="32%" r="68%">
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.85" />
+            <stop offset="20%" stopColor="#ffd1e2" />
+            <stop offset="55%" stopColor="#ff5fa2" />
+            <stop offset="85%" stopColor="#9b1d52" />
+            <stop offset="100%" stopColor="#3a0820" />
           </radialGradient>
+          <linearGradient id="pc-w" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="#ffaad0" />
+            <stop offset="100%" stopColor="#7a0838" />
+          </linearGradient>
         </defs>
-        <circle cx="32" cy="34" r="14" fill="url(#pc)" />
-        <path d="M14 34 L 4 28 L 8 38 L 4 48 Z" fill="#ff8fbf" />
-        <path d="M50 34 L 60 28 L 56 38 L 60 48 Z" fill="#ff8fbf" />
-        <ellipse cx="26" cy="28" rx="5" ry="2.6" fill="#fff" opacity="0.5" />
+        {/* Centre candy disc */}
+        <circle cx="32" cy="34" r="14" fill="url(#pc)" stroke="#3a0820" strokeWidth=".7" />
+        {/* Wrapper twists */}
+        <path d="M14 34 L 4 28 L 8 38 L 4 48 Z" fill="url(#pc-w)" stroke="#3a0820" strokeWidth=".5" />
+        <path d="M50 34 L 60 28 L 56 38 L 60 48 Z" fill="url(#pc-w)" stroke="#3a0820" strokeWidth=".5" />
+        {/* Wrapper crinkle lines */}
+        <path d="M 6 32 L 12 34" stroke="#3a0820" strokeWidth=".5" />
+        <path d="M 6 38 L 12 36" stroke="#3a0820" strokeWidth=".5" />
+        <path d="M 6 44 L 12 40" stroke="#3a0820" strokeWidth=".5" />
+        <path d="M 58 32 L 52 34" stroke="#3a0820" strokeWidth=".5" />
+        <path d="M 58 38 L 52 36" stroke="#3a0820" strokeWidth=".5" />
+        <path d="M 58 44 L 52 40" stroke="#3a0820" strokeWidth=".5" />
+        {/* Highlight on disc */}
+        <ellipse cx="26" cy="28" rx="5" ry="2.6" fill="rgba(255,255,255,.65)" />
+        {/* Small specular */}
+        <circle cx="38" cy="42" r="1.2" fill="rgba(255,255,255,.55)" />
       </svg>
     </div>
   );
@@ -334,18 +352,36 @@ export function PinkCandySymbol() {
 export function BlueCandySymbol() {
   return (
     <div className={wrap}>
-      <svg viewBox="0 0 64 64" className="w-full h-full drop-shadow-[0_4px_8px_rgba(60,200,255,0.5)]">
+      <svg viewBox="0 0 64 64" className="w-full h-full">
         <defs>
-          <radialGradient id="bc" cx="35%" cy="35%" r="60%">
-            <stop offset="0%" stopColor="#cdf3ff" />
-            <stop offset="60%" stopColor="#22a8e0" />
-            <stop offset="100%" stopColor="#0e3f6e" />
+          <radialGradient id="bc" cx="38%" cy="32%" r="68%">
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.85" />
+            <stop offset="20%" stopColor="#cdf3ff" />
+            <stop offset="55%" stopColor="#22a8e0" />
+            <stop offset="85%" stopColor="#0e3f6e" />
+            <stop offset="100%" stopColor="#02101e" />
           </radialGradient>
+          <linearGradient id="bc-w" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="#7ad6ff" />
+            <stop offset="100%" stopColor="#0a3a6a" />
+          </linearGradient>
         </defs>
-        <rect x="16" y="20" width="32" height="28" rx="14" fill="url(#bc)" />
-        <path d="M16 34 L 4 28 L 8 38 L 4 48 Z" fill="#7ad6ff" />
-        <path d="M48 34 L 60 28 L 56 38 L 60 48 Z" fill="#7ad6ff" />
-        <ellipse cx="26" cy="28" rx="5" ry="2.6" fill="#fff" opacity="0.5" />
+        {/* Centre pillow candy */}
+        <rect x="16" y="20" width="32" height="28" rx="14" fill="url(#bc)" stroke="#02101e" strokeWidth=".7" />
+        {/* Wrapper twists */}
+        <path d="M16 34 L 4 28 L 8 38 L 4 48 Z" fill="url(#bc-w)" stroke="#02101e" strokeWidth=".5" />
+        <path d="M48 34 L 60 28 L 56 38 L 60 48 Z" fill="url(#bc-w)" stroke="#02101e" strokeWidth=".5" />
+        {/* Wrapper crinkle lines */}
+        <path d="M 6 32 L 14 34" stroke="#02101e" strokeWidth=".5" />
+        <path d="M 6 38 L 14 36" stroke="#02101e" strokeWidth=".5" />
+        <path d="M 6 44 L 14 40" stroke="#02101e" strokeWidth=".5" />
+        <path d="M 58 32 L 50 34" stroke="#02101e" strokeWidth=".5" />
+        <path d="M 58 38 L 50 36" stroke="#02101e" strokeWidth=".5" />
+        <path d="M 58 44 L 50 40" stroke="#02101e" strokeWidth=".5" />
+        {/* Big highlight */}
+        <ellipse cx="26" cy="28" rx="5" ry="2.6" fill="rgba(255,255,255,.65)" />
+        {/* Small specular */}
+        <circle cx="40" cy="42" r="1.2" fill="rgba(255,255,255,.55)" />
       </svg>
     </div>
   );
