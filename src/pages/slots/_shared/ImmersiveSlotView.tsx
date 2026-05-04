@@ -16,6 +16,8 @@ import { Grid } from './Grid';
 import type { CellRenderer } from './Grid';
 import { Paytable } from './Paytable';
 import { buyBonusRound, playRound } from './engine';
+import { CountUp } from '../../../components/ui/CountUp';
+import { CoinShower } from '../../../components/ui/CoinShower';
 
 /**
  * Mobile-first immersive slot view. The whole viewport is the game:
@@ -111,9 +113,10 @@ export function ImmersiveSlotView({
   const [winTotal, setWinTotal] = useState(0);
   const [statusMsg, setStatusMsg] = useState<string>('');
   const [freeSpins, setFreeSpins] = useState<{ remaining: number; total: number; running: number } | null>(null);
-  const [bigWin, setBigWin] = useState<{ payout: number; multiplier: number } | null>(null);
+  const [bigWin, setBigWin] = useState<{ payout: number; tier: WinTier } | null>(null);
   const [paytableOpen, setPaytableOpen] = useState(false);
   const [floatingMults, setFloatingMults] = useState<MultiplierLanding[]>([]);
+  const [clusterPopups, setClusterPopups] = useState<{ id: string; col: number; row: number; payout: number }[]>([]);
   const [fsOverlay, setFsOverlay] = useState<{ count: number; reason: 'scatter' | 'retrigger' | 'buy' } | null>(null);
   const [fsOutroOverlay, setFsOutroOverlay] = useState<{ totalPayout: number } | null>(null);
   const [lightningStrike, setLightningStrike] = useState<boolean>(false);
@@ -204,6 +207,20 @@ export function ImmersiveSlotView({
             sound.play('win');
             setStatusMsg(`+${fmtCurrency(frame.chainPayout)}`);
             lastGrid = frame.grid;
+            // Per-cluster popups: position over the centroid of each win group.
+            const popups = frame.wins.map((w) => {
+              let sumC = 0, sumR = 0;
+              for (const [c, r] of w.positions) { sumC += c; sumR += r; }
+              return {
+                id: `wp-${frame.tumbleIdx}-${w.symbolId}-${Math.random().toString(36).slice(2, 6)}`,
+                col: sumC / w.positions.length,
+                row: sumR / w.positions.length,
+                payout: w.payout,
+              };
+            });
+            setClusterPopups(popups);
+            // Update the running spin total so the Last Win meter ticks up.
+            setWinTotal((t) => +(t + frame.chainPayout).toFixed(2));
             break;
           }
           case 'multipliersLanded': {
@@ -222,6 +239,7 @@ export function ImmersiveSlotView({
             }
             setNewKeys(fresh);
             setFloatingMults([]);
+            setClusterPopups([]); // popups disappear when winners tumble away
             setGrid(frame.grid);
             setWinning(new Set());
             lastGrid = frame.grid;
@@ -264,10 +282,13 @@ export function ImmersiveSlotView({
             sound.play('free-spins-end');
             // Show outro overlay summarizing the FS session win.
             setFsOutroOverlay({ totalPayout: frame.totalPayout });
-            setTimeout(() => setFsOutroOverlay(null), 2400);
+            setTimeout(() => setFsOutroOverlay(null), 2800);
             setFreeSpins(null);
-            const mx = frame.totalPayout / Math.max(betUsed, 0.01);
-            if (mx >= 20) setBigWin({ payout: frame.totalPayout, multiplier: mx });
+            const tier = winTierFor(frame.totalPayout, betUsed);
+            if (tier) {
+              setBigWin({ payout: frame.totalPayout, tier });
+              sound.play(tier.sound);
+            }
             break;
           }
           case 'final': {
@@ -276,9 +297,12 @@ export function ImmersiveSlotView({
                 s ? { ...s, remaining: Math.max(0, s.remaining - 1), running: s.running + frame.spinPayout } : s,
               );
             }
-            const mx = frame.spinPayout / Math.max(betUsed, 0.01);
-            if (mode === 'base' && mx >= 20) {
-              setBigWin({ payout: frame.spinPayout, multiplier: mx });
+            if (mode === 'base') {
+              const tier = winTierFor(frame.spinPayout, betUsed);
+              if (tier) {
+                setBigWin({ payout: frame.spinPayout, tier });
+                sound.play(tier.sound);
+              }
             }
             break;
           }
@@ -312,6 +336,7 @@ export function ImmersiveSlotView({
       skipRef.current = false; // reset skip on each spin
       setBigWin(null);
       setFloatingMults([]);
+      setClusterPopups([]);
       setStatusMsg('');
       setWinTotal(0);
       sound.play('spin');
@@ -415,10 +440,12 @@ export function ImmersiveSlotView({
           <span className="text-[#FFE0A8]/40 text-lg">·</span>
           <div className="flex flex-col items-center">
             <span className="text-[8px] uppercase tracking-widest text-[#FFE0A8]">Total Won</span>
-            <span className="font-serif italic font-bold text-lg leading-none text-[#ffe9a8] tabular-nums"
-                  style={{ textShadow: '0 0 12px rgba(255,200,40,.8)' }}>
-              {fmtCurrency(freeSpins.running)}
-            </span>
+            <CountUp
+              value={freeSpins.running}
+              format={fmtCurrency}
+              className="font-serif italic font-bold text-lg leading-none text-[#ffe9a8] tabular-nums"
+              style={{ textShadow: '0 0 12px rgba(255,200,40,.8)' }}
+            />
           </div>
         </div>
       )}
@@ -502,7 +529,42 @@ export function ImmersiveSlotView({
             ))}
           </AnimatePresence>
 
-          {/* Big win celebration centered on grid */}
+          {/* Win amount popup over each winning cluster (real Olympus parity).
+              Positioned at the centroid of the winning cells. */}
+          <AnimatePresence>
+            {clusterPopups.map((p) => (
+              <motion.div
+                key={p.id}
+                className="absolute pointer-events-none flex items-center justify-center z-[5]"
+                style={{
+                  left: `${liveInsets.left + (p.col + 0.5) * (liveInsets.width / cfg.cols)}%`,
+                  top: `${liveInsets.top + (p.row + 0.5) * (liveInsets.width / cfg.cols)}%`,
+                  transform: 'translate(-50%, -50%)',
+                }}
+                initial={{ scale: 0.3, opacity: 0, y: 8 }}
+                animate={{ scale: [0.3, 1.15, 1], opacity: 1, y: -10 }}
+                exit={{ opacity: 0, y: -22, scale: 0.9 }}
+                transition={{ duration: 0.4, ease: 'easeOut' }}
+              >
+                <span
+                  className="font-serif italic font-bold text-[#fff7d6] px-2 py-0.5 rounded-md whitespace-nowrap"
+                  style={{
+                    fontSize: 'clamp(13px, 3.4vw, 22px)',
+                    background: 'linear-gradient(180deg, rgba(80,40,5,.85), rgba(40,20,2,.9))',
+                    border: '1px solid rgba(255,233,168,.6)',
+                    boxShadow:
+                      'inset 0 1px 0 rgba(255,255,255,.25), 0 0 16px rgba(255,200,40,.55), 0 4px 10px rgba(0,0,0,.5)',
+                    textShadow: '0 0 10px rgba(255,200,40,.85), 0 1px 2px rgba(0,0,0,.6)',
+                  }}
+                >
+                  +{fmtCurrency(p.payout)}
+                </span>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+
+          {/* Tiered Big/Huge/Mega/Epic Win celebration centered on grid.
+              Title pulses, payout counts up live, intensity scales with tier. */}
           <AnimatePresence>
             {bigWin && (
               <motion.div
@@ -513,21 +575,40 @@ export function ImmersiveSlotView({
               >
                 <motion.div
                   className="text-center"
-                  initial={{ scale: 0.5, rotate: -4 }}
-                  animate={{ scale: 1, rotate: 0 }}
-                  transition={{ type: 'spring', stiffness: 220, damping: 14 }}
-                  onAnimationComplete={() => setTimeout(() => setBigWin(null), 1700)}
+                  initial={{ scale: 0.4, rotate: -6 }}
+                  animate={{
+                    scale: [0.4, 1.15, 1],
+                    rotate: [-6, 2, 0],
+                  }}
+                  transition={{
+                    type: 'spring',
+                    stiffness: 200,
+                    damping: 12,
+                    duration: 0.6,
+                  }}
+                  onAnimationComplete={() =>
+                    setTimeout(() => setBigWin(null), 2200 + bigWin.tier.intensity * 400)
+                  }
                 >
-                  <div className="font-serif italic font-bold olympus-fs-title" style={{ fontSize: 'clamp(28px, 9vw, 56px)' }}>
-                    {bigWin.multiplier >= 100 ? 'MEGA WIN' : bigWin.multiplier >= 50 ? 'BIG WIN' : 'NICE WIN'}
-                  </div>
-                  <div className="font-mono font-semibold mt-1" style={{
-                    fontSize: 'clamp(18px, 5vw, 32px)',
-                    color: '#FFE9A8',
-                    textShadow: '0 0 18px rgba(255,200,40,.8), 0 2px 4px rgba(0,0,0,.6)',
-                  }}>
-                    {fmtCurrency(bigWin.payout)}
-                  </div>
+                  <motion.div
+                    className="font-serif italic font-bold olympus-fs-title"
+                    style={{ fontSize: `clamp(${24 + bigWin.tier.intensity * 6}px, ${8 + bigWin.tier.intensity * 1.5}vw, ${48 + bigWin.tier.intensity * 12}px)` }}
+                    animate={{ scale: [1, 1.06, 1] }}
+                    transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+                  >
+                    {bigWin.tier.label}
+                  </motion.div>
+                  <CountUp
+                    value={bigWin.payout}
+                    duration={1400}
+                    format={fmtCurrency}
+                    className="block font-mono font-bold mt-1"
+                    style={{
+                      fontSize: 'clamp(22px, 7vw, 42px)',
+                      color: '#FFE9A8',
+                      textShadow: '0 0 22px rgba(255,200,40,.9), 0 4px 8px rgba(0,0,0,.6)',
+                    }}
+                  />
                 </motion.div>
               </motion.div>
             )}
@@ -538,7 +619,12 @@ export function ImmersiveSlotView({
       {/* Status row above the bottom bar */}
       <div className="flex items-center justify-between px-4 h-6 text-[11px] font-mono">
         <span className="text-ink-dim">
-          Last win <span className={winTotal > 0 ? 'text-[#ffe9a8] font-semibold' : 'text-ink-mute'}>{fmtCurrency(winTotal)}</span>
+          Last win{' '}
+          <CountUp
+            value={winTotal}
+            format={fmtCurrency}
+            className={winTotal > 0 ? 'text-[#ffe9a8] font-semibold' : 'text-ink-mute'}
+          />
         </span>
         {statusMsg ? (
           <span className="text-[#ffe9a8] truncate max-w-[60vw]">{statusMsg}</span>
@@ -718,6 +804,9 @@ export function ImmersiveSlotView({
           </div>
         </>
       )}
+
+      {/* Coin shower for big wins (tier-scaled intensity) */}
+      <CoinShower active={bigWin !== null} intensity={bigWin?.tier.intensity ?? 1} />
 
       {/* === Lightning Strike (Zeus arm-raise) overlay ===
           Real-Olympus signature feature: dramatic dim, lightning streaks
@@ -946,4 +1035,15 @@ function countScattersInGrid(grid: TGrid, scatterId: string): number {
   let n = 0;
   for (const col of grid) for (const cell of col) if (cell.symbolId === scatterId) n++;
   return n;
+}
+
+/** Real Pragmatic Olympus win tiers, by payout-to-bet ratio. */
+type WinTier = { label: string; intensity: number; sound: 'big-win' | 'mega-win' };
+function winTierFor(payout: number, bet: number): WinTier | null {
+  const ratio = payout / Math.max(bet, 0.01);
+  if (ratio >= 100) return { label: 'EPIC WIN',  intensity: 2.4, sound: 'mega-win' };
+  if (ratio >= 50)  return { label: 'MEGA WIN',  intensity: 1.7, sound: 'mega-win' };
+  if (ratio >= 25)  return { label: 'HUGE WIN',  intensity: 1.2, sound: 'big-win' };
+  if (ratio >= 10)  return { label: 'BIG WIN',   intensity: 0.8, sound: 'big-win' };
+  return null;
 }
