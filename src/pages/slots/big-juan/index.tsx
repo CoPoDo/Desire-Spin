@@ -25,6 +25,7 @@ import {
   GloveSvg,
   ChilliSvg,
   PinataSvg,
+  RoyalSvg,
 } from './symbols';
 import { BigJuanBonusRound } from './BonusRound';
 
@@ -701,6 +702,11 @@ function renderBigJuanSymbol(symId: string) {
     case 'glove':    return <GloveSvg />;
     case 'chilli':   return <ChilliSvg />;
     case 'pinata':   return <PinataSvg />;
+    case 'A':        return <RoyalSvg letter="A"  color="#ffd166" />;
+    case 'K':        return <RoyalSvg letter="K"  color="#a78bfa" />;
+    case 'Q':        return <RoyalSvg letter="Q"  color="#ff7ad9" />;
+    case 'J':        return <RoyalSvg letter="J"  color="#1fff7a" />;
+    case '10':       return <RoyalSvg letter="10" color="#22d3ee" />;
   }
   // Fallback: emoji on a disc
   const sym = symbolById(symId);

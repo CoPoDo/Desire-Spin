@@ -298,6 +298,73 @@ export function ChilliSvg({ size = '100%' }: { size?: string | number }) {
   );
 }
 
+/** Royal letter symbol (A / K / Q / J / 10) — stylised gradient letter
+ *  on a colored card-style disc with corner flourishes. */
+export function RoyalSvg({
+  letter,
+  color,
+  size = '100%',
+}: {
+  letter: string;
+  color: string;
+  size?: string | number;
+}) {
+  const id = `royal-${letter.toLowerCase()}`;
+  return (
+    <svg viewBox="0 0 64 64" width={size} height={size}>
+      <defs>
+        <linearGradient id={`${id}-fill`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#ffffff" />
+          <stop offset="40%" stopColor={color} />
+          <stop offset="100%" stopColor="#1a0a04" />
+        </linearGradient>
+        <radialGradient id={`${id}-disc`} cx="35%" cy="32%" r="70%">
+          <stop offset="0%" stopColor={`${color}55`} />
+          <stop offset="60%" stopColor={`${color}22`} />
+          <stop offset="100%" stopColor="#1a0a02" />
+        </radialGradient>
+      </defs>
+      {/* Disc backdrop */}
+      <circle cx="32" cy="32" r="26" fill={`url(#${id}-disc)`} stroke={color} strokeWidth="1.4" />
+      {/* Inner ring (decorative) */}
+      <circle cx="32" cy="32" r="22" fill="none" stroke={`${color}66`} strokeWidth=".4" />
+      {/* Corner flourishes */}
+      <path d="M 16 16 L 22 16 M 16 16 L 16 22" stroke={color} strokeWidth="1" strokeLinecap="round" />
+      <path d="M 48 16 L 42 16 M 48 16 L 48 22" stroke={color} strokeWidth="1" strokeLinecap="round" />
+      <path d="M 16 48 L 22 48 M 16 48 L 16 42" stroke={color} strokeWidth="1" strokeLinecap="round" />
+      <path d="M 48 48 L 42 48 M 48 48 L 48 42" stroke={color} strokeWidth="1" strokeLinecap="round" />
+      {/* Big letter */}
+      <text
+        x="32"
+        y={letter === '10' ? 41 : 43}
+        textAnchor="middle"
+        fontFamily="Fraunces, Georgia, serif"
+        fontWeight="900"
+        fontSize={letter === '10' ? 24 : 30}
+        fill={`url(#${id}-fill)`}
+        stroke="#1a0a04"
+        strokeWidth=".8"
+        style={{ filter: `drop-shadow(0 0 6px ${color}aa)` }}
+      >
+        {letter}
+      </text>
+      {/* Highlight on letter */}
+      <text
+        x="32"
+        y={letter === '10' ? 41 : 43}
+        textAnchor="middle"
+        fontFamily="Fraunces, Georgia, serif"
+        fontWeight="900"
+        fontSize={letter === '10' ? 24 : 30}
+        fill="rgba(255,255,255,.18)"
+        transform="translate(-1, -1)"
+      >
+        {letter}
+      </text>
+    </svg>
+  );
+}
+
 /** Piñata (SCATTER) — colourful donkey shape with stars. */
 export function PinataSvg({ size = '100%' }: { size?: string | number }) {
   return (
