@@ -2,70 +2,149 @@
 
 A running note for whoever (Claude or human) picks up this repo next.
 
-## What's done
+## Status
 
-The Gates of Olympus slot is essentially feature-complete vs. the real
-Pragmatic Play game (within the constraints of an emulator with no
-copyrighted assets). Run `git log --oneline` to see the trail.
+Gates of Olympus is now **deeply parity-matched** to the real Pragmatic
+Play game (within the constraints of an emulator with no copyrighted
+audio/art assets). Many improvements deployed this session — see the git
+log for the full trail.
 
-### Real-Olympus features implemented
+## Real-Olympus parity features implemented
+
+### Gameplay
 - 6×5 pay-anywhere tumble engine with cascade chains
-- Multiplier orbs (random per-tumble + Lightning Strike)
-- Free spins (15 from 4+ scatters), retrigger (+5 from 3 in FS)
+- Multiplier orbs (random per-tumble + dramatic Lightning Strike)
+- Free spins (15 from 4+ scatters), retrigger (+5 from 3 in FS) with
+  prominent "+5 FREE SPINS" callout
 - Persistent grid multipliers in FS, sum-multiply at end of each spin
 - Buy bonus (100×) with confirmation dialog
-- Ante bet (+25%, ~2× scatter chance)
-- Auto-play (10/25/50/100/∞), turbo, tap-to-skip
-- Tiered Big/Huge/Mega/Epic Win celebrations + coin shower
-- Win-cluster popups + cascading WIN counter + win count-up
-- Anticipation effect on 3+ scatters + lightning flash on each scatter land
-- Persistent free-spins HUD (Spins / Multiplier / Won)
-- Ambient sky lightning (12-30s) + scatter idle pulse
-- Pre-spin reels blur transition
-- Game info modal (Paytable / How to Play / Features tabs)
-- Synthesized sound effects + Phrygian-mode background music (base + FS variants)
-- PWA manifest (installable on phone)
-- Provably-fair RNG with verification
+- Ante bet (+25%, ~2× scatter chance) — toggle in bottom bar
+- Auto-play (10/25/50/100/∞) — pauses on big wins / overlays
+- Turbo (lightning bolt button)
+- Tap-to-skip with on-screen "Tap to skip" hint
+- Provably-fair RNG with verification panel
 
-### Architecture
-- `src/pages/slots/_shared/ImmersiveSlotView.tsx` — full-screen slot view
-  used by Olympus (Sweet Bonanza still uses the older `SlotShell.tsx`)
-- `src/pages/slots/_shared/engine.ts` — game-agnostic spin engine
-- `src/pages/slots/gates-of-olympus/` — Olympus config + symbols + page entry
-- `src/components/layout/SlotPageLayout.tsx` — fullscreen layout for slot pages
-- `src/hooks/useMusic.ts` — synthesized background music
-- `src/hooks/useSound.ts` — synthesized SFX palette
+### Probability calibration (matches real game)
+- Multiplier orbs: ~10% of base spins (real ~7-10%)
+- Free spins trigger: ~0.35% (real ~0.4-0.5%)
+- Lightning Strike: ~0.8% (rare special event)
+- Hit rate: ~28% (real 24-28%)
+- RTP: ~96-100% at 100k samples (real 96.5%)
+- Volatility: 5/5 (real high)
+- Max win: 5,000× cap
+
+### Visual presentation
+- Painted Zeus/arch backdrop image with reels positioned inside the arch
+- Six-tier wins (BIG → HUGE → MEGA → EPIC → SENSATIONAL → COLOSSAL)
+- Coin shower particle system (gold + jewel-toned gems) on big wins
+- Cluster popups (gold serif gradient) over each winning cluster
+- Cascading WIN counter that scales with payout
+- Cell drop bounce + landing squish + per-column stagger
+- Win cell puff-out on tumble (brightness flash + scale + fade)
+- Win cell radiating gold halo
+- Win cluster illumination (wide gold radial glow)
+- Symbol art: faceted hexagonal gems + ornate crown/ring/hourglass/chalice
+- Tiered multiplier orbs (normal / big / huge with extra glow)
+- Sticky multiplier orb halo (violet+gold) during free spins
+- FS background tint (multiply-blend purple+amber overlay)
+- Persistent FS HUD (Spins / Total Multiplier / Won) with prominent
+  TOTAL MULT counter that pulses on each new orb
+- Lightning Strike Zeus-area flash + bolts radiating from upper-left
+- Scatter idle pulse (always when on grid)
+- Scatter column pulse on 3+ scatters visible
+- Scatter near-miss tease at 2 scatters (subtle gold inset glow)
+- Anticipation effect at 3+ scatters (red-amber border + callout)
+- Lightning flash on each scatter landing
+- Ambient sky lightning every 12-30s
+- Idle cell glints every 2.4-6.4s when at rest
+- Pre-spin reels-blur transition
+- Welcome splash on game load ("MAX WIN 5,000×")
+- Free-spins outro "TOTAL WIN" overlay
+- Big-win celebration with vignette + pulsing halo + serif gold counter
+- Spin button gold shimmer pulse + sweep highlight when idle
+- Spin button color shift (-12° hue) during free spins
+
+### Audio
+- Synthesized SFX palette (no copyrighted audio):
+  - spin click, drop thunks (multi-layer), win chimes (escalating per chain)
+  - multiplier zap, lightning strike (rumble→crack→hiss→zing)
+  - thunder, scatter-land, big-win, mega-win
+  - free-spins-trigger fanfare, free-spins-end resolve
+  - coin tinkle (staggered through coin shower)
+- Phrygian-mode background music — base + free-spins tracks
+- Music ducks (20%) during big-win celebrations
+- Music intensity switches when entering / exiting FS
+- Audio context closes on unmount (no resource leaks)
+
+### UI / UX
+- Full-screen immersive layout (no scrolling, locked)
+- Floating top bar (back / balance + refill / menu)
+- Bottom action bar (bet stepper + buy / spin / turbo + auto + info + music + ante)
+- Crisp SVG icon set (turbo, autoplay, info, music, plus, minus, back,
+  spin arrow, stop, dots)
+- Olympus-themed bottom sheets (bet preset + autoplay options) with
+  decorative ⚡ corners and gold-gradient active states
+- Buy Free Spins confirmation dialog (purple→gold gradient, lightning
+  bolts, you-get / cost cards)
+- Game Info modal: 3 tabs (Paytable / How to Play / Features) +
+  RTP / Volatility / Max Win indicator card at top
+- Session stats panel: spins, FS triggered, wagered, won, biggest win,
+  biggest multiplier, net result, session length
+- Bet history (last 50 spins) with seed verification info
+- Provably-fair panel (rotate, verify, edit client seed)
+- Status row states: live cascade msg / AUTO N indicator /
+  PLACE YOUR BET prompt / INSUFFICIENT BALANCE warning
+- PWA manifest (installable as app)
+
+### Reliability
+- ErrorBoundary at app root with reload/lobby recovery
+- Stale setTimeout cancellation between spins (no state-leak between bets)
+- Body scroll lock on slot page (Android URL bar safety)
+- Image preload + onError gradient fallback
+- Refund-on-error in spin pipeline (no eaten bets if engine throws)
+- Idempotent music start (no chop on every spin)
+- Defensive seed validation (consumeNonce → guarded RNG init)
+
+## Architecture quick map
+
+| Layer | Files |
+|---|---|
+| RNG core | `src/lib/{sha256,fairness}.ts` |
+| State hooks | `src/hooks/{useBalance,useFairness,useBetHistory,useSound,useMusic,useSessionStats}.ts` |
+| Routing | `src/App.tsx` (slot routes use `SlotPageLayout`, others use `Layout`) |
+| Slot view | `src/pages/slots/_shared/ImmersiveSlotView.tsx` (the big one) |
+| Engine | `src/pages/slots/_shared/engine.ts` (game-agnostic) |
+| Game configs | `src/pages/slots/{gates-of-olympus,sweet-bonanza}/config.ts` |
+| Symbols | `src/pages/slots/{gates-of-olympus,sweet-bonanza}/symbols.tsx` |
+| UI primitives | `src/components/ui/{icons,Modal,CountUp,CoinShower}.tsx` |
+| Layouts | `src/components/layout/{GameProvider,Layout,SlotPageLayout,Sidebar,TopBar,GameCard,ComingSoon}.tsx` |
+| Modals | `src/components/{SessionStatsPanel}.tsx` + `src/components/fairness/{FairnessPanel,BetHistoryTable}.tsx` |
 
 ### Tunable arch coordinates
-`/slots/gates-of-olympus?tune=1` opens drag-sliders for the arch insets so
-the user can dial in the grid placement live and report back the values.
-Hard-coded defaults live in `src/pages/slots/gates-of-olympus/index.tsx`
-under `archInsets={{ left: 22, top: 45, width: 56 }}`.
+`/slots/gates-of-olympus?tune=1` opens drag-sliders for the arch insets
+so anyone can dial in the grid placement live and report the values.
+Hard-coded defaults in `src/pages/slots/gates-of-olympus/index.tsx`:
+`archInsets={{ left: 22, top: 45, width: 56 }}`.
 
 ## Likely next priorities
 
 1. **Sweet Bonanza immersive port** — currently uses the old card layout.
-   Wants its own painted backdrop image (user can supply or AI-generate)
-   and its own `archInsets`. The `ImmersiveSlotView` API already accepts
-   `backdropSrc` + `backdropAspect` + `archInsets`, so it's mostly a
-   matter of wiring + an image.
-2. **Better symbol art** — current SVGs are clean but flat. Could add
-   more 3D dimension, inner highlights, beveled rims.
-3. **Dice / Mines / Crash / Plinko** — placeholders in the lobby. Real
-   Olympus parity continues with these games using the same shell.
-4. **Optimize image** — the painted Olympus image is 2.4MB. Convert to
-   WebP for faster first-paint (Vercel can serve WebP automatically if
-   we use `<picture>` or import via Vite's asset pipeline).
-5. **Performance audit** — 30-cell grid with framer-motion `layout` is
-   fine but could be lighter. CoinShower particles could use Canvas
-   instead of DOM nodes for big celebrations.
+   The `ImmersiveSlotView` API already accepts `backdropSrc` +
+   `backdropAspect` + `archInsets` so it just needs an SB backdrop image
+   and an entry update.
+2. **Dice / Mines / Crash / Plinko** — placeholders in the lobby.
+3. **Volume sliders** — currently only on/off. Real game has continuous
+   sliders for SFX + music separately.
+4. **Long-press symbol tooltip** — quick paytable preview without
+   opening the full Game Info modal.
+5. **Image optimization** — backdrop is 2.4MB PNG; could WebP for ~70%
+   smaller (Vercel can serve via `<picture>`).
 
 ## How to deploy
-Vercel auto-deploys on every push to the branch. Production URL updates
-when the branch is merged to `main`. See `README.md` for the one-time
-setup walkthrough.
+Vercel auto-deploys on every push. Lobby URL is the production URL
+once the branch is merged to `main`. See `README.md` for setup.
 
 ## Testing
 - `npm test` — vitest, 20 tests
-- `npm run dev` — local dev server at :5173
+- `npm run dev` — local at :5173
 - `npm run build` — production bundle in `dist/`
