@@ -56,5 +56,12 @@ export const wantedWildConfig: SlotConfig = {
     glow: 'rgba(200,147,46,0.6)',
     gridClass: 'grid-bg-wanted',
     cellClass: 'cell-wanted',
+    // Real Wanted Dead or a Wild (Hacksaw) is a reel slot — the reels
+    // physically scroll vertically with motion blur during the spin
+    // animation, then stop sequentially. Our app uses the tumble
+    // engine, so we fake reel-scroll with a vertical scaleY smear +
+    // small symmetric blur + upward translate. Reads as "reels
+    // streaking upward fast" rather than the universal blur.
+    prespinStyle: 'reel-spin',
   },
 };
