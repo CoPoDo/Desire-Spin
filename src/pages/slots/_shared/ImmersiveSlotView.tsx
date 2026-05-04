@@ -1610,11 +1610,15 @@ export function ImmersiveSlotView({
           <CountUp
             value={winTotal}
             format={fmtCurrency}
-            className={winTotal > 0 ? 'text-[#ffe9a8] font-semibold' : 'text-ink-mute'}
+            className={winTotal > 0 ? 'font-semibold' : 'text-ink-mute'}
+            style={winTotal > 0 ? { color: cfg.theme.accent } : undefined}
           />
         </span>
         {statusMsg ? (
-          <span className="text-[#ffe9a8] truncate max-w-[60vw]">{statusMsg}</span>
+          <span
+            className="truncate max-w-[60vw]"
+            style={{ color: cfg.theme.accent }}
+          >{statusMsg}</span>
         ) : autoplay ? (
           <span className="text-[#ffe9a8] flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-[#ffc62a] animate-pulse" />
