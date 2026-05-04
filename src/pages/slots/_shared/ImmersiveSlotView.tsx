@@ -1330,12 +1330,20 @@ export function ImmersiveSlotView({
                   }}
                 >
                   <motion.div
-                    className="font-serif italic font-bold olympus-fs-title"
+                    className="font-serif italic font-bold"
                     style={{
                       fontSize: `clamp(${24 + bigWin.tier.intensity * 6}px, ${8 + bigWin.tier.intensity * 1.5}vw, ${48 + bigWin.tier.intensity * 12}px)`,
                       letterSpacing: '-0.015em',
-                      // Outer dramatic stroke for higher tiers
-                      WebkitTextStroke: bigWin.tier.intensity >= 2.4 ? '1px rgba(255,233,168,0.4)' : undefined,
+                      // Per-slot gradient: same approach as the cluster
+                      // popup theming. White cream → slot accent → dark
+                      // anchor reads natively for each game.
+                      background: `linear-gradient(180deg, #ffffff 0%, #fff5dc 30%, ${cfg.theme.accent} 65%, rgba(0,0,0,.55) 100%)`,
+                      WebkitBackgroundClip: 'text',
+                      backgroundClip: 'text',
+                      color: 'transparent',
+                      filter: `drop-shadow(0 0 24px ${cfg.theme.glow}) drop-shadow(0 4px 8px rgba(0,0,0,.6))`,
+                      WebkitTextStroke:
+                        bigWin.tier.intensity >= 2.4 ? `1px ${cfg.theme.accent}66` : undefined,
                     }}
                     animate={{ scale: [1, 1.06, 1] }}
                     transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
@@ -1346,10 +1354,15 @@ export function ImmersiveSlotView({
                     value={bigWin.payout}
                     duration={1400}
                     format={fmtCurrency}
-                    className="block font-serif italic font-extrabold mt-1 olympus-fs-title"
+                    className="block font-serif italic font-extrabold mt-1"
                     style={{
                       fontSize: `clamp(${22 + bigWin.tier.intensity * 4}px, ${7 + bigWin.tier.intensity * 1}vw, ${42 + bigWin.tier.intensity * 8}px)`,
                       letterSpacing: '-0.015em',
+                      background: `linear-gradient(180deg, #ffffff 0%, #fff5dc 30%, ${cfg.theme.accent} 65%, rgba(0,0,0,.55) 100%)`,
+                      WebkitBackgroundClip: 'text',
+                      backgroundClip: 'text',
+                      color: 'transparent',
+                      filter: `drop-shadow(0 0 24px ${cfg.theme.glow}) drop-shadow(0 4px 8px rgba(0,0,0,.6))`,
                     }}
                   />
                 </motion.div>
