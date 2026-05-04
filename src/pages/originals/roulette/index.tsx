@@ -10,6 +10,7 @@ import {
   colorOf,
   play,
 } from './engine';
+import { fireConfetti } from '../../../lib/confetti';
 
 const CHIP_OPTIONS = [1, 5, 10, 50, 100];
 
@@ -82,6 +83,12 @@ export function RouletteGame() {
       if (r.totalReturn > 0) {
         balance.credit(r.totalReturn);
         sound.play(r.totalReturn >= totalStake * 5 ? 'mega-win' : r.totalReturn >= totalStake * 2 ? 'big-win' : 'win');
+        if (r.totalReturn >= totalStake * 2) {
+          fireConfetti({
+            count: r.totalReturn >= totalStake * 10 ? 130 : 70,
+            colors: ['#1fff7a', '#c8102e', '#ffffff', '#15191f', '#ffd166'],
+          });
+        }
       } else {
         sound.play('drop');
       }
