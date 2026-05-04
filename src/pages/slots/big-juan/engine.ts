@@ -320,3 +320,90 @@ export function play(rng: Rng, isFreeSpin: boolean = false): SpinResult {
 }
 
 export { PAYLINES };
+
+// =============================================================================
+// BONUS ROUND — 3×3 respins mini-grid (Money Train / Hold-and-Win style)
+// =============================================================================
+//
+// On free-spin trigger (3+ scatters), the game enters a separate bonus
+// respins mode. Player gets 10 + 2*(scatter-3) initial respins (so 10/12/14
+// for 3/4/5 scatters). Each respin spins the empty cells of a 3×3 grid:
+//
+//  - Coin symbols stick in place when they land (1×, 2×, 5×, 10× values)
+//  - Bonus +1 symbols add a respin and stick
+//  - Jackpot symbols (mini/minor/major/grand) rarely land and stick
+//  - Empty cells re-spin each round
+//  - When a coin lands, the respin counter is RESET to its starting count
+//    (the classic "hold-and-win"); when no new coins land, respins decrement
+//  - Bonus ends when respins = 0 OR all 9 cells are filled
+//  - Total payout = sum of all coin values + jackpot values awarded
+
+export type BonusCellKind =
+  | 'empty'
+  | { kind: 'coin'; value: number }   // multiplier of base bet
+  | { kind: 'extra' }                 // +1 respin
+  | { kind: 'mini' }                  // jackpot tiers
+  | { kind: 'minor' }
+  | { kind: 'major' }
+  | { kind: 'grand' };
+
+export type BonusCell = BonusCellKind extends 'empty' ? 'empty' : BonusCellKind;
+
+/** Jackpot multipliers (× base bet). */
+export const JACKPOTS = {
+  mini:  10,
+  minor: 50,
+  major: 250,
+  grand: 2500,
+} as const;
+
+/** Per-cell weighted distribution for what an empty cell rolls when respun.
+ *  Most rolls are empty → keeps the round dramatic. */
+const BONUS_WEIGHTS: { kind: BonusCellKind; w: number }[] = [
+  { kind: 'empty',                w: 7000 }, // 70% miss
+  { kind: { kind: 'coin', value: 1 },  w: 1200 }, // 12% — 1×
+  { kind: { kind: 'coin', value: 2 },  w: 700  }, // 7%  — 2×
+  { kind: { kind: 'coin', value: 5 },  w: 320  }, // 3.2% — 5×
+  { kind: { kind: 'coin', value: 10 }, w: 150  }, // 1.5% — 10×
+  { kind: { kind: 'coin', value: 25 }, w: 70   }, // 0.7% — 25×
+  { kind: { kind: 'coin', value: 50 }, w: 25   }, // 0.25% — 50×
+  { kind: { kind: 'extra' },           w: 200  }, // 2% — +1 respin
+  { kind: { kind: 'mini' },            w: 80   }, // 0.8% — Mini jackpot
+  { kind: { kind: 'minor' },           w: 30   }, // 0.3%
+  { kind: { kind: 'major' },           w: 10   }, // 0.1%
+  { kind: { kind: 'grand' },           w: 5    }, // 0.05%
+];
+const BONUS_TOTAL_W = BONUS_WEIGHTS.reduce((s, w) => s + w.w, 0);
+
+export function bonusRollOne(rng: Rng): BonusCellKind {
+  const r = rng.nextInt(BONUS_TOTAL_W);
+  let acc = 0;
+  for (const item of BONUS_WEIGHTS) {
+    acc += item.w;
+    if (r < acc) return item.kind;
+  }
+  return 'empty';
+}
+
+/** Total cell value (× bet) for a single bonus cell. */
+export function bonusCellValue(cell: BonusCellKind): number {
+  if (cell === 'empty') return 0;
+  if (typeof cell === 'string') return 0;
+  if (cell.kind === 'coin') return cell.value;
+  if (cell.kind === 'extra') return 0;
+  if (cell.kind === 'mini') return JACKPOTS.mini;
+  if (cell.kind === 'minor') return JACKPOTS.minor;
+  if (cell.kind === 'major') return JACKPOTS.major;
+  if (cell.kind === 'grand') return JACKPOTS.grand;
+  return 0;
+}
+
+export function isFilled(cell: BonusCellKind): boolean {
+  return cell !== 'empty';
+}
+
+/** Initial respin count given trigger scatter count. */
+export function bonusInitialRespins(scatterCount: number): number {
+  return 10 + 2 * Math.max(0, Math.min(2, scatterCount - 3));
+}
+

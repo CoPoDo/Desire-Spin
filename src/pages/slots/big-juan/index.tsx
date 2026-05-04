@@ -23,6 +23,7 @@ import {
   ChilliSvg,
   PinataSvg,
 } from './symbols';
+import { BigJuanBonusRound } from './BonusRound';
 
 const BET_PRESETS = [0.2, 0.5, 1, 2, 5, 10, 20, 50, 100];
 
@@ -38,12 +39,14 @@ export function BigJuan() {
   const [lastResult, setLastResult] = useState<SpinResult | null>(null);
   const [winningCells, setWinningCells] = useState<Set<string>>(new Set());
   const [activeWin, setActiveWin] = useState<WinLine | null>(null);
-  const [freeSpinsRemaining, setFreeSpinsRemaining] = useState(0);
-  const [freeSpinsTotal, setFreeSpinsTotal] = useState(0);
-  const [freeSpinsWon, setFreeSpinsWon] = useState(0);
   const [showFsTrigger, setShowFsTrigger] = useState<number | null>(null);
   const [showWildSwitch, setShowWildSwitch] = useState(false);
   const [betSheetOpen, setBetSheetOpen] = useState(false);
+  /** Active bonus round info, or null if not in bonus. */
+  const [bonus, setBonus] = useState<{
+    scatterCount: number;
+    seeds: { serverSeed: string; clientSeed: string; nonce: number };
+  } | null>(null);
 
   // Menu / panels
   const [menuOpen, setMenuOpen] = useState(false);
@@ -86,9 +89,8 @@ export function BigJuan() {
   }, [lastResult]);
 
   const spin = useCallback(async () => {
-    if (busy) return;
-    const inFs = freeSpinsRemaining > 0;
-    if (!inFs && (balance.balance < bet || bet <= 0)) return;
+    if (busy || bonus) return;
+    if (balance.balance < bet || bet <= 0) return;
     setBusy(true);
     setActiveWin(null);
     setLastResult(null);
@@ -96,11 +98,11 @@ export function BigJuan() {
     setShowFsTrigger(null);
     setShowWildSwitch(false);
     sound.play('click');
-    if (!inFs) balance.debit(bet);
+    balance.debit(bet);
 
     const seeds = fairness.consumeNonce();
     const rng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
-    const r = play(rng, inFs);
+    const r = play(rng, false);
 
     // Reveal reels left-to-right
     for (let reel = 0; reel < 5; reel++) {
@@ -138,16 +140,18 @@ export function BigJuan() {
         r.totalMultiplier >= 10 ? 'big-win' : 'win',
       );
     }
-    if (r.freeSpinsAwarded > 0) {
-      setShowFsTrigger(r.freeSpinsAwarded);
+    if (r.scatterCount >= 3) {
+      // Trigger the BONUS ROUND (3×3 hold-and-win mini-grid). Show the
+      // big celebration banner first, then mount the bonus.
+      setShowFsTrigger(r.scatterCount);
       sound.play('free-spins-trigger');
-      setTimeout(() => setShowFsTrigger(null), 2400);
-      setFreeSpinsRemaining((prev) => prev + r.freeSpinsAwarded);
-      setFreeSpinsTotal((prev) => prev + r.freeSpinsAwarded);
-    }
-    if (inFs) {
-      setFreeSpinsRemaining((prev) => Math.max(0, prev - 1));
-      setFreeSpinsWon((prev) => +(prev + payout).toFixed(2));
+      setTimeout(() => {
+        setShowFsTrigger(null);
+        // Use a fresh nonce for the bonus's RNG so it's reproducible
+        // independently from the trigger spin.
+        const bonusSeeds = fairness.consumeNonce();
+        setBonus({ scatterCount: r.scatterCount, seeds: bonusSeeds });
+      }, 1800);
     }
     history.record({
       game: 'Big Juan',
@@ -160,18 +164,31 @@ export function BigJuan() {
     });
     session.recordSpin(bet, payout, false);
     setBusy(false);
-  }, [busy, bet, balance, fairness, freeSpinsRemaining, sound, history, session]);
+  }, [busy, bonus, bet, balance, fairness, sound, history, session]);
 
-  const inFs = freeSpinsRemaining > 0;
-  const totalCost = bet;
-
-  // Auto-advance free spins (each FS spin auto-fires after a delay)
-  useEffect(() => {
-    if (inFs && !busy) {
-      const t = setTimeout(() => spin(), 800);
-      return () => clearTimeout(t);
+  /** Bonus round resolved — pay the total mult × bet and clear bonus state. */
+  const resolveBonus = useCallback((totalBonusMult: number) => {
+    if (!bonus) return;
+    const payout = +(bet * totalBonusMult).toFixed(2);
+    if (payout > 0) {
+      balance.credit(payout);
+      sound.play(totalBonusMult >= 100 ? 'mega-win' : 'big-win');
     }
-  }, [inFs, busy, spin]);
+    history.record({
+      game: 'Big Juan',
+      bet,
+      payout,
+      multiplier: totalBonusMult,
+      serverSeedHash: fairness.hash,
+      clientSeed: bonus.seeds.clientSeed,
+      nonce: bonus.seeds.nonce,
+    });
+    session.recordSpin(bet, payout, false);
+    setBonus(null);
+  }, [bonus, bet, balance, fairness.hash, history, session, sound]);
+
+  const inFs = false; // legacy alias — bonus round replaces the FS auto loop
+  const totalCost = bet;
 
   return (
     <div
@@ -226,32 +243,6 @@ export function BigJuan() {
           </button>
         </div>
       </header>
-
-      {/* FS HUD */}
-      {inFs && (
-        <div
-          className="absolute z-30 left-1/2 -translate-x-1/2 top-[max(env(safe-area-inset-top),6px)] mt-[52px] flex items-stretch gap-2 px-3 py-1.5 rounded-2xl whitespace-nowrap"
-          style={{
-            background: 'linear-gradient(180deg, rgba(255,180,40,.22), rgba(180,40,40,.08))',
-            border: '1px solid rgba(255,200,80,.55)',
-            boxShadow: '0 0 18px rgba(255,180,40,.35), 0 4px 14px rgba(0,0,0,.45)',
-          }}
-        >
-          <div className="flex flex-col items-center px-1.5">
-            <span className="text-[8px] uppercase tracking-widest text-[#FFE0A8]">Spins</span>
-            <span className="font-mono font-bold text-base leading-none text-[#ffe9a8] tabular-nums">
-              {(freeSpinsTotal - freeSpinsRemaining)}/{freeSpinsTotal}
-            </span>
-          </div>
-          <span className="text-[#FFE0A8]/40 self-center">·</span>
-          <div className="flex flex-col items-center px-1.5">
-            <span className="text-[8px] uppercase tracking-widest text-[#FFE0A8]">Won</span>
-            <span className="font-mono font-bold text-base leading-none text-[#ffe9a8] tabular-nums">
-              {fmtCurrency(freeSpinsWon)}
-            </span>
-          </div>
-        </div>
-      )}
 
       {/* Reels stage */}
       <main className="flex-1 min-h-0 flex items-center justify-center pt-14 pb-2 px-3 relative">
@@ -394,8 +385,8 @@ export function BigJuan() {
                   boxShadow: '0 0 40px rgba(255,209,102,.9), 0 0 80px rgba(255,85,96,.7)',
                 }}
               >
-                <div className="text-3xl">🎉 FREE SPINS</div>
-                <div className="text-xl mt-1">{showFsTrigger} SPINS</div>
+                <div className="text-3xl">🎉 BONUS ROUND</div>
+                <div className="text-xl mt-1">{showFsTrigger}× SCATTER</div>
               </div>
             </motion.div>
           )}
@@ -416,7 +407,7 @@ export function BigJuan() {
         </button>
         <button
           onClick={() => spin()}
-          disabled={busy || inFs || balance.balance < bet || bet <= 0}
+          disabled={busy || !!bonus || balance.balance < bet || bet <= 0}
           className="flex-1 max-w-[160px] mx-auto py-3.5 rounded-2xl font-display font-extrabold text-base uppercase tracking-wider transition active:scale-[0.99]"
           style={{
             background: 'linear-gradient(180deg, #ffd166 0%, #c8932e 60%, #5a3a04 100%)',
@@ -428,7 +419,7 @@ export function BigJuan() {
                 : '0 0 24px rgba(255,209,102,.65), 0 4px 14px rgba(0,0,0,.5)',
           }}
         >
-          {busy ? 'Spinning…' : inFs ? `FS ${freeSpinsRemaining}` : 'Spin'}
+          {busy ? 'Spinning…' : 'Spin'}
         </button>
         <div className="flex flex-col items-end px-3 py-2 rounded-xl bg-bg-card/80 backdrop-blur-sm border border-edge min-w-[88px]">
           <span className="text-[8px] uppercase tracking-widest text-ink-mute">Last win</span>
@@ -536,6 +527,18 @@ export function BigJuan() {
       <FairnessPanel open={fairnessOpen} onClose={() => setFairnessOpen(false)} />
       <BetHistoryTable open={historyOpen} onClose={() => setHistoryOpen(false)} />
       <SessionStatsPanel open={statsOpen} onClose={() => setStatsOpen(false)} />
+
+      {/* Bonus respins overlay */}
+      <AnimatePresence>
+        {bonus && (
+          <BigJuanBonusRound
+            bet={bet}
+            scatterCount={bonus.scatterCount}
+            seeds={bonus.seeds}
+            onClose={resolveBonus}
+          />
+        )}
+      </AnimatePresence>
       {/* totalCost is currently unused but kept for future side-bet/ante. */}
       <span className="hidden">{totalCost}</span>
       {/* Active win info badge */}
