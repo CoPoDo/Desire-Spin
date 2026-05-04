@@ -97,6 +97,17 @@ export function SlotShell({ cfg, renderCell, initialGrid }: SlotShellProps) {
             lastGrid = frame.grid;
             break;
           }
+          case 'lightningStrike': {
+            // SB still uses the old card layout — at minimum apply the new
+            // grid so the multipliers are visible. The dramatic Zeus overlay
+            // lives in ImmersiveSlotView; a future SB immersive port would
+            // get the full effect.
+            setFloatingMults(frame.landings);
+            setGrid(frame.grid);
+            lastGrid = frame.grid;
+            sound.play('multiplier');
+            break;
+          }
           case 'multipliersLanded': {
             setFloatingMults(frame.landings);
             setGrid(frame.grid);

@@ -238,7 +238,11 @@ export function ImmersiveSlotView({
             for (const w of frame.wins) for (const [c, r] of w.positions) win.add(`${c}:${r}`);
             setGrid(frame.grid);
             setWinning(win);
-            sound.play('win');
+            // Escalating chain sounds: chain 1-2 plays standard win,
+            // 3-4 escalates to big-win, 5+ goes mega — builds tension.
+            const chainSound: 'win' | 'big-win' | 'mega-win' =
+              frame.tumbleIdx <= 2 ? 'win' : frame.tumbleIdx <= 4 ? 'big-win' : 'mega-win';
+            sound.play(chainSound);
             setStatusMsg(`+${fmtCurrency(frame.chainPayout)}`);
             lastGrid = frame.grid;
             // Per-cluster popups: position over the centroid of each win group.
