@@ -1362,21 +1362,33 @@ export function ImmersiveSlotView({
         )}
       </AnimatePresence>
 
-      {/* Autoplay sheet */}
+      {/* Autoplay sheet — Olympus-themed */}
       {autoplaySheetOpen && (
         <>
           <button
             aria-label="Close autoplay menu"
             onClick={() => setAutoplaySheetOpen(false)}
-            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm"
           />
-          <div className="fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl bg-bg-card border-t border-edge p-4 pb-[max(env(safe-area-inset-bottom),16px)] animate-rise">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-display font-bold">Auto-play</h3>
-              <button onClick={() => setAutoplaySheetOpen(false)} className="text-ink-dim text-xl">✕</button>
+          <div
+            className="fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl p-4 pb-[max(env(safe-area-inset-bottom),16px)] animate-rise overflow-hidden"
+            style={{
+              background:
+                'radial-gradient(ellipse at 50% 0%, rgba(120,60,20,.4), rgba(20,5,10,.96) 70%), linear-gradient(180deg, #1a0f36 0%, #0a0716 60%, #050308 100%)',
+              border: '1.5px solid rgba(255,198,42,.45)',
+              borderBottom: 'none',
+              boxShadow: 'inset 0 1px 0 rgba(255,233,168,.3), 0 -8px 24px rgba(0,0,0,.6), 0 0 32px rgba(255,180,40,.18)',
+            }}
+          >
+            <span className="absolute top-2 left-3 text-base opacity-80" style={{ color: '#FFE9A8', textShadow: '0 0 8px rgba(255,200,40,.7)' }}>⚡</span>
+            <span className="absolute top-2 right-3 text-base opacity-80" style={{ color: '#FFE9A8', textShadow: '0 0 8px rgba(255,200,40,.7)' }}>⚡</span>
+
+            <div className="flex items-center justify-between mb-1 mt-1">
+              <h3 className="font-serif italic font-bold olympus-fs-title text-lg">Auto-Play</h3>
+              <button onClick={() => setAutoplaySheetOpen(false)} className="text-[#FFE0A8] text-lg w-6 h-6 flex items-center justify-center">✕</button>
             </div>
-            <p className="text-xs text-ink-dim mb-3">
-              The reels spin automatically with the current bet. Tap STOP at any time, or it'll
+            <p className="text-[11px] text-[#FFE0A8]/70 mb-3 leading-relaxed">
+              Reels spin automatically with the current bet. Tap STOP any time, or it'll
               pause if your balance dips below the bet.
             </p>
             <div className="grid grid-cols-3 gap-2">
@@ -1386,8 +1398,13 @@ export function ImmersiveSlotView({
                   onClick={() => {
                     setAutoplay({ remaining: n === 0 ? 0 : n, infinite: n === 0 });
                     setAutoplaySheetOpen(false);
+                    sound.play('click');
                   }}
-                  className="py-3 rounded-xl font-mono font-semibold text-sm bg-bg-elev border border-edge text-ink hover:bg-bg-hover"
+                  className="py-3 rounded-xl font-mono font-semibold text-sm text-[#FFE0A8] hover:text-[#fff7d6] transition"
+                  style={{
+                    background: 'rgba(255,233,168,.04)',
+                    border: '1px solid rgba(255,198,42,.25)',
+                  }}
                 >
                   {n === 0 ? '∞' : n}
                 </button>
@@ -1395,7 +1412,11 @@ export function ImmersiveSlotView({
             </div>
             <button
               onClick={() => setAutoplaySheetOpen(false)}
-              className="mt-3 w-full py-2.5 rounded-xl bg-bg-hover text-ink-dim text-sm"
+              className="mt-3 w-full py-2.5 rounded-xl text-[#FFE0A8] text-sm"
+              style={{
+                background: 'rgba(255,233,168,.06)',
+                border: '1px solid rgba(255,198,42,.25)',
+              }}
             >Cancel</button>
           </div>
         </>
