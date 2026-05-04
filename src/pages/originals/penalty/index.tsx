@@ -112,8 +112,11 @@ export function PenaltyGame() {
           )}
         </div>
 
-        {/* Goal frame */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-3 overflow-hidden">
+        {/* Goal frame — pitch shakes when a goal scores so the net
+         *  ripple + crowd-cheer feel lands kinetically. */}
+        <div
+          className={`rounded-2xl bg-bg-card border border-edge p-3 overflow-hidden ${phase === 'reveal' && goal === true ? 'shake-medium' : ''}`}
+        >
           <div
             className="relative w-full"
             style={{
