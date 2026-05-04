@@ -4,10 +4,18 @@ A running note for whoever (Claude or human) picks up this repo next.
 
 ## Status
 
-Gates of Olympus is now **deeply parity-matched** to the real Pragmatic
-Play game (within the constraints of an emulator with no copyrighted
-audio/art assets). Many improvements deployed this session — see the git
-log for the full trail.
+Both **Gates of Olympus** and **Sweet Bonanza** now run on the
+ImmersiveSlotView shell (full-screen layout, big-win celebration, free
+spins HUD, buy bonus, ante bet, autoplay, turbo, tap-to-skip, fairness
+panel, coin shower, etc). They share an engine but have their own
+visual identities — Olympus uses a painted Zeus/arch backdrop image,
+Sweet Bonanza uses a CSS-only candy-cloud scene with tier-coloured
+multiplier bombs.
+
+26 Stake-style "Originals" games ship alongside the two slots. See
+the table further down for the full lineup. Plinko is rendered in SVG
+(GPU-cheap animation) and the cell drop in Olympus uses a tween
+instead of spring physics so the tumble stays smooth on mobile.
 
 ## Real-Olympus parity features implemented
 
