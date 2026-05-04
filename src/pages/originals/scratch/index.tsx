@@ -6,6 +6,7 @@ import { createRng } from '../../../lib/fairness';
 import { fmtCurrency, fmtMultiplier } from '../../../lib/format';
 import { BetInput } from '../_shared/BetInput';
 import { SCRATCH_SYMBOLS, type ScratchResult, play } from './engine';
+import { fireConfetti } from '../../../lib/confetti';
 
 type Phase = 'idle' | 'reveal' | 'done';
 
@@ -62,6 +63,14 @@ export function ScratchGame() {
                     ? 'big-win'
                     : 'win',
               );
+              if (result.multiplier >= 5) {
+                fireConfetti({
+                  count: result.multiplier >= 50 ? 130 : 65,
+                  colors: result.winningSymbol
+                    ? [result.winningSymbol.color, '#fff5dc', '#ffffff']
+                    : undefined,
+                });
+              }
             } else if (result.payout > 0) {
               balance.credit(result.payout);
               sound.play('win');
