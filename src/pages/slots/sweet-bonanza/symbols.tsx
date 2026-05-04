@@ -40,27 +40,44 @@ export function HeartSymbol() {
 }
 
 export function GrapeSymbol() {
+  // Bunch of 7 berries arranged in a triangle (top row 3, mid row 2, bot row 1
+  // plus a top centre). Each berry gets its own rotated radial gradient so the
+  // light source feels consistent across the cluster.
   const g: { x: number; y: number; r: number }[] = [
-    { x: 32, y: 18, r: 7 },
-    { x: 22, y: 26, r: 7 }, { x: 32, y: 26, r: 7 }, { x: 42, y: 26, r: 7 },
-    { x: 26, y: 36, r: 7 }, { x: 38, y: 36, r: 7 },
-    { x: 32, y: 46, r: 7 },
+    { x: 32, y: 17, r: 7.5 },
+    { x: 22, y: 27, r: 7.5 }, { x: 32, y: 27, r: 7.5 }, { x: 42, y: 27, r: 7.5 },
+    { x: 27, y: 37, r: 7.5 }, { x: 37, y: 37, r: 7.5 },
+    { x: 32, y: 47, r: 7.5 },
   ];
   return (
     <div className={wrap}>
-      <svg viewBox="0 0 64 64" className="w-full h-full drop-shadow-[0_4px_8px_rgba(125,60,255,0.45)]">
-        <path d="M30 14 Q 36 8 44 10" stroke="#5a8a3c" strokeWidth="2.2" fill="none" />
-        <path d="M40 8 Q 46 14 38 18" fill="#7fbf52" />
-        {g.map((c, i) => (
-          <circle key={i} cx={c.x} cy={c.y} r={c.r} fill="url(#grp)" stroke="#3a1873" strokeWidth="0.8" />
-        ))}
+      <svg viewBox="0 0 64 64" className="w-full h-full">
         <defs>
-          <radialGradient id="grp" cx="35%" cy="30%" r="65%">
-            <stop offset="0%" stopColor="#c8a8ff" />
-            <stop offset="60%" stopColor="#7d3cff" />
-            <stop offset="100%" stopColor="#3a1873" />
+          <radialGradient id="grp" cx="34%" cy="28%" r="68%">
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.85" />
+            <stop offset="20%" stopColor="#dab8ff" />
+            <stop offset="55%" stopColor="#9b5bff" />
+            <stop offset="85%" stopColor="#5a1ec0" />
+            <stop offset="100%" stopColor="#260a5c" />
           </radialGradient>
+          <linearGradient id="grp-stem" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#7fc950" />
+            <stop offset="100%" stopColor="#3a6a1f" />
+          </linearGradient>
         </defs>
+        {/* Stem */}
+        <path d="M30 14 Q 38 6 46 10" stroke="url(#grp-stem)" strokeWidth="2.4" fill="none" strokeLinecap="round" />
+        {/* Leaf */}
+        <path d="M40 8 Q 50 12 44 20 Q 40 14 40 8 Z" fill="#7fc950" stroke="#3a6a1f" strokeWidth=".6" />
+        <path d="M42 10 Q 47 15 44 18" stroke="#3a6a1f" strokeWidth=".5" fill="none" />
+        {/* Berries */}
+        {g.map((c, i) => (
+          <g key={i}>
+            <circle cx={c.x} cy={c.y} r={c.r} fill="url(#grp)" stroke="rgba(38,10,92,.6)" strokeWidth=".8" />
+            {/* Tiny shine on each berry */}
+            <ellipse cx={c.x - 2} cy={c.y - 2.5} rx="2" ry="1.4" fill="rgba(255,255,255,.6)" />
+          </g>
+        ))}
       </svg>
     </div>
   );
@@ -130,24 +147,36 @@ export function AppleSymbol() {
 }
 
 export function BlueberrySymbol() {
+  // 3-2-1 arrangement of 6 berries with calyx star detail (the little
+  // five-point crown on real blueberries) — adds character vs flat circles.
   const dots = [
-    { x: 22, y: 30 }, { x: 32, y: 24 }, { x: 42, y: 30 },
-    { x: 26, y: 40 }, { x: 38, y: 40 }, { x: 32, y: 48 },
+    { x: 22, y: 26 }, { x: 32, y: 22 }, { x: 42, y: 26 },
+    { x: 26, y: 38 }, { x: 38, y: 38 },
+    { x: 32, y: 50 },
   ];
   return (
     <div className={wrap}>
-      <svg viewBox="0 0 64 64" className="w-full h-full drop-shadow-[0_4px_8px_rgba(40,80,200,0.55)]">
+      <svg viewBox="0 0 64 64" className="w-full h-full">
         <defs>
-          <radialGradient id="bb" cx="35%" cy="30%" r="65%">
-            <stop offset="0%" stopColor="#a3c8ff" />
-            <stop offset="60%" stopColor="#3263e0" />
-            <stop offset="100%" stopColor="#102b80" />
+          <radialGradient id="bb" cx="34%" cy="28%" r="68%">
+            <stop offset="0%" stopColor="#dceaff" />
+            <stop offset="20%" stopColor="#a3c8ff" />
+            <stop offset="55%" stopColor="#3263e0" />
+            <stop offset="85%" stopColor="#1a3a8a" />
+            <stop offset="100%" stopColor="#08163d" />
           </radialGradient>
         </defs>
         {dots.map((d, i) => (
           <g key={i}>
-            <circle cx={d.x} cy={d.y} r={9} fill="url(#bb)" stroke="#0a1842" strokeWidth="0.8" />
-            <circle cx={d.x - 1.5} cy={d.y - 2} r={1.5} fill="#fff" opacity="0.5" />
+            <circle cx={d.x} cy={d.y} r={9} fill="url(#bb)" stroke="rgba(8,22,61,.65)" strokeWidth=".9" />
+            {/* Calyx star — five small lines forming a crown at the top */}
+            <g stroke="rgba(255,255,255,.45)" strokeWidth=".5" fill="none">
+              <line x1={d.x} y1={d.y - 2} x2={d.x} y2={d.y - 4.5} />
+              <line x1={d.x - 1.5} y1={d.y - 1.5} x2={d.x - 3} y2={d.y - 3} />
+              <line x1={d.x + 1.5} y1={d.y - 1.5} x2={d.x + 3} y2={d.y - 3} />
+            </g>
+            {/* Big highlight */}
+            <ellipse cx={d.x - 2} cy={d.y - 2.5} rx="2.2" ry="1.5" fill="rgba(255,255,255,.65)" />
           </g>
         ))}
       </svg>
