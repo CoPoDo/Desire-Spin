@@ -14,6 +14,7 @@ import {
   useAutoBetRunner,
 } from '../_shared/AutoBetController';
 import { type Risk, type SegCount, multipliersFor, spin } from './engine';
+import { fireConfetti } from '../../../lib/confetti';
 
 const SEG_OPTIONS: SegCount[] = [10, 20, 30, 40, 50];
 
@@ -58,6 +59,12 @@ export function WheelGame() {
         if (r.payout > 0) {
           balance.credit(r.payout);
           sound.play(r.multiplier >= 10 ? 'mega-win' : r.multiplier >= 2 ? 'big-win' : 'win');
+          if (r.multiplier >= 2) {
+            fireConfetti({
+              count: r.multiplier >= 30 ? 130 : r.multiplier >= 10 ? 80 : 50,
+              colors: ['#ffc62a', '#1fff7a', '#22d3ee', '#ffffff'],
+            });
+          }
         } else {
           sound.play('drop');
         }
