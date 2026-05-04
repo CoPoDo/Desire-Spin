@@ -140,9 +140,18 @@ export function WheelGame() {
                 const labelR = r * 0.65;
                 const lx = Math.cos(midRad) * labelR;
                 const ly = Math.sin(midRad) * labelR;
+                const isWinningSeg = lastResult?.segment === i;
                 return (
                   <g key={i}>
-                    <path d={path} fill={fill} stroke="#0f1419" strokeWidth="0.6" />
+                    <path
+                      d={path}
+                      fill={fill}
+                      stroke={isWinningSeg ? '#ffffff' : '#0f1419'}
+                      strokeWidth={isWinningSeg ? 1.6 : 0.6}
+                      style={isWinningSeg ? {
+                        filter: `drop-shadow(0 0 6px ${fill}) drop-shadow(0 0 12px ${fill})`,
+                      } : undefined}
+                    />
                     {segments <= 30 && (
                       <text
                         x={lx}
