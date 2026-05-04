@@ -94,6 +94,10 @@ function PaytableTab({ cfg, renderCell }: { cfg: SlotConfig; renderCell: CellRen
 }
 
 function RulesTab({ cfg }: { cfg: SlotConfig }) {
+  // Lightning-Strike is unique to Gates of Olympus. Other tumble slots in
+  // the lobby (Bonanza, Sugar Rush, Cantina, Wanted, Pharaoh, Wolf) don't
+  // have that feature, so the section was misleading there.
+  const isOlympus = cfg.id === 'gates-of-olympus';
   return (
     <div className="space-y-4 text-sm leading-relaxed">
       <Section title="Pay Anywhere">
@@ -112,11 +116,13 @@ function RulesTab({ cfg }: { cfg: SlotConfig }) {
         multiplier that lands sticks on the grid; at the end of each spin, all multiplier
         values sum together and apply to that spin's total win.
       </Section>
-      <Section title="Lightning Strike">
-        Occasionally before the first win check, Zeus will appear and strike the board
-        with 2–6 multiplier orbs at once. A dramatic full-screen moment that can lead to
-        massive cascades.
-      </Section>
+      {isOlympus && (
+        <Section title="Lightning Strike">
+          Occasionally before the first win check, Zeus will appear and strike the board
+          with 2–6 multiplier orbs at once. A dramatic full-screen moment that can lead to
+          massive cascades.
+        </Section>
+      )}
       <Section title="Bet">
         Adjust your bet with the −/+ buttons or tap the bet amount for a preset menu.
       </Section>
