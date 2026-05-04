@@ -230,12 +230,12 @@ export function spin(rng: Rng, cfg: SlotConfig, opts: SpinOptions, mode: SpinMod
 
   let working: Grid = clone(grid);
 
-  // === Lightning Strike feature (real Olympus signature) ===
-  // In base mode only, with ~6% probability per spin, Zeus raises his arm and
-  // strikes the board with 2-6 multiplier orbs at random (separate from the
-  // per-tumble random multiplier mechanic). This is a distinct, dramatic
-  // moment with its own UI overlay & sound.
-  if (mode === 'base' && rng.next() < 0.06) {
+  // === Lightning Strike feature ===
+  // NOT actually in real Pragmatic Olympus — that game just has random
+  // multiplier orbs landing during tumbles. We keep it as a rare "special
+  // moment" (~0.8% per base spin = ~1 in 125 spins) so the dramatic Zeus
+  // overlay feels earned rather than spammy.
+  if (mode === 'base' && rng.next() < 0.008) {
     const strikeCount = 2 + rng.nextInt(5); // 2..6 orbs
     const landings: MultiplierLanding[] = [];
     const used = new Set<string>();

@@ -92,20 +92,22 @@ export const sweetBonanzaConfig: SlotConfig = {
   // Calibrated for ~96.5% RTP and ~0.4% scatter trigger rate.
   weightsBase: [4, 8, 9, 10, 12, 14, 16, 16, 18, 2.0],
   weightsFree: [6, 9, 10, 12, 13, 14, 14, 14, 14, 2.6],
+  // Multiplier frequencies tuned to real Pragmatic Sweet Bonanza rates
+  // (~7-10% base, ~50-70% in free spins).
   multiplierTableBase: {
-    pPerTumble: 0.13,
+    pPerTumble: 0.04,
     maxPerTumble: 2,
     values: [
-      [2, 22], [3, 18], [4, 16], [5, 14], [6, 12], [8, 10], [10, 9],
-      [12, 7], [15, 6], [20, 5], [25, 4], [50, 3], [100, 1.5], [500, 0.20],
+      [2, 10], [3, 9], [4, 8], [5, 7], [6, 6.5], [8, 6], [10, 6],
+      [12, 5.5], [15, 5], [20, 5], [25, 5], [50, 4.5], [100, 3], [500, 0.7],
     ],
   },
   multiplierTableFree: {
-    pPerTumble: 0.40,
+    pPerTumble: 0.28,
     maxPerTumble: 3,
     values: [
-      [2, 18], [3, 16], [4, 14], [5, 12], [6, 11], [8, 10], [10, 9],
-      [15, 8], [20, 7], [25, 6], [50, 5], [100, 3], [200, 1.2], [500, 0.30],
+      [2, 12], [3, 11], [4, 10], [5, 9], [6, 8], [8, 7.5], [10, 7],
+      [15, 6.5], [20, 6], [25, 5.5], [50, 5], [100, 4], [200, 2], [500, 0.6],
     ],
   },
   theme: {
