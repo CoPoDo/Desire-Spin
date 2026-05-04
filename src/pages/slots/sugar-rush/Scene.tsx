@@ -324,9 +324,11 @@ export function SugarRushScene() {
         />
       ))}
 
-      {/* Chocolate / strawberry-glaze river at the very bottom — distinct
-       * candy-ground signature. Shiny brown gradient with a glossy top
-       * highlight and small "drip" wave shapes. */}
+      {/* Melted-chocolate river at the very bottom — real Sugar Rush has
+       * an actual brown chocolate stream running across the foreground.
+       * Previous version was tinted raspberry-pink which read as strawberry
+       * syrup, not chocolate. Now warm cocoa-brown with cream-colour glaze
+       * highlight and dotted chocolate-chip flecks. */}
       <svg
         className="absolute inset-x-0"
         style={{ bottom: 0, height: '8%', width: '100%' }}
@@ -335,27 +337,33 @@ export function SugarRushScene() {
       >
         <defs>
           <linearGradient id="sr-choc" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#c44a78" />
-            <stop offset="50%" stopColor="#7a2058" />
-            <stop offset="100%" stopColor="#3a0820" />
+            <stop offset="0%" stopColor="#7a4422" />
+            <stop offset="50%" stopColor="#4a2410" />
+            <stop offset="100%" stopColor="#1a0a04" />
           </linearGradient>
           <linearGradient id="sr-glaze" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="rgba(255,200,232,.85)" />
-            <stop offset="100%" stopColor="rgba(255,200,232,0)" />
+            <stop offset="0%" stopColor="rgba(255,222,180,.7)" />
+            <stop offset="100%" stopColor="rgba(255,222,180,0)" />
           </linearGradient>
         </defs>
-        {/* Main puddle base */}
+        {/* Main puddle base — warm chocolate */}
         <path
           d="M 0,8 L 0,3 Q 8,1.6 16,3 Q 24,4.4 32,2.4 Q 42,0.8 52,2.4 Q 62,4 72,2.6 Q 82,1.4 92,3 Q 96,3.8 100,3 L 100,8 Z"
           fill="url(#sr-choc)"
         />
-        {/* Highlight along the top edge (glossy candy shine) */}
+        {/* Cream-coloured glaze highlight along the surface ripple */}
         <path
           d="M 0,3 Q 8,1.6 16,3 Q 24,4.4 32,2.4 Q 42,0.8 52,2.4 Q 62,4 72,2.6 Q 82,1.4 92,3 Q 96,3.8 100,3"
           fill="none"
           stroke="url(#sr-glaze)"
           strokeWidth=".4"
         />
+        {/* Tiny chocolate-chip flecks suspended near the surface */}
+        {[
+          [12, 4.2], [28, 5], [44, 4.4], [62, 5.2], [78, 4.6], [90, 5.4],
+        ].map(([x, y], i) => (
+          <circle key={i} cx={x} cy={y} r=".25" fill="#1a0a04" opacity=".75" />
+        ))}
       </svg>
 
       {/* 7. Vignette + frame */}
