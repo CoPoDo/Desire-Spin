@@ -27,6 +27,45 @@ export function PharaohScene() {
         }}
       />
 
+      {/* Eye of Horus — sacred watcher floating in the sky behind the
+       *  sun. Real Egyptian-themed slots use the Eye as a watermark
+       *  symbol of divine watchfulness over the play area. Drawn very
+       *  faintly so it doesn't compete with the reels but reads as
+       *  "something divine is watching" the moment the player notices it. */}
+      <svg
+        className="absolute pointer-events-none"
+        style={{
+          left: '50%',
+          top: '20%',
+          transform: 'translate(-50%, -50%)',
+          width: '36%',
+          aspectRatio: '2 / 1',
+          opacity: 0.32,
+          mixBlendMode: 'screen',
+          filter: 'drop-shadow(0 0 12px rgba(255,209,102,.6))',
+          animation: 'pharaohEyeWatch 8s ease-in-out infinite',
+        }}
+        viewBox="0 0 100 50"
+      >
+        {/* Almond-shaped eye outline */}
+        <path
+          d="M 8 25 Q 50 5 92 25 Q 50 45 8 25 Z"
+          fill="none"
+          stroke="rgba(255,209,102,.85)"
+          strokeWidth="1.4"
+        />
+        {/* Iris */}
+        <circle cx="50" cy="25" r="9" fill="rgba(40,60,160,.45)" stroke="rgba(255,209,102,.7)" strokeWidth="0.6" />
+        {/* Pupil */}
+        <circle cx="50" cy="25" r="3.6" fill="rgba(20,8,4,.85)" />
+        {/* Eyebrow / brow ridge */}
+        <path d="M 12 18 Q 50 -2 88 18" fill="none" stroke="rgba(255,209,102,.7)" strokeWidth="1.1" />
+        {/* Falcon-marking tear-line below eye */}
+        <path d="M 38 32 L 32 42" stroke="rgba(255,209,102,.7)" strokeWidth="1.1" strokeLinecap="round" />
+        {/* Side cheek-curl marking */}
+        <path d="M 70 32 Q 80 36 78 44" fill="none" stroke="rgba(255,209,102,.7)" strokeWidth="1.1" strokeLinecap="round" />
+      </svg>
+
       {/* 2. Pyramids + sphinx silhouettes */}
       <svg
         className="absolute inset-x-0"

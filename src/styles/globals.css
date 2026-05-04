@@ -1308,6 +1308,14 @@
   50%      { transform: translate(-50%, -50%) scale(1.04); opacity: 1; }
 }
 
+/* Pharaoh sky Eye of Horus watermark — slow opacity breathing so the
+ * sacred watcher seems to "open and close" subtly. Translate component
+ * preserved inside the keyframe. */
+@keyframes pharaohEyeWatch {
+  0%, 100% { transform: translate(-50%, -50%) scale(1);    opacity: 0.22; }
+  50%      { transform: translate(-50%, -50%) scale(1.02); opacity: 0.4;  }
+}
+
 /* Big Juan — fiesta confetti sparks drifting up from below */
 @keyframes bigJuanConfetti {
   0%   { transform: translate(0, 100%) rotate(0deg); opacity: 0; }
