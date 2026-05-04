@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { loadJson, saveJson } from '../../../lib/storage';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -914,8 +914,20 @@ export function ImmersiveSlotView({
     setBet(betPresets[Math.min(betPresets.length - 1, presetIdx + 1)]!);
   }, [betPresets, presetIdx]);
 
+  // Per-slot CSS variables consumed by .olympus-fs-title /
+  // .olympus-fs-sub in globals.css. Mirrors the welcome-splash gradient
+  // recipe (line 2614) so the FS-trigger banner, FS-outro reveal, and
+  // dialog headers all light up in the slot's own colour rather than
+  // hardcoded Olympus gold. cfg.theme.accent + cfg.theme.glow already
+  // plumbed everywhere; just expose them as CSS vars for global rules.
+  const fsThemeStyle = {
+    ['--slot-fs-grad' as string]: `linear-gradient(180deg, #ffffff 0%, #fff5dc 30%, ${cfg.theme.accent} 65%, rgba(0,0,0,.55) 100%)`,
+    ['--slot-fs-glow' as string]: cfg.theme.glow,
+    ['--slot-fs-sub-color' as string]: cfg.theme.accent,
+  } as CSSProperties;
+
   return (
-    <div className="absolute inset-0 flex flex-col">
+    <div className="absolute inset-0 flex flex-col" style={fsThemeStyle}>
       {/* Persistent free-spins HUD — fixed top, shows over the floating top
           bar during a free-spins session. Three stats: spin counter, current
           on-grid multiplier total (sum of all visible orbs), and total won.

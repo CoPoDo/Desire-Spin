@@ -573,15 +573,21 @@
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
+/* Per-slot themed gold/accent FS typography. Each slot's outer stage
+ * container sets --slot-fs-grad / --slot-fs-glow / --slot-fs-sub-color
+ * inline (in ImmersiveSlotView and SlotShell) so the FS-trigger banner
+ * and dialog headers light up in the slot's own colour rather than
+ * Olympus gold. Fallbacks preserve the original Olympus look if a
+ * caller doesn't set the vars (e.g. legacy non-themed mounts). */
 .olympus-fs-title {
   font-family: 'Fraunces', serif;
   font-style: italic;
   font-weight: 700;
-  background: linear-gradient(180deg, #ffffff 0%, #ffe9a8 35%, #ffc850 65%, #c8932f 100%);
+  background: var(--slot-fs-grad, linear-gradient(180deg, #ffffff 0%, #ffe9a8 35%, #ffc850 65%, #c8932f 100%));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  filter: drop-shadow(0 0 24px rgba(255, 200, 40, 0.9)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.6));
+  filter: drop-shadow(0 0 24px var(--slot-fs-glow, rgba(255, 200, 40, 0.9))) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.6));
   letter-spacing: -0.02em;
 }
 .olympus-fs-sub {
@@ -589,8 +595,8 @@
   font-weight: 700;
   letter-spacing: 0.42em;
   text-transform: uppercase;
-  color: #ffe0a8;
-  text-shadow: 0 0 14px rgba(255, 200, 40, 0.7), 0 2px 4px rgba(0, 0, 0, 0.5);
+  color: var(--slot-fs-sub-color, #ffe0a8);
+  text-shadow: 0 0 14px var(--slot-fs-glow, rgba(255, 200, 40, 0.7)), 0 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 /* Spin button color-shift when free spins are active. Real Pragmatic

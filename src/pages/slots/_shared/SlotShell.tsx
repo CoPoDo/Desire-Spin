@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useGame } from '../../../game-context';
 import { createRng } from '../../../lib/fairness';
@@ -269,8 +269,17 @@ export function SlotShell({ cfg, renderCell, initialGrid }: SlotShellProps) {
   const buyCost = useMemo(() => cfg.buyBonusCost * bet, [cfg.buyBonusCost, bet]);
   const inFree = freeSpins !== null;
 
+  // Per-slot CSS variables consumed by .olympus-fs-title / .olympus-fs-sub.
+  // Mirrors ImmersiveSlotView: each slot's FS-trigger banner + headers
+  // light up in the slot's own colour rather than hardcoded Olympus gold.
+  const fsThemeStyle = {
+    ['--slot-fs-grad' as string]: `linear-gradient(180deg, #ffffff 0%, #fff5dc 30%, ${cfg.theme.accent} 65%, rgba(0,0,0,.55) 100%)`,
+    ['--slot-fs-glow' as string]: cfg.theme.glow,
+    ['--slot-fs-sub-color' as string]: cfg.theme.accent,
+  } as CSSProperties;
+
   return (
-    <div className={`space-y-4 ${cfg.theme.stageClass ?? ''}`}>
+    <div className={`space-y-4 ${cfg.theme.stageClass ?? ''}`} style={fsThemeStyle}>
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className={`text-2xl md:text-3xl font-bold ${cfg.theme.stageClass === 'olympus-stage' ? 'font-serif italic' : 'font-display'}`}
