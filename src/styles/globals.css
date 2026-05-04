@@ -1151,8 +1151,13 @@
   background:
     radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 1) 0%, rgba(220, 200, 255, 0.95) 10%, transparent 30%),
     radial-gradient(circle at 50% 55%, #f5e8ff 0%, #a78bfa 22%, #6638c8 55%, #2a1268 82%, #0a0418 100%);
-  border: 1.5px solid rgba(10, 4, 24, 0.9);
+  border: none;
   box-shadow:
+    /* Layered moonsilver housing ring (outside-in): pale moonglow silver
+     * → twilight violet → night-black. Echoes the moonlit-ridge backdrop. */
+    0 0 0 1px rgba(220, 200, 255, 0.95),
+    0 0 0 2.5px rgba(80, 50, 130, 0.92),
+    0 0 0 4px rgba(10, 4, 24, 0.95),
     inset 0 0 0 1px rgba(220, 200, 255, 0.7),
     inset 0 0 22px rgba(167, 139, 250, 0.85),
     inset 0 -8px 14px rgba(20, 8, 40, 0.7),
@@ -1173,8 +1178,11 @@
   letter-spacing: -0.02em;
 }
 .wolf-orb-big {
-  border-width: 3px;
   box-shadow:
+    /* Brighter moonsilver rim on tier-up */
+    0 0 0 1px rgba(235, 220, 255, 1),
+    0 0 0 2.5px rgba(95, 60, 150, 0.95),
+    0 0 0 4px rgba(10, 4, 24, 0.95),
     inset 0 0 24px rgba(220, 200, 255, 0.95),
     inset 0 -10px 14px rgba(20, 8, 40, 0.8),
     0 0 24px rgba(167, 139, 250, 1),
@@ -1182,11 +1190,14 @@
     0 10px 22px rgba(0, 0, 0, 0.65);
 }
 .wolf-orb-huge {
-  border-width: 3px;
   background:
     radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 1) 0%, rgba(255, 248, 200, 0.95) 10%, transparent 28%),
     radial-gradient(circle at 50% 55%, #fffbe0 0%, #ffd166 18%, #a78bfa 50%, #6638c8 78%, #1a0a4a 100%);
   box-shadow:
+    /* Top-tier breaks through to gold rim — like the wolf's eye in moonlight */
+    0 0 0 1px rgba(255, 240, 180, 1),
+    0 0 0 2.5px rgba(110, 70, 170, 0.95),
+    0 0 0 4px rgba(10, 4, 24, 0.95),
     inset 0 0 30px rgba(255, 200, 80, 0.95),
     inset 0 -10px 16px rgba(20, 8, 40, 0.8),
     0 0 32px rgba(255, 174, 80, 1),
