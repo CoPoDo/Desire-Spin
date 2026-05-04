@@ -62,6 +62,24 @@ export function WolfScene() {
         }}
       />
 
+      {/* Moonlight beam — soft cone of pale-violet light from the moon
+       * down toward the wolf-on-ridge area. Adds dramatic theatrical
+       * lighting and ties the moon visually to the wolf silhouette. */}
+      <div
+        className="absolute pointer-events-none"
+        style={{
+          right: '6%',
+          top: '24%',
+          width: '36%',
+          height: '52%',
+          background:
+            'linear-gradient(170deg, rgba(220,200,255,.22) 0%, rgba(167,139,250,.12) 40%, transparent 80%)',
+          clipPath: 'polygon(40% 0%, 60% 0%, 100% 100%, 0% 100%)',
+          mixBlendMode: 'screen',
+          filter: 'blur(2px)',
+        }}
+      />
+
       {/* Distant mesa silhouettes */}
       <svg
         className="absolute inset-x-0"
