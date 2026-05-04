@@ -120,6 +120,13 @@ export function Home() {
             badge="LIVE"
             art={<PlaceholderArt label="🟢" tone="#1a3a1a" />}
           />
+          <GameCard
+            to="/originals/blackjack"
+            title="Blackjack"
+            subtitle="3:2 BJ pays"
+            badge="LIVE"
+            art={<PlaceholderArt label="🃏" tone="#102b3a" />}
+          />
         </div>
       </section>
     </div>
