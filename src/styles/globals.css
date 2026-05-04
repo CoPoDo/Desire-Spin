@@ -874,15 +874,21 @@
   transform: translateZ(0);
   will-change: transform;
 }
-/* Wanted poster scatter pulses with gold halo */
+/* Wanted poster scatter — paper flutter rather than a static pulse.
+ * Real bounty posters in Western movies rustle in the wind: slight tilt
+ * back-and-forth + a subtle vertical lift as if a gust catches the
+ * corner. Reads as a poster nailed to a fence post catching air. */
 .wanted-sym-scatter {
-  animation: wantedScatterPulse 1.7s ease-in-out infinite;
+  animation: wantedScatterFlutter 2s ease-in-out infinite;
   filter: drop-shadow(0 3px 6px rgba(0,0,0,.7))
           drop-shadow(0 0 14px rgba(255, 174, 80, 0.7));
+  transform-origin: 50% 90%; /* hinge at the bottom edge */
 }
-@keyframes wantedScatterPulse {
-  0%, 100% { transform: scale(1) translateZ(0); opacity: 0.95; }
-  50%      { transform: scale(1.05) translateZ(0); opacity: 1; }
+@keyframes wantedScatterFlutter {
+  0%, 100% { transform: rotate(-1.5deg) translateY(0) scale(1) translateZ(0); opacity: 0.95; }
+  25%      { transform: rotate(2deg)   translateY(-2%) scale(1.03) translateZ(0); opacity: 1; }
+  50%      { transform: rotate(-1deg)  translateY(0)   scale(1.01) translateZ(0); }
+  75%      { transform: rotate(2.5deg) translateY(-1%) scale(1.04) translateZ(0); opacity: 1; }
 }
 /* Outlaw hero pulses subtly */
 .wanted-sym-hero {
