@@ -131,8 +131,13 @@ export function MinesGame() {
           </AnimatePresence>
         </div>
 
-        {/* Grid */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-3">
+        {/* Grid — shakes briefly when the player hits a mine. The
+         *  shake-medium class fires a single 0.55s wobble cycle; React
+         *  swaps it off when the round resets so it can re-trigger on
+         *  the next loss. */}
+        <div
+          className={`rounded-2xl bg-bg-card border border-edge p-3 ${round?.done && round.hitMine ? 'shake-medium' : ''}`}
+        >
           <div className="grid grid-cols-5 gap-1.5 aspect-square">
             {Array.from({ length: GRID_SIZE }).map((_, i) => {
               const isRevealed = round?.revealed.has(i) ?? false;
