@@ -1573,8 +1573,9 @@ export function ImmersiveSlotView({
 
       {/* === Lightning Strike (Zeus arm-raise) overlay ===
           Real-Olympus signature feature: dramatic dim, lightning streaks
-          across the screen, Zeus silhouette glows, and multiplier orbs
-          slam onto the board (handled by the playFrames staggered timeouts). */}
+          across the screen radiating from Zeus's position, Zeus area glows
+          brightly (he's the source), and multiplier orbs slam onto the
+          board (handled by the playFrames staggered timeouts). */}
       <AnimatePresence>
         {lightningStrike && (
           <motion.div
@@ -1589,26 +1590,56 @@ export function ImmersiveSlotView({
               background:
                 'radial-gradient(ellipse at center, rgba(80,30,10,.55) 0%, rgba(0,0,0,.85) 65%)',
             }} />
-            {/* Lightning bolts — three thick zags zip across at staggered times */}
-            {[0, 1, 2].map((i) => (
-              <motion.div
-                key={i}
-                className="absolute"
-                style={{
-                  left: `${15 + i * 28}%`,
-                  top: 0,
-                  bottom: 0,
-                  width: '3px',
-                  background:
-                    'linear-gradient(180deg, transparent, #fffbe1 12%, #ffe9a8 30%, #ffc62a 60%, transparent 100%)',
-                  filter: 'drop-shadow(0 0 24px rgba(255,200,80,.95)) drop-shadow(0 0 60px rgba(255,140,40,.8))',
-                  transform: `skewX(${i % 2 === 0 ? -8 : 8}deg)`,
-                }}
-                initial={{ opacity: 0, scaleY: 0 }}
-                animate={{ opacity: [0, 1, 0.9, 0], scaleY: [0.4, 1, 1, 1] }}
-                transition={{ duration: 0.55, delay: i * 0.18, ease: 'easeOut' }}
-              />
-            ))}
+
+            {/* Bright Zeus-area highlight — the painted Zeus statue lives in
+                the upper-left of the backdrop. A localized warm radial
+                makes him visibly the source of the lightning. */}
+            <motion.div
+              className="absolute"
+              style={{
+                left: '-10%',
+                top: '-5%',
+                width: '60%',
+                height: '60%',
+                background:
+                  'radial-gradient(ellipse at 30% 30%, rgba(255,233,168,0.7) 0%, rgba(255,200,80,0.45) 25%, rgba(255,140,40,0.18) 50%, transparent 75%)',
+                mixBlendMode: 'screen',
+                filter: 'blur(4px)',
+              }}
+              initial={{ opacity: 0, scale: 0.6 }}
+              animate={{ opacity: [0, 1, 0.85, 1, 0.7], scale: [0.6, 1, 0.95, 1, 1] }}
+              transition={{ duration: 1.2, times: [0, 0.15, 0.4, 0.6, 1], ease: 'easeOut' }}
+            />
+
+            {/* Lightning bolts — radiating from upper-left (Zeus's bolt)
+                toward the grid area in three diverging directions. */}
+            {[0, 1, 2].map((i) => {
+              // Each bolt starts near Zeus (upper-left) and angles down-right
+              const startX = 18 + Math.random() * 8;
+              const angle = -8 + i * 12;
+              return (
+                <motion.div
+                  key={i}
+                  className="absolute"
+                  style={{
+                    left: `${startX}%`,
+                    top: '12%',
+                    bottom: '20%',
+                    width: '3px',
+                    background:
+                      'linear-gradient(180deg, transparent, #fffbe1 8%, #ffe9a8 25%, #ffc62a 65%, transparent 100%)',
+                    filter:
+                      'drop-shadow(0 0 24px rgba(255,200,80,.95)) drop-shadow(0 0 60px rgba(255,140,40,.8))',
+                    transform: `skewX(${angle}deg) translateX(${i * 80}px)`,
+                    transformOrigin: 'top',
+                  }}
+                  initial={{ opacity: 0, scaleY: 0 }}
+                  animate={{ opacity: [0, 1, 0.9, 0], scaleY: [0.4, 1, 1, 1] }}
+                  transition={{ duration: 0.55, delay: i * 0.18, ease: 'easeOut' }}
+                />
+              );
+            })}
+
             {/* Screen flash */}
             <motion.div
               className="absolute inset-0 bg-[#fffbe1]"
@@ -1616,7 +1647,8 @@ export function ImmersiveSlotView({
               animate={{ opacity: [0, 0.55, 0, 0.3, 0] }}
               transition={{ duration: 0.7, times: [0, 0.05, 0.18, 0.25, 0.4] }}
             />
-            {/* Zeus title */}
+
+            {/* "LIGHTNING STRIKE" title */}
             <motion.div
               className="relative z-10 text-center"
               initial={{ scale: 0.5, opacity: 0, y: 20 }}
