@@ -2308,8 +2308,13 @@ export function ImmersiveSlotView({
                   style={{
                     left: `${left}%`,
                     top: `${top}%`,
-                    color: '#FFE9A8',
-                    textShadow: '0 0 18px rgba(255,200,40,.95), 0 0 36px rgba(255,140,40,.7)',
+                    // Glyph colour pulled from the slot's accent. White-
+                    // ish base with a theme-tinted halo so emoji-rendered
+                    // glyphs (chili 🌶, sheriff star ⭐, full moon 🌕,
+                    // scarab 🪲) keep their natural colour while the
+                    // surrounding glow matches the game palette.
+                    color: '#ffffff',
+                    textShadow: `0 0 18px ${cfg.theme.accent}f0, 0 0 36px ${cfg.theme.glow}`,
                   }}
                   initial={{ scale: 0, rotate: -180, opacity: 0 }}
                   animate={{ scale: [0, 1.3, 1], rotate: [180, 20, 0], opacity: [0, 1, 1] }}
