@@ -106,6 +106,13 @@ export function Home() {
             badge="LIVE"
             art={<PlaceholderArt label="🗼" tone="#3a1010" />}
           />
+          <GameCard
+            to="/originals/keno"
+            title="Keno"
+            subtitle="Pick & match"
+            badge="LIVE"
+            art={<PlaceholderArt label="🔢" tone="#1a3a3a" />}
+          />
         </div>
       </section>
     </div>
