@@ -101,7 +101,9 @@ export function WolfScene() {
         {/* Foreground ridge */}
         <path d="M0,50 L0,42 Q14,40 28,42 Q44,44 60,42 Q76,40 92,44 L100,42 L100,50 Z" fill="url(#wf-near)" />
         {/* Howling wolf silhouette on the ridge — sized so it reads at
-         * any reasonable viewport. Sits in the moonlight beam. */}
+         * any reasonable viewport. Sits in the moonlight beam. Now with
+         * a glowing amber eye + visible howl-arcs curving toward the moon
+         * (the iconic "howling at the moon" composition). */}
         <g transform="translate(40 32) scale(2.6)">
           {/* Hindquarters */}
           <ellipse cx="-3" cy="3" rx="2.6" ry="1.6" fill="#02010a" />
@@ -125,6 +127,32 @@ export function WolfScene() {
           <path d="M -5 2.4 Q -7 1.5 -7 -0.4 Q -6 0.4 -5.5 1.6" stroke="#02010a" strokeWidth=".7" fill="none" strokeLinecap="round" />
           {/* Subtle moon-glow rim along back */}
           <path d="M -5 2.6 Q -3 1.2 0 1.5 Q 2 1 3 -1" stroke="rgba(220,200,255,.45)" strokeWidth=".2" fill="none" />
+          {/* Glowing amber eye — small dot with halo, sits on the snout */}
+          <circle cx="3.5" cy="-2.7" r=".18" fill="#ffd166" />
+          <circle cx="3.5" cy="-2.7" r=".5" fill="rgba(255,209,102,.35)" />
+          {/* Howl-arcs — two faint curved sound-waves leaving the snout
+              and bending toward the moon. Quintessential howling pose. */}
+          <path
+            d="M 4.4 -3.5 Q 6 -5 7 -4"
+            stroke="rgba(220,200,255,.55)"
+            strokeWidth=".18"
+            fill="none"
+            strokeLinecap="round"
+          />
+          <path
+            d="M 4.6 -4 Q 7 -6 8.5 -4.5"
+            stroke="rgba(220,200,255,.4)"
+            strokeWidth=".15"
+            fill="none"
+            strokeLinecap="round"
+          />
+          <path
+            d="M 4.8 -4.4 Q 8 -7 10 -4.8"
+            stroke="rgba(220,200,255,.28)"
+            strokeWidth=".12"
+            fill="none"
+            strokeLinecap="round"
+          />
         </g>
       </svg>
 
