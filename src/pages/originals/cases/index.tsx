@@ -6,6 +6,7 @@ import { createRng } from '../../../lib/fairness';
 import { fmtCurrency, fmtMultiplier } from '../../../lib/format';
 import { BetInput } from '../_shared/BetInput';
 import { CASE_ITEMS, type CaseItem, play } from './engine';
+import { fireConfetti } from '../../../lib/confetti';
 
 type Phase = 'idle' | 'opening' | 'reveal';
 
@@ -57,6 +58,15 @@ export function CasesGame() {
       if (r.payout > bet) {
         balance.credit(r.payout);
         sound.play(r.multiplier >= 50 ? 'mega-win' : r.multiplier >= 3 ? 'big-win' : 'win');
+        // Chip-shower confetti on high-value crate opens. Tinted with
+        // the prize tier's colour so opening a "Legendary" crate fires
+        // gold chips while a "Rare" crate fires the rare-tier blue.
+        if (r.multiplier >= 3) {
+          fireConfetti({
+            count: r.multiplier >= 50 ? 130 : 70,
+            colors: [r.item.color, '#fff5dc', '#ffffff'],
+          });
+        }
       } else if (r.payout > 0) {
         balance.credit(r.payout);
         sound.play('drop');
