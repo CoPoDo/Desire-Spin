@@ -14,6 +14,7 @@ import {
   useAutoBetRunner,
 } from '../_shared/AutoBetController';
 import { play, winChanceFor } from './engine';
+import { CountUp } from '../../../components/ui/CountUp';
 
 export function LimboGame() {
   const { balance, fairness, sound, history, session } = useGame();
@@ -104,7 +105,19 @@ export function LimboGame() {
                     : 'none',
               }}
             >
-              {lastResult === null ? '0.00×' : `${lastResult.toFixed(2)}×`}
+              {lastResult === null ? (
+                '0.00×'
+              ) : (
+                /* CountUp climbs from 0 to the result over 700ms with
+                 * ease-out cubic — mimics the rocket launch feel real
+                 * Stake Limbo has, where the multiplier rapidly climbs
+                 * before settling on the final number. */
+                <CountUp
+                  value={lastResult}
+                  duration={700}
+                  format={(n) => `${n.toFixed(2)}×`}
+                />
+              )}
             </motion.div>
           </AnimatePresence>
           <div className="mt-3 text-xs text-ink-dim">
