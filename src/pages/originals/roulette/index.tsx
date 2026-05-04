@@ -7,7 +7,6 @@ import { fmtCurrency } from '../../../lib/format';
 import {
   type Bet,
   type BetType,
-  RED_NUMBERS,
   colorOf,
   play,
 } from './engine';
