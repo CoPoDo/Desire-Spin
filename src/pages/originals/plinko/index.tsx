@@ -19,6 +19,7 @@ import {
   dropBall,
   multipliersFor,
 } from './engine';
+import { fireConfetti } from '../../../lib/confetti';
 
 type ActiveBall = {
   id: number;
@@ -70,6 +71,12 @@ export function PlinkoGame() {
           result.multiplier >= 2 ? 'big-win' :
           result.multiplier >= 0.5 ? 'win' : 'drop',
         );
+        if (result.multiplier >= 5) {
+          fireConfetti({
+            count: result.multiplier >= 100 ? 130 : result.multiplier >= 20 ? 80 : 50,
+            colors: ['#ff5560', '#ffd166', '#22d3ee', '#1fff7a', '#ffffff'],
+          });
+        }
         setFlashingBucket(result.bucket);
         setTimeout(() => setFlashingBucket(null), 600);
         history.record({
