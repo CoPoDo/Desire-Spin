@@ -126,11 +126,25 @@ export function DiceGame() {
             <span>0</span><span>25</span><span>50</span><span>75</span><span>100</span>
           </div>
           <div className="relative h-3 bg-bg-elev rounded-full mb-3 overflow-hidden">
+            {/* Lose zone (red) — opposite of the win zone, dimmed so the
+             *  win zone visually dominates. Real Stake-style dice colour-
+             *  codes the slider so the player reads risk at a glance. */}
             <div
-              className="absolute top-0 bottom-0 bg-accent/35"
+              className="absolute top-0 bottom-0 bg-rose-500/20"
+              style={{
+                left: direction === 'over' ? '0%' : `${target}%`,
+                right: direction === 'over' ? `${100 - target}%` : '0%',
+              }}
+            />
+            {/* Win zone (vivid green so it dominates) */}
+            <div
+              className="absolute top-0 bottom-0"
               style={{
                 left: direction === 'over' ? `${target}%` : '0%',
                 right: direction === 'over' ? '0%' : `${100 - target}%`,
+                background:
+                  'linear-gradient(180deg, rgba(31,255,122,.55), rgba(15,170,80,.32))',
+                boxShadow: 'inset 0 0 12px rgba(31,255,122,.35)',
               }}
             />
             {lastRoll !== null && (
