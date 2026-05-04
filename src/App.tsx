@@ -1,5 +1,7 @@
 import { Route, Routes } from 'react-router-dom';
+import { GameProvider } from './components/layout/GameProvider';
 import { Layout } from './components/layout/Layout';
+import { SlotPageLayout } from './components/layout/SlotPageLayout';
 import { Home } from './pages/Home';
 import { Settings } from './pages/Settings';
 import { ComingSoon } from './components/layout/ComingSoon';
@@ -8,18 +10,27 @@ import { GatesOfOlympus } from './pages/slots/gates-of-olympus';
 
 export default function App() {
   return (
-    <Layout>
+    <GameProvider>
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/slots/sweet-bonanza" element={<SweetBonanza />} />
-        <Route path="/slots/gates-of-olympus" element={<GatesOfOlympus />} />
-        <Route path="/casino" element={<Home />} />
-        <Route path="/sports" element={<ComingSoon title="Sports" />} />
-        <Route path="/live" element={<ComingSoon title="Live Casino" />} />
-        <Route path="/promotions" element={<ComingSoon title="Promotions" />} />
-        <Route path="*" element={<ComingSoon title="Not found" />} />
+        {/* Slot games — fullscreen immersive layout, no sidebar/footer */}
+        <Route
+          path="/slots/sweet-bonanza"
+          element={<SlotPageLayout><SweetBonanza /></SlotPageLayout>}
+        />
+        <Route
+          path="/slots/gates-of-olympus"
+          element={<SlotPageLayout><GatesOfOlympus /></SlotPageLayout>}
+        />
+
+        {/* Lobby + non-game routes — full Layout with sidebar */}
+        <Route path="/" element={<Layout><Home /></Layout>} />
+        <Route path="/casino" element={<Layout><Home /></Layout>} />
+        <Route path="/settings" element={<Layout><Settings /></Layout>} />
+        <Route path="/sports" element={<Layout><ComingSoon title="Sports" /></Layout>} />
+        <Route path="/live" element={<Layout><ComingSoon title="Live Casino" /></Layout>} />
+        <Route path="/promotions" element={<Layout><ComingSoon title="Promotions" /></Layout>} />
+        <Route path="*" element={<Layout><ComingSoon title="Not found" /></Layout>} />
       </Routes>
-    </Layout>
+    </GameProvider>
   );
 }

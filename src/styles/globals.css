@@ -336,7 +336,68 @@
   text-shadow: 0 0 14px rgba(255, 200, 40, 0.7), 0 2px 4px rgba(0, 0, 0, 0.5);
 }
 
-/* Spin button (Olympus theme) */
+/* Big round SPIN button for immersive slot view (Pragmatic-style mobile) */
+.spin-btn {
+  position: relative;
+  width: clamp(70px, 19vw, 96px);
+  height: clamp(70px, 19vw, 96px);
+  border-radius: 50%;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  background:
+    radial-gradient(circle at 35% 28%, #fff5c4 0%, #ffd37a 18%, #f5c56f 38%, #c8932e 65%, #6a4410 100%);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.7),
+    inset 0 -3px 0 rgba(80, 40, 5, 0.6),
+    inset 0 0 18px rgba(255, 200, 80, 0.5),
+    0 0 0 2px rgba(120, 70, 10, 0.85),
+    0 0 0 4px rgba(255, 233, 168, 0.35),
+    0 0 32px rgba(255, 200, 80, 0.55),
+    0 8px 22px rgba(0, 0, 0, 0.6);
+  transition: transform 130ms ease, filter 130ms ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.spin-btn:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+.spin-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+.spin-btn:disabled {
+  opacity: 0.55;
+  filter: saturate(0.4);
+  cursor: not-allowed;
+}
+.spin-btn-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80%;
+  height: 80%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 110%, rgba(255, 255, 255, 0.18), transparent 60%),
+    linear-gradient(180deg, #b07820 0%, #6a4410 100%);
+  border: 1px solid rgba(255, 233, 168, 0.5);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+.spin-btn-text {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-weight: 800;
+  font-size: clamp(13px, 3.4vw, 18px);
+  letter-spacing: 0.02em;
+  color: #fff7d6;
+  text-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.5),
+    0 0 8px rgba(255, 200, 80, 0.95),
+    0 0 16px rgba(255, 156, 69, 0.7);
+}
+
+/* Spin button (Olympus theme — old card-layout button, kept for non-immersive) */
 .btn-olympus {
   background: linear-gradient(180deg, #f5c56f 0%, #e5a93a 50%, #c8932f 100%);
   color: #1a0f00;
