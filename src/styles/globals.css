@@ -748,7 +748,10 @@
   50%      { transform: scale(1.05) translateZ(0); }
 }
 
-/* Juan multiplier orb — fiesta-firework: yellow→red→burgundy */
+/* Juan multiplier orb — fiesta-firework: yellow→red→burgundy.
+ * Same layered brass-housing pattern as Olympus (Pass 5): bright fiesta
+ * gold rim → bronze → dark inner ring → orb body. Visually unifies the
+ * "metal-housed orb" treatment across the lobby. */
 .juan-orb {
   position: relative;
   width: 88%;
@@ -759,12 +762,17 @@
   background:
     radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 0.95) 0%, rgba(255, 240, 168, 0.85) 12%, transparent 28%),
     radial-gradient(circle at 50% 55%, #fff8c4 0%, #ffae50 22%, #ff5560 50%, #c8102e 78%, #5a0810 100%);
-  /* Dark rim + inner gold gloss (consistent with bonanza/olympus orbs). */
-  border: 1.5px solid rgba(40, 4, 8, 0.85);
+  border: none;
   box-shadow:
+    /* Layered metal-housing ring (outside-in): fiesta gold → bronze → dark */
+    0 0 0 1px rgba(255, 232, 130, 0.95),
+    0 0 0 2.5px rgba(180, 105, 30, 0.92),
+    0 0 0 4px rgba(40, 4, 8, 0.95),
+    /* Inner gloss + ember + bottom shading */
     inset 0 0 0 1px rgba(255, 232, 168, 0.7),
     inset 0 0 18px rgba(255, 174, 80, 0.6),
     inset 0 -6px 12px rgba(50, 8, 8, 0.6),
+    /* Outer fiesta halo */
     0 0 14px rgba(255, 174, 80, 0.85),
     0 0 32px rgba(200, 16, 46, 0.55),
     0 8px 18px rgba(0, 0, 0, 0.6);
@@ -782,11 +790,14 @@
   letter-spacing: -0.02em;
 }
 .juan-orb-big {
-  border-width: 3px;
   background:
     radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 1) 0%, rgba(255, 240, 200, 0.95) 12%, transparent 28%),
     radial-gradient(circle at 50% 55%, #fff8c4 0%, #ffd166 18%, #ff5560 45%, #c8102e 75%, #3a0408 100%);
   box-shadow:
+    /* Brighter brass-housing ring on tier-up */
+    0 0 0 1px rgba(255, 240, 145, 1),
+    0 0 0 2.5px rgba(200, 130, 40, 0.95),
+    0 0 0 4px rgba(40, 4, 8, 0.95),
     inset 0 0 24px rgba(255, 209, 102, 0.85),
     inset 0 -8px 14px rgba(40, 4, 4, 0.7),
     0 0 24px rgba(255, 174, 80, 0.95),
@@ -794,11 +805,14 @@
     0 10px 22px rgba(0, 0, 0, 0.6);
 }
 .juan-orb-huge {
-  border-width: 3px;
   background:
     radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 1) 0%, rgba(255, 248, 200, 0.95) 10%, transparent 28%),
     radial-gradient(circle at 50% 55%, #fffbe0 0%, #ffd166 18%, #ff7a30 45%, #c8102e 70%, #2a0408 100%);
   box-shadow:
+    /* Brightest brass-housing ring on top tier */
+    0 0 0 1px rgba(255, 248, 160, 1),
+    0 0 0 2.5px rgba(220, 145, 50, 0.95),
+    0 0 0 4px rgba(40, 4, 8, 0.95),
     inset 0 0 28px rgba(255, 200, 80, 0.95),
     inset 0 -10px 16px rgba(58, 4, 4, 0.8),
     0 0 32px rgba(255, 174, 80, 1),
