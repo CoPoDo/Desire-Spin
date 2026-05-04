@@ -128,8 +128,19 @@ export function RaceGame() {
                     : 'inset 0 1px 0 rgba(255,255,255,.04)',
                 }}
               >
-                {/* Finish line */}
-                <div className="absolute right-1 top-0 bottom-0 w-0.5 bg-ink/30" />
+                {/* Finish line — proper b/w checkerboard pattern instead
+                 *  of a thin grey bar, matching how real horse-race
+                 *  finish lines are painted. */}
+                <div
+                  className="absolute right-1 top-0 bottom-0 w-1.5"
+                  style={{
+                    background:
+                      'repeating-linear-gradient(0deg, #ffffff 0 4px, #1a1f29 4px 8px), repeating-linear-gradient(0deg, #1a1f29 0 4px, #ffffff 4px 8px)',
+                    backgroundSize: '50% 100%, 50% 100%',
+                    backgroundPosition: '0 0, 100% 0',
+                    backgroundRepeat: 'no-repeat',
+                  }}
+                />
                 {/* Lane label */}
                 <div className="absolute left-2 top-1/2 -translate-y-1/2 font-mono font-bold text-xs text-ink-dim tabular-nums z-0">
                   {i + 1}
