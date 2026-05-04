@@ -184,5 +184,20 @@ export function useMusic({ soundEnabled }: { soundEnabled: boolean }) {
     if (!soundEnabled || !musicEnabled) stop();
   }, [soundEnabled, musicEnabled, stop]);
 
+  // Close the AudioContext on unmount so the OS-level audio resource is
+  // released cleanly. Without this, navigating slot pages back-to-back
+  // could accrue dangling audio contexts (~1 per visit).
+  useEffect(() => {
+    return () => {
+      stopAll();
+      const ctx = ctxRef.current;
+      if (ctx && ctx.state !== 'closed') {
+        try { void ctx.close(); } catch { /* ignore */ }
+      }
+      ctxRef.current = null;
+      masterGainRef.current = null;
+    };
+  }, [stopAll]);
+
   return { musicEnabled, setMusicEnabled, start, stop, duck };
 }
