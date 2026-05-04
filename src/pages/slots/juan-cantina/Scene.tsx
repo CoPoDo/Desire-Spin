@@ -338,8 +338,13 @@ function CantinaCactus({
            Q 42 40 38 40 L 36 40 L 36 30 Q 36 26 32 26 Q 28 26 28 32 Z"
         fill="#1a0610"
       />
-      {/* Small flower bloom on top of one arm (Mexican fiesta flair) */}
-      <circle cx="38" cy="17" r="1.2" fill="#ff5fa2" opacity=".75" />
+      {/* Small flower bloom on top of one arm (Mexican fiesta flair).
+       *  Gentle pulse so the pink bloom catches attention on closer
+       *  inspection — like a real cactus flower opening in the dusk. */}
+      <circle
+        cx="38" cy="17" r="1.2" fill="#ff5fa2" opacity=".75"
+        style={{ animation: 'cantinaCactusBloom 4s ease-in-out infinite' }}
+      />
       <circle cx="38" cy="17" r=".4" fill="#ffd166" />
       {/* Faint ribbed-spine lines down the trunk */}
       {[24, 30].map((x) => (

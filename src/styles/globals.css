@@ -1489,6 +1489,14 @@
   50%      { transform: translate(-50%, -50%) scale(1.02); opacity: 0.4;  }
 }
 
+/* Cantina cactus bloom — slow open/close pulse on the pink flower
+ * resting atop the cactus arm. Looks like a desert flower expanding
+ * + relaxing in dusk light. */
+@keyframes cantinaCactusBloom {
+  0%, 100% { r: 1.2;  opacity: 0.75; }
+  50%      { r: 1.55; opacity: 0.95; }
+}
+
 /* Cantina building windows + door — candle/oil flicker, similar to
  * Wanted's saloon gas lamps but with a slightly warmer pattern. Three
  * separate windows use different cycle timings so each candle seems
