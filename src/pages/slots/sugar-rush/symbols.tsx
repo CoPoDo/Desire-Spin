@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion';
 
 const wrap = 'bonanza-sym';
-const scatterWrap = 'bonanza-sym bonanza-sym-scatter';
+const scatterWrap = 'bonanza-sym bonanza-sym-scatter sugar-sym-scatter';
 
 /** Donut — pink-glazed with rainbow sprinkles, hole in the middle. */
 export function DonutSymbol() {

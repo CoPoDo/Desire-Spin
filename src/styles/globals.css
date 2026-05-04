@@ -1369,6 +1369,19 @@
   0%, 100% { transform: scale(1) translateZ(0); opacity: 0.95; }
   50%      { transform: scale(1.05) translateZ(0); opacity: 1; }
 }
+/* Sugar Rush lollipop scatter — overrides the Bonanza idle pulse with a
+ * slow continuous spin (lollipops twirl on their stick). Combined with
+ * the existing pulse this reads as the candy disc rotating while
+ * pulsing — much more on-theme for a candy-rush slot. */
+.sugar-sym-scatter {
+  animation:
+    bonanzaScatterPulse 1.7s ease-in-out infinite,
+    sugarScatterSpin 5s linear infinite !important;
+}
+@keyframes sugarScatterSpin {
+  0%   { rotate: 0deg; }
+  100% { rotate: 360deg; }
+}
 
 /* Sweet Bonanza multiplier orb — vibrant gradient candy bomb.
  * Colour escalates with value (matches Pragmatic's real-game tiers):
