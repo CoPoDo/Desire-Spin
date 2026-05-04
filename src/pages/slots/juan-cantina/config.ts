@@ -38,20 +38,23 @@ export const juanCantinaConfig: SlotConfig = {
   // Order matches symbols[] above.
   weightsBase: [3, 7, 8, 9, 12, 14, 16, 17, 18, 2.0],
   weightsFree: [5, 8, 9, 11, 13, 14, 14, 14, 14, 2.6],
+  // Audited multiplier weights — same low-skewed distribution shape
+  // as Bonanza/Olympus so Cantina's bonus pacing matches Pragmatic
+  // norms (heavy 2-5×, rare 100×+).
   multiplierTableBase: {
     pPerTumble: 0.04,
     maxPerTumble: 2,
     values: [
-      [2, 10], [3, 9], [4, 8], [5, 7], [6, 6.5], [8, 6], [10, 6],
-      [12, 5.5], [15, 5], [20, 5], [25, 5], [50, 4.5], [100, 3], [500, 0.7],
+      [2, 22], [3, 16], [4, 13], [5, 10], [6, 7], [8, 6], [10, 5],
+      [12, 4], [15, 3.5], [20, 3], [25, 2.5], [50, 1.8], [100, 1.2], [500, 0.3],
     ],
   },
   multiplierTableFree: {
     pPerTumble: 0.30,
     maxPerTumble: 3,
     values: [
-      [2, 12], [3, 11], [4, 10], [5, 9], [6, 8], [8, 7.5], [10, 7],
-      [15, 6.5], [20, 6], [25, 5.5], [50, 5], [100, 4], [200, 2], [500, 0.6],
+      [2, 24], [3, 18], [4, 14], [5, 11], [6, 8], [8, 6], [10, 5],
+      [15, 4], [20, 3], [25, 2.5], [50, 1.8], [100, 1.2], [200, 0.7], [500, 0.25],
     ],
   },
   theme: {

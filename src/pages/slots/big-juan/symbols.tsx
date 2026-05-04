@@ -1,124 +1,155 @@
 /** Big Juan symbol art — full SVG for the high-tier characters; lower
  *  tier still uses emoji on a tinted disc (see SymbolCell). */
 
-/** Big Juan — masked luchador wrestler hero (red+gold mask, flexed pose). */
+/** Big Juan — portly Mexican mariachi mascot per real Pragmatic Big Juan:
+ *  HUGE curly black mustache, red sombrero, green-and-gold mariachi vest,
+ *  hands raised holding maracas. NOT a luchador wrestler. */
 export function BigJuanSvg({ size = '100%' }: { size?: string | number }) {
   return (
     <svg viewBox="0 0 64 64" width={size} height={size}>
       <defs>
-        <linearGradient id="bj-mask" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id="bj-hat" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#ff8a8a" />
           <stop offset="35%" stopColor="#ff5560" />
-          <stop offset="80%" stopColor="#a8102e" />
-          <stop offset="100%" stopColor="#3a0408" />
+          <stop offset="78%" stopColor="#c8102e" />
+          <stop offset="100%" stopColor="#5a0810" />
         </linearGradient>
         <radialGradient id="bj-skin" cx="50%" cy="48%" r="55%">
           <stop offset="0%" stopColor="#ffe4c4" />
           <stop offset="60%" stopColor="#c89058" />
           <stop offset="100%" stopColor="#5a3018" />
         </radialGradient>
-        <linearGradient id="bj-cape" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#ffd166" />
-          <stop offset="60%" stopColor="#c8932e" />
-          <stop offset="100%" stopColor="#5a3a04" />
+        <linearGradient id="bj-vest" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#3aff8a" />
+          <stop offset="55%" stopColor="#1a8a3a" />
+          <stop offset="100%" stopColor="#0a4a1a" />
         </linearGradient>
         <linearGradient id="bj-trim" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#fff5c4" />
           <stop offset="100%" stopColor="#a8761a" />
         </linearGradient>
       </defs>
-      {/* Cape */}
-      <path d="M 8 32 L 14 56 L 50 56 L 56 32 Q 56 44 32 50 Q 8 44 8 32 Z" fill="url(#bj-cape)" stroke="#3a1a04" strokeWidth=".7" />
-      {/* Shoulders */}
-      <path d="M 8 36 Q 12 30 22 30 L 42 30 Q 52 30 56 36 L 54 56 L 10 56 Z" fill="url(#bj-skin)" stroke="#3a1a08" strokeWidth="1" strokeLinejoin="round" />
-      {/* Pec definition */}
-      <path d="M 22 32 Q 26 38 28 44" stroke="#5a3018" strokeWidth=".6" fill="none" />
-      <path d="M 42 32 Q 38 38 36 44" stroke="#5a3018" strokeWidth=".6" fill="none" />
-      <path d="M 32 30 L 32 50" stroke="#5a3018" strokeWidth=".5" />
-      {/* Bicep highlights */}
-      <ellipse cx="13" cy="42" rx="2.5" ry="3" fill="rgba(255,255,255,.18)" />
-      <ellipse cx="51" cy="42" rx="2.5" ry="3" fill="rgba(255,255,255,.18)" />
-      {/* Head */}
-      <ellipse cx="32" cy="20" rx="13" ry="14" fill="url(#bj-mask)" stroke="#3a0408" strokeWidth="1.2" />
-      {/* Mask top peak */}
-      <path d="M 26 6 L 32 2 L 38 6 L 36 12 L 28 12 Z" fill="url(#bj-mask)" stroke="#3a0408" strokeWidth=".8" />
-      {/* Gold trim around face */}
-      <path d="M 22 18 Q 32 12 42 18 L 42 26 Q 32 22 22 26 Z" fill="url(#bj-trim)" stroke="#5a3a04" strokeWidth=".5" />
-      {/* Eye holes */}
-      <ellipse cx="27" cy="22" rx="3" ry="2.4" fill="#1a0a04" />
-      <ellipse cx="37" cy="22" rx="3" ry="2.4" fill="#1a0a04" />
-      <ellipse cx="27" cy="22" rx="2.4" ry="1.8" fill="url(#bj-skin)" />
-      <ellipse cx="37" cy="22" rx="2.4" ry="1.8" fill="url(#bj-skin)" />
-      <ellipse cx="27" cy="22" rx="1.2" ry="1.2" fill="#1a0a04" />
-      <ellipse cx="37" cy="22" rx="1.2" ry="1.2" fill="#1a0a04" />
-      <circle cx="26.7" cy="21.7" r=".3" fill="#fff" />
-      <circle cx="36.7" cy="21.7" r=".3" fill="#fff" />
-      {/* Mask centre stripe */}
-      <rect x="31" y="6" width="2" height="22" fill="url(#bj-trim)" stroke="#5a3a04" strokeWidth=".3" />
-      {/* Decorative gold stars */}
-      <path d="M 18 14 L 19 16 L 21 16 L 19.5 17 L 20 19 L 18 18 L 16 19 L 16.5 17 L 15 16 L 17 16 Z" fill="url(#bj-trim)" />
-      <path d="M 46 14 L 47 16 L 49 16 L 47.5 17 L 48 19 L 46 18 L 44 19 L 44.5 17 L 43 16 L 45 16 Z" fill="url(#bj-trim)" />
-      {/* Mouth */}
-      <path d="M 28 30 Q 32 32 36 30 Q 35 31 32 31 Q 29 31 28 30 Z" fill="#1a0a04" />
-      <path d="M 22 28 Q 32 32 42 28" fill="none" stroke="#3a0408" strokeWidth=".5" />
-      {/* Fists */}
-      <circle cx="22" cy="50" r="3" fill="url(#bj-skin)" stroke="#3a1a08" strokeWidth=".7" />
-      <circle cx="42" cy="50" r="3" fill="url(#bj-skin)" stroke="#3a1a08" strokeWidth=".7" />
-      <rect x="19" y="46" width="6" height="2" fill="url(#bj-trim)" stroke="#5a3a04" strokeWidth=".3" />
-      <rect x="39" y="46" width="6" height="2" fill="url(#bj-trim)" stroke="#5a3a04" strokeWidth=".3" />
+      {/* Body — round-bellied charro suit, green vest with gold trim */}
+      <path d="M 10 40 Q 14 32 22 32 L 42 32 Q 50 32 54 40 L 56 58 L 8 58 Z" fill="url(#bj-vest)" stroke="#0a3a18" strokeWidth="1" strokeLinejoin="round" />
+      {/* Big rounded belly */}
+      <ellipse cx="32" cy="48" rx="18" ry="11" fill="url(#bj-vest)" stroke="#0a3a18" strokeWidth=".8" />
+      {/* Gold trim along vest opening */}
+      <path d="M 24 32 L 24 58" stroke="url(#bj-trim)" strokeWidth="1.4" />
+      <path d="M 40 32 L 40 58" stroke="url(#bj-trim)" strokeWidth="1.4" />
+      {/* Gold buttons down the front */}
+      <circle cx="32" cy="38" r="1" fill="url(#bj-trim)" stroke="#5a3a04" strokeWidth=".25" />
+      <circle cx="32" cy="44" r="1" fill="url(#bj-trim)" stroke="#5a3a04" strokeWidth=".25" />
+      <circle cx="32" cy="50" r="1" fill="url(#bj-trim)" stroke="#5a3a04" strokeWidth=".25" />
+      {/* White shirt collar */}
+      <path d="M 26 32 L 32 36 L 38 32 L 38 30 L 26 30 Z" fill="#fff5e0" stroke="#5a3018" strokeWidth=".4" />
+      {/* Red bow tie */}
+      <path d="M 28 33 L 32 36 L 36 33 L 36 38 L 32 36 L 28 38 Z" fill="#ff5560" stroke="#5a0810" strokeWidth=".4" />
+      {/* Head — round, jolly, ruddy cheeks */}
+      <ellipse cx="32" cy="22" rx="11" ry="11" fill="url(#bj-skin)" stroke="#5a3018" strokeWidth="1" />
+      {/* Cheeks (rosy) */}
+      <ellipse cx="24" cy="25" rx="2.5" ry="1.8" fill="#ff6f6f" opacity=".55" />
+      <ellipse cx="40" cy="25" rx="2.5" ry="1.8" fill="#ff6f6f" opacity=".55" />
+      {/* Eyes — small, friendly, smiling */}
+      <path d="M 26 21 Q 28 19 30 21" stroke="#1a0a04" strokeWidth="1.2" fill="none" strokeLinecap="round" />
+      <path d="M 34 21 Q 36 19 38 21" stroke="#1a0a04" strokeWidth="1.2" fill="none" strokeLinecap="round" />
+      {/* Big curly black mustache — hallmark of real Big Juan */}
+      <path d="M 22 27 Q 18 26 16 28 Q 17 30 20 29 Q 24 28 26 28 Q 28 28 32 28 Q 36 28 38 28 Q 40 28 44 29 Q 47 30 48 28 Q 46 26 42 27 Q 38 28 36 28 L 32 30 L 28 28 Q 26 28 22 27 Z"
+        fill="#0a0408" stroke="#000" strokeWidth=".4" />
+      {/* Mustache curl tips */}
+      <path d="M 16 28 Q 14 30 16 31 Q 17 30 16 28 Z" fill="#0a0408" />
+      <path d="M 48 28 Q 50 30 48 31 Q 47 30 48 28 Z" fill="#0a0408" />
+      {/* Smile beneath mustache */}
+      <path d="M 28 31 Q 32 33 36 31" fill="none" stroke="#1a0a04" strokeWidth=".7" strokeLinecap="round" />
+      {/* SOMBRERO — wide red brim with gold trim, sits on top */}
+      <ellipse cx="32" cy="13" rx="22" ry="5" fill="url(#bj-hat)" stroke="#3a0408" strokeWidth="1" />
+      <ellipse cx="32" cy="14.5" rx="20" ry="1.5" fill="rgba(0,0,0,.3)" />
+      {/* Sombrero crown */}
+      <path d="M 24 13 Q 22 4 32 2 Q 42 4 40 13 Z" fill="url(#bj-hat)" stroke="#3a0408" strokeWidth="1" />
+      {/* Sombrero gold band */}
+      <path d="M 23 12 Q 32 10 41 12 L 41 9 Q 32 7 23 9 Z" fill="url(#bj-trim)" stroke="#5a3a04" strokeWidth=".3" />
+      {/* Sombrero pom-poms on rim */}
+      <circle cx="10" cy="13" r="1.6" fill="#1fff7a" stroke="#0a3a18" strokeWidth=".3" />
+      <circle cx="54" cy="13" r="1.6" fill="#1fff7a" stroke="#0a3a18" strokeWidth=".3" />
+      {/* Sombrero highlight */}
+      <ellipse cx="28" cy="6" rx="2" ry="3" fill="rgba(255,255,255,.4)" />
+      {/* Hands holding maracas (raised in fiesta pose) */}
+      <circle cx="14" cy="40" r="3.5" fill="url(#bj-skin)" stroke="#5a3018" strokeWidth=".7" />
+      <circle cx="50" cy="40" r="3.5" fill="url(#bj-skin)" stroke="#5a3018" strokeWidth=".7" />
+      {/* Maracas (small gourds with handles) */}
+      <ellipse cx="11" cy="34" rx="2.5" ry="3" fill="#ffd166" stroke="#5a3a04" strokeWidth=".5" />
+      <rect x="10.5" y="36" width="1" height="3" fill="#5a3a04" />
+      <ellipse cx="9.5" cy="32.5" rx="0.6" ry="0.9" fill="rgba(255,255,255,.5)" />
+      <ellipse cx="53" cy="34" rx="2.5" ry="3" fill="#ffd166" stroke="#5a3a04" strokeWidth=".5" />
+      <rect x="52.5" y="36" width="1" height="3" fill="#5a3a04" />
+      <ellipse cx="51.5" cy="32.5" rx="0.6" ry="0.9" fill="rgba(255,255,255,.5)" />
     </svg>
   );
 }
 
-/** El Diablo — devil/villain character with horns. */
+/** Señorita — female fiesta dancer character with red flamenco-style
+ *  dress, dark hair, hibiscus flower behind her ear. Replaces the
+ *  out-of-place "El Diablo" devil — real Big Juan is a fiesta theme. */
 export function DiabloSvg({ size = '100%' }: { size?: string | number }) {
   return (
     <svg viewBox="0 0 64 64" width={size} height={size}>
       <defs>
-        <radialGradient id="dv-skin" cx="50%" cy="42%" r="60%">
-          <stop offset="0%" stopColor="#ff8a8a" />
-          <stop offset="50%" stopColor="#a8102e" />
-          <stop offset="100%" stopColor="#3a0408" />
+        <radialGradient id="sn-skin" cx="50%" cy="42%" r="60%">
+          <stop offset="0%" stopColor="#ffe4c4" />
+          <stop offset="60%" stopColor="#c89058" />
+          <stop offset="100%" stopColor="#5a3018" />
         </radialGradient>
-        <linearGradient id="dv-horn" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#fff5c4" />
-          <stop offset="60%" stopColor="#c8932e" />
-          <stop offset="100%" stopColor="#3a2204" />
+        <linearGradient id="sn-dress" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#ff8a8a" />
+          <stop offset="45%" stopColor="#ff5560" />
+          <stop offset="100%" stopColor="#5a0810" />
+        </linearGradient>
+        <linearGradient id="sn-hair" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#3a1a08" />
+          <stop offset="100%" stopColor="#0a0408" />
         </linearGradient>
       </defs>
-      {/* Cape */}
-      <path d="M 8 38 L 12 56 L 52 56 L 56 38 Q 50 50 32 52 Q 14 50 8 38 Z" fill="#1a0a02" stroke="#000" strokeWidth=".6" />
-      {/* Shoulders */}
-      <path d="M 12 42 Q 18 36 28 36 L 36 36 Q 46 36 52 42 L 50 56 L 14 56 Z" fill="url(#dv-skin)" stroke="#000" strokeWidth=".8" />
+      {/* Flamenco dress — flared skirt with ruffles */}
+      <path d="M 6 56 Q 10 38 28 36 L 36 36 Q 54 38 58 56 Z" fill="url(#sn-dress)" stroke="#5a0810" strokeWidth="1" strokeLinejoin="round" />
+      {/* Skirt ruffle layers */}
+      <path d="M 8 50 Q 16 46 32 46 Q 48 46 56 50" fill="none" stroke="#fff5e0" strokeWidth=".7" opacity=".6" />
+      <path d="M 6 56 Q 14 52 32 52 Q 50 52 58 56" fill="none" stroke="#fff5e0" strokeWidth=".5" opacity=".4" />
+      {/* Bodice — fitted upper dress with ruffle edge */}
+      <path d="M 24 30 Q 24 26 28 26 L 36 26 Q 40 26 40 30 L 40 38 L 24 38 Z" fill="url(#sn-dress)" stroke="#5a0810" strokeWidth=".7" />
+      {/* Shoulder ruffles */}
+      <path d="M 22 30 Q 24 28 26 30 Q 27 32 26 33 Q 24 32 22 30" fill="url(#sn-dress)" stroke="#5a0810" strokeWidth=".4" />
+      <path d="M 42 30 Q 40 28 38 30 Q 37 32 38 33 Q 40 32 42 30" fill="url(#sn-dress)" stroke="#5a0810" strokeWidth=".4" />
       {/* Head */}
-      <ellipse cx="32" cy="22" rx="11" ry="13" fill="url(#dv-skin)" stroke="#000" strokeWidth="1" />
-      {/* Horns (left + right, curved) */}
-      <path d="M 22 14 Q 16 6 14 12 Q 18 14 22 14 Z" fill="url(#dv-horn)" stroke="#000" strokeWidth=".5" />
-      <path d="M 42 14 Q 48 6 50 12 Q 46 14 42 14 Z" fill="url(#dv-horn)" stroke="#000" strokeWidth=".5" />
-      {/* Eyes (yellow, glaring) */}
-      <ellipse cx="27" cy="21" rx="2.4" ry="1.6" fill="#ffd166" />
-      <ellipse cx="37" cy="21" rx="2.4" ry="1.6" fill="#ffd166" />
-      <ellipse cx="27" cy="21" rx=".7" ry="1.4" fill="#1a0a04" />
-      <ellipse cx="37" cy="21" rx=".7" ry="1.4" fill="#1a0a04" />
-      {/* Brow furrow (angry) */}
-      <path d="M 22 18 L 30 19" stroke="#1a0a04" strokeWidth="1.4" strokeLinecap="round" />
-      <path d="M 34 19 L 42 18" stroke="#1a0a04" strokeWidth="1.4" strokeLinecap="round" />
-      {/* Goatee */}
-      <path d="M 30 32 L 32 38 L 34 32" fill="#1a0a04" />
-      {/* Sinister grin (with fangs) */}
-      <path d="M 26 30 Q 32 32 38 30" fill="#1a0a04" stroke="#000" strokeWidth=".4" />
-      <path d="M 28 30 L 28.5 32 L 29 30 Z" fill="#fff5e0" />
-      <path d="M 35 30 L 35.5 32 L 36 30 Z" fill="#fff5e0" />
-      {/* Pointed mustache */}
-      <path d="M 26 28 L 22 27" stroke="#1a0a04" strokeWidth="1" strokeLinecap="round" />
-      <path d="M 38 28 L 42 27" stroke="#1a0a04" strokeWidth="1" strokeLinecap="round" />
-      {/* Pointed beard tip */}
-      <path d="M 32 38 L 32 44" stroke="#1a0a04" strokeWidth="1.2" />
-      {/* Trident in hand */}
-      <line x1="48" y1="56" x2="56" y2="36" stroke="#5a3a04" strokeWidth="1.5" strokeLinecap="round" />
-      <path d="M 54 36 L 56 32 L 58 36 L 56 42 Z" fill="url(#dv-horn)" stroke="#3a2204" strokeWidth=".5" />
-      <path d="M 53 38 L 55 34" stroke="url(#dv-horn)" strokeWidth="1.2" strokeLinecap="round" />
-      <path d="M 59 38 L 57 34" stroke="url(#dv-horn)" strokeWidth="1.2" strokeLinecap="round" />
+      <ellipse cx="32" cy="20" rx="9" ry="10" fill="url(#sn-skin)" stroke="#5a3018" strokeWidth=".8" />
+      {/* Hair — pulled back, dark waves */}
+      <path d="M 23 18 Q 22 8 32 6 Q 42 8 41 18 Q 40 14 32 14 Q 24 14 23 18 Z" fill="url(#sn-hair)" stroke="#000" strokeWidth=".4" />
+      {/* Bun on top */}
+      <ellipse cx="32" cy="6" rx="3" ry="2" fill="url(#sn-hair)" stroke="#000" strokeWidth=".3" />
+      {/* Hibiscus flower behind right ear */}
+      <g transform="translate(40 16)">
+        <circle cx="0" cy="0" r="1" fill="#ffd166" />
+        {[0, 72, 144, 216, 288].map((a) => {
+          const x = Math.cos((a * Math.PI) / 180) * 1.8;
+          const y = Math.sin((a * Math.PI) / 180) * 1.8;
+          return <ellipse key={a} cx={x} cy={y} rx="1.4" ry=".9" fill="#ff5560" stroke="#5a0810" strokeWidth=".2" transform={`rotate(${a} ${x} ${y})`} />;
+        })}
+        <circle cx="0" cy="0" r=".5" fill="#fff5c4" />
+      </g>
+      {/* Eyes — almond, dark lashes */}
+      <ellipse cx="28" cy="20" rx="1.4" ry="1" fill="#1a0a04" />
+      <ellipse cx="36" cy="20" rx="1.4" ry="1" fill="#1a0a04" />
+      <path d="M 26.5 19.5 Q 28 19 29.5 19.5" stroke="#1a0a04" strokeWidth=".5" fill="none" />
+      <path d="M 34.5 19.5 Q 36 19 37.5 19.5" stroke="#1a0a04" strokeWidth=".5" fill="none" />
+      {/* Cheeks */}
+      <ellipse cx="25" cy="23" rx="1.6" ry="1.2" fill="#ff6f6f" opacity=".5" />
+      <ellipse cx="39" cy="23" rx="1.6" ry="1.2" fill="#ff6f6f" opacity=".5" />
+      {/* Lips — red */}
+      <path d="M 30 25 Q 32 26 34 25 Q 33 27 32 27 Q 31 27 30 25 Z" fill="#c8102e" stroke="#5a0810" strokeWidth=".25" />
+      {/* Earring (gold hoop) */}
+      <circle cx="23" cy="21" r="1" fill="none" stroke="#ffd166" strokeWidth=".5" />
+      <circle cx="41" cy="21" r="1" fill="none" stroke="#ffd166" strokeWidth=".5" />
+      {/* Castanets in hand (raised) */}
+      <ellipse cx="46" cy="38" rx="2" ry="2.5" fill="#a8761a" stroke="#5a3a04" strokeWidth=".4" />
+      <ellipse cx="46" cy="35" rx="1.6" ry="1.2" fill="#fff5c4" stroke="#5a3a04" strokeWidth=".25" />
     </svg>
   );
 }
@@ -200,41 +231,71 @@ export function BootSvg({ size = '100%' }: { size?: string | number }) {
   );
 }
 
-/** Boxing/wrestling glove. */
+/** Maracas — pair of crossed gourd shakers with painted patterns,
+ *  tied with red ribbon. Replaces the wrestling glove (which didn't
+ *  fit the real Big Juan fiesta theme). */
 export function GloveSvg({ size = '100%' }: { size?: string | number }) {
   return (
     <svg viewBox="0 0 64 64" width={size} height={size}>
       <defs>
-        <radialGradient id="bj-glv" cx="38%" cy="32%" r="65%">
-          <stop offset="0%" stopColor="#a3d4ff" />
-          <stop offset="55%" stopColor="#1a72c4" />
-          <stop offset="100%" stopColor="#0a1f4a" />
+        <radialGradient id="bj-mar1" cx="38%" cy="32%" r="65%">
+          <stop offset="0%" stopColor="#fff5c4" />
+          <stop offset="55%" stopColor="#ffd166" />
+          <stop offset="100%" stopColor="#5a3a04" />
+        </radialGradient>
+        <radialGradient id="bj-mar2" cx="38%" cy="32%" r="65%">
+          <stop offset="0%" stopColor="#ffb4b8" />
+          <stop offset="55%" stopColor="#ff5560" />
+          <stop offset="100%" stopColor="#5a0810" />
         </radialGradient>
       </defs>
-      {/* Main fist */}
-      <path
-        d="M 14 24 Q 14 14 24 14 L 38 14 Q 50 14 50 28 L 50 44 Q 50 54 40 54 L 22 54 Q 14 54 14 46 Z"
-        fill="url(#bj-glv)"
-        stroke="#0a1f4a"
-        strokeWidth="1"
-        strokeLinejoin="round"
-      />
-      {/* Thumb bump */}
-      <path d="M 14 28 Q 6 28 6 38 Q 6 46 14 46 Z" fill="url(#bj-glv)" stroke="#0a1f4a" strokeWidth=".8" />
-      {/* Wrist cuff (red strap) */}
-      <rect x="14" y="50" width="36" height="6" fill="#c8102e" stroke="#5a081a" strokeWidth=".6" />
-      <rect x="14" y="50" width="36" height="1.5" fill="rgba(255,255,255,.4)" />
-      {/* Knuckle creases */}
-      <path d="M 18 30 L 18 40" stroke="rgba(0,0,0,.4)" strokeWidth=".5" />
-      <path d="M 26 26 L 26 40" stroke="rgba(0,0,0,.4)" strokeWidth=".5" />
-      <path d="M 34 26 L 34 40" stroke="rgba(0,0,0,.4)" strokeWidth=".5" />
-      <path d="M 42 26 L 42 40" stroke="rgba(0,0,0,.4)" strokeWidth=".5" />
-      {/* Highlight */}
-      <ellipse cx="22" cy="22" rx="5" ry="3" fill="rgba(255,255,255,.5)" transform="rotate(-15 22 22)" />
-      {/* Strap buckle */}
-      <rect x="28" y="51" width="8" height="3" fill="#ffd166" stroke="#5a3a04" strokeWidth=".4" />
-      {/* Stitching on cuff */}
-      <line x1="14" y1="56" x2="50" y2="56" stroke="#5a081a" strokeWidth=".5" strokeDasharray="1 1.5" />
+      {/* Maraca 1 — gold gourd, leaning left */}
+      <g transform="rotate(-22 22 32)">
+        {/* Gourd body */}
+        <ellipse cx="22" cy="20" rx="9" ry="11" fill="url(#bj-mar1)" stroke="#5a3a04" strokeWidth="1" />
+        {/* Painted ring patterns */}
+        <ellipse cx="22" cy="14" rx="6.5" ry="1.2" fill="none" stroke="#5a0810" strokeWidth=".5" />
+        <ellipse cx="22" cy="20" rx="8.5" ry="1.4" fill="none" stroke="#5a0810" strokeWidth=".6" />
+        <ellipse cx="22" cy="26" rx="7" ry="1.2" fill="none" stroke="#5a0810" strokeWidth=".5" />
+        {/* Floral dot pattern */}
+        <circle cx="18" cy="17" r=".7" fill="#1fff7a" />
+        <circle cx="26" cy="17" r=".7" fill="#5fb8ff" />
+        <circle cx="22" cy="22" r=".7" fill="#ff5560" />
+        {/* Highlight */}
+        <ellipse cx="18" cy="14" rx="2" ry="2.5" fill="rgba(255,255,255,.5)" />
+        {/* Handle */}
+        <rect x="20" y="30" width="4" height="14" fill="#5a3a04" stroke="#3a1a04" strokeWidth=".4" />
+        {/* Handle wrap (red ribbon) */}
+        <rect x="19.5" y="34" width="5" height="2" fill="#ff5560" stroke="#5a0810" strokeWidth=".25" />
+      </g>
+      {/* Maraca 2 — red gourd, leaning right */}
+      <g transform="rotate(22 42 32)">
+        {/* Gourd body */}
+        <ellipse cx="42" cy="20" rx="9" ry="11" fill="url(#bj-mar2)" stroke="#5a0810" strokeWidth="1" />
+        {/* Painted ring patterns */}
+        <ellipse cx="42" cy="14" rx="6.5" ry="1.2" fill="none" stroke="#5a3a04" strokeWidth=".5" />
+        <ellipse cx="42" cy="20" rx="8.5" ry="1.4" fill="none" stroke="#5a3a04" strokeWidth=".6" />
+        <ellipse cx="42" cy="26" rx="7" ry="1.2" fill="none" stroke="#5a3a04" strokeWidth=".5" />
+        {/* Floral dot pattern */}
+        <circle cx="38" cy="17" r=".7" fill="#ffd166" />
+        <circle cx="46" cy="17" r=".7" fill="#1fff7a" />
+        <circle cx="42" cy="22" r=".7" fill="#fff5c4" />
+        {/* Highlight */}
+        <ellipse cx="38" cy="14" rx="2" ry="2.5" fill="rgba(255,255,255,.55)" />
+        {/* Handle */}
+        <rect x="40" y="30" width="4" height="14" fill="#5a3a04" stroke="#3a1a04" strokeWidth=".4" />
+        {/* Handle wrap (gold ribbon) */}
+        <rect x="39.5" y="34" width="5" height="2" fill="#ffd166" stroke="#5a3a04" strokeWidth=".25" />
+      </g>
+      {/* Crossed-X tie ribbon at the centre */}
+      <path d="M 26 46 Q 32 50 38 46 Q 36 52 32 52 Q 28 52 26 46 Z" fill="#ff5560" stroke="#5a0810" strokeWidth=".4" />
+      <path d="M 30 50 Q 32 56 28 60" fill="none" stroke="#ff5560" strokeWidth="1" strokeLinecap="round" />
+      <path d="M 34 50 Q 32 56 36 60" fill="none" stroke="#ff5560" strokeWidth="1" strokeLinecap="round" />
+      {/* Motion shake lines */}
+      <path d="M 4 10 L 7 12" stroke="#ffd166" strokeWidth=".6" strokeLinecap="round" opacity=".7" />
+      <path d="M 60 10 L 57 12" stroke="#ff5560" strokeWidth=".6" strokeLinecap="round" opacity=".7" />
+      <path d="M 4 18 L 7 19" stroke="#ffd166" strokeWidth=".5" strokeLinecap="round" opacity=".6" />
+      <path d="M 60 18 L 57 19" stroke="#ff5560" strokeWidth=".5" strokeLinecap="round" opacity=".6" />
     </svg>
   );
 }

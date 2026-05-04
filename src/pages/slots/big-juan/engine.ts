@@ -1,6 +1,10 @@
 import type { Rng } from '../../../lib/fairness';
 
-/** Big Juan — 5×4 paylines slot inspired by Hacksaw Gaming's Big Juan.
+/** Big Juan — 5×4 paylines slot inspired by Pragmatic Play's Big Juan
+ *  (a fiesta / cantina theme with a portly mariachi mascot, NOT a
+ *  luchador — see screenshots from the real game). Mechanics map to
+ *  the real game's hold-and-spin bonus with 4 progressive jackpot tiers
+ *  (Grand / Major / Minor / Mini).
  *
  *  ── Layout ─────────────────────────────────────────────
  *    5 reels × 4 rows = 20 cells
@@ -8,22 +12,24 @@ import type { Rng } from '../../../lib/fairness';
  *    Wins are evaluated left → right starting at reel 0
  *
  *  ── Symbols ────────────────────────────────────────────
- *    juan       — top pay (Big Juan, the masked luchador)
- *    diablo     — high pay (El Diablo villain)
- *    sombrero   — high
- *    guitar     — high
- *    boot       — mid (lucha boot)
- *    glove      — mid
+ *    juan       — top pay (Big Juan, the portly mariachi mascot)
+ *    diablo     — high pay (Señorita, the female fiesta dancer)
+ *    sombrero   — high (red sombrero hat)
+ *    guitar     — high (mariachi vihuela)
+ *    boot       — mid (cowboy/charro boot)
+ *    glove      — mid (pair of maracas)
  *    A K Q J 10 — low (royal-style filler)
  *    chilli     — WILD (substitutes everything except scatter)
- *    pinata     — SCATTER (3+ → free spins)
+ *    pinata     — SCATTER (3+ → bonus respins round)
  *
  *  ── Features ──────────────────────────────────────────
  *    Wild substitution — chilli replaces any non-scatter to complete a line
  *    Wild Switch       — when 6+ identical non-scatter symbols land
  *                         entirely within reels 2-4, all of those positions
  *                         switch to wilds (re-evaluate for big multi-line hits)
- *    Free Spins        — 3 / 4 / 5 scatters → 8 / 10 / 12 free spins
+ *    Bonus Respins     — 3 / 4 / 5 piñata scatters → 10 / 12 / 14 respins
+ *                         on a 3×3 hold-and-spin grid with coins, jackpots
+ *                         (mini/minor/major/grand), and +1-respin tokens
  *    Scatter pay       — 3 / 4 / 5 scatters pay 2× / 10× / 50× total bet
  *
  *  Calibrated for ~96.7% RTP / high volatility / ~2500× max-win cap
@@ -49,15 +55,15 @@ export type SymbolDef = {
 };
 
 export const SYMBOLS: SymbolDef[] = [
-  // Top pay
-  { id: 'juan',     emoji: '🤼', color: '#ff5560', pay: { 3: 5,  4: 25, 5: 200 }, weights: [2, 3, 3, 3, 2] },
-  // High pays
-  { id: 'diablo',   emoji: '😈', color: '#a82048', pay: { 3: 2,  4: 10, 5: 80 },  weights: [3, 4, 4, 4, 3] },
+  // Top pay — Big Juan, the portly mariachi mascot
+  { id: 'juan',     emoji: '🤠', color: '#ff5560', pay: { 3: 5,  4: 25, 5: 200 }, weights: [2, 3, 3, 3, 2] },
+  // High pays — fiesta/mariachi cast
+  { id: 'diablo',   emoji: '💃', color: '#ff8aa3', pay: { 3: 2,  4: 10, 5: 80 },  weights: [3, 4, 4, 4, 3] },
   { id: 'sombrero', emoji: '🪅', color: '#ffae50', pay: { 3: 1.5, 4: 7, 5: 50 },  weights: [4, 5, 5, 5, 4] },
   { id: 'guitar',   emoji: '🎸', color: '#c8932e', pay: { 3: 1.2, 4: 5, 5: 40 },  weights: [5, 5, 5, 5, 5] },
   // Mid pays
   { id: 'boot',     emoji: '👢', color: '#7a4a18', pay: { 3: 0.8, 4: 3, 5: 20 },  weights: [6, 6, 6, 6, 6] },
-  { id: 'glove',    emoji: '🥊', color: '#5fb8ff', pay: { 3: 0.6, 4: 2, 5: 15 },  weights: [7, 7, 7, 7, 7] },
+  { id: 'glove',    emoji: '🪇', color: '#ffd166', pay: { 3: 0.6, 4: 2, 5: 15 },  weights: [7, 7, 7, 7, 7] },
   // Low pays (royal-style)
   { id: 'A',        emoji: '🅰', color: '#ffd166', pay: { 3: 0.4, 4: 1.2, 5: 8 }, weights: [9, 9, 9, 9, 9] },
   { id: 'K',        emoji: '🅺', color: '#a78bfa', pay: { 3: 0.3, 4: 1, 5: 6 },   weights: [10, 10, 10, 10, 10] },
@@ -65,7 +71,7 @@ export const SYMBOLS: SymbolDef[] = [
   { id: 'J',        emoji: '🅹', color: '#1fff7a', pay: { 3: 0.2, 4: 0.6, 5: 4 }, weights: [11, 11, 11, 11, 11] },
   { id: '10',       emoji: '🔟', color: '#22d3ee', pay: { 3: 0.2, 4: 0.5, 5: 3 }, weights: [11, 11, 11, 11, 11] },
   // Wild (chilli) — substitutes; only on middle reels (2/3/4 = index 1/2/3) per
-  // typical Hacksaw conventions (wilds usually NOT on first reel).
+  // typical Pragmatic conventions (wilds usually NOT on first reel).
   { id: 'chilli',   emoji: '🌶️', color: '#ff5560', isWild: true,    weights: [0, 2, 3, 2, 0] },
   // Scatter (piñata) — appears on any reel.
   { id: 'pinata',   emoji: '🎉', color: '#ffd166', isScatter: true, weights: [1.5, 1.5, 1.5, 1.5, 1.5] },

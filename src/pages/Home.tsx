@@ -75,9 +75,9 @@ export function Home() {
           <GameCard
             to="/slots/big-juan"
             title="Big Juan"
-            subtitle="5×4 paylines · Lucha libre"
+            subtitle="Hold-and-spin · Fiesta jackpots"
             badge="HOT"
-            bg="radial-gradient(80% 60% at 50% 50%, #ff5560 0%, #5a0810 50%, #14040a 100%)"
+            bg="radial-gradient(80% 60% at 50% 45%, #ff8a55 0%, #c8102e 35%, #5a0810 70%, #14040a 100%)"
             art={<BigJuanArt />}
           />
         </div>

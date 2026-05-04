@@ -30,8 +30,10 @@ import { fireConfetti } from '../../../lib/confetti';
 
 const BET_PRESETS = [0.2, 0.5, 1, 2, 5, 10, 20, 50, 100];
 
-/** Big Juan — 5×4 paylines slot with chilli wilds + piñata-scatter free
- *  spins + Wild Switch. Hacksaw-Gaming-inspired lucha libre theme. */
+/** Big Juan — 5×4 paylines slot with chilli wilds + piñata-scatter
+ *  bonus respins (3×3 hold-and-spin with mini/minor/major/grand
+ *  jackpots) + Wild Switch. Pragmatic-Play-inspired fiesta cantina
+ *  theme starring the portly mariachi mascot, Big Juan. */
 export function BigJuan() {
   const { balance, fairness, history, sound, session } = useGame();
 
@@ -168,7 +170,7 @@ export function BigJuan() {
           : 'big';
         setBigWin({ payout, tier });
         setTimeout(() => setBigWin(null), tier === 'epic' ? 4500 : tier === 'mega' ? 3500 : 2700);
-        // Lucha-fiesta chip-shower in cantina/lucha colours.
+        // Fiesta chip-shower in cantina mariachi colours.
         fireConfetti({
           count: tier === 'epic' ? 160 : tier === 'mega' ? 110 : 75,
           colors: ['#ff5560', '#ffd166', '#1fff7a', '#5fb8ff', '#c042b8', '#ffffff'],
@@ -266,6 +268,38 @@ export function BigJuan() {
 
       {/* Top bar comes from SlotPageLayout (back / balance + refill / menu).
           Big Juan only owns the in-stage game UI. */}
+
+      {/* Jackpot tier ribbon — Grand / Major / Minor / Mini, the iconic
+       * top-of-screen banner from the real Pragmatic Big Juan. Values
+       * shown are ×bet so they scale with whatever stake the player set. */}
+      <div className="absolute z-20 left-1/2 -translate-x-1/2 top-12 flex gap-1 px-2 pointer-events-none">
+        {(['grand', 'major', 'minor', 'mini'] as const).map((tier) => {
+          const c = tier === 'grand' ? '#ff5560'
+            : tier === 'major' ? '#ffae50'
+            : tier === 'minor' ? '#a78bfa'
+            : '#5fb8ff';
+          const value = bet * JACKPOTS[tier];
+          return (
+            <div
+              key={tier}
+              className="bj-jackpot-tier flex flex-col items-center px-1.5 py-1 rounded-md"
+              style={{
+                background: `linear-gradient(180deg, ${c}25, rgba(0,0,0,.55))`,
+                border: `1px solid ${c}88`,
+                boxShadow: `0 0 8px ${c}44, inset 0 1px 0 rgba(255,255,255,.12)`,
+                minWidth: '52px',
+              }}
+            >
+              <span className="text-[7px] uppercase tracking-widest font-display font-bold leading-none" style={{ color: c, textShadow: `0 0 4px ${c}88` }}>
+                {tier}
+              </span>
+              <span className="text-[9px] font-mono font-extrabold tabular-nums leading-none mt-0.5" style={{ color: '#fff5e0', textShadow: `0 0 4px ${c}88, 0 1px 1px rgba(0,0,0,.6)` }}>
+                {fmtCurrency(value)}
+              </span>
+            </div>
+          );
+        })}
+      </div>
 
       {/* Reels stage */}
       <main className="flex-1 min-h-0 flex items-center justify-center pt-14 pb-2 px-3 relative">
@@ -1134,35 +1168,45 @@ function PaylineOverlay({ line, color }: { line: number[]; color: string }) {
 }
 
 function BigJuanBackdrop() {
-  // Wrestling-arena lit-stage backdrop. Spotlights, ropes, bunting.
+  // Fiesta cantina backdrop — string lights, papel picado bunting, warm
+  // dusk sky over a Mexican village square. NOT a wrestling arena
+  // (real Big Juan is a fiesta-themed Pragmatic slot).
   return (
     <div className="absolute inset-0 -z-0 overflow-hidden">
-      {/* Crowd / dark stadium */}
+      {/* Warm cantina sky — sunset reds bleeding into deep night */}
       <div
         className="absolute inset-0"
         style={{
           background:
-            'radial-gradient(80% 60% at 50% 38%, #ff5560 0%, #5a0810 40%, #14040a 75%, #02010a 100%)',
+            'radial-gradient(80% 60% at 50% 38%, #ff8a55 0%, #c8102e 30%, #5a0810 60%, #14040a 85%, #02010a 100%)',
         }}
       />
-      {/* Spotlight rays — two top-corner cones + a centre stage glow.
-       *  Real arena spotlights pulse with the ring announcer's beats;
-       *  the soft brightness lift here reads as the lighting board
-       *  swelling to highlight the action. */}
+      {/* Distant village silhouette — small adobe rooflines along the horizon */}
+      <svg
+        className="absolute inset-x-0"
+        style={{ top: '32%', height: '5%', width: '100%', opacity: 0.6 }}
+        viewBox="0 0 100 5"
+        preserveAspectRatio="none"
+      >
+        <path
+          d="M 0 5 L 0 3 L 4 3 L 4 1.5 L 8 1.5 L 8 3 L 12 3 L 12 2 L 18 2 L 18 3.4 L 22 3.4 L 22 1.8 L 28 1.8 L 28 3 L 34 3 L 34 2.2 L 40 2.2 L 40 3.4 L 46 3.4 L 46 1.6 L 52 1.6 L 52 3 L 58 3 L 58 2 L 64 2 L 64 3.4 L 70 3.4 L 70 1.8 L 76 1.8 L 76 3 L 82 3 L 82 2.2 L 88 2.2 L 88 3.4 L 94 3.4 L 94 2 L 100 2 L 100 5 Z"
+          fill="#1a0408"
+        />
+      </svg>
+      {/* Soft cantina ambient glow — warm cone backlighting the reel stage */}
       <div
         className="absolute inset-0"
         style={{
           background: `
-            radial-gradient(40% 28% at 28% 22%, rgba(255,232,168,.35), transparent 70%),
-            radial-gradient(40% 28% at 72% 22%, rgba(255,232,168,.35), transparent 70%),
-            radial-gradient(60% 30% at 50% 60%, rgba(255,209,102,.18), transparent 75%)
+            radial-gradient(40% 30% at 30% 22%, rgba(255,180,100,.32), transparent 70%),
+            radial-gradient(40% 30% at 70% 22%, rgba(255,180,100,.32), transparent 70%),
+            radial-gradient(60% 30% at 50% 60%, rgba(255,209,102,.20), transparent 75%)
           `,
           mixBlendMode: 'screen',
           animation: 'bjSpotlightPulse 3.4s ease-in-out infinite',
         }}
       />
-      {/* Centre spotlight beam — bright gold radial behind the reel area
-       * (the lucha arena's main spotlight on the centre of the ring). */}
+      {/* Centre stage warm glow */}
       <div
         className="absolute pointer-events-none"
         style={{
@@ -1172,128 +1216,82 @@ function BigJuanBackdrop() {
           width: '92%',
           height: '50%',
           background:
-            'radial-gradient(ellipse at center, rgba(255,209,102,.32) 0%, rgba(255,150,80,.16) 40%, transparent 75%)',
+            'radial-gradient(ellipse at center, rgba(255,209,102,.32) 0%, rgba(255,150,80,.18) 40%, transparent 75%)',
           filter: 'blur(8px)',
           mixBlendMode: 'screen',
         }}
       />
 
-      {/* Crowd silhouettes — dark cheering audience beyond the ring ropes,
-       * visible top-bottom of the screen. Two rows of bobbing-head shapes
-       * to suggest a packed wrestling arena instead of an empty void.
-       * The two rows now bob in slightly off-sync rhythms (1.4s vs 1.7s)
-       * so the heads look like they're cheering / clapping rather than
-       * sitting frozen. */}
+      {/* String lights along the top — strung between buildings, glowing
+       * warm fiesta bulbs (alternating red, gold, green, blue, magenta).
+       * These are the canonical "verbenas" lights you see in every real
+       * cantina/fiesta scene. */}
       <svg
         className="absolute inset-x-0"
-        style={{
-          top: '14%',
-          height: '6%',
-          width: '100%',
-          opacity: 0.55,
-          animation: 'bjCrowdBob 1.4s ease-in-out infinite',
-          transformOrigin: '50% 100%',
-        }}
-        viewBox="0 0 100 6"
+        style={{ top: '12%', height: '4%', width: '100%' }}
+        viewBox="0 0 100 4"
         preserveAspectRatio="none"
       >
+        {/* Sagging wire */}
         <path
-          d="M 0,6
-             L 0,4 Q 2,2.5 4,4 Q 6,2 8,4 Q 10,1.8 12,4 Q 14,2.4 16,4 Q 18,2 20,4
-             Q 22,2.6 24,4 Q 26,2.2 28,4 Q 30,2.8 32,4 Q 34,2 36,4 Q 38,2.4 40,4
-             Q 42,2 44,4 Q 46,2.6 48,4 Q 50,1.8 52,4 Q 54,2.2 56,4 Q 58,2.8 60,4
-             Q 62,2 64,4 Q 66,2.4 68,4 Q 70,2.6 72,4 Q 74,2 76,4 Q 78,2.8 80,4
-             Q 82,2.2 84,4 Q 86,2 88,4 Q 90,2.6 92,4 Q 94,2.4 96,4 Q 98,2 100,4
-             L 100,6 Z"
-          fill="#02010a"
+          d="M 0 1 Q 25 2.4 50 1.6 T 100 1"
+          fill="none"
+          stroke="rgba(0,0,0,.5)"
+          strokeWidth=".15"
         />
-      </svg>
-      <svg
-        className="absolute inset-x-0"
-        style={{
-          bottom: '12%',
-          height: '6%',
-          width: '100%',
-          opacity: 0.55,
-          animation: 'bjCrowdBob 1.7s ease-in-out infinite',
-          animationDelay: '-0.3s',
-          transformOrigin: '50% 0%',
-        }}
-        viewBox="0 0 100 6"
-        preserveAspectRatio="none"
-      >
-        <path
-          d="M 0,6
-             L 0,4 Q 2,2 4,4 Q 6,2.6 8,4 Q 10,2.2 12,4 Q 14,2.8 16,4 Q 18,2.4 20,4
-             Q 22,2 24,4 Q 26,2.6 28,4 Q 30,2.2 32,4 Q 34,2.8 36,4 Q 38,2 40,4
-             Q 42,2.4 44,4 Q 46,2 48,4 Q 50,2.8 52,4 Q 54,2.2 56,4 Q 58,2.6 60,4
-             Q 62,2.4 64,4 Q 66,2 68,4 Q 70,2.8 72,4 Q 74,2.2 76,4 Q 78,2.6 80,4
-             Q 82,2 84,4 Q 86,2.8 88,4 Q 90,2.4 92,4 Q 94,2 96,4 Q 98,2.6 100,4
-             L 100,6 Z"
-          fill="#02010a"
-        />
+        {(() => {
+          const colors = ['#ff5560', '#ffd166', '#1fff7a', '#5fb8ff', '#c042b8', '#ffae50'];
+          const N = 22;
+          return Array.from({ length: N }).map((_, i) => {
+            const x = (i + 0.5) * (100 / N);
+            const yWire = x < 50
+              ? 1 + 1.4 * (1 - Math.abs(x - 25) / 25)
+              : 1 + 1.4 * (1 - Math.abs(x - 75) / 25);
+            const color = colors[i % colors.length]!;
+            return (
+              <g key={i}>
+                <line x1={x} y1={yWire} x2={x} y2={yWire + 0.3} stroke="#222" strokeWidth=".1" />
+                <ellipse
+                  cx={x}
+                  cy={yWire + 0.7}
+                  rx="0.35"
+                  ry="0.5"
+                  fill={color}
+                  opacity={0.9}
+                  style={{
+                    filter: `drop-shadow(0 0 1.2px ${color})`,
+                    animation: `bjBulbTwinkle 1.${(i % 9) + 1}s ease-in-out infinite`,
+                    animationDelay: `${(i * 0.13).toFixed(2)}s`,
+                  }}
+                />
+              </g>
+            );
+          });
+        })()}
       </svg>
 
-      {/* Wrestling ring ropes (top + bottom) — sit just inside the crowd
-       * silhouettes so they read as the front rope of the squared circle.
-       * Glow pulses with the spotlight rhythm so the gold rope visibly
-       * catches the arena lighting in waves. */}
+      {/* Adobe wall silhouettes left + right — cantina building walls
+       * framing the reels (replace the wrestling-rope frame). */}
       <div
-        className="absolute inset-x-0 bj-ring-rope"
+        className="absolute"
         style={{
+          left: 0,
           top: '14%',
-          height: '4px',
-          background: 'linear-gradient(180deg, #ffd166, #c8932e)',
-          opacity: .8,
-        }}
-      />
-      <div
-        className="absolute inset-x-0 bj-ring-rope"
-        style={{
           bottom: '12%',
-          height: '4px',
-          background: 'linear-gradient(180deg, #ffd166, #c8932e)',
-          opacity: .8,
-          animationDelay: '-1.2s',
-        }}
-      />
-      {/* Turnbuckles (red/yellow padding at the corners of the ring).
-       *  Pads catch the spotlight in soft pulses so the corner pads
-       *  visibly shine when the lighting passes over them. Top pads
-       *  (red) and bottom pads (gold) use offset delays for variation. */}
-      <div
-        className="absolute bj-turnbuckle bj-turnbuckle-red"
-        style={{
-          top: '13.4%', left: 0, width: '5%', height: '1.6%',
-          background: 'linear-gradient(180deg, #ff5560, #c8102e)',
-          borderRadius: '0 4px 4px 0',
+          width: '4%',
+          background:
+            'linear-gradient(90deg, rgba(60,16,8,.85), rgba(120,40,16,.5) 60%, transparent 100%)',
         }}
       />
       <div
-        className="absolute bj-turnbuckle bj-turnbuckle-red"
+        className="absolute"
         style={{
-          top: '13.4%', right: 0, width: '5%', height: '1.6%',
-          background: 'linear-gradient(180deg, #ff5560, #c8102e)',
-          borderRadius: '4px 0 0 4px',
-          animationDelay: '-1.7s',
-        }}
-      />
-      <div
-        className="absolute bj-turnbuckle bj-turnbuckle-gold"
-        style={{
-          bottom: '11.4%', left: 0, width: '5%', height: '1.6%',
-          background: 'linear-gradient(180deg, #ffd166, #c8932e)',
-          borderRadius: '0 4px 4px 0',
-          animationDelay: '-0.8s',
-        }}
-      />
-      <div
-        className="absolute bj-turnbuckle bj-turnbuckle-gold"
-        style={{
-          bottom: '11.4%', right: 0, width: '5%', height: '1.6%',
-          background: 'linear-gradient(180deg, #ffd166, #c8932e)',
-          borderRadius: '4px 0 0 4px',
-          animationDelay: '-2.5s',
+          right: 0,
+          top: '14%',
+          bottom: '12%',
+          width: '4%',
+          background:
+            'linear-gradient(270deg, rgba(60,16,8,.85), rgba(120,40,16,.5) 60%, transparent 100%)',
         }}
       />
       {/* Papel picado bunting at top — triangular SVG pennants on a sagging
@@ -1358,7 +1356,7 @@ function BigJuanBackdrop() {
         })()}
       </svg>
       {/* Floating confetti sparks — small coloured rectangles drift up
-       * from the bottom in the fiesta palette. Adds ambient lucha-arena
+       * from the bottom in the fiesta palette. Adds ambient cantina-square
        * energy without competing with the reels. */}
       {[
         { left: '8%',  size: 5, dur: 8,  delay: 0,    color: '#ff5560' },

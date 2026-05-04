@@ -1734,14 +1734,31 @@
 }
 
 /* Big Juan crowd silhouette bob — heads/shoulders cheering on a short
- * cycle. Pure scaleY oscillation pivoted at one edge of each band so
- * the silhouette tops/bottoms (where the heads are) move while the
- * far edge stays anchored. The two crowd rows pass different cycle
- * times + a delay so the heads bob out of sync, which reads as a
- * cheering crowd rather than a synchronised wave. */
+ * cycle (now disused since the wrestling crowd was replaced with a
+ * fiesta cantina backdrop, kept for safety in case other rules reference). */
 @keyframes bjCrowdBob {
   0%, 100% { transform: scaleY(1); }
   50%      { transform: scaleY(1.18); }
+}
+
+/* Big Juan fiesta string-light bulbs — warm twinkle on a short loop.
+ * Each bulb's animation-delay is randomised inline so the row of lights
+ * shimmers in non-synchronised waves like real verbenas string lighting.
+ * Mixes scale + opacity so bulbs visibly pulse rather than just blink. */
+@keyframes bjBulbTwinkle {
+  0%, 100% { opacity: 0.5;  transform: scale(0.92); }
+  50%      { opacity: 1;    transform: scale(1.12); }
+}
+
+/* Big Juan top-of-stage jackpot ribbon — soft glow pulse on each tier
+ * card (mirrors how real Big Juan's Grand/Major/Minor/Mini banner has
+ * a subtle breathing-light effect to draw the eye to the top prize). */
+.bj-jackpot-tier {
+  animation: bjJackpotBreathe 2.6s ease-in-out infinite;
+}
+@keyframes bjJackpotBreathe {
+  0%, 100% { filter: brightness(1); }
+  50%      { filter: brightness(1.18); }
 }
 
 /* Big Juan — fiesta confetti sparks drifting up from below */

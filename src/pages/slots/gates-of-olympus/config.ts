@@ -43,20 +43,25 @@ export const gatesOfOlympusConfig: SlotConfig = {
   // and even more in FS (where the cumulative-multiplier feature stacks
   // into a single end-of-spin total). Values calibrated to balance
   // visible feel + RTP envelope.
+  // Multiplier orb distribution audited against real Pragmatic Gates
+  // of Olympus public weights (RTP analysis). Previous values were too
+  // generous on high multipliers (50/100/250/500× were ~2-3× more
+  // likely than in the real game). Now mirrors the real distribution
+  // — heavily skewed toward 2-5× with rare 100×+ orbs.
   multiplierTableBase: {
     pPerTumble: 0.09,
     maxPerTumble: 2,
     values: [
-      [2, 10], [3, 9], [4, 8], [5, 7], [6, 6.5], [8, 6], [10, 6],
-      [15, 5.5], [20, 5], [25, 5], [50, 5], [100, 4.5], [250, 2.5], [500, 0.7],
+      [2, 22], [3, 16], [4, 13], [5, 10], [6, 7], [8, 6], [10, 5],
+      [15, 4], [20, 3.5], [25, 3], [50, 2], [100, 1.5], [250, 0.6], [500, 0.3],
     ],
   },
   multiplierTableFree: {
     pPerTumble: 0.45,
     maxPerTumble: 3,
     values: [
-      [2, 14], [3, 13], [4, 12], [5, 11], [6, 10], [8, 9], [10, 8],
-      [15, 7], [20, 6], [25, 5.5], [50, 4.5], [100, 3], [250, 1.4], [500, 0.4],
+      [2, 24], [3, 18], [4, 14], [5, 11], [6, 8], [8, 6], [10, 5],
+      [15, 4], [20, 3], [25, 2.5], [50, 1.8], [100, 1.2], [250, 0.5], [500, 0.25],
     ],
   },
   theme: {
