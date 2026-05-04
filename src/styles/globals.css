@@ -387,6 +387,7 @@
   border: none;
   padding: 0;
   cursor: pointer;
+  overflow: hidden;
   background:
     radial-gradient(circle at 35% 28%, #fff5c4 0%, #ffd37a 18%, #f5c56f 38%, #c8932e 65%, #6a4410 100%);
   box-shadow:
@@ -401,6 +402,43 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  animation: spinBtnPulse 2.4s ease-in-out infinite;
+}
+.spin-btn::before {
+  /* Gold shimmer sweep — diagonal highlight rotates around the button
+     while it's idle. Hidden when disabled (less visual noise when you
+     can't spin). Real Pragmatic does the same idle "ready to spin" hint. */
+  content: '';
+  position: absolute;
+  inset: -50%;
+  background: linear-gradient(120deg, transparent 35%, rgba(255, 255, 255, 0.45) 50%, transparent 65%);
+  transform: translateX(-100%);
+  animation: spinBtnShimmer 3.2s ease-in-out infinite;
+  pointer-events: none;
+}
+.spin-btn:disabled::before { display: none; }
+@keyframes spinBtnPulse {
+  0%, 100% { box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.7),
+    inset 0 -3px 0 rgba(80, 40, 5, 0.6),
+    inset 0 0 18px rgba(255, 200, 80, 0.5),
+    0 0 0 2px rgba(120, 70, 10, 0.85),
+    0 0 0 4px rgba(255, 233, 168, 0.35),
+    0 0 32px rgba(255, 200, 80, 0.55),
+    0 8px 22px rgba(0, 0, 0, 0.6); }
+  50% { box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.85),
+    inset 0 -3px 0 rgba(80, 40, 5, 0.6),
+    inset 0 0 22px rgba(255, 200, 80, 0.7),
+    0 0 0 2px rgba(120, 70, 10, 0.85),
+    0 0 0 4px rgba(255, 233, 168, 0.5),
+    0 0 42px rgba(255, 200, 80, 0.85),
+    0 8px 22px rgba(0, 0, 0, 0.6); }
+}
+@keyframes spinBtnShimmer {
+  0%   { transform: translateX(-100%) rotate(0deg); }
+  60%  { transform: translateX(100%) rotate(0deg); }
+  100% { transform: translateX(100%) rotate(0deg); }
 }
 .spin-btn:hover:not(:disabled) {
   filter: brightness(1.06);

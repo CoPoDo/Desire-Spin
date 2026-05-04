@@ -819,42 +819,58 @@ export function ImmersiveSlotView({
 
           {/* Accumulating WIN counter during winning cascades — appears center-
               top of the grid area whenever there's an active win, grows with
-              each chain payout. Hidden when no win in this spin. */}
+              each chain payout. Hidden when no win in this spin. Size scales
+              with magnitude (subtle for small wins, big for huge ones). */}
           <AnimatePresence>
-            {winTotal > 0 && !bigWin && (
-              <motion.div
-                key="cascadewin"
-                className="absolute pointer-events-none z-[7]"
-                style={{
-                  left: '50%',
-                  top: `${Math.max(liveInsets.top - 6, 8)}%`,
-                  transform: 'translate(-50%, -50%)',
-                }}
-                initial={{ scale: 0.4, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ opacity: 0, scale: 0.6 }}
-                transition={{ type: 'spring', stiffness: 280, damping: 18 }}
-              >
-                <div
-                  className="flex flex-col items-center px-4 py-1 rounded-full backdrop-blur-sm"
+            {winTotal > 0 && !bigWin && (() => {
+              const ratio = winTotal / Math.max(bet, 0.01);
+              const sizeStep = ratio >= 25 ? 2 : ratio >= 10 ? 1 : 0;
+              const fontSize = 16 + sizeStep * 6; // 16px / 22px / 28px
+              const labelSize = 8 + sizeStep * 1;
+              return (
+                <motion.div
+                  key="cascadewin"
+                  className="absolute pointer-events-none z-[7]"
                   style={{
-                    background: 'linear-gradient(180deg, rgba(80,40,5,.75), rgba(40,20,2,.85))',
-                    border: '1px solid rgba(255,233,168,.55)',
-                    boxShadow:
-                      'inset 0 1px 0 rgba(255,255,255,.25), 0 0 18px rgba(255,200,40,.45), 0 4px 10px rgba(0,0,0,.5)',
+                    left: '50%',
+                    top: `${Math.max(liveInsets.top - 7, 6)}%`,
+                    transform: 'translate(-50%, -50%)',
+                  }}
+                  initial={{ scale: 0.4, opacity: 0 }}
+                  animate={{ scale: [1, 1.08, 1], opacity: 1 }}
+                  exit={{ opacity: 0, scale: 0.6 }}
+                  transition={{
+                    scale: { duration: 1.4, repeat: Infinity, ease: 'easeInOut' },
+                    opacity: { duration: 0.25 },
                   }}
                 >
-                  <span className="text-[8px] uppercase tracking-widest text-[#FFE0A8]">Win</span>
-                  <CountUp
-                    value={winTotal}
-                    format={fmtCurrency}
-                    duration={500}
-                    className="font-serif italic font-bold text-lg text-[#fff7d6] leading-none tabular-nums"
-                    style={{ textShadow: '0 0 12px rgba(255,200,40,.95), 0 1px 2px rgba(0,0,0,.6)' }}
-                  />
-                </div>
-              </motion.div>
-            )}
+                  <div
+                    className="flex flex-col items-center px-4 py-1 rounded-full backdrop-blur-sm"
+                    style={{
+                      background: 'linear-gradient(180deg, rgba(80,40,5,.78), rgba(40,20,2,.9))',
+                      border: '1.5px solid rgba(255,233,168,.6)',
+                      boxShadow:
+                        'inset 0 1px 0 rgba(255,255,255,.3), 0 0 22px rgba(255,200,40,.55), 0 4px 10px rgba(0,0,0,.5)',
+                    }}
+                  >
+                    <span className="uppercase tracking-widest text-[#FFE0A8] leading-none"
+                          style={{ fontSize: `${labelSize}px` }}>
+                      Win
+                    </span>
+                    <CountUp
+                      value={winTotal}
+                      format={fmtCurrency}
+                      duration={500}
+                      className="font-serif italic font-bold text-[#fff7d6] leading-none tabular-nums"
+                      style={{
+                        fontSize: `${fontSize}px`,
+                        textShadow: '0 0 14px rgba(255,200,40,.95), 0 1px 2px rgba(0,0,0,.6)',
+                      }}
+                    />
+                  </div>
+                </motion.div>
+              );
+            })()}
           </AnimatePresence>
 
           {/* Tiered Big/Huge/Mega/Epic Win celebration centered on grid.
@@ -907,7 +923,9 @@ export function ImmersiveSlotView({
         </div>
       </button>
 
-      {/* Status row above the bottom bar */}
+      {/* Status row above the bottom bar — switches between Last win,
+          live cascade message, autoplay indicator, and the idle "Place
+          your bet" prompt that real game shows when reels are at rest. */}
       <div className="flex items-center justify-between px-4 h-6 text-[11px] font-mono">
         <span className="text-ink-dim">
           Last win{' '}
@@ -923,6 +941,10 @@ export function ImmersiveSlotView({
           <span className="text-[#ffe9a8] flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-[#ffc62a] animate-pulse" />
             AUTO {autoplay.infinite ? '∞' : autoplay.remaining}
+          </span>
+        ) : !busy && !inFree && winTotal === 0 ? (
+          <span className="text-ink-mute uppercase tracking-[0.18em] text-[10px]">
+            Place Your Bet
           </span>
         ) : null}
       </div>
