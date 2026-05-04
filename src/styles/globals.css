@@ -1385,6 +1385,15 @@
   50%      { transform: translate(-50%, -50%) scale(1.04); opacity: 1; }
 }
 
+/* Pharaoh palm tree sway — gentle desert-breeze rotation, pivot at
+ * the base of the trunk so the crown rocks while the trunk-base stays
+ * planted. Long 5.4s cycle keeps it from feeling like a fan; offset
+ * delay on the mirrored palm prevents lockstep. */
+@keyframes pharaohPalmSway {
+  0%, 100% { transform: rotate(-1.5deg); }
+  50%      { transform: rotate(1.8deg); }
+}
+
 /* Pharaoh sun heat-haze — matches Wanted's wantedSunHaze in shape +
  * pacing but slightly slower (5.5s vs 5s) to differentiate the two
  * desert scenes. Translate centre-anchor preserved inside keyframe. */

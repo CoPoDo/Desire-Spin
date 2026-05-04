@@ -372,13 +372,25 @@ function PalmTree({
   size: string;
   scaleX?: 1 | -1;
 }) {
+  // Wrap in a div so the SVG can keep its scaleX flip while the parent
+  // div handles the desert-breeze sway animation. transform-origin at
+  // the base of the trunk so the crown rocks. Mirrored palms get an
+  // offset delay so the two trees aren't in lockstep.
   return (
-    <svg
+    <div
       className="absolute"
       style={{
         ...position,
         width: size,
         aspectRatio: '1 / 1.6',
+        animation: `pharaohPalmSway 5.4s ease-in-out ${scaleX === -1 ? '-2.7s ' : ''}infinite`,
+        transformOrigin: '50% 100%',
+      }}
+    >
+    <svg
+      style={{
+        width: '100%',
+        height: '100%',
         filter: 'drop-shadow(0 0 8px rgba(0,0,0,.6)) drop-shadow(2px 0 4px rgba(255,140,40,.35))',
         transform: `scaleX(${scaleX})`,
       }}
@@ -441,5 +453,6 @@ function PalmTree({
       <circle cx="26" cy="6" r=".7" fill="#5a3a04" />
       <circle cx="24" cy="8" r=".6" fill="#5a3a04" />
     </svg>
+    </div>
   );
 }
