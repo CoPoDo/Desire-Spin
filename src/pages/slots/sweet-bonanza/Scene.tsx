@@ -24,10 +24,12 @@ export function BonanzaScene() {
         }}
       />
 
-      {/* 2. Distant pastel mountains */}
+      {/* 2. Distant pastel mountains — sit in the bottom third so the grid
+       * (which spans roughly 25-65% of the stage height) has clean sky around
+       * it rather than sitting on top of the mountain silhouette. */}
       <svg
         className="absolute inset-x-0"
-        style={{ bottom: '0%', height: '50%', width: '100%' }}
+        style={{ bottom: '0%', height: '36%', width: '100%' }}
         viewBox="0 0 100 50"
         preserveAspectRatio="none"
       >

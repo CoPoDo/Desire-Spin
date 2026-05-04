@@ -348,6 +348,21 @@
   animation: olympusOrbBreathe 1.6s ease-in-out infinite,
              olympusOrbStickyHalo 2.2s ease-in-out infinite;
 }
+/* Bonanza orbs gain a magenta-rose sticky halo during free spins so persistent
+ * multipliers visually pop against the candy backdrop. */
+.olympus-fs-mode .bonanza-orb {
+  animation: bonanzaOrbBreathe 1.6s ease-in-out infinite,
+             bonanzaOrbStickyHalo 2.2s ease-in-out infinite;
+}
+@keyframes bonanzaOrbStickyHalo {
+  0%, 100% {
+    filter: drop-shadow(0 0 4px rgba(255, 95, 162, 0.4));
+  }
+  50% {
+    filter: drop-shadow(0 0 14px rgba(255, 95, 162, 0.85))
+            drop-shadow(0 0 26px rgba(255, 200, 80, 0.4));
+  }
+}
 @keyframes olympusOrbStickyHalo {
   0%, 100% {
     filter: drop-shadow(0 0 4px rgba(167, 139, 250, 0.4));
