@@ -84,23 +84,47 @@ export function GrapeSymbol() {
 }
 
 export function WatermelonSymbol() {
+  // Half-slice watermelon: pink flesh dome, white inner-rind layer, green
+  // outer rind with dark stripes. Six teardrop seeds with subtle highlights.
   return (
     <div className={wrap}>
-      <svg viewBox="0 0 64 64" className="w-full h-full drop-shadow-[0_4px_8px_rgba(0,160,80,0.45)]">
+      <svg viewBox="0 0 64 64" className="w-full h-full">
         <defs>
-          <linearGradient id="wm" x1="0" y1="0" x2="0" y2="1">
+          <radialGradient id="wm-flesh" cx="50%" cy="80%" r="80%">
             <stop offset="0%" stopColor="#ff8aa8" />
-            <stop offset="80%" stopColor="#ff3d6b" />
+            <stop offset="55%" stopColor="#ff3d6b" />
+            <stop offset="100%" stopColor="#a01030" />
+          </radialGradient>
+          <linearGradient id="wm-rind" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#3acf60" />
+            <stop offset="60%" stopColor="#1aa744" />
+            <stop offset="100%" stopColor="#0d5a26" />
           </linearGradient>
         </defs>
-        <path d="M8 50 A 28 28 0 0 1 56 50 L 8 50 Z" fill="url(#wm)" />
-        <path d="M8 50 A 28 28 0 0 1 56 50 L 8 50 Z" fill="none" stroke="#ffe2ec" strokeWidth="2" />
-        <path d="M5 50 L 59 50" stroke="#fff" strokeWidth="3" />
-        <path d="M5 50 L 59 50" stroke="#1aa744" strokeWidth="2" transform="translate(0 4)" />
-        <circle cx="22" cy="40" r="2.2" fill="#1a1f29" />
-        <circle cx="32" cy="34" r="2.2" fill="#1a1f29" />
-        <circle cx="42" cy="40" r="2.2" fill="#1a1f29" />
-        <circle cx="32" cy="44" r="2.2" fill="#1a1f29" />
+        {/* Outer rind (green) */}
+        <path d="M5 52 A 27 27 0 0 1 59 52 L 5 52 Z" fill="url(#wm-rind)" stroke="#0d5a26" strokeWidth="1" />
+        {/* Rind stripes — darker green arcs */}
+        <path d="M9 52 A 23 23 0 0 1 32 30" fill="none" stroke="rgba(13,90,38,.6)" strokeWidth=".8" />
+        <path d="M55 52 A 23 23 0 0 0 32 30" fill="none" stroke="rgba(13,90,38,.6)" strokeWidth=".8" />
+        {/* White inner-rind layer */}
+        <path d="M9 52 A 23 23 0 0 1 55 52 L 9 52 Z" fill="#ffeae0" />
+        {/* Pink flesh */}
+        <path d="M11 52 A 21 21 0 0 1 53 52 L 11 52 Z" fill="url(#wm-flesh)" />
+        {/* Highlight on flesh */}
+        <path d="M14 50 Q 24 38 32 36" stroke="rgba(255,255,255,.4)" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+        {/* Seeds (teardrops) */}
+        {[
+          { x: 22, y: 42, rot: -15 },
+          { x: 32, y: 36, rot: 0 },
+          { x: 42, y: 42, rot: 15 },
+          { x: 27, y: 48, rot: -8 },
+          { x: 37, y: 48, rot: 8 },
+        ].map((s, i) => (
+          <g key={i} transform={`rotate(${s.rot} ${s.x} ${s.y})`}>
+            <ellipse cx={s.x} cy={s.y} rx="1.6" ry="2.6" fill="#1a1f29" />
+            <ellipse cx={s.x - 0.4} cy={s.y - 0.6} rx="0.5" ry="0.8" fill="rgba(255,255,255,.4)" />
+          </g>
+        ))}
       </svg>
     </div>
   );
@@ -129,18 +153,42 @@ export function PlumSymbol() {
 export function AppleSymbol() {
   return (
     <div className={wrap}>
-      <svg viewBox="0 0 64 64" className="w-full h-full drop-shadow-[0_4px_8px_rgba(60,180,80,0.5)]">
+      <svg viewBox="0 0 64 64" className="w-full h-full">
         <defs>
-          <radialGradient id="ap" cx="35%" cy="35%" r="65%">
-            <stop offset="0%" stopColor="#c2ff8e" />
+          <radialGradient id="ap-body" cx="34%" cy="32%" r="70%">
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.85" />
+            <stop offset="18%" stopColor="#d8ff9a" />
             <stop offset="55%" stopColor="#48c93a" />
-            <stop offset="100%" stopColor="#1a5f1c" />
+            <stop offset="85%" stopColor="#1a5f1c" />
+            <stop offset="100%" stopColor="#082810" />
           </radialGradient>
+          <linearGradient id="ap-stem" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#7a4a1a" />
+            <stop offset="100%" stopColor="#3a1f0a" />
+          </linearGradient>
+          <linearGradient id="ap-leaf" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#9bdf66" />
+            <stop offset="100%" stopColor="#3a8a1a" />
+          </linearGradient>
         </defs>
-        <path d="M32 16 C 18 16 10 28 12 40 C 14 52 24 58 32 56 C 40 58 50 52 52 40 C 54 28 46 16 32 16 Z" fill="url(#ap)" />
-        <path d="M32 18 C 32 14 36 10 40 12" stroke="#5a3a1c" strokeWidth="2.5" fill="none" />
-        <path d="M34 14 Q 44 6 50 12" fill="#7fbf52" />
-        <ellipse cx="22" cy="26" rx="6" ry="3" fill="#fff" opacity="0.45" />
+        {/* Apple body — slight bilobed top via two arcs */}
+        <path
+          d="M32 18 C 18 18 10 28 12 40 C 14 52 24 58 32 56 C 40 58 50 52 52 40 C 54 28 46 18 32 18 Z"
+          fill="url(#ap-body)"
+          stroke="rgba(8,40,16,.55)"
+          strokeWidth=".9"
+        />
+        {/* Subtle indent at top centre */}
+        <path d="M30 18 Q 32 22 34 18" fill="none" stroke="rgba(0,0,0,.25)" strokeWidth=".7" />
+        {/* Stem */}
+        <path d="M32 18 C 33 14 36 10 38 11" stroke="url(#ap-stem)" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+        {/* Leaf */}
+        <path d="M37 11 Q 50 6 52 14 Q 46 16 37 11 Z" fill="url(#ap-leaf)" stroke="#3a8a1a" strokeWidth=".5" />
+        <path d="M40 12 Q 47 11 50 13" stroke="rgba(8,40,16,.5)" strokeWidth=".5" fill="none" />
+        {/* Big highlight */}
+        <ellipse cx="22" cy="28" rx="6.5" ry="3.5" fill="rgba(255,255,255,.6)" />
+        {/* Small specular */}
+        <ellipse cx="20" cy="32" rx="2" ry="1" fill="rgba(255,255,255,.45)" />
       </svg>
     </div>
   );
