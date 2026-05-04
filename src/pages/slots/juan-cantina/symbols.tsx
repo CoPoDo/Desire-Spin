@@ -229,7 +229,6 @@ const SYMBOL_COLOR: Record<string, string> = {
   taco:   '#ffae50',
   lime:   '#1fff7a',
   cactus: '#5a8a3c',
-  skull:  '#fff5fb',
 };
 
 const SYMBOL_EMOJI: Record<string, string> = {
@@ -237,7 +236,6 @@ const SYMBOL_EMOJI: Record<string, string> = {
   taco:   '🌮',
   lime:   '🍋',
   cactus: '🌵',
-  skull:  '💀',
 };
 
 function makeEmojiSymbol(id: string) {
@@ -275,7 +273,82 @@ export const ChilliSymbol = makeEmojiSymbol('chilli');
 export const TacoSymbol = makeEmojiSymbol('taco');
 export const LimeSymbol = makeEmojiSymbol('lime');
 export const CactusSymbol = makeEmojiSymbol('cactus');
-export const SkullSymbol = makeEmojiSymbol('skull');
+
+/** Sugar skull (calavera) — Day of the Dead style with marigold flower
+ *  in the forehead, decorated swirls around the eye sockets, and pink
+ *  rose accents on the cheeks. Custom SVG so it reads as a proper
+ *  calavera instead of the generic ☠️ emoji. */
+export function SkullSymbol() {
+  return (
+    <div className={wrap} style={{ color: '#fff5fb' }}>
+      <svg viewBox="0 0 64 64" className="w-full h-full">
+        <defs>
+          <radialGradient id="skull-bone" cx="50%" cy="35%" r="60%">
+            <stop offset="0%" stopColor="#ffffff" />
+            <stop offset="60%" stopColor="#f5e9d4" />
+            <stop offset="100%" stopColor="#a89478" />
+          </radialGradient>
+        </defs>
+        {/* Skull body — wider top, narrowing jaw */}
+        <path
+          d="M16 30 Q 14 12 32 12 Q 50 12 48 30
+             L 48 42 Q 48 46 44 46 L 42 50 L 38 46 L 26 46 L 22 50 L 20 46 Q 16 46 16 42 Z"
+          fill="url(#skull-bone)"
+          stroke="#5a4830"
+          strokeWidth="1"
+        />
+        {/* Forehead marigold (orange + yellow petals around centre) */}
+        <g>
+          {[0, 60, 120, 180, 240, 300].map((rot, i) => (
+            <ellipse
+              key={i}
+              cx="32"
+              cy="18"
+              rx="2.5"
+              ry="1.4"
+              fill="#ff8a40"
+              transform={`rotate(${rot} 32 21)`}
+            />
+          ))}
+          <circle cx="32" cy="20" r="1.6" fill="#ffd166" stroke="#7a4a04" strokeWidth=".3" />
+        </g>
+        {/* Eye sockets — large, with decorative violet swirls around */}
+        <ellipse cx="24" cy="30" rx="4" ry="4.5" fill="#1a0a0a" />
+        <ellipse cx="40" cy="30" rx="4" ry="4.5" fill="#1a0a0a" />
+        {/* Pink flower in each eye */}
+        <circle cx="24" cy="30" r="2" fill="#ff5fa2" />
+        <circle cx="24" cy="30" r="0.8" fill="#fff5fb" />
+        <circle cx="40" cy="30" r="2" fill="#ff5fa2" />
+        <circle cx="40" cy="30" r="0.8" fill="#fff5fb" />
+        {/* Decorative dots around eye sockets */}
+        {[
+          [18, 24], [30, 24], [18, 36], [30, 36],
+          [34, 24], [46, 24], [34, 36], [46, 36],
+        ].map(([x, y], i) => (
+          <circle key={i} cx={x} cy={y} r=".7" fill="#a78bfa" />
+        ))}
+        {/* Heart-shaped nose */}
+        <path
+          d="M32 36 C 30 34 28 35 28 37 C 28 39 32 42 32 42 C 32 42 36 39 36 37 C 36 35 34 34 32 36 Z"
+          fill="#1a0a0a"
+        />
+        {/* Mouth — stitched smile with vertical teeth lines */}
+        <path d="M22 44 L 42 44" stroke="#1a0a0a" strokeWidth=".9" strokeLinecap="round" />
+        {[24, 27, 30, 33, 36, 39, 42].map((x, i) => (
+          <line key={i} x1={x - 1} y1="42.5" x2={x - 1} y2="45.5" stroke="#1a0a0a" strokeWidth=".5" />
+        ))}
+        {/* Cheek roses */}
+        <circle cx="20" cy="40" r="1.4" fill="#ff5fa2" stroke="#7a124d" strokeWidth=".25" />
+        <circle cx="44" cy="40" r="1.4" fill="#ff5fa2" stroke="#7a124d" strokeWidth=".25" />
+        <circle cx="20" cy="40" r=".6" fill="#fff5fb" />
+        <circle cx="44" cy="40" r=".6" fill="#fff5fb" />
+        {/* Forehead swirl decoration */}
+        <path d="M22 22 Q 26 24 24 26" fill="none" stroke="#a78bfa" strokeWidth=".5" />
+        <path d="M42 22 Q 38 24 40 26" fill="none" stroke="#a78bfa" strokeWidth=".5" />
+      </svg>
+    </div>
+  );
+}
 
 export function MaracaSymbol() {
   return (
