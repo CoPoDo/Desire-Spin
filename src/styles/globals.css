@@ -188,16 +188,39 @@
 .cell-olympus.win {
   animation: olympusWin 620ms ease-out;
   box-shadow:
-    inset 0 1px 0 rgba(255, 233, 168, 0.5),
-    inset 0 0 24px rgba(255, 198, 42, 0.35),
-    inset 0 0 0 1px rgba(255, 198, 42, 0.5),
-    0 0 24px rgba(255, 198, 42, 0.45),
+    inset 0 1px 0 rgba(255, 233, 168, 0.6),
+    inset 0 0 30px rgba(255, 198, 42, 0.55),
+    inset 0 0 0 2px rgba(255, 233, 168, 0.7),
+    0 0 28px rgba(255, 198, 42, 0.65),
     0 8px 24px rgba(0, 0, 0, 0.6);
 }
+/* Radiating sparkle ring layered on top of winning cells. Renders the
+   real-game look where a glowing halo pulses outward over the symbol. */
+.cell-olympus.win::after {
+  content: '';
+  position: absolute;
+  inset: -8%;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 50%,
+      rgba(255, 233, 168, 0) 30%,
+      rgba(255, 233, 168, 0.45) 45%,
+      rgba(255, 198, 42, 0.25) 60%,
+      transparent 75%);
+  animation: olympusWinHalo 620ms ease-out;
+  mix-blend-mode: screen;
+}
 @keyframes olympusWin {
-  0% { transform: scale(1); filter: brightness(1); }
-  50% { transform: scale(1.07); filter: brightness(1.55) saturate(1.25); }
-  100% { transform: scale(1); filter: brightness(1); }
+  0%   { transform: scale(1);    filter: brightness(1); }
+  35%  { transform: scale(1.09); filter: brightness(1.7) saturate(1.35); }
+  70%  { transform: scale(1.04); filter: brightness(1.35) saturate(1.2); }
+  100% { transform: scale(1);    filter: brightness(1); }
+}
+@keyframes olympusWinHalo {
+  0%   { opacity: 0; transform: scale(0.6); }
+  40%  { opacity: 1; transform: scale(1.1); }
+  100% { opacity: 0; transform: scale(1.6); }
 }
 
 /* Symbol container — drives drop-shadow currentColor glow. */

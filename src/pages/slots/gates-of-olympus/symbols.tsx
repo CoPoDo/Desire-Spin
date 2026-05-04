@@ -21,15 +21,22 @@ const SYMBOL_COLOR: Record<string, string> = {
 };
 
 function Wrap({ id, children, scatter }: { id: string; children: React.ReactNode; scatter?: boolean }) {
+  // The wrap takes the symbol's color via currentColor, which cascades into
+  // the SVG (currentColor fills + drop-shadow). Real Pragmatic glows in the
+  // symbol's own color — gems glow their gem color, gold items glow gold.
+  const color = SYMBOL_COLOR[id] ?? '#FFE9A8';
   return (
     <div
       className={`olympus-sym${scatter ? ' olympus-sym-scatter' : ''}`}
-      style={{ color: SYMBOL_COLOR[id] ?? '#FFE9A8' }}
+      style={{ color }}
     >
       {children}
     </div>
   );
 }
+
+/** Re-export so the Grid layer can read symbol colors for cell tinting. */
+export const olympusSymbolColor = (id: string) => SYMBOL_COLOR[id] ?? '#FFE9A8';
 
 export function CrownSymbol() {
   return (
