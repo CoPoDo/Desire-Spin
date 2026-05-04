@@ -210,6 +210,22 @@ export function WantedScene() {
         🪴
       </div>
 
+      {/* Warm dusk stage-light glow behind reels */}
+      <div
+        className="absolute pointer-events-none"
+        style={{
+          left: '50%',
+          top: '46%',
+          transform: 'translate(-50%, -50%)',
+          width: '92%',
+          height: '50%',
+          background:
+            'radial-gradient(ellipse at center, rgba(255,165,80,.28) 0%, rgba(200,80,40,.14) 40%, transparent 75%)',
+          filter: 'blur(8px)',
+          mixBlendMode: 'screen',
+        }}
+      />
+
       {/* 4. Sparkle dust + dust motes */}
       <div
         className="absolute inset-0"
