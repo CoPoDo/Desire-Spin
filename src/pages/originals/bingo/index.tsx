@@ -14,6 +14,7 @@ import {
   computeLineMatches,
   play,
 } from './engine';
+import { fireConfetti } from '../../../lib/confetti';
 
 type Phase = 'idle' | 'drawing' | 'reveal';
 
@@ -54,6 +55,13 @@ export function BingoGame() {
             r.lineCount >= 4 ? 'mega-win' :
             r.lineCount >= 2 ? 'big-win' : 'win',
           );
+          // Confetti shower for multi-line bingos
+          if (r.lineCount >= 2) {
+            fireConfetti({
+              count: r.lineCount >= 4 ? 130 : 70,
+              colors: ['#ffd166', '#ff5560', '#22d3ee', '#1fff7a', '#ffffff'],
+            });
+          }
         } else {
           sound.play('drop');
         }
