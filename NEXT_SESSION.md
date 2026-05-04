@@ -128,35 +128,48 @@ Hard-coded defaults in `src/pages/slots/gates-of-olympus/index.tsx`:
 
 ## Originals (Stake-style)
 
-Five new games deployed alongside Olympus, all using the shared
-`OriginalPageLayout` (back / title / balance + refill / menu) and the
-provably-fair RNG via `fairness.consumeNonce()`:
+13 Stake-style games deployed, all using the shared `OriginalPageLayout`
+(back / title / balance + refill / menu) and the provably-fair RNG via
+`fairness.consumeNonce()`. Each one is in `src/pages/originals/<name>/`
+with `engine.ts` (game logic) + `index.tsx` (UI).
 
-| Game   | RTP | Mechanic |
-|--------|-----|----------|
-| Dice   | 99% | Slider over/under target, 0-100 roll |
-| Limbo  | 99% | Set target multiplier, RNG must beat it |
-| Mines  | 99% | 5×5 grid, reveal gems, dodge mines, cash out |
-| Crash  | 99% | Multiplier rises from 1×, cash out before bust |
-| Plinko | 99% | Drop ball through pegs, lands in payout bucket |
+| Game      | RTP    | Mechanic |
+|-----------|--------|----------|
+| Dice      | 99%    | Slider over/under target, editable multiplier/chance, 50/50 presets |
+| Limbo     | 99%    | Set target multiplier, RNG must beat it |
+| Mines     | 99%    | 5×5 grid, reveal gems, dodge mines, "Pick Random", profit-on-cash stat |
+| Crash     | 99%    | Multiplier rises, auto-cashout, bust-history bar chart |
+| Plinko    | ~99%   | 8-16 rows × Low/Med/High risk, animated ball, bucket flash |
+| Wheel     | ~99%   | 10/20/30/40/50 segments × Low/Med/High risk, spinning SVG |
+| Hilo      | 99%    | Higher/lower cards, skip card, cashout streak |
+| Tower     | 99%    | 9-row climb, 5 difficulties (easy → master), skull avoid |
+| Keno      | ~99%   | 40-number 8×5 grid, pick 1-10, draw 10, 4 risk tables |
+| Roulette  | 97.3%  | European single-0, multi-bet board, all standard outside bets |
+| Blackjack | 99.5%  | Hit/Stand/Double, dealer stands on 17, BJ pays 3:2 |
+| Baccarat  | ~98.9% | Punto Banco rules, multi-bet (Player/Banker/Tie) |
+| Diamonds  | 99%    | 5-gem match, 7-tier rarity, 1000× max payout |
+
+All games that make sense (Dice/Limbo/Plinko/Wheel/Crash/Diamonds) ship
+with **Manual / Auto tabs** and auto-bet config (count + stop-on-profit
++ stop-on-loss). Mines/Tower/Hilo/Blackjack are interactive single-round
+games where auto-bet doesn't apply. Roulette/Baccarat have multi-bet
+boards instead.
 
 Shared components in `src/pages/originals/_shared/`:
 - `BetInput` — bet amount + ½ / 2× / Max
-- `AutoBetController` — Manual / Auto tabs, auto-bet config (count,
-  stop-on-profit, stop-on-loss), live progress display, and a
-  `useAutoBetRunner` hook that loops the game's `runOnce()` async fn
-
-All originals support Manual / Auto modes. Crash has a vertical bust-
-history bar chart (last 20 rounds, log-scaled, color-tiered). Mines has
-a "Pick Random" button. Plinko supports concurrent ball drops.
+- `AutoBetController` — Manual / Auto tabs, AutoConfigFields, live
+  progress display, `useAutoBetRunner` hook
 
 ## Likely next priorities
 
 1. **Sweet Bonanza immersive port** — currently uses the old card layout.
-2. **More Originals** — Wheel, Hilo, Keno, Tower, Roulette.
-3. **Volume sliders** — separate SFX + music sliders.
-4. **Long-press symbol tooltip** — quick paytable preview.
-5. **Image optimization** — backdrop is 2.4MB PNG; could WebP.
+2. **More Slots** — Big Bass Bonanza, Sugar Rush, Wanted Dead or a Wild
+   placeholders are in the lobby ready to wire up.
+3. **More Originals** — Slide, Coin Flip, Video Poker, Pachinko remain.
+4. **Real ball physics in Plinko** (currently keyframe interpolation).
+5. **Volume sliders** — separate SFX + music sliders.
+6. **Image optimization** — Olympus backdrop is 2.4MB PNG; could WebP.
+7. **Game info modals** — per-game How to Play / Rules accessible from menu.
 
 ## How to deploy
 Vercel auto-deploys on every push. Lobby URL is the production URL
