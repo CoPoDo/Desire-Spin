@@ -1302,13 +1302,17 @@ export function ImmersiveSlotView({
                       'radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.55) 80%)',
                   }}
                 />
-                {/* Bright halo behind the title */}
+                {/* Bright halo behind the title — theme-tinted via
+                    cfg.theme.accent so each slot's big-win celebration
+                    has its own colour wash (Bonanza pink, Sugar Rush
+                    magenta, Olympus gold, etc.) instead of a shared
+                    Olympus-gold halo on every game. */}
                 <motion.div
                   className="absolute"
                   style={{
                     width: '85%',
                     height: '50%',
-                    background: 'radial-gradient(ellipse at center, rgba(255,200,80,0.45) 0%, rgba(255,140,40,0.2) 35%, transparent 65%)',
+                    background: `radial-gradient(ellipse at center, ${cfg.theme.accent}73 0%, ${cfg.theme.accent}33 35%, transparent 65%)`,
                     filter: 'blur(8px)',
                   }}
                   animate={{ scale: [0.8, 1.05, 0.95, 1], opacity: [0, 1, 0.8, 0.9] }}
