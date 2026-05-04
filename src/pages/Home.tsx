@@ -162,6 +162,13 @@ export function Home() {
             badge="LIVE"
             art={<PlaceholderArt label="🎈" tone="#3a1a3a" />}
           />
+          <GameCard
+            to="/originals/cups"
+            title="3 Cups"
+            subtitle="Find the ball"
+            badge="LIVE"
+            art={<PlaceholderArt label="🥤" tone="#102b3a" />}
+          />
         </div>
       </section>
     </div>
