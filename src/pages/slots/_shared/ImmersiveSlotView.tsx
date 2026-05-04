@@ -1205,11 +1205,16 @@ export function ImmersiveSlotView({
                   className="font-serif italic font-bold whitespace-nowrap leading-none"
                   style={{
                     fontSize: 'clamp(14px, 4vw, 26px)',
-                    background: 'linear-gradient(180deg, #FFFFFF 0%, #FFE9A8 35%, #FFC850 65%, #C8932F 100%)',
+                    // Per-slot gradient: Olympus uses gold (default look),
+                    // Bonanza/Sugar Rush use pink, Cantina warm orange, etc.
+                    // The cfg.theme.accent provides the slot's signature
+                    // colour; we wrap white-cream-accent-darker into a vertical
+                    // gradient so the popup reads native to the slot.
+                    background: `linear-gradient(180deg, #FFFFFF 0%, #FFF5DC 30%, ${cfg.theme.accent} 65%, rgba(0,0,0,.55) 100%)`,
                     WebkitBackgroundClip: 'text',
                     backgroundClip: 'text',
                     color: 'transparent',
-                    filter: 'drop-shadow(0 0 14px rgba(255,200,40,.95)) drop-shadow(0 2px 4px rgba(0,0,0,.7))',
+                    filter: `drop-shadow(0 0 14px ${cfg.theme.glow}) drop-shadow(0 2px 4px rgba(0,0,0,.7))`,
                     letterSpacing: '-0.01em',
                   }}
                 >
