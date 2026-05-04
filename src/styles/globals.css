@@ -1458,6 +1458,17 @@
   100% { transform: scale(1); }
 }
 
+/* Olympus — lightning-bolt trail flash. Each bolt fades in fast,
+ * brightens, then fades out within 0.45s. Applied with a per-bolt
+ * delay so the trails fan out from Zeus's hand to each orb landing
+ * in rapid succession (real Pragmatic Olympus does the same). */
+@keyframes zeusBoltFlash {
+  0%   { opacity: 0; }
+  20%  { opacity: 1; }
+  60%  { opacity: 0.7; }
+  100% { opacity: 0; }
+}
+
 /* Screen-shake utility classes (ported from House Edge). Apply to any
  * container — translates + tiny rotation cycles for ~0.35s/0.55s/0.9s
  * to convey tiered impact on big-win moments. Loops once and ends

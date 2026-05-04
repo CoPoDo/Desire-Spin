@@ -167,6 +167,15 @@ export function ImmersiveSlotView({
   const [paytableOpen, setPaytableOpen] = useState(false);
   const [floatingMults, setFloatingMults] = useState<MultiplierLanding[]>([]);
   const [orbImpacts, setOrbImpacts] = useState<{ id: string; col: number; row: number }[]>([]);
+  /** Lightning-bolt trails fired from Zeus (top-left of board) to each
+   *  multiplier orb landing position. Only used on Olympus. Each entry
+   *  is a unique id + the path data + the landing target. */
+  const [zeusBolts, setZeusBolts] = useState<{ id: string; d: string; col: number; row: number }[]>([]);
+  /** Screen rumble triggered by big multiplier orbs landing (50×+). Lower
+   *  duration/intensity than a full big-win shake so it reads as "thunder
+   *  rolling" rather than "screen breaking". Real Pragmatic Olympus
+   *  rumbles the camera on big orbs landing. */
+  const [orbRumble, setOrbRumble] = useState<'sm' | 'md' | 'lg' | null>(null);
   const [clusterPopups, setClusterPopups] = useState<{ id: string; col: number; row: number; payout: number }[]>([]);
   const [prespin, setPrespin] = useState<boolean>(false);
   // Tier-scaled lightning bolts that strike across the painted scene
@@ -388,9 +397,34 @@ export function ImmersiveSlotView({
               setZeusEyesGlow(true);
               speakZeus(zeusLineFor('multiplierLanded'));
               scheduleSpin(() => setZeusEyesGlow(false), 1100);
+              // Lightning-bolt TRAIL from Zeus's hand (top-left ~18%/22%)
+              // to each orb landing — real Olympus shows electric arcs
+              // streaking from Zeus to where the orbs land before they
+              // appear. Each bolt is a randomised zigzag path generated
+              // procedurally. These render as SVG paths in the overlay.
+              const bolts = frame.landings.map((l, i) => {
+                const startX = 18; // Zeus hand approx, % of board width
+                const startY = 22;
+                const endX = ((l.col + 0.5) / cfg.cols) * 100;
+                const endY = ((l.row + 0.5) / cfg.rows) * 100;
+                // Build a 4-segment zigzag between start and end with
+                // small lateral jitters so each bolt looks unique.
+                const dx = endX - startX;
+                const dy = endY - startY;
+                const seg = (t: number, jitter: number) => {
+                  const x = startX + dx * t + (Math.random() - 0.5) * jitter;
+                  const y = startY + dy * t + (Math.random() - 0.5) * jitter;
+                  return `${x.toFixed(2)} ${y.toFixed(2)}`;
+                };
+                const d = `M ${startX} ${startY} L ${seg(0.28, 4)} L ${seg(0.55, 5)} L ${seg(0.78, 4)} L ${endX} ${endY}`;
+                return { id: `zb-${l.key}-${i}`, d, col: l.col, row: l.row };
+              });
+              setZeusBolts(bolts);
+              scheduleSpin(() => setZeusBolts([]), 480);
             }
-            // Impact rings — each orb gets an expanding gold ring at its
-            // landing position. Real Olympus shows a similar shockwave.
+            // Impact rings — each orb gets an expanding ring at its
+            // landing position. Real Olympus shows a shockwave + ground-
+            // crack as the orb slams in.
             const impacts = frame.landings.map((l) => ({
               id: `oi-${l.key}`,
               col: l.col,
@@ -398,6 +432,22 @@ export function ImmersiveSlotView({
             }));
             setOrbImpacts(impacts);
             scheduleSpin(() => setOrbImpacts([]), 700);
+            // Screen rumble — scaled to the highest multiplier on screen
+            // so a 2× drops a small thump and a 100×+ shakes the camera
+            // hard. Real Pragmatic Olympus has this exact escalation.
+            const maxMult = Math.max(0, ...frame.landings.map((l) => l.value));
+            if (maxMult >= 100) {
+              setOrbRumble('lg');
+              sound.play('thunder');
+              scheduleSpin(() => setOrbRumble(null), 700);
+            } else if (maxMult >= 25) {
+              setOrbRumble('md');
+              sound.play('thunder');
+              scheduleSpin(() => setOrbRumble(null), 500);
+            } else if (maxMult >= 10) {
+              setOrbRumble('sm');
+              scheduleSpin(() => setOrbRumble(null), 350);
+            }
             break;
           }
           case 'tumble': {
@@ -602,6 +652,8 @@ export function ImmersiveSlotView({
       setZeusEyesGlow(false);
       setBigWinBolts([]);
       setFsMultReveal(null);
+      setZeusBolts([]);
+      setOrbRumble(null);
       // Pre-spin: blur+darken the previous grid for ~180ms so the swap to
       // the new grid feels like a real "reels stopped" transition.
       setPrespin(true);
@@ -941,8 +993,10 @@ export function ImmersiveSlotView({
       >
         <div
           // Stage container — gets a shake class while a big-win
-          // celebration is playing. Tier intensity decides the shake
-          // strength: BIG → light, HUGE → medium, MEGA+ → heavy.
+          // celebration is playing OR a heavy multiplier orb just
+          // landed (orbRumble). Tier intensity decides shake strength:
+          // BIG → light, HUGE → medium, MEGA+ → heavy. Orb rumble
+          // overlays a brief shorter shake during multiplier landings.
           className={`relative h-full ${inFree ? 'olympus-fs-mode' : ''} ${
             bigWin
               ? bigWin.tier.intensity >= 1.7
@@ -950,7 +1004,13 @@ export function ImmersiveSlotView({
                 : bigWin.tier.intensity >= 1.0
                   ? 'shake-medium'
                   : 'shake-light'
-              : ''
+              : orbRumble === 'lg'
+                ? 'shake-medium'
+                : orbRumble === 'md'
+                  ? 'shake-light'
+                  : orbRumble === 'sm'
+                    ? 'shake-light'
+                    : ''
           }`}
           style={{
             aspectRatio: `${backdropAspect.w} / ${backdropAspect.h}`,
@@ -1230,9 +1290,58 @@ export function ImmersiveSlotView({
             )}
           </AnimatePresence>
 
-          {/* Multiplier orb impact rings — much subtler now. The previous
-              big gold ring on every orb drop was visually noisy. Now just
-              a faint quick flash centered on the landing cell. */}
+          {/* Lightning-bolt trails from Zeus to each multiplier orb
+              landing. Real Pragmatic Olympus shows a brief electric arc
+              from Zeus's outstretched hand (top-left of stage) to each
+              orb position before the orb materialises. Renders as a
+              single SVG covering the whole board area; the d-paths are
+              built in the multipliersLanded handler. */}
+          {zeusBolts.length > 0 && (
+            <svg
+              className="absolute inset-0 pointer-events-none z-[7]"
+              viewBox="0 0 100 100"
+              preserveAspectRatio="none"
+              style={{
+                filter: 'drop-shadow(0 0 4px rgba(255,233,168,1)) drop-shadow(0 0 12px rgba(255,200,80,.85))',
+              }}
+            >
+              {zeusBolts.map((b, i) => (
+                <g key={b.id}>
+                  {/* Outer warm halo stroke */}
+                  <path
+                    d={b.d}
+                    stroke="#ffe9a8"
+                    strokeWidth="0.9"
+                    strokeLinejoin="miter"
+                    strokeLinecap="round"
+                    fill="none"
+                    style={{
+                      animation: `zeusBoltFlash 0.45s ease-out ${i * 0.04}s forwards`,
+                      opacity: 0,
+                    }}
+                  />
+                  {/* Bright inner core */}
+                  <path
+                    d={b.d}
+                    stroke="#fffbe1"
+                    strokeWidth="0.35"
+                    strokeLinejoin="miter"
+                    strokeLinecap="round"
+                    fill="none"
+                    style={{
+                      animation: `zeusBoltFlash 0.45s ease-out ${i * 0.04 + 0.04}s forwards`,
+                      opacity: 0,
+                    }}
+                  />
+                </g>
+              ))}
+            </svg>
+          )}
+
+          {/* Multiplier orb impact rings — accent-tinted shockwave at each
+              landing position. On Olympus this pairs with the lightning
+              trail above to feel like Zeus throwing a charged orb that
+              cracks the ground when it lands. */}
           <AnimatePresence>
             {orbImpacts.map((imp) => (
               <motion.div
@@ -1246,8 +1355,7 @@ export function ImmersiveSlotView({
                   transform: 'translate(-50%, -50%)',
                   // Orb-impact halo tinted to the slot's accent so the
                   // landing flash matches each game's palette (Bonanza
-                  // pink, Olympus gold, Sugar Rush magenta, etc.). Was
-                  // hardcoded gold which clashed with non-Olympus themes.
+                  // pink, Olympus gold, Sugar Rush magenta, etc.).
                   background: `radial-gradient(circle at 50% 50%, ${cfg.theme.accent}8c 0%, ${cfg.theme.accent}40 50%, transparent 75%)`,
                   mixBlendMode: 'screen',
                 }}
@@ -1258,6 +1366,41 @@ export function ImmersiveSlotView({
               />
             ))}
           </AnimatePresence>
+
+          {/* Electric crackle sparks around each landed orb — small bright
+              pixels that arc outward from the landing point. Stays on
+              briefly to suggest residual charge. Olympus only. */}
+          {cfg.id === 'gates-of-olympus' && (
+            <AnimatePresence>
+              {orbImpacts.map((imp) =>
+                Array.from({ length: 6 }).map((_, i) => {
+                  const angle = (i / 6) * Math.PI * 2 + Math.random() * 0.5;
+                  const dist = 22 + Math.random() * 18;
+                  const dx = Math.cos(angle) * dist;
+                  const dy = Math.sin(angle) * dist;
+                  return (
+                    <motion.div
+                      key={`${imp.id}-spark-${i}`}
+                      className="absolute pointer-events-none z-[8] rounded-full"
+                      style={{
+                        left: `${liveInsets.left + (imp.col + 0.5) * (liveInsets.width / cfg.cols)}%`,
+                        top: `${liveInsets.top + (imp.row + 0.5) * (liveInsets.width / cfg.cols)}%`,
+                        width: '4px',
+                        height: '4px',
+                        background: '#fffbe1',
+                        boxShadow: '0 0 8px #ffe9a8, 0 0 16px rgba(255,200,80,.85)',
+                        transform: 'translate(-50%, -50%)',
+                      }}
+                      initial={{ x: 0, y: 0, opacity: 0, scale: 0.6 }}
+                      animate={{ x: dx, y: dy, opacity: [0, 1, 0], scale: [0.6, 1.4, 0.4] }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.55, ease: 'easeOut' }}
+                    />
+                  );
+                })
+              )}
+            </AnimatePresence>
+          )}
 
           {/* Floating multiplier value text — flies out of each orb landing */}
           <AnimatePresence>
