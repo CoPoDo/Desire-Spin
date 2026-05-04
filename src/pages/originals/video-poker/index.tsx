@@ -232,7 +232,7 @@ function CardView({
         initial={{ y: -20, opacity: 0, rotateY: 180 }}
         animate={{ y: 0, opacity: 1, rotateY: 0 }}
         transition={{ type: 'spring', stiffness: 240, damping: 20 }}
-        className="w-14 h-20 sm:w-16 sm:h-24 rounded-xl flex flex-col items-center justify-center font-bold"
+        className="relative w-14 h-20 sm:w-16 sm:h-24 rounded-xl font-bold"
         style={{
           background: 'linear-gradient(180deg, #f5f0e4, #e8dfc9)',
           border: held ? '2px solid #1fff7a' : '2px solid #c8932e',
@@ -242,8 +242,20 @@ function CardView({
           color: red ? '#c8102e' : '#1a0f00',
         }}
       >
-        <div className="text-2xl leading-none">{rankLabel(card.rank)}</div>
-        <div className="text-xl mt-0.5">{card.suit}</div>
+        {/* Corner pips for proper playing-card look (matches Hilo / BJ /
+         *  Baccarat) — small but always visible. */}
+        <div className="absolute top-1 left-1 leading-none flex flex-col items-center text-[10px]">
+          <span>{rankLabel(card.rank)}</span>
+          <span>{card.suit}</span>
+        </div>
+        <div className="absolute bottom-1 right-1 leading-none flex flex-col items-center rotate-180 text-[10px]">
+          <span>{rankLabel(card.rank)}</span>
+          <span>{card.suit}</span>
+        </div>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <div className="text-2xl leading-none">{rankLabel(card.rank)}</div>
+          <div className="text-xl mt-0.5">{card.suit}</div>
+        </div>
       </motion.div>
       {held && (
         <div
