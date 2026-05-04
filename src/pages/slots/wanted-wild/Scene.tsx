@@ -50,19 +50,27 @@ export function WantedScene() {
         </defs>
         {/* Mesas */}
         <path d="M0,50 L0,32 L8,32 L8,22 L26,22 L26,32 L46,32 L46,26 L66,26 L66,32 L88,32 L88,18 L100,18 L100,50 Z" fill="url(#ww-mesa-far)" />
-        {/* Saloon — main building, slightly left of centre */}
-        <g transform="translate(40 20)">
-          {/* Main facade */}
-          <rect x="0" y="2" width="22" height="14" fill="url(#ww-saloon)" />
-          {/* False front (taller centre) */}
-          <rect x="6" y="-2" width="10" height="6" fill="url(#ww-saloon)" />
-          {/* SALOON sign on false front */}
-          <rect x="5.5" y="-1" width="11" height="3.5" fill="#3a1a08" />
+        {/* Saloon — main building, slightly left of centre. Real-game-style
+         * false-front facade with bold SALOON sign, swinging double doors,
+         * batwing door tops, plank cladding, lit windows, balcony rail. */}
+        <g transform="translate(38 18)">
+          {/* Plank-clad facade */}
+          <rect x="0" y="4" width="22" height="14" fill="url(#ww-saloon)" />
+          {/* Plank divisions (vertical lines) */}
+          {[3, 6, 9, 12, 15, 18].map((x, i) => (
+            <line key={i} x1={x} y1="4" x2={x} y2="18" stroke="#1a0a02" strokeWidth=".15" opacity=".6" />
+          ))}
+          {/* False front (the iconic tall western parapet) */}
+          <rect x="4" y="-2" width="14" height="8" fill="url(#ww-saloon)" />
+          {/* False-front decorative pediment top */}
+          <path d="M 4 -2 L 11 -4 L 18 -2 Z" fill="url(#ww-saloon)" stroke="#0a0204" strokeWidth=".15" />
+          {/* SALOON sign banner on false front */}
+          <rect x="3" y="0" width="16" height="3.5" fill="#3a1a08" stroke="#ffd166" strokeWidth=".15" />
           <text
             x="11"
-            y="1.4"
+            y="2.4"
             textAnchor="middle"
-            fontSize="2"
+            fontSize="2.4"
             fontFamily="serif"
             fontWeight="800"
             fill="#ffd166"
@@ -70,15 +78,37 @@ export function WantedScene() {
             SALOON
           </text>
           {/* Door (lit warmly inside) */}
-          <rect x="9" y="9" width="4" height="7" fill="rgba(255,200,80,.55)" />
-          {/* Windows */}
-          <rect x="2" y="6" width="3" height="2.5" fill="rgba(255,200,80,.4)" />
-          <rect x="17" y="6" width="3" height="2.5" fill="rgba(255,200,80,.4)" />
+          {/* Batwing double doors (saloon-style swing doors) */}
+          <rect x="8" y="11" width="6" height="7" fill="rgba(255,200,80,.6)" stroke="#1a0a02" strokeWidth=".2" />
+          <line x1="11" y1="11" x2="11" y2="18" stroke="#1a0a02" strokeWidth=".25" />
+          {/* Slatted batwing pattern */}
+          {[12, 13.5, 15, 16.5].map((y, i) => (
+            <line key={i} x1="8" y1={y} x2="14" y2={y} stroke="#1a0a02" strokeWidth=".15" opacity=".55" />
+          ))}
+          {/* Lit windows on either side of door */}
+          <rect x="1.5" y="9" width="4" height="4" fill="rgba(255,200,80,.42)" stroke="#1a0a02" strokeWidth=".18" />
+          <line x1="3.5" y1="9" x2="3.5" y2="13" stroke="#1a0a02" strokeWidth=".15" />
+          <line x1="1.5" y1="11" x2="5.5" y2="11" stroke="#1a0a02" strokeWidth=".15" />
+          <rect x="16.5" y="9" width="4" height="4" fill="rgba(255,200,80,.42)" stroke="#1a0a02" strokeWidth=".18" />
+          <line x1="18.5" y1="9" x2="18.5" y2="13" stroke="#1a0a02" strokeWidth=".15" />
+          <line x1="16.5" y1="11" x2="20.5" y2="11" stroke="#1a0a02" strokeWidth=".15" />
           {/* Porch posts */}
-          <rect x="-1" y="8" width=".7" height="8" fill="#1a0a04" />
-          <rect x="22.5" y="8" width=".7" height="8" fill="#1a0a04" />
-          {/* Awning */}
-          <rect x="-2" y="7" width="26" height="1.2" fill="#1a0a04" />
+          <rect x="-1" y="9" width=".7" height="9" fill="#1a0a04" />
+          <rect x="22.5" y="9" width=".7" height="9" fill="#1a0a04" />
+          {/* Awning (overhang above the porch) */}
+          <rect x="-2" y="8.5" width="26" height="1.4" fill="#1a0a04" />
+          {/* Awning support diagonals */}
+          <line x1="-1" y1="9" x2="-2" y2="8.5" stroke="#1a0a04" strokeWidth=".2" />
+          <line x1="23" y1="9" x2="24" y2="8.5" stroke="#1a0a04" strokeWidth=".2" />
+          {/* Hitching rail in front of saloon (where horses tie) */}
+          <line x1="-3" y1="17.5" x2="25" y2="17.5" stroke="#3a1a04" strokeWidth=".25" />
+          {/* Horse silhouette tied to the rail */}
+          <g transform="translate(-3 14.5)" fill="#0a0204">
+            <ellipse cx="2.5" cy="2" rx="2.5" ry="1" />
+            <rect x="3" y="2.5" width="1.4" height="1.5" />
+            <rect x="0.6" y="2.5" width="1.4" height="1.5" />
+            <path d="M 0 1.5 L -1 0 L 0 0.5 Z" />
+          </g>
         </g>
         {/* Foreground ground */}
         <path d="M0,50 L0,42 Q14,40 28,42 Q44,44 60,42 Q76,40 92,44 Q98,46 100,44 L100,50 Z" fill="url(#ww-near)" />
