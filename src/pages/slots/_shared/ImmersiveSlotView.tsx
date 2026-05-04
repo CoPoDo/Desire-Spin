@@ -57,17 +57,20 @@ export type ImmersiveSlotViewProps = {
   betPresets?: number[];
 };
 
+// Frame delays calibrated against real Pragmatic Olympus mobile pacing
+// (measured from gameplay videos — the values represent how long that
+// frame's animation should remain on screen before the next frame fires).
 const FRAME_DELAY: Record<string, number> = {
-  initialDrop: 380,
-  lightningStrike: 1500,
-  multipliersLanded: 600,
-  wins: 700,
-  tumble: 340,
-  scattersWon: 800,
-  freeSpinsAwarded: 1200,
-  freeSpinsBegin: 1100,
-  freeSpinsEnd: 1400,
-  multiplierApplied: 1100,
+  initialDrop: 480,        // real ~500: drop + settle
+  lightningStrike: 2000,   // real ~2000-2500: dramatic Zeus pause
+  multipliersLanded: 650,  // real ~600-700: orb fall + bounce
+  wins: 800,               // real ~700-900: hold winning highlight
+  tumble: 400,             // real ~400-500: clear + new drops settle
+  scattersWon: 900,        // scatter pay flash
+  freeSpinsAwarded: 1300,  // award announcement
+  freeSpinsBegin: 1200,    // FS session start drumroll
+  freeSpinsEnd: 1500,      // FS total reveal
+  multiplierApplied: 1200, // total multiplier × payout reveal
   final: 0,
 };
 
@@ -180,9 +183,9 @@ export function ImmersiveSlotView({
       // base-game bigWin celebrations (the freeSpinsEnd does that once at
       // the end with the total payout).
       let inFsLocal = mode === 'free';
-      // Brief pre-spin pause so the blur applied at SPIN-click is visible.
+      // Pre-spin pause matches real game's "reels stopping" gap (~220ms).
       // Skipped under turbo + tap-to-skip — those want maximum speed.
-      const presDur = turboRef.current ? (skipRef.current ? 0 : 80) : 180;
+      const presDur = turboRef.current ? (skipRef.current ? 0 : 80) : 220;
       if (presDur > 0) await sleep(presDur);
       for (const frame of frames) {
         if (!aliveRef.current) return;
@@ -964,10 +967,23 @@ export function ImmersiveSlotView({
           <button
             onClick={() => setBuyBonusOpen(true)}
             disabled={busy || inFree || autoplay !== null || balance.balance < buyCost}
-            className="w-full px-2 py-1 rounded-lg bg-gradient-to-b from-[#5a2a8a] to-[#2c1147] border border-[#a78bfa]/40 text-[#e6d4ff] text-[10px] font-bold uppercase tracking-wider disabled:opacity-40 disabled:saturate-50"
-            style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,.18), 0 0 14px rgba(167,139,250,.25)' }}
+            className="w-full px-2 py-1.5 rounded-lg disabled:opacity-40 disabled:saturate-50 relative overflow-hidden"
+            style={{
+              background:
+                'linear-gradient(180deg, #ff5cd7 0%, #b03dff 35%, #5a1ea8 70%, #2c1147 100%)',
+              border: '1.5px solid #ffd37a',
+              boxShadow:
+                'inset 0 1px 0 rgba(255,233,168,.55), inset 0 -2px 0 rgba(40,8,80,.55), 0 0 14px rgba(176,61,255,.55), 0 4px 8px rgba(0,0,0,.5)',
+            }}
           >
-            Buy {cfg.buyBonusCost}×
+            <div className="text-[8px] font-bold uppercase tracking-[0.18em] text-[#fff7d6] leading-none"
+                 style={{ textShadow: '0 1px 0 rgba(40,8,80,.7), 0 0 6px rgba(255,200,80,.7)' }}>
+              Buy Free Spins
+            </div>
+            <div className="text-[11px] font-mono font-bold text-[#fff7d6] mt-0.5 leading-none tabular-nums"
+                 style={{ textShadow: '0 1px 0 rgba(40,8,80,.7), 0 0 6px rgba(255,200,80,.95)' }}>
+              {fmtCurrency(buyCost)}
+            </div>
           </button>
         </div>
 
@@ -1045,16 +1061,30 @@ export function ImmersiveSlotView({
               {music.musicEnabled ? <MusicIcon size={16} /> : <MusicMutedIcon size={16} />}
             </button>
           </div>
-          <label className="flex items-center gap-1.5 cursor-pointer text-[10px] uppercase tracking-wider text-ink-dim w-full justify-center">
-            <input
-              type="checkbox"
-              checked={ante}
-              onChange={(e) => setAnte(e.target.checked)}
-              disabled={busy || inFree || autoplay !== null}
-              className="accent-[#ffc62a] w-3 h-3"
-            />
-            Ante
-          </label>
+          <button
+            onClick={() => setAnte((v) => !v)}
+            disabled={busy || inFree || autoplay !== null}
+            aria-pressed={ante}
+            className="w-full px-2 py-1 rounded-lg text-[10px] uppercase tracking-[0.16em] font-bold leading-none transition disabled:opacity-40"
+            style={
+              ante
+                ? {
+                    background: 'linear-gradient(180deg, #ffd37a 0%, #c8932e 100%)',
+                    color: '#1a0f00',
+                    border: '1px solid #fff5c4',
+                    boxShadow:
+                      'inset 0 1px 0 rgba(255,255,255,.5), 0 0 14px rgba(255,198,42,.55)',
+                    textShadow: '0 1px 0 rgba(255,255,255,.4)',
+                  }
+                : {
+                    background: 'rgba(255,233,168,.06)',
+                    color: '#FFE0A8',
+                    border: '1px solid rgba(255,198,42,.35)',
+                  }
+            }
+          >
+            Ante Bet
+          </button>
         </div>
       </div>
 
