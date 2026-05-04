@@ -24,6 +24,11 @@ export function GatesOfOlympus() {
       // leans warm purple, which matched Bonanza better than Olympus —
       // override here with a darker, gold-rim-lit stormy palette.
       freeSpinsTint="linear-gradient(180deg, rgba(40, 8, 80, 0.32) 0%, rgba(120, 50, 10, 0.22) 30%, rgba(20, 4, 50, 0.42) 70%, rgba(8, 2, 30, 0.55) 100%)"
+      // Lightning bolts ⚡ are correct for Olympus (Zeus's signature) — the
+      // shared default already uses them. Just rebrand the banner from a
+      // generic "FREE SPINS!" to Olympus's actual real-game callout.
+      fsTriggerGlyph="⚡"
+      fsTriggerTitle="GATES OF OLYMPUS!"
       renderCell={({ symbolId, multiplier }) => {
         if (multiplier !== undefined) {
           return (
