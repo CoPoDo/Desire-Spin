@@ -209,12 +209,28 @@ export function ImmersiveSlotView({
       // base-game bigWin celebrations (the freeSpinsEnd does that once at
       // the end with the total payout).
       let inFsLocal = mode === 'free';
+      let lastFrameKind: string | null = null;
       // Pre-spin pause matches real game's "reels stopping" gap (~220ms).
       // Skipped under turbo + tap-to-skip — those want maximum speed.
       const presDur = turboRef.current ? (skipRef.current ? 0 : 80) : 220;
       if (presDur > 0) await sleep(presDur);
       for (const frame of frames) {
         if (!aliveRef.current) return;
+        // Between-FS-spin breather: real Pragmatic pauses ~500ms between
+        // free spins so the player has breathing room between cascades.
+        // Detect: we're in FS, last frame was a 'final', and current is
+        // a fresh 'initialDrop' (start of next spin).
+        if (
+          inFsLocal &&
+          lastFrameKind === 'final' &&
+          frame.kind === 'initialDrop'
+        ) {
+          const breather = turboRef.current
+            ? (skipRef.current ? 0 : 180)
+            : 500;
+          if (breather > 0) await sleep(breather);
+          if (!aliveRef.current) return;
+        }
         switch (frame.kind) {
           case 'initialDrop': {
             const keys = new Set<string>();
@@ -438,6 +454,7 @@ export function ImmersiveSlotView({
           delay = Math.max(baseDelay * SKIP_DELAY_FACTOR, SKIP_MIN_DELAY[frame.kind] ?? 0);
         }
         if (delay > 0) await sleep(delay);
+        lastFrameKind = frame.kind;
       }
     },
     [sound],
