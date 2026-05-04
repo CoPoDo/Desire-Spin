@@ -14,6 +14,7 @@ import {
   useAutoBetRunner,
 } from '../_shared/AutoBetController';
 import { play, winChanceFor } from './engine';
+import { fireConfetti } from '../../../lib/confetti';
 
 type Phase = 'idle' | 'sliding' | 'reveal';
 
@@ -74,6 +75,12 @@ export function SlideGame() {
               r.payout >= b * 50 ? 'mega-win' :
               r.payout >= b * 5 ? 'big-win' : 'win',
             );
+            if (r.payout >= b * 5) {
+              fireConfetti({
+                count: r.payout >= b * 50 ? 130 : 70,
+                colors: ['#1fff7a', '#ffd166', '#ffffff'],
+              });
+            }
           } else {
             sound.play('drop');
           }
