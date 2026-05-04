@@ -110,31 +110,17 @@ export function WolfScene() {
         </g>
       </svg>
 
-      {/* Cactus silhouettes */}
-      <div
-        className="absolute select-none"
-        style={{
-          bottom: '8%',
-          left: '5%',
-          fontSize: 'min(48px, 11cqw)',
-          opacity: 0.7,
-          filter: 'drop-shadow(0 0 8px rgba(0,0,0,.5)) brightness(0.4)',
-        }}
-      >
-        🌵
-      </div>
-      <div
-        className="absolute select-none"
-        style={{
-          bottom: '7%',
-          right: '8%',
-          fontSize: 'min(38px, 8cqw)',
-          opacity: 0.65,
-          filter: 'drop-shadow(0 0 6px rgba(0,0,0,.5)) brightness(0.4)',
-        }}
-      >
-        🌵
-      </div>
+      {/* Cactus silhouettes — proper SVG saguaros instead of emoji. Pure
+       * black silhouettes with a subtle moon-rim highlight on the left edge
+       * (matches the moon-light direction). */}
+      <CactusSilhouette
+        position={{ bottom: '6%', left: '4%' }}
+        size="min(54px, 12cqw)"
+      />
+      <CactusSilhouette
+        position={{ bottom: '5%', right: '7%' }}
+        size="min(40px, 9cqw)"
+      />
 
       {/* Vignette */}
       <div
@@ -152,5 +138,50 @@ export function WolfScene() {
         }}
       />
     </div>
+  );
+}
+
+function CactusSilhouette({
+  position,
+  size,
+}: {
+  position: { bottom?: string; left?: string; right?: string };
+  size: string;
+}) {
+  return (
+    <svg
+      className="absolute"
+      style={{
+        ...position,
+        width: size,
+        aspectRatio: '1 / 1.4',
+        filter: 'drop-shadow(-1px 0 2px rgba(220,200,255,.35)) drop-shadow(0 4px 6px rgba(0,0,0,.7))',
+      }}
+      viewBox="0 0 50 70"
+    >
+      {/* Saguaro silhouette — main trunk + two raised arms (asymmetric). */}
+      <path
+        d="M 22 70 L 22 40 Q 22 30 18 30 Q 12 30 12 36 L 12 48 Q 12 52 16 52 L 18 52
+           L 18 38 Q 18 32 22 32 L 22 70 Z"
+        fill="#02010a"
+      />
+      {/* Right arm */}
+      <path
+        d="M 28 70 L 28 30 Q 28 22 34 22 L 38 22 Q 42 22 42 28 L 42 38 Q 42 42 38 42
+           L 36 42 L 36 32 Q 36 28 32 28 Q 28 28 28 36 L 28 70 Z"
+        fill="#02010a"
+      />
+      {/* Spine details (faint vertical lines) */}
+      <line x1="24" y1="36" x2="24" y2="68" stroke="rgba(220,200,255,.18)" strokeWidth=".4" />
+      <line x1="30" y1="34" x2="30" y2="68" stroke="rgba(220,200,255,.18)" strokeWidth=".4" />
+      <line x1="14" y1="38" x2="14" y2="50" stroke="rgba(220,200,255,.18)" strokeWidth=".4" />
+      {/* Soft moon-rim highlight on left edge */}
+      <path
+        d="M 22 70 L 22 40 Q 22 30 18 30 Q 12 30 12 36 L 12 48"
+        stroke="rgba(220,200,255,.35)"
+        strokeWidth=".7"
+        fill="none"
+      />
+    </svg>
   );
 }
