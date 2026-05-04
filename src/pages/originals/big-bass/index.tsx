@@ -14,6 +14,7 @@ import {
   useAutoBetRunner,
 } from '../_shared/AutoBetController';
 import { SYMBOLS, type BassResult, spin, symbolById } from './engine';
+import { fireConfetti } from '../../../lib/confetti';
 
 export function BigBassGame() {
   const { balance, fairness, sound, history, session } = useGame();
@@ -57,6 +58,13 @@ export function BigBassGame() {
         r.multiplier >= 100 ? 'mega-win' :
         r.multiplier >= 10 ? 'big-win' : 'win',
       );
+      // Splash of "fishing" colours on a notable win
+      if (r.multiplier >= 10) {
+        fireConfetti({
+          count: r.multiplier >= 100 ? 130 : 70,
+          colors: ['#5fb8ff', '#22d3ee', '#1fff7a', '#ffd166', '#ffffff'],
+        });
+      }
     } else {
       sound.play('drop');
     }
