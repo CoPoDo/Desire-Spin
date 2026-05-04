@@ -60,12 +60,15 @@ export function Grid({
               // landing squish (scale [0.85,1.05,1]) so they feel weighted.
               initial={isNew ? { y: -90, opacity: 0, scale: 0.85 } : false}
               animate={{ y: 0, opacity: 1, scale: isNew ? [0.85, 1.05, 0.97, 1] : 1 }}
-              // Win → tumble: cell puffs out with a brightness flash then fades.
+              // Win → tumble: cell puffs out with a softer brightness lift
+              // then fades. Earlier values (brightness 1.8 / saturate 1.4)
+              // read as a harsh flash on every winning cell — gentler now so
+              // the cascade feels smooth instead of strobed.
               exit={{
-                scale: 1.35,
+                scale: 1.22,
                 opacity: 0,
-                filter: 'brightness(1.8) saturate(1.4)',
-                transition: { duration: 0.32, ease: [0.4, 0, 0.2, 1] },
+                filter: 'brightness(1.35) saturate(1.15)',
+                transition: { duration: 0.3, ease: [0.4, 0, 0.2, 1] },
               }}
               // Tween-based drop (cheaper than spring physics on 30 simultaneous
               // cells with drop-shadow filters) — keeps the bouncy "land + squish"
