@@ -28,7 +28,7 @@ export function SlotPageLayout({ children }: { children: ReactNode }) {
           </svg>
         </Link>
 
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex-1 flex items-center justify-center gap-1">
           <div
             className="px-3 py-1 rounded-full bg-black/45 backdrop-blur-sm border border-[#ffc62a]/35 flex items-center gap-2"
             style={{ boxShadow: '0 0 18px rgba(255,198,42,.18)' }}
@@ -38,6 +38,13 @@ export function SlotPageLayout({ children }: { children: ReactNode }) {
               {fmtCurrency(balance.balance)}
             </span>
           </div>
+          <button
+            onClick={() => balance.credit(1000)}
+            aria-label="Add 1,000 play money"
+            className="px-2 py-1 rounded-full bg-gradient-to-b from-[#ffc62a] to-[#c8932e] border border-[#ffe9a8]/60 text-[#1a0f00] text-[10px] font-bold uppercase tracking-wider shadow-[0_0_14px_rgba(255,198,42,.5)] active:scale-95 transition"
+          >
+            +1k
+          </button>
         </div>
 
         <button

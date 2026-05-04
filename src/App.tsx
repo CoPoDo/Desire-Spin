@@ -1,4 +1,5 @@
 import { Route, Routes } from 'react-router-dom';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { GameProvider } from './components/layout/GameProvider';
 import { Layout } from './components/layout/Layout';
 import { SlotPageLayout } from './components/layout/SlotPageLayout';
@@ -10,8 +11,9 @@ import { GatesOfOlympus } from './pages/slots/gates-of-olympus';
 
 export default function App() {
   return (
-    <GameProvider>
-      <Routes>
+    <ErrorBoundary>
+      <GameProvider>
+        <Routes>
         {/* Slot games — fullscreen immersive layout, no sidebar/footer */}
         <Route
           path="/slots/sweet-bonanza"
@@ -30,7 +32,8 @@ export default function App() {
         <Route path="/live" element={<Layout><ComingSoon title="Live Casino" /></Layout>} />
         <Route path="/promotions" element={<Layout><ComingSoon title="Promotions" /></Layout>} />
         <Route path="*" element={<Layout><ComingSoon title="Not found" /></Layout>} />
-      </Routes>
-    </GameProvider>
+        </Routes>
+      </GameProvider>
+    </ErrorBoundary>
   );
 }
