@@ -155,6 +155,13 @@ export function Home() {
             badge="LIVE"
             art={<PlaceholderArt label="🪙" tone="#3a3010" />}
           />
+          <GameCard
+            to="/originals/pump"
+            title="Pump"
+            subtitle="Inflate before pop"
+            badge="LIVE"
+            art={<PlaceholderArt label="🎈" tone="#3a1a3a" />}
+          />
         </div>
       </section>
     </div>
