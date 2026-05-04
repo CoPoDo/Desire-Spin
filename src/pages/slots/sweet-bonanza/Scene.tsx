@@ -116,6 +116,25 @@ export function BonanzaScene() {
         ))}
       </svg>
 
+      {/* Soft candy-spotlight glow behind the reel area — gives the grid
+       * visual focus + matches real Sweet Bonanza's pink "stage light"
+       * behind the reels. The grid sits at top:27% width:84% so this
+       * radial centre is positioned over that footprint. */}
+      <div
+        className="absolute pointer-events-none"
+        style={{
+          left: '50%',
+          top: '46%',
+          transform: 'translate(-50%, -50%)',
+          width: '92%',
+          height: '50%',
+          background:
+            'radial-gradient(ellipse at center, rgba(255,200,232,.32) 0%, rgba(255,140,200,.18) 40%, transparent 75%)',
+          filter: 'blur(8px)',
+          mixBlendMode: 'screen',
+        }}
+      />
+
       {/* 4. Cloud puffs — wispier than before, layered for depth. */}
       <div
         className="absolute inset-0"
