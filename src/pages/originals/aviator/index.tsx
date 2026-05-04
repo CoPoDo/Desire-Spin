@@ -14,6 +14,7 @@ import {
   useAutoBetRunner,
 } from '../_shared/AutoBetController';
 import { multiplierAt, rollCrash } from './engine';
+import { fireConfetti } from '../../../lib/confetti';
 
 type Phase = 'idle' | 'flying' | 'crashed' | 'cashed';
 
@@ -64,6 +65,12 @@ export function AviatorGame() {
       if (win) {
         balance.credit(payout);
         sound.play(cashedAt! >= 10 ? 'mega-win' : cashedAt! >= 3 ? 'big-win' : 'win');
+        if (cashedAt! >= 2) {
+          fireConfetti({
+            count: cashedAt! >= 20 ? 130 : cashedAt! >= 5 ? 80 : 50,
+            colors: ['#5fb8ff', '#ffd166', '#ffffff'],
+          });
+        }
       } else {
         sound.play('drop');
       }
