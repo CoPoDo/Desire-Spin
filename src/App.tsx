@@ -20,6 +20,7 @@ import { KenoGame } from './pages/originals/keno';
 import { RouletteGame } from './pages/originals/roulette';
 import { BlackjackGame } from './pages/originals/blackjack';
 import { BaccaratGame } from './pages/originals/baccarat';
+import { DiamondsGame } from './pages/originals/diamonds';
 
 export default function App() {
   return (
@@ -47,6 +48,7 @@ export default function App() {
         <Route path="/originals/roulette" element={<RouletteGame />} />
         <Route path="/originals/blackjack" element={<BlackjackGame />} />
         <Route path="/originals/baccarat" element={<BaccaratGame />} />
+        <Route path="/originals/diamonds" element={<DiamondsGame />} />
 
         {/* Lobby + non-game routes — full Layout with sidebar */}
         <Route path="/" element={<Layout><Home /></Layout>} />
