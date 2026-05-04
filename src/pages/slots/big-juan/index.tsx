@@ -868,7 +868,7 @@ export function BigJuan() {
                   : 'drop-shadow(0 0 24px rgba(255,209,102,.9)) drop-shadow(0 4px 8px rgba(0,0,0,.6))',
               }}
             >
-              {bigWin.tier === 'epic' ? 'EPIC WIN!' : bigWin.tier === 'mega' ? 'MEGA WIN!' : 'BIG WIN!'}
+              {bigWin.tier === 'epic' ? '¡CAMPEÓN!' : bigWin.tier === 'mega' ? '¡FENOMENAL!' : '¡GRAN GANANCIA!'}
             </motion.div>
             <motion.div
               className="font-mono font-extrabold tabular-nums"
