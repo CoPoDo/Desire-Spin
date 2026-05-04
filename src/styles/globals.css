@@ -1318,6 +1318,18 @@
   50%      { transform: rotate(0.7deg)  translateX(1%); }
 }
 
+/* Wanted saloon gas-lamp flicker — irregular opacity step pattern
+ * approximates a gas-fed flame catching small drafts. Two windows
+ * use different cycle times + a delay so they flicker independently. */
+@keyframes wantedGasLampFlicker {
+  0%, 100% { fill-opacity: 0.42; }
+  18%      { fill-opacity: 0.35; }
+  32%      { fill-opacity: 0.55; }
+  50%      { fill-opacity: 0.32; }
+  68%      { fill-opacity: 0.5;  }
+  85%      { fill-opacity: 0.42; }
+}
+
 /* Wanted dusk sun — slow heat-haze pulse. Subtle scale + opacity
  * shimmer so the western sunset feels alive instead of a flat
  * gradient. Translate component preserved (centre-anchor). */

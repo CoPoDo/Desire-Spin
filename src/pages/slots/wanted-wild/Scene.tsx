@@ -88,11 +88,23 @@ export function WantedScene() {
           {[12, 13.5, 15, 16.5].map((y, i) => (
             <line key={i} x1="8" y1={y} x2="14" y2={y} stroke="#1a0a02" strokeWidth=".15" opacity=".55" />
           ))}
-          {/* Lit windows on either side of door */}
-          <rect x="1.5" y="9" width="4" height="4" fill="rgba(255,200,80,.42)" stroke="#1a0a02" strokeWidth=".18" />
+          {/* Lit windows on either side of door — gas lamps inside the
+           *  saloon flicker independently. Each window is rendered as an
+           *  SVG <rect> inside this group, so we attach a CSS animation
+           *  via inline style. Two distinct timings mean the lamps don't
+           *  flicker in sync. */}
+          <rect
+            x="1.5" y="9" width="4" height="4"
+            fill="rgba(255,200,80,.42)" stroke="#1a0a02" strokeWidth=".18"
+            style={{ animation: 'wantedGasLampFlicker 1.8s ease-in-out infinite' }}
+          />
           <line x1="3.5" y1="9" x2="3.5" y2="13" stroke="#1a0a02" strokeWidth=".15" />
           <line x1="1.5" y1="11" x2="5.5" y2="11" stroke="#1a0a02" strokeWidth=".15" />
-          <rect x="16.5" y="9" width="4" height="4" fill="rgba(255,200,80,.42)" stroke="#1a0a02" strokeWidth=".18" />
+          <rect
+            x="16.5" y="9" width="4" height="4"
+            fill="rgba(255,200,80,.42)" stroke="#1a0a02" strokeWidth=".18"
+            style={{ animation: 'wantedGasLampFlicker 2.3s ease-in-out -0.6s infinite' }}
+          />
           <line x1="18.5" y1="9" x2="18.5" y2="13" stroke="#1a0a02" strokeWidth=".15" />
           <line x1="16.5" y1="11" x2="20.5" y2="11" stroke="#1a0a02" strokeWidth=".15" />
           {/* Porch posts */}
