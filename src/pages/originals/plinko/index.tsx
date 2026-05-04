@@ -6,6 +6,14 @@ import { createRng } from '../../../lib/fairness';
 import { fmtCurrency } from '../../../lib/format';
 import { BetInput } from '../_shared/BetInput';
 import {
+  AutoConfigFields,
+  AutoProgressDisplay,
+  ManualAutoTabs,
+  type AutoConfig,
+  type Mode,
+  useAutoBetRunner,
+} from '../_shared/AutoBetController';
+import {
   type PlinkoDrop,
   type Risk,
   dropBall,
@@ -27,49 +35,67 @@ export function PlinkoGame() {
   const [bet, setBet] = useState(1);
   const [rows, setRows] = useState(12);
   const [risk, setRisk] = useState<Risk>('medium');
+  const [mode, setMode] = useState<Mode>('manual');
+  const [autoConfig, setAutoConfig] = useState<AutoConfig>({ count: 10, stopOnProfit: 0, stopOnLoss: 0 });
+  const [autoActive, setAutoActive] = useState(false);
   const [activeBalls, setActiveBalls] = useState<ActiveBall[]>([]);
   const [recentResults, setRecentResults] = useState<{ id: number; multiplier: number }[]>([]);
   const ballIdRef = useRef(0);
+  const stateRef = useRef({ bet, rows, risk });
+  stateRef.current = { bet, rows, risk };
 
   const mults = useMemo(() => multipliersFor(risk, rows), [risk, rows]);
-  const buckets = mults.length; // = rows + 1
+  const buckets = mults.length;
 
-  const drop = useCallback(() => {
-    if (balance.balance < bet || bet <= 0) return;
-    sound.play('click');
-    balance.debit(bet);
-    const seeds = fairness.consumeNonce();
-    const rng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
-    const result = dropBall(rng, bet, rows, risk);
-    const id = ++ballIdRef.current;
-    setActiveBalls((prev) => [...prev, { id, drop: result, rows, startedAt: performance.now() }]);
+  const drop = useCallback((): Promise<number> => {
+    return new Promise<number>((resolve) => {
+      const { bet: b, rows: r, risk: rk } = stateRef.current;
+      if (balance.balance < b || b <= 0) {
+        resolve(0);
+        return;
+      }
+      sound.play('click');
+      balance.debit(b);
+      const seeds = fairness.consumeNonce();
+      const rng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
+      const result = dropBall(rng, b, r, rk);
+      const id = ++ballIdRef.current;
+      setActiveBalls((prev) => [...prev, { id, drop: result, rows: r, startedAt: performance.now() }]);
 
-    // Animation completes ~rows*120ms + 200ms settle. After that, credit + record.
-    const animDur = rows * 130 + 250;
-    setTimeout(() => {
-      if (result.payout > 0) balance.credit(result.payout);
-      sound.play(
-        result.multiplier >= 10 ? 'mega-win' :
-        result.multiplier >= 2 ? 'big-win' :
-        result.multiplier >= 0.5 ? 'win' : 'drop',
-      );
-      history.record({
-        game: 'Plinko',
-        bet,
-        payout: result.payout,
-        multiplier: result.multiplier,
-        serverSeedHash: fairness.hash,
-        clientSeed: seeds.clientSeed,
-        nonce: seeds.nonce,
-      });
-      session.recordSpin(bet, result.payout, false);
-      setRecentResults((prev) => [{ id, multiplier: result.multiplier }, ...prev].slice(0, 8));
-      // Remove ball after another 400ms so player sees it land
+      const animDur = r * 130 + 250;
       setTimeout(() => {
-        setActiveBalls((prev) => prev.filter((b) => b.id !== id));
-      }, 400);
-    }, animDur);
-  }, [balance, bet, rows, risk, fairness, sound, history, session]);
+        if (result.payout > 0) balance.credit(result.payout);
+        sound.play(
+          result.multiplier >= 10 ? 'mega-win' :
+          result.multiplier >= 2 ? 'big-win' :
+          result.multiplier >= 0.5 ? 'win' : 'drop',
+        );
+        history.record({
+          game: 'Plinko',
+          bet: b,
+          payout: result.payout,
+          multiplier: result.multiplier,
+          serverSeedHash: fairness.hash,
+          clientSeed: seeds.clientSeed,
+          nonce: seeds.nonce,
+        });
+        session.recordSpin(b, result.payout, false);
+        setRecentResults((prev) => [{ id, multiplier: result.multiplier }, ...prev].slice(0, 8));
+        setTimeout(() => {
+          setActiveBalls((prev) => prev.filter((bb) => bb.id !== id));
+        }, 400);
+        resolve(result.payout - b);
+      }, animDur);
+    });
+  }, [balance, fairness, sound, history, session]);
+
+  const progress = useAutoBetRunner({
+    active: autoActive,
+    config: autoConfig,
+    intervalMs: 350,
+    runOnce: drop,
+    onStop: () => setAutoActive(false),
+  });
 
   return (
     <OriginalPageLayout title="Plinko">
@@ -106,8 +132,8 @@ export function PlinkoGame() {
 
         {/* Controls */}
         <div className="rounded-2xl bg-bg-card border border-edge p-4 space-y-3">
-          <BetInput bet={bet} onBetChange={setBet} />
-          {/* Risk + rows */}
+          <ManualAutoTabs mode={mode} onChange={setMode} disabled={autoActive} />
+          <BetInput bet={bet} onBetChange={setBet} disabled={autoActive} />
           <div>
             <div className="text-[10px] uppercase tracking-widest text-ink-mute mb-1.5">Risk</div>
             <div className="flex gap-1.5">
@@ -115,7 +141,8 @@ export function PlinkoGame() {
                 <button
                   key={r}
                   onClick={() => setRisk(r)}
-                  className={`flex-1 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition ${
+                  disabled={autoActive}
+                  className={`flex-1 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition disabled:opacity-50 ${
                     risk === r
                       ? 'bg-accent text-bg'
                       : 'bg-bg-elev border border-edge text-ink-dim hover:text-ink'
@@ -137,17 +164,36 @@ export function PlinkoGame() {
               max={16}
               step={1}
               value={rows}
+              disabled={autoActive}
               onChange={(e) => setRows(parseInt(e.target.value))}
               className="w-full accent-accent"
             />
           </div>
-          <button
-            onClick={drop}
-            disabled={balance.balance < bet || bet <= 0}
-            className="w-full py-3.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
-          >
-            Drop · {fmtCurrency(bet)}
-          </button>
+          {mode === 'auto' && (
+            <>
+              <AutoConfigFields config={autoConfig} onChange={setAutoConfig} disabled={autoActive} />
+              {autoActive && <AutoProgressDisplay progress={progress} config={autoConfig} />}
+            </>
+          )}
+          {mode === 'manual' ? (
+            <button
+              onClick={() => void drop()}
+              disabled={balance.balance < bet || bet <= 0}
+              className="w-full py-3.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
+            >
+              Drop · {fmtCurrency(bet)}
+            </button>
+          ) : (
+            <button
+              onClick={() => setAutoActive((a) => !a)}
+              disabled={!autoActive && (balance.balance < bet || bet <= 0)}
+              className={`w-full py-3.5 rounded-xl font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99] ${
+                autoActive ? 'bg-accent-hot text-white' : 'bg-accent text-bg'
+              }`}
+            >
+              {autoActive ? 'Stop Autobet' : 'Start Autobet'}
+            </button>
+          )}
         </div>
       </div>
     </OriginalPageLayout>

@@ -5,6 +5,14 @@ import { useGame } from '../../../game-context';
 import { createRng } from '../../../lib/fairness';
 import { fmtCurrency } from '../../../lib/format';
 import { BetInput } from '../_shared/BetInput';
+import {
+  AutoConfigFields,
+  AutoProgressDisplay,
+  ManualAutoTabs,
+  type AutoConfig,
+  type Mode,
+  useAutoBetRunner,
+} from '../_shared/AutoBetController';
 import { multiplierAt, rollBust, timeForMultiplier } from './engine';
 
 type Phase = 'idle' | 'running' | 'crashed' | 'cashed';
@@ -17,10 +25,13 @@ export function CrashGame() {
   const [bet, setBet] = useState(1);
   const [autoCashout, setAutoCashout] = useState(2.0);
   const [autoCashoutEnabled, setAutoCashoutEnabled] = useState(false);
+  const [mode, setMode] = useState<Mode>('manual');
+  const [autoConfig, setAutoConfig] = useState<AutoConfig>({ count: 10, stopOnProfit: 0, stopOnLoss: 0 });
+  const [autoActive, setAutoActive] = useState(false);
   const [phase, setPhase] = useState<Phase>('idle');
   const [bust, setBust] = useState<number | null>(null);
   const [currentMult, setCurrentMult] = useState(1.0);
-  const [recent, setRecent] = useState<{ id: string; bust: number }[]>([]);
+  const [recent, setRecent] = useState<{ id: string; bust: number; cashedAt: number | null }[]>([]);
 
   const startTimeRef = useRef<number>(0);
   const rafRef = useRef<number | null>(null);
@@ -37,6 +48,11 @@ export function CrashGame() {
     rafRef.current = null;
   }, []);
   useEffect(() => () => cleanup(), [cleanup]);
+
+  // Auto-bet round resolution: each Crash round is async. autoResolveRef
+  // holds the resolver of the currently-pending Promise (if any) so we can
+  // signal "round done" with the net delta after finalize fires.
+  const autoResolveRef = useRef<((delta: number) => void) | null>(null);
 
   const finalize = useCallback(
     (cashedAt: number | null, bustAt: number) => {
@@ -58,7 +74,12 @@ export function CrashGame() {
         nonce: 0,
       });
       session.recordSpin(bet, payout, false);
-      setRecent((r) => [{ id: `${Date.now()}`, bust: bustAt }, ...r].slice(0, 10));
+      setRecent((r) => [{ id: `${Date.now()}`, bust: bustAt, cashedAt }, ...r].slice(0, 20));
+      // Resolve the pending auto-bet round's promise (if any) with net delta.
+      if (autoResolveRef.current) {
+        autoResolveRef.current(payout - bet);
+        autoResolveRef.current = null;
+      }
     },
     [bet, balance, fairness, history, session, sound],
   );
@@ -137,6 +158,41 @@ export function CrashGame() {
     bustRef.current = null;
     phaseRef.current = 'idle';
   }, []);
+
+  /** Auto-bet runs Crash with the auto-cashout enabled at the configured
+   *  target. Returns a Promise that resolves with net delta when the round
+   *  finishes (either cashout or bust). */
+  const autoRunOnce = useCallback(async (): Promise<number> => {
+    // Force auto-cashout on for auto rounds (otherwise nothing would
+    // resolve the round — the auto loop can't manually click cashout).
+    if (!autoCashoutEnabled) setAutoCashoutEnabled(true);
+    if (balance.balance < bet || bet <= 0) return 0;
+    return new Promise<number>((resolve) => {
+      autoResolveRef.current = resolve;
+      // Start the round
+      sound.play('click');
+      balance.debit(bet);
+      const seeds = fairness.consumeNonce();
+      const rng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
+      const b = rollBust(rng);
+      bustRef.current = b;
+      cashedAtRef.current = null;
+      setBust(b);
+      setCurrentMult(1.0);
+      phaseRef.current = 'running';
+      setPhase('running');
+      startTimeRef.current = performance.now();
+      rafRef.current = requestAnimationFrame(tick);
+    });
+  }, [autoCashoutEnabled, balance, bet, fairness, sound, tick]);
+
+  const progress = useAutoBetRunner({
+    active: autoActive,
+    config: autoConfig,
+    intervalMs: 600,
+    runOnce: autoRunOnce,
+    onStop: () => setAutoActive(false),
+  });
 
   const inGame = phase === 'running';
   const won = phase === 'cashed';
@@ -219,6 +275,42 @@ export function CrashGame() {
           </div>
         </div>
 
+        {/* Bust history bar chart — like Stake's "Last X rounds" view */}
+        {recent.length > 0 && (
+          <div className="rounded-xl bg-bg-card border border-edge p-2.5">
+            <div className="flex items-end justify-end gap-0.5 h-12">
+              {recent.slice().reverse().map((r) => {
+                const heightPct = Math.min(100, (Math.log(r.bust) / Math.log(20)) * 100);
+                const tier = r.bust >= 10 ? 'epic' : r.bust >= 2 ? 'good' : 'low';
+                return (
+                  <div
+                    key={r.id}
+                    className="flex-1 flex flex-col items-center justify-end gap-0.5"
+                    title={`${r.bust.toFixed(2)}×${r.cashedAt ? ` · cashed ${r.cashedAt.toFixed(2)}×` : ''}`}
+                  >
+                    <div
+                      className="w-full rounded-sm"
+                      style={{
+                        height: `${Math.max(8, heightPct)}%`,
+                        background:
+                          tier === 'epic' ? '#ffc62a' : tier === 'good' ? '#1fff7a' : '#ff3d8b',
+                        boxShadow: tier !== 'low' ? `0 0 6px currentColor` : undefined,
+                      }}
+                    />
+                    <span
+                      className={`text-[8px] font-mono font-semibold tabular-nums leading-none ${
+                        tier === 'epic' ? 'text-accent-gold' : tier === 'good' ? 'text-accent' : 'text-accent-hot'
+                      }`}
+                    >
+                      {r.bust < 10 ? r.bust.toFixed(2) : r.bust.toFixed(0)}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Action button */}
         {inGame ? (
           <button
@@ -229,7 +321,8 @@ export function CrashGame() {
           </button>
         ) : (
           <div className="rounded-2xl bg-bg-card border border-edge p-4 space-y-3">
-            <BetInput bet={bet} onBetChange={setBet} />
+            <ManualAutoTabs mode={mode} onChange={setMode} disabled={autoActive} />
+            <BetInput bet={bet} onBetChange={setBet} disabled={autoActive} />
             <div className="rounded-lg bg-bg-elev border border-edge p-3">
               <div className="flex items-center justify-between">
                 <label className="flex items-center gap-2 text-xs text-ink-dim cursor-pointer">
@@ -237,6 +330,7 @@ export function CrashGame() {
                     type="checkbox"
                     checked={autoCashoutEnabled}
                     onChange={(e) => setAutoCashoutEnabled(e.target.checked)}
+                    disabled={autoActive}
                     className="accent-accent w-3.5 h-3.5"
                   />
                   Auto cashout
@@ -247,11 +341,12 @@ export function CrashGame() {
                   min={1.01}
                   step={0.01}
                   value={autoCashout}
+                  disabled={autoActive}
                   onChange={(e) => {
                     const v = parseFloat(e.target.value);
                     if (Number.isFinite(v)) setAutoCashout(Math.max(1.01, v));
                   }}
-                  className="font-mono font-semibold text-sm tabular-nums bg-bg-card border border-edge rounded-lg px-2 py-1 w-24 text-right outline-none focus:border-accent/60"
+                  className="font-mono font-semibold text-sm tabular-nums bg-bg-card border border-edge rounded-lg px-2 py-1 w-24 text-right outline-none focus:border-accent/60 disabled:opacity-50"
                 />
               </div>
               {autoCashoutEnabled && (
@@ -263,30 +358,34 @@ export function CrashGame() {
                 </div>
               )}
             </div>
-            <button
-              onClick={lost || won ? reset : start}
-              disabled={!(lost || won) && (balance.balance < bet || bet <= 0)}
-              className="w-full py-3.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
-            >
-              {lost || won ? 'Bet Again' : `Bet ${fmtCurrency(bet)}`}
-            </button>
-          </div>
-        )}
-
-        {/* Recent busts */}
-        {recent.length > 0 && (
-          <div className="flex items-center gap-1.5 overflow-x-auto py-1">
-            <span className="text-[10px] uppercase tracking-widest text-ink-mute mr-1 flex-shrink-0">Recent</span>
-            {recent.map((r) => (
-              <span
-                key={r.id}
-                className={`font-mono font-semibold text-xs tabular-nums px-2 py-1 rounded-lg flex-shrink-0 ${
-                  r.bust >= 2 ? 'bg-accent/15 text-accent' : 'bg-accent-hot/15 text-accent-hot'
+            {mode === 'auto' && (
+              <>
+                <AutoConfigFields config={autoConfig} onChange={setAutoConfig} disabled={autoActive} />
+                {autoActive && <AutoProgressDisplay progress={progress} config={autoConfig} />}
+                <p className="text-[10px] text-ink-mute leading-relaxed">
+                  Auto-bet uses your auto-cashout target. If it's off it'll be enabled automatically.
+                </p>
+              </>
+            )}
+            {mode === 'manual' ? (
+              <button
+                onClick={lost || won ? reset : start}
+                disabled={!(lost || won) && (balance.balance < bet || bet <= 0)}
+                className="w-full py-3.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
+              >
+                {lost || won ? 'Bet Again' : `Bet ${fmtCurrency(bet)}`}
+              </button>
+            ) : (
+              <button
+                onClick={() => setAutoActive((a) => !a)}
+                disabled={!autoActive && (balance.balance < bet || bet <= 0)}
+                className={`w-full py-3.5 rounded-xl font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99] ${
+                  autoActive ? 'bg-accent-hot text-white' : 'bg-accent text-bg'
                 }`}
               >
-                {r.bust.toFixed(2)}×
-              </span>
-            ))}
+                {autoActive ? 'Stop Autobet' : 'Start Autobet'}
+              </button>
+            )}
           </div>
         )}
       </div>

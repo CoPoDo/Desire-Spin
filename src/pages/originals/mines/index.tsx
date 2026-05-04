@@ -85,6 +85,18 @@ export function MinesGame() {
 
   const reset = useCallback(() => setRound(null), []);
 
+  /** Pick a random unrevealed tile — Stake's "?" button. */
+  const pickRandom = useCallback(() => {
+    if (!round || round.done) return;
+    const remaining: number[] = [];
+    for (let i = 0; i < GRID_SIZE; i++) {
+      if (!round.revealed.has(i)) remaining.push(i);
+    }
+    if (remaining.length === 0) return;
+    const idx = remaining[Math.floor(Math.random() * remaining.length)]!;
+    onTile(idx);
+  }, [round, onTile]);
+
   return (
     <OriginalPageLayout title="Mines">
       <div className="flex flex-col p-4 gap-4 max-w-md mx-auto w-full">
@@ -227,13 +239,23 @@ export function MinesGame() {
               <Stat label="Mines" value={`${mineCount}`} />
               <Stat label="Next Pick" value={picks + 1 <= GRID_SIZE - mineCount ? fmtMultiplier(nextMult) : '—'} />
             </div>
-            <button
-              onClick={doCashOut}
-              disabled={picks === 0}
-              className="w-full py-3.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
-            >
-              {picks === 0 ? 'Pick a tile to start' : `Cash Out ${fmtCurrency(cashoutAmount)}`}
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={pickRandom}
+                disabled={busyClick}
+                className="flex-shrink-0 px-4 py-3.5 rounded-xl bg-bg-elev border border-edge text-ink hover:bg-bg-hover font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.97]"
+                title="Pick a random unrevealed tile"
+              >
+                Pick Random
+              </button>
+              <button
+                onClick={doCashOut}
+                disabled={picks === 0}
+                className="flex-1 py-3.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
+              >
+                {picks === 0 ? 'Pick a tile to start' : `Cash Out ${fmtCurrency(cashoutAmount)}`}
+              </button>
+            </div>
           </div>
         )}
       </div>

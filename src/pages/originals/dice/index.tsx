@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
 import { useGame } from '../../../game-context';
@@ -6,47 +6,49 @@ import { createRng } from '../../../lib/fairness';
 import { fmtCurrency, fmtMultiplier } from '../../../lib/format';
 import { BetInput } from '../_shared/BetInput';
 import {
+  AutoConfigFields,
+  AutoProgressDisplay,
+  ManualAutoTabs,
+  type AutoConfig,
+  type Mode,
+  useAutoBetRunner,
+} from '../_shared/AutoBetController';
+import {
   type DiceDirection,
   multiplierFor,
   play,
   winChanceFor,
 } from './engine';
 
-/** Stake-style Dice game.
- *
- * Slider sets a target 0-100. Roll the dice; you win if your direction
- * (over / under) holds. Multiplier = 99 / winChance% (1% house edge).
- *
- * UI mirrors Stake closely:
- *   - Big result number at the top
- *   - Slider with the target threshold + win region tinted green
- *   - Three info cards: Multiplier, Roll Over/Under, Win Chance
- *   - Bet input with ½ / 2× / Max
- *   - Big bet button
- */
 export function DiceGame() {
   const { balance, fairness, sound, history, session } = useGame();
   const [bet, setBet] = useState(1);
   const [direction, setDirection] = useState<DiceDirection>('over');
   const [target, setTarget] = useState(50);
+  const [mode, setMode] = useState<Mode>('manual');
+  const [autoConfig, setAutoConfig] = useState<AutoConfig>({ count: 10, stopOnProfit: 0, stopOnLoss: 0 });
+  const [autoActive, setAutoActive] = useState(false);
   const [busy, setBusy] = useState(false);
   const [lastRoll, setLastRoll] = useState<number | null>(null);
   const [lastWin, setLastWin] = useState<boolean | null>(null);
   const [recentRolls, setRecentRolls] = useState<{ id: string; roll: number; win: boolean }[]>([]);
+  const stateRef = useRef({ direction, target, bet });
+  stateRef.current = { direction, target, bet };
 
   const winChance = useMemo(() => winChanceFor(direction, target), [direction, target]);
   const multiplier = useMemo(() => multiplierFor(direction, target), [direction, target]);
   const profitOnWin = useMemo(() => +(bet * multiplier - bet).toFixed(2), [bet, multiplier]);
 
-  const roll = useCallback(() => {
-    if (busy || balance.balance < bet || bet <= 0) return;
+  const playOnce = useCallback(async (): Promise<number> => {
+    const { direction: dir, target: tgt, bet: b } = stateRef.current;
+    if (balance.balance < b || b <= 0) return 0;
     setBusy(true);
     sound.play('click');
-    balance.debit(bet);
+    balance.debit(b);
     try {
       const seeds = fairness.consumeNonce();
       const rng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
-      const result = play(rng, bet, direction, target);
+      const result = play(rng, b, dir, tgt);
       setLastRoll(result.roll);
       setLastWin(result.win);
       setRecentRolls((r) => [{ id: `${seeds.nonce}`, roll: result.roll, win: result.win }, ...r].slice(0, 8));
@@ -58,22 +60,32 @@ export function DiceGame() {
       }
       history.record({
         game: 'Dice',
-        bet,
+        bet: b,
         payout: result.payout,
         multiplier: result.win ? result.multiplier : 0,
         serverSeedHash: fairness.hash,
         clientSeed: seeds.clientSeed,
         nonce: seeds.nonce,
       });
-      session.recordSpin(bet, result.payout, false);
-    } catch (err) {
-      balance.credit(bet);
-      // eslint-disable-next-line no-console
-      console.error('Dice play failed:', err);
+      session.recordSpin(b, result.payout, false);
+      return result.payout - b;
     } finally {
       setBusy(false);
     }
-  }, [busy, balance, bet, direction, target, fairness, history, session, sound]);
+  }, [balance, fairness, history, session, sound]);
+
+  const progress = useAutoBetRunner({
+    active: autoActive,
+    config: autoConfig,
+    intervalMs: 280,
+    runOnce: playOnce,
+    onStop: () => setAutoActive(false),
+  });
+
+  const manualRoll = useCallback(() => {
+    if (busy || balance.balance < bet || bet <= 0) return;
+    void playOnce();
+  }, [busy, balance, bet, playOnce]);
 
   return (
     <OriginalPageLayout title="Dice">
@@ -108,17 +120,12 @@ export function DiceGame() {
           </div>
         </div>
 
-        {/* Slider track */}
+        {/* Slider */}
         <div className="rounded-2xl bg-bg-card border border-edge p-4">
           <div className="flex items-center justify-between text-[10px] uppercase tracking-widest text-ink-mute mb-2">
-            <span>0</span>
-            <span>25</span>
-            <span>50</span>
-            <span>75</span>
-            <span>100</span>
+            <span>0</span><span>25</span><span>50</span><span>75</span><span>100</span>
           </div>
           <div className="relative h-3 bg-bg-elev rounded-full mb-3 overflow-hidden">
-            {/* Green win region */}
             <div
               className="absolute top-0 bottom-0 bg-accent/35"
               style={{
@@ -126,7 +133,6 @@ export function DiceGame() {
                 right: direction === 'over' ? '0%' : `${100 - target}%`,
               }}
             />
-            {/* Last roll marker */}
             {lastRoll !== null && (
               <motion.div
                 className="absolute top-0 bottom-0 w-1 rounded-full"
@@ -143,11 +149,8 @@ export function DiceGame() {
                 transition={{ type: 'spring', stiffness: 320, damping: 18 }}
               />
             )}
-            {/* Target marker */}
-            <div
-              className="absolute top-[-3px] bottom-[-3px] w-0.5 bg-ink"
-              style={{ left: `${target}%`, transform: 'translateX(-50%)' }}
-            />
+            <div className="absolute top-[-3px] bottom-[-3px] w-0.5 bg-ink"
+                 style={{ left: `${target}%`, transform: 'translateX(-50%)' }} />
           </div>
           <input
             type="range"
@@ -155,46 +158,61 @@ export function DiceGame() {
             max={98}
             step={0.01}
             value={target}
-            disabled={busy}
+            disabled={busy || autoActive}
             onChange={(e) => setTarget(parseFloat(e.target.value))}
             className="w-full accent-accent"
           />
         </div>
 
-        {/* Stat cards */}
+        {/* Stats */}
         <div className="grid grid-cols-3 gap-2">
-          <Stat label="Multiplier" value={`${fmtMultiplier(multiplier)}`} />
+          <Stat label="Multiplier" value={fmtMultiplier(multiplier)} />
           <button
             onClick={() => setDirection((d) => (d === 'over' ? 'under' : 'over'))}
-            disabled={busy}
+            disabled={busy || autoActive}
             className="rounded-xl bg-bg-card border border-edge p-3 text-center hover:bg-bg-hover disabled:opacity-50"
           >
             <div className="text-[10px] uppercase tracking-widest text-ink-mute">Roll {direction}</div>
-            <div className="font-mono font-bold text-base text-ink mt-0.5 tabular-nums">
-              {target.toFixed(2)}
-            </div>
-            <div className="text-[9px] text-accent mt-0.5">tap to flip</div>
+            <div className="font-mono font-bold text-base text-ink mt-0.5 tabular-nums">{target.toFixed(2)}</div>
           </button>
           <Stat label="Win Chance" value={`${winChance.toFixed(2)}%`} />
         </div>
 
-        {/* Bet input + button */}
+        {/* Mode + bet panel */}
         <div className="rounded-2xl bg-bg-card border border-edge p-4 space-y-3">
-          <BetInput bet={bet} onBetChange={setBet} disabled={busy} />
+          <ManualAutoTabs mode={mode} onChange={setMode} disabled={autoActive} />
+          <BetInput bet={bet} onBetChange={setBet} disabled={busy || autoActive} />
           <div className="flex justify-between text-xs">
             <span className="text-ink-mute">Profit on Win</span>
             <span className="font-mono font-semibold text-accent tabular-nums">{fmtCurrency(profitOnWin)}</span>
           </div>
-          <button
-            onClick={roll}
-            disabled={busy || balance.balance < bet || bet <= 0}
-            className="w-full py-3.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
-          >
-            {busy ? 'Rolling…' : 'Roll Dice'}
-          </button>
+          {mode === 'auto' && (
+            <>
+              <AutoConfigFields config={autoConfig} onChange={setAutoConfig} disabled={autoActive} />
+              {autoActive && <AutoProgressDisplay progress={progress} config={autoConfig} />}
+            </>
+          )}
+          {mode === 'manual' ? (
+            <button
+              onClick={manualRoll}
+              disabled={busy || balance.balance < bet || bet <= 0}
+              className="w-full py-3.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
+            >
+              {busy ? 'Rolling…' : 'Roll Dice'}
+            </button>
+          ) : (
+            <button
+              onClick={() => setAutoActive((a) => !a)}
+              disabled={!autoActive && (balance.balance < bet || bet <= 0)}
+              className={`w-full py-3.5 rounded-xl font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99] ${
+                autoActive ? 'bg-accent-hot text-white' : 'bg-accent text-bg'
+              }`}
+            >
+              {autoActive ? 'Stop Autobet' : 'Start Autobet'}
+            </button>
+          )}
         </div>
 
-        {/* Recent rolls */}
         {recentRolls.length > 0 && (
           <div className="flex items-center gap-1.5 overflow-x-auto py-1">
             <span className="text-[10px] uppercase tracking-widest text-ink-mute mr-1 flex-shrink-0">Recent</span>
