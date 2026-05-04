@@ -92,6 +92,13 @@ export function Home() {
             badge="LIVE"
             art={<PlaceholderArt label="🎡" tone="#3a2010" />}
           />
+          <GameCard
+            to="/originals/hilo"
+            title="Hilo"
+            subtitle="Higher or lower"
+            badge="LIVE"
+            art={<PlaceholderArt label="🃏" tone="#1a3a30" />}
+          />
         </div>
       </section>
     </div>
