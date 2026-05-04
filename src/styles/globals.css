@@ -570,18 +570,24 @@
    BONANZA — visual polish (lighter touch)
    ========================================================================== */
 .cell-bonanza {
+  /* Lighter, glassier cells so the candy-cloud backdrop bleeds through.
+   * Real Sweet Bonanza cells are translucent candy-glass with a pink rim
+   * — earlier values (78%/85% alpha) made them feel like solid panels
+   * sitting on top of the scene rather than belonging to it. */
   background:
-    radial-gradient(ellipse at 50% 0%, rgba(255, 95, 162, 0.32), transparent 65%),
-    linear-gradient(180deg, rgba(40, 18, 80, 0.78) 0%, rgba(20, 8, 40, 0.85) 100%);
-  border: 1px solid rgba(255, 142, 196, 0.28);
+    radial-gradient(ellipse at 50% 0%, rgba(255, 142, 200, 0.38), transparent 65%),
+    linear-gradient(180deg, rgba(60, 28, 100, 0.55) 0%, rgba(30, 12, 60, 0.62) 100%);
+  border: 1.5px solid rgba(255, 168, 215, 0.45);
   box-shadow:
-    inset 0 1px 0 rgba(255, 200, 230, 0.22),
-    inset 0 -8px 18px rgba(0, 0, 0, 0.4),
-    inset 0 0 0 1px rgba(255, 95, 162, 0.06),
-    0 6px 18px rgba(0, 0, 0, 0.45);
+    inset 0 1px 0 rgba(255, 220, 240, 0.32),
+    inset 0 -8px 18px rgba(0, 0, 0, 0.32),
+    inset 0 0 0 1px rgba(255, 142, 200, 0.10),
+    0 6px 18px rgba(0, 0, 0, 0.4),
+    0 0 12px rgba(255, 142, 200, 0.15);
   border-radius: 12px;
-  /* Tiny inner top-light so the cell feels lit like the real game's glass. */
   position: relative;
+  backdrop-filter: blur(1.5px);
+  -webkit-backdrop-filter: blur(1.5px);
 }
 .cell-bonanza::before {
   content: '';
