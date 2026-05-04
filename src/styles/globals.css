@@ -327,6 +327,23 @@
     0 8px 18px rgba(0, 0, 0, 0.55); }
 }
 
+/* Sticky-orb effect during free spins — orbs pulse with a violet/gold
+   secondary halo to indicate they persist until end of spin. Real
+   Pragmatic Olympus shows a similar "energy aura" on FS orbs. */
+.olympus-fs-mode .olympus-orb {
+  animation: olympusOrbBreathe 1.6s ease-in-out infinite,
+             olympusOrbStickyHalo 2.2s ease-in-out infinite;
+}
+@keyframes olympusOrbStickyHalo {
+  0%, 100% {
+    filter: drop-shadow(0 0 4px rgba(167, 139, 250, 0.4));
+  }
+  50% {
+    filter: drop-shadow(0 0 12px rgba(167, 139, 250, 0.8))
+            drop-shadow(0 0 24px rgba(255, 200, 80, 0.4));
+  }
+}
+
 /* Free-spins counter (Olympus) */
 .olympus-fs-counter {
   background:

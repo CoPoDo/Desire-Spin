@@ -695,7 +695,7 @@ export function ImmersiveSlotView({
         aria-label={busy ? 'Tap to skip animation' : 'Reels'}
       >
         <div
-          className="relative h-full"
+          className={`relative h-full ${inFree ? 'olympus-fs-mode' : ''}`}
           style={{
             aspectRatio: `${backdropAspect.w} / ${backdropAspect.h}`,
             // height: 100% via flex parent; width derived from aspect-ratio.
