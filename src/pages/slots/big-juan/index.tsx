@@ -1061,7 +1061,7 @@ function renderBigJuanSymbol(symId: string) {
     case 'boot':     return <BootSvg />;
     case 'glove':    return <GloveSvg />;
     case 'chilli':   return <ChilliSvg />;
-    case 'pinata':   return <PinataSvg />;
+    case 'pinata':   return <span className="bj-pinata-sway block w-full h-full"><PinataSvg /></span>;
     case 'A':        return <RoyalSvg letter="A"  color="#ffd166" />;
     case 'K':        return <RoyalSvg letter="K"  color="#a78bfa" />;
     case 'Q':        return <RoyalSvg letter="Q"  color="#ff7ad9" />;

@@ -1298,6 +1298,21 @@
   100% { transform: translate(20px, -110%) rotate(540deg); opacity: 0; }
 }
 
+/* Piñata scatter — swings from a string. Real piñatas hang from a rope
+ * and sway side-to-side; the rotation pivot is the dotted "string" at
+ * the top of the SVG (cy=2). Slow gentle period (2.6s) so it reads as
+ * relaxed swing rather than jittery. */
+.bj-pinata-sway {
+  display: inline-block;
+  animation: bjPinataSway 2.6s ease-in-out infinite;
+  transform-origin: 50% 4%; /* hinge at the very top where the string is */
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,.55));
+}
+@keyframes bjPinataSway {
+  0%, 100% { transform: rotate(-7deg); }
+  50%      { transform: rotate(7deg); }
+}
+
 /* Sugar Rush — coloured sprinkles raining DOWN across the candyland */
 @keyframes sugarSprinkleFall {
   0%   { transform: translate(0, -10%) rotate(0deg); opacity: 0; }
