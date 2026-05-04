@@ -566,34 +566,49 @@ export function ImmersiveSlotView({
           on-grid multiplier total (sum of all visible orbs), and total won.
           Real-Olympus parity. */}
       {inFree && freeSpins && (
-        <div className="absolute top-[max(env(safe-area-inset-top),6px)] mt-[52px] left-1/2 -translate-x-1/2 z-[35] flex items-stretch gap-2 px-3 py-1.5 rounded-full olympus-fs-counter whitespace-nowrap">
-          <div className="flex flex-col items-center px-1">
+        <div className="absolute top-[max(env(safe-area-inset-top),6px)] mt-[52px] left-1/2 -translate-x-1/2 z-[35] flex items-stretch gap-2 px-3 py-1.5 rounded-2xl olympus-fs-counter whitespace-nowrap">
+          <div className="flex flex-col items-center px-1.5">
             <span className="text-[8px] uppercase tracking-widest text-[#FFE0A8]">Spins</span>
-            <span className="font-serif italic font-bold text-base leading-none text-[#ffe9a8] tabular-nums"
+            <span className="font-serif italic font-bold text-lg leading-none text-[#ffe9a8] tabular-nums"
                   style={{ textShadow: '0 0 12px rgba(255,200,40,.8)' }}>
               {(freeSpins.total - freeSpins.remaining)}/{freeSpins.total}
             </span>
           </div>
-          <span className="text-[#FFE0A8]/40">·</span>
-          <div className="flex flex-col items-center px-1">
-            <span className="text-[8px] uppercase tracking-widest text-[#FFE0A8]">Mult</span>
+          <span className="text-[#FFE0A8]/40 self-center">·</span>
+          {/* TOTAL MULTIPLIER — more prominent: brighter when active, springs/
+              pulses when value increases. Real Olympus emphasizes this stat. */}
+          <motion.div
+            className="flex flex-col items-center px-2 rounded-xl"
+            animate={gridMultiplierTotal > 0 ? {
+              scale: [1, 1.08, 1],
+            } : { scale: 1 }}
+            transition={{ duration: 0.6 }}
+            key={gridMultiplierTotal}
+            style={gridMultiplierTotal > 0 ? {
+              background: 'linear-gradient(180deg, rgba(255,200,80,.18), rgba(180,40,40,.08))',
+              boxShadow: '0 0 14px rgba(255,200,40,.4)',
+            } : undefined}
+          >
+            <span className="text-[8px] uppercase tracking-widest text-[#FFE0A8]">Total Mult</span>
             <CountUp
               value={gridMultiplierTotal}
               format={(n) => `${n.toFixed(0)}×`}
-              duration={400}
-              className={`font-serif italic font-bold text-base leading-none tabular-nums ${
-                gridMultiplierTotal > 0 ? 'text-[#fff7d6]' : 'text-[#FFE0A8]/60'
+              duration={350}
+              className={`font-serif italic font-extrabold text-xl leading-none tabular-nums ${
+                gridMultiplierTotal > 0 ? 'text-[#fff7d6]' : 'text-[#FFE0A8]/55'
               }`}
-              style={gridMultiplierTotal > 0 ? { textShadow: '0 0 12px rgba(255,200,40,.95)' } : undefined}
+              style={gridMultiplierTotal > 0 ? {
+                textShadow: '0 0 14px rgba(255,200,40,1), 0 0 24px rgba(255,140,40,.7)',
+              } : undefined}
             />
-          </div>
-          <span className="text-[#FFE0A8]/40">·</span>
-          <div className="flex flex-col items-center px-1">
+          </motion.div>
+          <span className="text-[#FFE0A8]/40 self-center">·</span>
+          <div className="flex flex-col items-center px-1.5">
             <span className="text-[8px] uppercase tracking-widest text-[#FFE0A8]">Won</span>
             <CountUp
               value={freeSpins.running}
               format={fmtCurrency}
-              className="font-serif italic font-bold text-base leading-none text-[#ffe9a8] tabular-nums"
+              className="font-serif italic font-bold text-lg leading-none text-[#ffe9a8] tabular-nums"
               style={{ textShadow: '0 0 12px rgba(255,200,40,.8)' }}
             />
           </div>
@@ -784,7 +799,8 @@ export function ImmersiveSlotView({
           </AnimatePresence>
 
           {/* Win amount popup over each winning cluster (real Olympus parity).
-              Positioned at the centroid of the winning cells. */}
+              Positioned at the centroid of the winning cells. Floats up with
+              gold serif text, fades out as the tumble starts. */}
           <AnimatePresence>
             {clusterPopups.map((p) => (
               <motion.div
@@ -795,20 +811,21 @@ export function ImmersiveSlotView({
                   top: `${liveInsets.top + (p.row + 0.5) * (liveInsets.width / cfg.cols)}%`,
                   transform: 'translate(-50%, -50%)',
                 }}
-                initial={{ scale: 0.3, opacity: 0, y: 8 }}
-                animate={{ scale: [0.3, 1.15, 1], opacity: 1, y: -10 }}
-                exit={{ opacity: 0, y: -22, scale: 0.9 }}
-                transition={{ duration: 0.4, ease: 'easeOut' }}
+                initial={{ scale: 0.2, opacity: 0, y: 12 }}
+                animate={{ scale: [0.2, 1.2, 1], opacity: [0, 1, 1], y: [-2, -16, -22] }}
+                exit={{ opacity: 0, y: -32, scale: 0.85 }}
+                transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
               >
                 <span
-                  className="font-serif italic font-bold text-[#fff7d6] px-2 py-0.5 rounded-md whitespace-nowrap"
+                  className="font-serif italic font-bold whitespace-nowrap leading-none"
                   style={{
-                    fontSize: 'clamp(13px, 3.4vw, 22px)',
-                    background: 'linear-gradient(180deg, rgba(80,40,5,.85), rgba(40,20,2,.9))',
-                    border: '1px solid rgba(255,233,168,.6)',
-                    boxShadow:
-                      'inset 0 1px 0 rgba(255,255,255,.25), 0 0 16px rgba(255,200,40,.55), 0 4px 10px rgba(0,0,0,.5)',
-                    textShadow: '0 0 10px rgba(255,200,40,.85), 0 1px 2px rgba(0,0,0,.6)',
+                    fontSize: 'clamp(14px, 4vw, 26px)',
+                    background: 'linear-gradient(180deg, #FFFFFF 0%, #FFE9A8 35%, #FFC850 65%, #C8932F 100%)',
+                    WebkitBackgroundClip: 'text',
+                    backgroundClip: 'text',
+                    color: 'transparent',
+                    filter: 'drop-shadow(0 0 14px rgba(255,200,40,.95)) drop-shadow(0 2px 4px rgba(0,0,0,.7))',
+                    letterSpacing: '-0.01em',
                   }}
                 >
                   +{fmtCurrency(p.payout)}
