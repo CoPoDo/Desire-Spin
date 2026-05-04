@@ -14,6 +14,7 @@ import {
   rankLabel,
   rankLabel2,
 } from './engine';
+import { fireConfetti } from '../../../lib/confetti';
 
 type Phase = 'idle' | 'hold' | 'done';
 
@@ -77,6 +78,11 @@ export function VideoPokerGame() {
     if (payout > 0) {
       balance.credit(payout);
       sound.play(r.multiplier >= 50 ? 'mega-win' : r.multiplier >= 4 ? 'big-win' : 'win');
+      if (r.multiplier >= 4) {
+        fireConfetti({
+          count: r.multiplier >= 50 ? 130 : 70,
+        });
+      }
     } else {
       sound.play('drop');
     }
