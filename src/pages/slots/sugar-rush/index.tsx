@@ -14,6 +14,12 @@ export function SugarRush() {
       archInsets={{ left: 8, top: 27, width: 84 }}
       // Hot magenta+strawberry FS tint (vs Bonanza's cooler rose).
       freeSpinsTint="linear-gradient(180deg, rgba(200, 30, 130, 0.22) 0%, rgba(160, 60, 180, 0.36) 50%, rgba(60, 10, 80, 0.46) 100%)"
+      // Real Sugar Rush's bonus trigger blasts candy hearts + sprinkles
+      // across the screen with the game name. Default lightning ⚡ glyph
+      // is wrong; use a heart (matching the Pass 8 heart-shaped multipliers)
+      // and the iconic banner.
+      fsTriggerGlyph="❤"
+      fsTriggerTitle="SUGAR RUSH!"
       maxWinLabel="5,000×"
       renderCell={({ symbolId, multiplier }) => {
         if (multiplier !== undefined) {
