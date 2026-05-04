@@ -134,8 +134,10 @@ export function PumpGame() {
           )}
         </div>
 
-        {/* Balloon */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-6 flex items-center justify-center min-h-[220px]">
+        {/* Balloon — container shakes when the balloon pops */}
+        <div
+          className={`rounded-2xl bg-bg-card border border-edge p-6 flex items-center justify-center min-h-[220px] ${round?.popped ? 'shake-medium' : ''}`}
+        >
           <AnimatePresence mode="wait">
             {round?.popped ? (
               <motion.div
