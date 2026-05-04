@@ -65,5 +65,11 @@ export const gatesOfOlympusConfig: SlotConfig = {
     gridClass: 'grid-bg-olympus',
     cellClass: 'cell-olympus',
     stageClass: 'olympus-stage',
+    // Real Gates of Olympus is a tumble slot, mechanically identical to
+    // Sweet Bonanza on spin start: symbols fall down off the grid, new
+    // ones cascade in from above. The Zeus-power flicker added in Pass
+    // 6 (.olympus-scene::before) handles the divine atmosphere — no
+    // need for a per-spin overlay; the 'fall' transition is enough.
+    prespinStyle: 'fall',
   },
 };
