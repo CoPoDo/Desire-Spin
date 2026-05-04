@@ -1138,6 +1138,23 @@ function BigJuanBackdrop() {
           mixBlendMode: 'screen',
         }}
       />
+      {/* Centre spotlight beam — bright gold radial behind the reel area
+       * (the lucha arena's main spotlight on the centre of the ring). */}
+      <div
+        className="absolute pointer-events-none"
+        style={{
+          left: '50%',
+          top: '46%',
+          transform: 'translate(-50%, -50%)',
+          width: '92%',
+          height: '50%',
+          background:
+            'radial-gradient(ellipse at center, rgba(255,209,102,.32) 0%, rgba(255,150,80,.16) 40%, transparent 75%)',
+          filter: 'blur(8px)',
+          mixBlendMode: 'screen',
+        }}
+      />
+
       {/* Crowd silhouettes — dark cheering audience beyond the ring ropes,
        * visible top-bottom of the screen. Two rows of bobbing-head shapes
        * to suggest a packed wrestling arena instead of an empty void. */}
