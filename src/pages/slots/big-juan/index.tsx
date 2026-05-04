@@ -1,13 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGame } from '../../../game-context';
 import { createRng } from '../../../lib/fairness';
 import { fmtCurrency } from '../../../lib/format';
-import { BackIcon, MenuDotsIcon, SoundIcon, SoundMutedIcon } from '../../../components/ui/icons';
-import { FairnessPanel } from '../../../components/fairness/FairnessPanel';
-import { BetHistoryTable } from '../../../components/fairness/BetHistoryTable';
-import { SessionStatsPanel } from '../../../components/SessionStatsPanel';
 import {
   JACKPOTS,
   PAYLINES,
@@ -61,11 +56,10 @@ export function BigJuan() {
   const [paytableOpen, setPaytableOpen] = useState(false);
   const [turbo, setTurbo] = useState(false);
 
-  // Menu / panels
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [statsOpen, setStatsOpen] = useState(false);
-  const [historyOpen, setHistoryOpen] = useState(false);
-  const [fairnessOpen, setFairnessOpen] = useState(false);
+  // Big Juan only owns its game-specific UI state (paytable, autoplay,
+  // bonus, big-win). Sound / Stats / History / Fairness / Settings are
+  // all wired up through SlotPageLayout's shared menu — no duplicate
+  // state needed here.
 
   const aliveRef = useRef(true);
   useEffect(() => {
@@ -73,17 +67,9 @@ export function BigJuan() {
     return () => { aliveRef.current = false; };
   }, []);
 
-  // Lock body scroll for slot pages.
-  useEffect(() => {
-    const prevHtml = document.documentElement.style.overflow;
-    const prevBody = document.body.style.overflow;
-    document.documentElement.style.overflow = 'hidden';
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.documentElement.style.overflow = prevHtml;
-      document.body.style.overflow = prevBody;
-    };
-  }, []);
+  // Body-scroll locking handled by SlotPageLayout (which wraps every slot
+  // in the lobby). Big Juan only mounts inside its <main>, so no need to
+  // duplicate the lock here.
 
   // Cycle through winning lines so the player can see each one
   useEffect(() => {
@@ -263,70 +249,12 @@ export function BigJuan() {
   }, [busy, bonus, balance, buyBonusCost, fairness, sound]);
 
   return (
-    <div
-      className="fixed inset-0 overflow-hidden text-ink flex flex-col big-juan-stage"
-    >
+    <div className="absolute inset-0 overflow-hidden text-ink flex flex-col big-juan-stage">
       {/* Backdrop */}
       <BigJuanBackdrop />
 
-      {/* Top bar */}
-      <header className="absolute top-0 inset-x-0 z-30 flex items-center justify-between gap-2 px-3 pt-[max(env(safe-area-inset-top),8px)] pb-2">
-        <Link
-          to="/"
-          aria-label="Back to lobby"
-          className="flex items-center justify-center w-9 h-9 rounded-full bg-bg-card/80 backdrop-blur-sm border border-edge text-ink-dim hover:text-ink"
-        >
-          <BackIcon size={18} strokeWidth={2.4} />
-        </Link>
-        <div className="flex-1 text-center">
-          <div
-            className="font-display font-extrabold text-base"
-            style={{
-              background: 'linear-gradient(180deg, #ffd166 0%, #ff5560 80%)',
-              WebkitBackgroundClip: 'text',
-              backgroundClip: 'text',
-              color: 'transparent',
-              filter: 'drop-shadow(0 2px 4px rgba(0,0,0,.6))',
-            }}
-          >
-            BIG JUAN
-          </div>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="px-2.5 py-1 rounded-full bg-bg-card/80 backdrop-blur-sm border border-accent/30 flex items-center gap-1.5">
-            <span className="text-[9px] uppercase tracking-widest text-ink-mute">Bal</span>
-            <span className="font-mono font-semibold text-xs text-ink tabular-nums">
-              {fmtCurrency(balance.balance)}
-            </span>
-          </div>
-          <button
-            onClick={() => balance.credit(1000)}
-            aria-label="Add 1,000"
-            className="px-2 py-1 rounded-full bg-accent text-bg text-[10px] font-bold uppercase tracking-wider"
-          >
-            +1k
-          </button>
-          <button
-            aria-label="Turbo"
-            onClick={() => setTurbo((t) => !t)}
-            className="flex items-center justify-center w-9 h-9 rounded-full backdrop-blur-sm border text-base"
-            style={{
-              background: turbo ? 'rgba(31,255,122,.2)' : 'rgba(20,20,30,.6)',
-              borderColor: turbo ? 'rgba(31,255,122,.6)' : 'rgba(255,255,255,.15)',
-              color: turbo ? '#1fff7a' : '#9aa3b2',
-            }}
-          >
-            ⚡
-          </button>
-          <button
-            aria-label="Menu"
-            onClick={() => setMenuOpen((v) => !v)}
-            className="flex items-center justify-center w-9 h-9 rounded-full bg-bg-card/80 backdrop-blur-sm border border-edge text-ink-dim hover:text-ink"
-          >
-            <MenuDotsIcon size={18} strokeWidth={2.4} />
-          </button>
-        </div>
-      </header>
+      {/* Top bar comes from SlotPageLayout (back / balance + refill / menu).
+          Big Juan only owns the in-stage game UI. */}
 
       {/* Reels stage */}
       <main className="flex-1 min-h-0 flex items-center justify-center pt-14 pb-2 px-3 relative">
@@ -477,12 +405,14 @@ export function BigJuan() {
         </AnimatePresence>
       </main>
 
-      {/* Bottom bar */}
-      <footer className="relative z-30 flex items-center justify-between gap-2 px-3 pb-[max(env(safe-area-inset-bottom),8px)] pt-2">
+      {/* Bottom bar — bet | buy | info | SPIN | turbo | auto. Same control
+          set + ordering as ImmersiveSlotView so the lobby feels unified. */}
+      <footer className="relative z-30 flex items-center justify-center gap-1.5 px-3 pb-[max(env(safe-area-inset-bottom),8px)] pt-2">
         <button
           onClick={() => setBetSheetOpen(true)}
           disabled={busy || inFs}
-          className="flex flex-col items-start px-3 py-2 rounded-xl bg-bg-card/80 backdrop-blur-sm border border-edge disabled:opacity-50"
+          className="flex flex-col items-start px-3 py-2 rounded-xl bg-bg-card/80 backdrop-blur-sm border border-edge disabled:opacity-50 flex-shrink-0"
+          aria-label="Bet amount"
         >
           <span className="text-[8px] uppercase tracking-widest text-ink-mute">Bet</span>
           <span className="font-mono font-bold text-sm text-ink tabular-nums">
@@ -493,43 +423,28 @@ export function BigJuan() {
           onClick={() => setBuyBonusConfirm(true)}
           disabled={busy || !!bonus || !!autoplay || balance.balance < buyBonusCost}
           aria-label="Buy bonus"
-          className="flex flex-col items-center px-2 py-1.5 rounded-xl border disabled:opacity-50"
+          className="flex flex-col items-center justify-center w-12 h-12 rounded-xl border disabled:opacity-50 flex-shrink-0"
           style={{
             background: 'linear-gradient(180deg, rgba(255,85,96,.25), rgba(0,0,0,.4))',
             borderColor: 'rgba(255,85,96,.6)',
           }}
         >
-          <span className="text-[8px] uppercase tracking-widest text-[#ff8a8a]">Buy</span>
-          <span className="text-[9px] font-mono font-bold text-[#ff8a8a] tabular-nums">
-            {fmtCurrency(buyBonusCost)}
+          <span className="text-[8px] uppercase tracking-widest text-[#ff8a8a] leading-none">Buy</span>
+          <span className="text-[8px] font-mono font-bold text-[#ff8a8a] tabular-nums leading-none mt-0.5">
+            {bet < 1 ? bet.toFixed(2).replace('0.', '.') : Math.round(bet * 100)}
           </span>
         </button>
         <button
-          onClick={() => {
-            if (autoplay) setAutoplay(null);
-            else setAutoplaySheetOpen(true);
-          }}
-          disabled={busy || !!bonus}
-          aria-label={autoplay ? 'Stop autoplay' : 'Auto-play'}
-          className="flex flex-col items-center px-2 py-1.5 rounded-xl border disabled:opacity-50"
-          style={{
-            background: autoplay
-              ? 'linear-gradient(180deg, rgba(31,255,122,.25), rgba(0,0,0,.4))'
-              : 'rgba(0,0,0,.4)',
-            borderColor: autoplay ? 'rgba(31,255,122,.6)' : 'rgba(255,209,102,.4)',
-          }}
+          onClick={() => setPaytableOpen(true)}
+          aria-label="Pay table"
+          className="flex items-center justify-center w-11 h-11 rounded-full bg-black/40 backdrop-blur-sm border border-[#ffd166]/40 text-[#ffd166] text-base flex-shrink-0"
         >
-          <span className="text-[8px] uppercase tracking-widest" style={{ color: autoplay ? '#9cffa8' : '#ffe0a8' }}>
-            {autoplay ? 'Stop' : 'Auto'}
-          </span>
-          <span className="text-[9px] font-mono font-bold tabular-nums" style={{ color: autoplay ? '#1fff7a' : '#ffd166' }}>
-            {autoplay ? `${autoplay.remaining}` : '...'}
-          </span>
+          ⓘ
         </button>
         <button
           onClick={() => spin()}
           disabled={busy || !!bonus || balance.balance < bet || bet <= 0}
-          className="flex-1 max-w-[160px] mx-auto py-3.5 rounded-2xl font-display font-extrabold text-base uppercase tracking-wider transition active:scale-[0.99]"
+          className="flex-shrink-0 w-[88px] h-[60px] rounded-2xl font-display font-extrabold text-sm uppercase tracking-wider transition active:scale-[0.99]"
           style={{
             background: 'linear-gradient(180deg, #ffd166 0%, #c8932e 60%, #5a3a04 100%)',
             color: '#1a0a04',
@@ -540,18 +455,60 @@ export function BigJuan() {
                 : '0 0 24px rgba(255,209,102,.65), 0 4px 14px rgba(0,0,0,.5)',
           }}
         >
-          {busy ? 'Spinning…' : 'Spin'}
+          {busy ? '…' : 'Spin'}
         </button>
-        <div className="flex flex-col items-end px-3 py-2 rounded-xl bg-bg-card/80 backdrop-blur-sm border border-edge min-w-[88px]">
-          <span className="text-[8px] uppercase tracking-widest text-ink-mute">Last win</span>
-          <span
-            className="font-mono font-bold text-sm tabular-nums"
-            style={{ color: lastResult && lastResult.totalMultiplier > 0 ? '#ffd166' : '#9aa3b2' }}
-          >
-            {lastResult ? fmtCurrency(bet * lastResult.totalMultiplier) : '—'}
+        <button
+          aria-label="Turbo"
+          onClick={() => setTurbo((t) => !t)}
+          className="flex items-center justify-center w-11 h-11 rounded-full backdrop-blur-sm border text-base flex-shrink-0"
+          style={{
+            background: turbo ? 'rgba(31,255,122,.2)' : 'rgba(20,20,30,.6)',
+            borderColor: turbo ? 'rgba(31,255,122,.6)' : 'rgba(255,255,255,.15)',
+            color: turbo ? '#1fff7a' : '#9aa3b2',
+          }}
+        >
+          ⚡
+        </button>
+        <button
+          onClick={() => {
+            if (autoplay) setAutoplay(null);
+            else setAutoplaySheetOpen(true);
+          }}
+          disabled={busy || !!bonus}
+          aria-label={autoplay ? 'Stop autoplay' : 'Auto-play'}
+          className="flex flex-col items-center justify-center w-12 h-12 rounded-xl border disabled:opacity-50 flex-shrink-0"
+          style={{
+            background: autoplay
+              ? 'linear-gradient(180deg, rgba(31,255,122,.25), rgba(0,0,0,.4))'
+              : 'rgba(0,0,0,.4)',
+            borderColor: autoplay ? 'rgba(31,255,122,.6)' : 'rgba(255,209,102,.4)',
+          }}
+        >
+          <span className="text-[8px] uppercase tracking-widest leading-none" style={{ color: autoplay ? '#9cffa8' : '#ffe0a8' }}>
+            {autoplay ? 'Stop' : 'Auto'}
           </span>
-        </div>
+          <span className="text-[9px] font-mono font-bold tabular-nums leading-none mt-0.5" style={{ color: autoplay ? '#1fff7a' : '#ffd166' }}>
+            {autoplay ? `${autoplay.remaining}` : '∞'}
+          </span>
+        </button>
       </footer>
+
+      {/* Last-win status pill — small badge above the footer (overlay so it
+          doesn't push other rows around). */}
+      {lastResult && lastResult.totalMultiplier > 0 && (
+        <div
+          className="absolute z-20 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[11px] font-mono font-bold tabular-nums pointer-events-none"
+          style={{
+            bottom: '76px',
+            background: 'rgba(0,0,0,.6)',
+            border: '1px solid rgba(255,209,102,.55)',
+            color: '#ffd166',
+            textShadow: '0 0 6px rgba(0,0,0,.85)',
+          }}
+        >
+          Last win {fmtCurrency(bet * lastResult.totalMultiplier)}
+        </div>
+      )}
 
       {/* Bet sheet */}
       <AnimatePresence>
@@ -594,67 +551,10 @@ export function BigJuan() {
         )}
       </AnimatePresence>
 
-      {/* Menu sheet */}
-      {menuOpen && (
-        <>
-          <button
-            aria-label="Close menu"
-            onClick={() => setMenuOpen(false)}
-            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
-          />
-          <div className="fixed top-14 right-3 z-50 w-56 rounded-2xl bg-bg-card border border-edge shadow-2xl overflow-hidden">
-            <button
-              onClick={() => sound.setEnabled(!sound.enabled)}
-              className="w-full flex items-center justify-between px-4 py-3 text-sm hover:bg-bg-hover"
-            >
-              <span className="flex items-center gap-2">
-                {sound.enabled ? <SoundIcon size={16} /> : <SoundMutedIcon size={16} />}
-                Sound
-              </span>
-              <span className="text-ink-dim">{sound.enabled ? 'On' : 'Off'}</span>
-            </button>
-            <button
-              onClick={() => { setPaytableOpen(true); setMenuOpen(false); }}
-              className="w-full flex items-center justify-between px-4 py-3 text-sm hover:bg-bg-hover border-t border-edge"
-            >
-              <span>Pay table</span>
-              <span className="text-ink-dim">›</span>
-            </button>
-            <button
-              onClick={() => { setStatsOpen(true); setMenuOpen(false); }}
-              className="w-full flex items-center justify-between px-4 py-3 text-sm hover:bg-bg-hover border-t border-edge"
-            >
-              <span>Session stats</span>
-              <span className="text-ink-dim">›</span>
-            </button>
-            <button
-              onClick={() => { setHistoryOpen(true); setMenuOpen(false); }}
-              className="w-full flex items-center justify-between px-4 py-3 text-sm hover:bg-bg-hover border-t border-edge"
-            >
-              <span>Bet history</span>
-              <span className="text-ink-dim">›</span>
-            </button>
-            <button
-              onClick={() => { setFairnessOpen(true); setMenuOpen(false); }}
-              className="w-full flex items-center justify-between px-4 py-3 text-sm hover:bg-bg-hover border-t border-edge"
-            >
-              <span>Fairness</span>
-              <span className="text-ink-dim">›</span>
-            </button>
-            <Link
-              to="/"
-              onClick={() => setMenuOpen(false)}
-              className="block w-full px-4 py-3 text-sm hover:bg-bg-hover border-t border-edge"
-            >
-              <span>Back to lobby</span>
-            </Link>
-          </div>
-        </>
-      )}
-
-      <FairnessPanel open={fairnessOpen} onClose={() => setFairnessOpen(false)} />
-      <BetHistoryTable open={historyOpen} onClose={() => setHistoryOpen(false)} />
-      <SessionStatsPanel open={statsOpen} onClose={() => setStatsOpen(false)} />
+      {/* Sound toggle / Stats / History / Fairness / Back-to-lobby live in
+          SlotPageLayout's shared menu (consistent across every slot in the
+          lobby). The pay-table button below opens the Big-Juan-specific
+          modal below. */}
 
       {/* Bonus respins overlay */}
       <AnimatePresence>
