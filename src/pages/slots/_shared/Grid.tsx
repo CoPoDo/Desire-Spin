@@ -15,16 +15,23 @@ export function Grid({
   winning,
   newKeys,
   renderCell,
+  bare = false,
 }: {
   grid: TGrid;
   cfg: SlotConfig;
   winning: Set<string>;
   newKeys: Set<string>;
   renderCell: CellRenderer;
+  /** When true, omit the grid background/border (caller provides chrome). */
+  bare?: boolean;
 }) {
   return (
     <div
-      className={`relative rounded-2xl p-2 sm:p-3 border border-white/5 ${cfg.theme.gridClass}`}
+      className={
+        bare
+          ? 'relative'
+          : `relative rounded-2xl p-2 sm:p-3 border border-white/5 ${cfg.theme.gridClass}`
+      }
       style={{
         display: 'grid',
         gridTemplateColumns: `repeat(${cfg.cols}, minmax(0, 1fr))`,

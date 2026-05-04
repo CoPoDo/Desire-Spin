@@ -289,9 +289,53 @@ export function SlotShell({ cfg, renderCell, initialGrid }: SlotShellProps) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
-        <div className="relative">
-          <Grid grid={grid} cfg={cfg} winning={winning} newKeys={newKeys} renderCell={renderCell} />
+      <div className={
+        cfg.theme.stageClass === 'olympus-stage'
+          ? 'grid grid-cols-1 lg:grid-cols-[minmax(280px,460px)_1fr] gap-6 justify-items-center lg:justify-items-stretch'
+          : 'grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4'
+      }>
+        <div className="relative w-full max-w-[480px] lg:max-w-none">
+          {cfg.theme.stageClass === 'olympus-stage' ? (
+            // Painted Olympus scene with the reels positioned inside the arch.
+            <div className="olympus-scene">
+              <div className="olympus-arch-grid">
+                <Grid grid={grid} cfg={cfg} winning={winning} newKeys={newKeys} renderCell={renderCell} bare />
+              </div>
+
+              <AnimatePresence>
+                {bigWin && (
+                  <motion.div
+                    className="absolute inset-0 flex items-center justify-center pointer-events-none z-20"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                  >
+                    <motion.div
+                      className="text-center"
+                      initial={{ scale: 0.6, rotate: -3 }}
+                      animate={{ scale: 1, rotate: 0 }}
+                      transition={{ type: 'spring', stiffness: 200, damping: 14 }}
+                      onAnimationComplete={() => setTimeout(() => setBigWin(null), 1800)}
+                    >
+                      <div className="font-serif italic font-bold text-4xl md:text-6xl olympus-fs-title">
+                        {bigWin.multiplier >= 100
+                          ? 'MEGA WIN'
+                          : bigWin.multiplier >= 50
+                            ? 'BIG WIN'
+                            : 'NICE WIN'}
+                      </div>
+                      <div className="text-xl md:text-3xl mt-2 font-mono text-[#ffe9a8]"
+                           style={{ textShadow: '0 0 18px rgba(255,200,40,.8), 0 2px 4px rgba(0,0,0,.6)' }}>
+                        {fmtCurrency(bigWin.payout)}
+                      </div>
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          ) : (
+            <Grid grid={grid} cfg={cfg} winning={winning} newKeys={newKeys} renderCell={renderCell} />
+          )}
 
           <AnimatePresence>
             {floatingMults.map((m) => (
@@ -306,43 +350,45 @@ export function SlotShell({ cfg, renderCell, initialGrid }: SlotShellProps) {
             ))}
           </AnimatePresence>
 
-          <div className="mt-2 flex items-center justify-between text-xs text-ink-dim">
+          <div className="mt-2 flex items-center justify-between text-xs text-ink-dim w-full">
             <span>Last win: <span className="font-mono text-ink">{fmtCurrency(winTotal)}</span></span>
             <span>Balance: <span className="font-mono text-ink">{fmtCurrency(balance.balance)}</span></span>
           </div>
 
-          <AnimatePresence>
-            {bigWin && (
-              <motion.div
-                className="absolute inset-0 flex items-center justify-center pointer-events-none"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-              >
+          {cfg.theme.stageClass !== 'olympus-stage' && (
+            <AnimatePresence>
+              {bigWin && (
                 <motion.div
-                  className="font-display font-extrabold text-center"
-                  initial={{ scale: 0.6 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: 'spring' }}
-                  onAnimationComplete={() => setTimeout(() => setBigWin(null), 1800)}
+                  className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
                 >
-                  <div
-                    className="text-5xl md:text-7xl"
-                    style={{ color: cfg.theme.accent, textShadow: `0 0 30px ${cfg.theme.glow}` }}
+                  <motion.div
+                    className="font-display font-extrabold text-center"
+                    initial={{ scale: 0.6 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: 'spring' }}
+                    onAnimationComplete={() => setTimeout(() => setBigWin(null), 1800)}
                   >
-                    {bigWin.multiplier >= 100
-                      ? 'MEGA WIN'
-                      : bigWin.multiplier >= 50
-                        ? 'BIG WIN'
-                        : 'NICE WIN'}
-                  </div>
-                  <div className="text-2xl md:text-4xl mt-2 font-mono">
-                    {fmtCurrency(bigWin.payout)}
-                  </div>
+                    <div
+                      className="text-5xl md:text-7xl"
+                      style={{ color: cfg.theme.accent, textShadow: `0 0 30px ${cfg.theme.glow}` }}
+                    >
+                      {bigWin.multiplier >= 100
+                        ? 'MEGA WIN'
+                        : bigWin.multiplier >= 50
+                          ? 'BIG WIN'
+                          : 'NICE WIN'}
+                    </div>
+                    <div className="text-2xl md:text-4xl mt-2 font-mono">
+                      {fmtCurrency(bigWin.payout)}
+                    </div>
+                  </motion.div>
                 </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+              )}
+            </AnimatePresence>
+          )}
         </div>
 
         <BetControls

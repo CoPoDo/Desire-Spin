@@ -92,47 +92,75 @@
    OLYMPUS — high-fidelity theme
    ========================================================================== */
 
-/* Atmospheric backdrop wraps the whole game view. */
+/* The Olympus stage uses a painted Zeus/arch image as the entire backdrop.
+   The reel grid is positioned absolutely inside the dark archway opening of
+   the image. To swap in a different image, replace `/public/olympus-bg.png`. */
 .olympus-stage {
   position: relative;
   isolation: isolate;
+  border-radius: 18px;
 }
-.olympus-stage::before {
-  content: '';
-  position: absolute;
-  inset: -20px;
-  pointer-events: none;
-  background-image:
-    radial-gradient(2px 2px at 18% 22%, rgba(255, 233, 168, 0.6), transparent 60%),
-    radial-gradient(1.5px 1.5px at 82% 18%, rgba(255, 233, 168, 0.45), transparent 60%),
-    radial-gradient(1px 1px at 35% 78%, rgba(255, 233, 168, 0.55), transparent 60%),
-    radial-gradient(1.2px 1.2px at 75% 65%, rgba(255, 233, 168, 0.45), transparent 60%),
-    radial-gradient(1.8px 1.8px at 12% 60%, rgba(212, 181, 245, 0.5), transparent 60%),
-    radial-gradient(1px 1px at 92% 35%, rgba(212, 181, 245, 0.5), transparent 60%),
-    radial-gradient(1.4px 1.4px at 45% 8%, rgba(255, 233, 168, 0.55), transparent 60%),
-    radial-gradient(1px 1px at 60% 92%, rgba(212, 181, 245, 0.45), transparent 60%);
-  opacity: 0.7;
-  animation: olympusStars 12s ease-in-out infinite;
-  border-radius: 24px;
-  z-index: 0;
+
+/* Painted scene wrapper — preserves the image's portrait aspect ratio. */
+.olympus-scene {
+  position: relative;
+  width: 100%;
+  /* Image native is 941 × 1672 → ~0.563 aspect (portrait) */
+  aspect-ratio: 941 / 1672;
+  background-image: url('/olympus-bg.png');
+  background-size: cover;
+  background-position: center;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 1px rgba(120, 80, 30, 0.4),
+    0 24px 60px rgba(0, 0, 0, 0.7),
+    0 0 36px rgba(255, 180, 40, 0.22);
 }
-.olympus-stage::after {
+
+/* Twinkling stars layered on top of the painted scene for animated depth. */
+.olympus-scene::after {
   content: '';
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background:
-    radial-gradient(60% 30% at 50% 0%, rgba(255, 198, 42, 0.06), transparent 70%);
-  z-index: 0;
-  border-radius: 24px;
-}
-.olympus-stage > * {
-  position: relative;
-  z-index: 1;
+  background-image:
+    radial-gradient(2px 2px at 22% 14%, rgba(255, 233, 168, 0.6), transparent 60%),
+    radial-gradient(1.4px 1.4px at 78% 12%, rgba(255, 233, 168, 0.5), transparent 60%),
+    radial-gradient(1px 1px at 12% 18%, rgba(255, 233, 168, 0.55), transparent 60%),
+    radial-gradient(1.6px 1.6px at 88% 22%, rgba(212, 181, 245, 0.5), transparent 60%);
+  opacity: 0.7;
+  animation: olympusStars 8s ease-in-out infinite;
+  mix-blend-mode: screen;
 }
 @keyframes olympusStars {
-  0%, 100% { opacity: 0.55; }
-  50% { opacity: 0.85; }
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.9; }
+}
+
+/* The reel grid sits inside the archway opening. The image's arch interior
+   roughly spans:
+     horizontal: 19% → 83% (center 51%, width 64%)
+     vertical:   31% → 88% (center 59.5%, height 57%)
+   Sizing the 6×5 grid to ~58% width (≈ 1.2:1 ratio → ~32% height) keeps a
+   little breathing room inside the carved frame. */
+.olympus-arch-grid {
+  position: absolute;
+  left: 21%;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 58%;
+}
+
+/* Inner glow that makes the grid feel like it's lit from within the arch. */
+.olympus-arch-grid::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  background: radial-gradient(60% 60% at 50% 50%, rgba(255, 198, 42, 0.18), transparent 70%);
+  pointer-events: none;
+  z-index: -1;
+  filter: blur(8px);
 }
 
 /* Cell well — dark with bronze rim, inner top-light. */
