@@ -183,6 +183,33 @@ export function PharaohScene() {
         }}
       />
 
+      {/* Drifting sand particles — small warm-amber specks blowing across
+       * the desert from right to left. Adds wind / atmosphere to a scene
+       * that was static otherwise. */}
+      {[
+        { top: '52%', size: 2,   dur: 18, delay: 0,    color: '#ffd166' },
+        { top: '58%', size: 1.4, dur: 22, delay: 2.4,  color: '#ffae50' },
+        { top: '65%', size: 2.2, dur: 16, delay: 4.8,  color: '#fff5c4' },
+        { top: '72%', size: 1.6, dur: 20, delay: 1.2,  color: '#ffd166' },
+        { top: '78%', size: 2,   dur: 24, delay: 3.6,  color: '#c8932e' },
+        { top: '84%', size: 1.4, dur: 18, delay: 5.6,  color: '#fff5c4' },
+      ].map((p, i) => (
+        <div
+          key={i}
+          className="absolute rounded-full"
+          style={{
+            top: p.top,
+            right: 0,
+            width: `${p.size}px`,
+            height: `${p.size}px`,
+            background: p.color,
+            boxShadow: `0 0 4px ${p.color}aa`,
+            animation: `pharaohSandDrift ${p.dur}s linear ${p.delay}s infinite`,
+            mixBlendMode: 'screen',
+          }}
+        />
+      ))}
+
       {/* 5. Hieroglyph border bands at top */}
       <div
         className="absolute inset-x-0 select-none flex items-center justify-around"

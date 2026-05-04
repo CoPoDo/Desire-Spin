@@ -1145,6 +1145,14 @@
   100% { transform: translate(-12px, 110%) rotate(720deg); opacity: 0; }
 }
 
+/* Pharaoh's Gold — warm sand drifting across the desert (right → left) */
+@keyframes pharaohSandDrift {
+  0%   { transform: translate(110vw, 0); opacity: 0; }
+  10%  { opacity: 0.7; }
+  90%  { opacity: 0.7; }
+  100% { transform: translate(-10vw, -8px); opacity: 0; }
+}
+
 /* Sweet Bonanza symbol container — vibrant drop-shadow for the candy palette.
  * Larger than Olympus's 78% so the saturated fruits dominate the cell, matching
  * real Sweet Bonanza's punchy filled-cell look. */
