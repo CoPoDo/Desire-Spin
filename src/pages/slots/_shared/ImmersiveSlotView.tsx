@@ -548,7 +548,7 @@ export function ImmersiveSlotView({
           on-grid multiplier total (sum of all visible orbs), and total won.
           Real-Olympus parity. */}
       {inFree && freeSpins && (
-        <div className="absolute top-12 left-1/2 -translate-x-1/2 z-30 flex items-stretch gap-2 px-3 py-1.5 rounded-full olympus-fs-counter whitespace-nowrap">
+        <div className="absolute top-[max(env(safe-area-inset-top),6px)] mt-[52px] left-1/2 -translate-x-1/2 z-[35] flex items-stretch gap-2 px-3 py-1.5 rounded-full olympus-fs-counter whitespace-nowrap">
           <div className="flex flex-col items-center px-1">
             <span className="text-[8px] uppercase tracking-widest text-[#FFE0A8]">Spins</span>
             <span className="font-serif italic font-bold text-base leading-none text-[#ffe9a8] tabular-nums"
