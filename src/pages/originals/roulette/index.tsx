@@ -130,9 +130,12 @@ export function RouletteGame() {
               <motion.div key="spin" className="text-center">
                 <div className="text-[10px] uppercase tracking-widest text-ink-mute">Spinning</div>
                 {/* Wheel hub with an off-centre ball orbiting around it.
-                 *  The hub is a dark green felt circle (real roulette
-                 *  layout). The ball is positioned at 50% top, then the
-                 *  whole container rotates so the ball appears to orbit. */}
+                 *  Real roulette wheels DECELERATE over the last second
+                 *  before the ball drops into a pocket — the previous
+                 *  infinite-linear spin felt arcade-y. Now ramps from
+                 *  0 to ~5.25 revolutions over 2.4s using ease-out
+                 *  quintic so the wheel kicks off fast and settles
+                 *  gently into the result reveal that fires at 2.4s. */}
                 <motion.div
                   className="mt-2 relative inline-block w-16 h-16 rounded-full"
                   style={{
@@ -140,8 +143,9 @@ export function RouletteGame() {
                     border: '2px solid #2a3142',
                     boxShadow: 'inset 0 0 12px rgba(0,0,0,.6), 0 4px 8px rgba(0,0,0,.4)',
                   }}
-                  animate={{ rotate: 360 }}
-                  transition={{ repeat: Infinity, ease: 'linear', duration: 0.6 }}
+                  initial={{ rotate: 0 }}
+                  animate={{ rotate: 360 * 5 + 90 }}
+                  transition={{ duration: 2.4, ease: [0.22, 1, 0.36, 1] }}
                 >
                   {/* Orbiting ball */}
                   <span
