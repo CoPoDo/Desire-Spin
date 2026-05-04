@@ -2114,7 +2114,15 @@ export function ImmersiveSlotView({
             transition={{ duration: 0.4 }}
           >
             <motion.div
-              className="font-serif italic font-bold olympus-fs-title text-4xl md:text-6xl mb-2"
+              className="font-serif italic font-bold text-4xl md:text-6xl mb-2"
+              style={{
+                background: `linear-gradient(180deg, #ffffff 0%, #fff5dc 30%, ${cfg.theme.accent} 65%, rgba(0,0,0,.55) 100%)`,
+                WebkitBackgroundClip: 'text',
+                backgroundClip: 'text',
+                color: 'transparent',
+                filter: `drop-shadow(0 0 24px ${cfg.theme.glow}) drop-shadow(0 4px 8px rgba(0,0,0,.6))`,
+                letterSpacing: '-0.02em',
+              }}
               initial={{ scale: 0.4, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               transition={{ type: 'spring', stiffness: 220, damping: 16 }}
@@ -2138,7 +2146,15 @@ export function ImmersiveSlotView({
               Max Win
             </motion.div>
             <motion.div
-              className="font-serif italic font-bold olympus-fs-title text-3xl md:text-5xl"
+              className="font-serif italic font-bold text-3xl md:text-5xl"
+              style={{
+                background: `linear-gradient(180deg, #ffffff 0%, #fff5dc 30%, ${cfg.theme.accent} 65%, rgba(0,0,0,.55) 100%)`,
+                WebkitBackgroundClip: 'text',
+                backgroundClip: 'text',
+                color: 'transparent',
+                filter: `drop-shadow(0 0 24px ${cfg.theme.glow}) drop-shadow(0 4px 8px rgba(0,0,0,.6))`,
+                letterSpacing: '-0.02em',
+              }}
               initial={{ scale: 0.5, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.5, type: 'spring', stiffness: 220, damping: 14 }}
