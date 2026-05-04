@@ -82,19 +82,31 @@ export function WolfScene() {
         <path d="M0,50 L0,30 L10,30 L10,18 L26,18 L26,30 L46,30 L46,22 L66,22 L66,30 L82,30 L82,16 L96,16 L96,30 L100,30 L100,50 Z" fill="url(#wf-mesa-far)" />
         {/* Foreground ridge */}
         <path d="M0,50 L0,42 Q14,40 28,42 Q44,44 60,42 Q76,40 92,44 L100,42 L100,50 Z" fill="url(#wf-near)" />
-        {/* Howling wolf silhouette on ridge (left of centre) */}
-        <g transform="translate(28 38)">
-          {/* Body */}
-          <ellipse cx="0" cy="3" rx="3" ry="1.6" fill="#02010a" />
-          {/* Legs */}
-          <line x1="-2" y1="4" x2="-2" y2="6" stroke="#02010a" strokeWidth=".8" />
-          <line x1="2" y1="4" x2="2" y2="6" stroke="#02010a" strokeWidth=".8" />
-          {/* Head + neck (raised, howling) */}
-          <path d="M2 2 L 4 -3 L 5.5 -2 L 6 0 L 4 1 L 3 3 Z" fill="#02010a" />
+        {/* Howling wolf silhouette on the ridge — sized so it reads at
+         * any reasonable viewport. Sits in the moonlight beam. */}
+        <g transform="translate(40 32) scale(2.6)">
+          {/* Hindquarters */}
+          <ellipse cx="-3" cy="3" rx="2.6" ry="1.6" fill="#02010a" />
+          {/* Front body */}
+          <ellipse cx="0" cy="2" rx="2.2" ry="1.4" fill="#02010a" />
+          {/* Back ridge */}
+          <path d="M -5 2.6 Q -3 1.2 0 1.5 Q 2 1 3 -1" stroke="#02010a" strokeWidth=".5" fill="none" />
+          {/* Front legs */}
+          <line x1="-1" y1="3" x2="-1" y2="6" stroke="#02010a" strokeWidth=".7" />
+          <line x1="1" y1="3" x2="1" y2="6" stroke="#02010a" strokeWidth=".7" />
+          {/* Back legs */}
+          <line x1="-4" y1="3.8" x2="-4" y2="6" stroke="#02010a" strokeWidth=".7" />
+          <line x1="-2.5" y1="3.8" x2="-2.5" y2="6" stroke="#02010a" strokeWidth=".7" />
+          {/* Neck (raised toward the moon) */}
+          <path d="M 1.5 1 L 2.6 -2.5 L 4 -2 L 3.4 1 Z" fill="#02010a" />
+          {/* Snout (head pointing up & back, like a real howling pose) */}
+          <path d="M 2.6 -2.5 L 4 -3.5 L 4.4 -2.8 L 3.4 -1.6 Z" fill="#02010a" />
           {/* Ear */}
-          <path d="M3 -2 L 4 -4 L 5 -3 Z" fill="#02010a" />
-          {/* Tail */}
-          <path d="M-3 2 Q -4 0 -5 1" stroke="#02010a" strokeWidth=".8" fill="none" />
+          <path d="M 3 -3 L 3.4 -4.4 L 4 -3.6 Z" fill="#02010a" />
+          {/* Tail (curved up) */}
+          <path d="M -5 2.4 Q -7 1.5 -7 -0.4 Q -6 0.4 -5.5 1.6" stroke="#02010a" strokeWidth=".7" fill="none" strokeLinecap="round" />
+          {/* Subtle moon-glow rim along back */}
+          <path d="M -5 2.6 Q -3 1.2 0 1.5 Q 2 1 3 -1" stroke="rgba(220,200,255,.45)" strokeWidth=".2" fill="none" />
         </g>
       </svg>
 
