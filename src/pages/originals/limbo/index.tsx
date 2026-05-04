@@ -15,6 +15,7 @@ import {
 } from '../_shared/AutoBetController';
 import { play, winChanceFor } from './engine';
 import { CountUp } from '../../../components/ui/CountUp';
+import { fireConfetti } from '../../../lib/confetti';
 
 export function LimboGame() {
   const { balance, fairness, sound, history, session } = useGame();
@@ -49,6 +50,12 @@ export function LimboGame() {
       if (r.win) {
         balance.credit(r.payout);
         sound.play(t >= 10 ? 'mega-win' : t >= 3 ? 'big-win' : 'win');
+        if (t >= 3) {
+          fireConfetti({
+            count: t >= 50 ? 130 : t >= 10 ? 80 : 50,
+            colors: ['#1fff7a', '#22d3ee', '#ffd166', '#ffffff'],
+          });
+        }
       } else {
         sound.play('drop');
       }
