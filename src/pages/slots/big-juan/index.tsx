@@ -1138,7 +1138,46 @@ function BigJuanBackdrop() {
           mixBlendMode: 'screen',
         }}
       />
-      {/* Wrestling ring ropes (top + bottom) */}
+      {/* Crowd silhouettes — dark cheering audience beyond the ring ropes,
+       * visible top-bottom of the screen. Two rows of bobbing-head shapes
+       * to suggest a packed wrestling arena instead of an empty void. */}
+      <svg
+        className="absolute inset-x-0"
+        style={{ top: '14%', height: '6%', width: '100%', opacity: 0.55 }}
+        viewBox="0 0 100 6"
+        preserveAspectRatio="none"
+      >
+        <path
+          d="M 0,6
+             L 0,4 Q 2,2.5 4,4 Q 6,2 8,4 Q 10,1.8 12,4 Q 14,2.4 16,4 Q 18,2 20,4
+             Q 22,2.6 24,4 Q 26,2.2 28,4 Q 30,2.8 32,4 Q 34,2 36,4 Q 38,2.4 40,4
+             Q 42,2 44,4 Q 46,2.6 48,4 Q 50,1.8 52,4 Q 54,2.2 56,4 Q 58,2.8 60,4
+             Q 62,2 64,4 Q 66,2.4 68,4 Q 70,2.6 72,4 Q 74,2 76,4 Q 78,2.8 80,4
+             Q 82,2.2 84,4 Q 86,2 88,4 Q 90,2.6 92,4 Q 94,2.4 96,4 Q 98,2 100,4
+             L 100,6 Z"
+          fill="#02010a"
+        />
+      </svg>
+      <svg
+        className="absolute inset-x-0"
+        style={{ bottom: '12%', height: '6%', width: '100%', opacity: 0.55 }}
+        viewBox="0 0 100 6"
+        preserveAspectRatio="none"
+      >
+        <path
+          d="M 0,6
+             L 0,4 Q 2,2 4,4 Q 6,2.6 8,4 Q 10,2.2 12,4 Q 14,2.8 16,4 Q 18,2.4 20,4
+             Q 22,2 24,4 Q 26,2.6 28,4 Q 30,2.2 32,4 Q 34,2.8 36,4 Q 38,2 40,4
+             Q 42,2.4 44,4 Q 46,2 48,4 Q 50,2.8 52,4 Q 54,2.2 56,4 Q 58,2.6 60,4
+             Q 62,2.4 64,4 Q 66,2 68,4 Q 70,2.8 72,4 Q 74,2.2 76,4 Q 78,2.6 80,4
+             Q 82,2 84,4 Q 86,2.8 88,4 Q 90,2.4 92,4 Q 94,2 96,4 Q 98,2.6 100,4
+             L 100,6 Z"
+          fill="#02010a"
+        />
+      </svg>
+
+      {/* Wrestling ring ropes (top + bottom) — sit just inside the crowd
+       * silhouettes so they read as the front rope of the squared circle */}
       <div
         className="absolute inset-x-0"
         style={{
@@ -1146,7 +1185,7 @@ function BigJuanBackdrop() {
           height: '4px',
           background: 'linear-gradient(180deg, #ffd166, #c8932e)',
           boxShadow: '0 0 8px rgba(255,209,102,.5)',
-          opacity: .65,
+          opacity: .8,
         }}
       />
       <div
@@ -1156,7 +1195,44 @@ function BigJuanBackdrop() {
           height: '4px',
           background: 'linear-gradient(180deg, #ffd166, #c8932e)',
           boxShadow: '0 0 8px rgba(255,209,102,.5)',
-          opacity: .65,
+          opacity: .8,
+        }}
+      />
+      {/* Turnbuckles (red/yellow padding at the corners of the ring) */}
+      <div
+        className="absolute"
+        style={{
+          top: '13.4%', left: 0, width: '5%', height: '1.6%',
+          background: 'linear-gradient(180deg, #ff5560, #c8102e)',
+          borderRadius: '0 4px 4px 0',
+          boxShadow: '0 0 6px rgba(255,85,96,.6)',
+        }}
+      />
+      <div
+        className="absolute"
+        style={{
+          top: '13.4%', right: 0, width: '5%', height: '1.6%',
+          background: 'linear-gradient(180deg, #ff5560, #c8102e)',
+          borderRadius: '4px 0 0 4px',
+          boxShadow: '0 0 6px rgba(255,85,96,.6)',
+        }}
+      />
+      <div
+        className="absolute"
+        style={{
+          bottom: '11.4%', left: 0, width: '5%', height: '1.6%',
+          background: 'linear-gradient(180deg, #ffd166, #c8932e)',
+          borderRadius: '0 4px 4px 0',
+          boxShadow: '0 0 6px rgba(255,209,102,.6)',
+        }}
+      />
+      <div
+        className="absolute"
+        style={{
+          bottom: '11.4%', right: 0, width: '5%', height: '1.6%',
+          background: 'linear-gradient(180deg, #ffd166, #c8932e)',
+          borderRadius: '4px 0 0 4px',
+          boxShadow: '0 0 6px rgba(255,209,102,.6)',
         }}
       />
       {/* Papel picado bunting at top */}
