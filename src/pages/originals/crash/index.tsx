@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
 import { useGame } from '../../../game-context';
 import { createRng } from '../../../lib/fairness';
-import { fmtCurrency, fmtMultiplier } from '../../../lib/format';
+import { fmtCurrency } from '../../../lib/format';
 import { BetInput } from '../_shared/BetInput';
 import { multiplierAt, rollBust, timeForMultiplier } from './engine';
 
