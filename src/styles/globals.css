@@ -1328,6 +1328,17 @@
   100% { transform: translate(110vw, -8px) rotate(720deg); opacity: 0; }
 }
 
+/* Bonanza candy-castle window flicker — candles inside each turret
+ * window catch slight draughts. Same pattern as Cantina/Wanted but
+ * with smaller alpha range so the castle stays subtle behind the grid. */
+@keyframes bonanzaCastleFlicker {
+  0%, 100% { fill-opacity: 0.6; }
+  20%      { fill-opacity: 0.45; }
+  45%      { fill-opacity: 0.75; }
+  68%      { fill-opacity: 0.55; }
+  85%      { fill-opacity: 0.7;  }
+}
+
 /* Tier-scaled lightning bolt flash (ported from House Edge gates). Each
  * bolt fades up to 1, holds bright for ~25%, dims and lingers, then
  * clears. The 0% start at opacity:0 + forwards on the animation lets

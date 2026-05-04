@@ -144,16 +144,49 @@ export function BonanzaScene() {
           stroke="rgba(255,255,255,.18)"
           strokeWidth=".1"
         />
-        {/* Lit windows (warm orange dots, two rows) */}
+        {/* Lit windows (warm orange dots, two rows) — each candle/lamp
+         *  inside the candy castle flickers independently with a tiny
+         *  pseudo-random delay so the castle reads as inhabited rather
+         *  than printed. */}
         {[40, 44, 56, 60].map((x, i) => (
-          <rect key={`w1-${i}`} x={x - 0.5} y="9" width="1" height="1.4" fill="rgba(255,200,80,.6)" />
+          <rect
+            key={`w1-${i}`}
+            x={x - 0.5}
+            y="9"
+            width="1"
+            height="1.4"
+            fill="rgba(255,200,80,.6)"
+            style={{
+              animation: `bonanzaCastleFlicker 2.2s ease-in-out infinite`,
+              animationDelay: `${(i * 7) % 19 / 10}s`,
+            }}
+          />
         ))}
         {[48.5, 51.5].map((x, i) => (
-          <rect key={`w2-${i}`} x={x - 0.4} y="6" width=".8" height="1.2" fill="rgba(255,200,80,.55)" />
+          <rect
+            key={`w2-${i}`}
+            x={x - 0.4}
+            y="6"
+            width=".8"
+            height="1.2"
+            fill="rgba(255,200,80,.55)"
+            style={{
+              animation: `bonanzaCastleFlicker 2.5s ease-in-out infinite`,
+              animationDelay: `${(i * 11 + 3) % 17 / 10}s`,
+            }}
+          />
         ))}
         {/* Tiny window in left + right turrets */}
-        <rect x="36.5" y="8" width="1" height="1.2" fill="rgba(255,200,80,.55)" />
-        <rect x="62.5" y="8" width="1" height="1.2" fill="rgba(255,200,80,.55)" />
+        <rect
+          x="36.5" y="8" width="1" height="1.2"
+          fill="rgba(255,200,80,.55)"
+          style={{ animation: `bonanzaCastleFlicker 1.9s ease-in-out -0.6s infinite` }}
+        />
+        <rect
+          x="62.5" y="8" width="1" height="1.2"
+          fill="rgba(255,200,80,.55)"
+          style={{ animation: `bonanzaCastleFlicker 2.4s ease-in-out -1.3s infinite` }}
+        />
       </svg>
 
       {/* Soft candy-spotlight glow behind the reel area — gives the grid
