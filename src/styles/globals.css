@@ -1348,6 +1348,14 @@
   53%      { fill: #1a0a04; }
 }
 
+/* Wanted SALOON sign — slow gold reflection breathe. Filter-driven
+ * brightness wave reads as the gold lettering catching the dusk sun
+ * in waves. Long 4.2s cycle keeps it ambient. */
+@keyframes wantedSaloonGlow {
+  0%, 100% { filter: drop-shadow(0 0 .5px rgba(255,209,102,.4))  brightness(1);    }
+  50%      { filter: drop-shadow(0 0 1.5px rgba(255,232,168,.85)) brightness(1.18); }
+}
+
 /* Wanted saloon gas-lamp flicker — irregular opacity step pattern
  * approximates a gas-fed flame catching small drafts. Two windows
  * use different cycle times + a delay so they flicker independently. */

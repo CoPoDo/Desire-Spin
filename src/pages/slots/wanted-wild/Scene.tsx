@@ -67,7 +67,9 @@ export function WantedScene() {
           <rect x="4" y="-2" width="14" height="8" fill="url(#ww-saloon)" />
           {/* False-front decorative pediment top */}
           <path d="M 4 -2 L 11 -4 L 18 -2 Z" fill="url(#ww-saloon)" stroke="#0a0204" strokeWidth=".15" />
-          {/* SALOON sign banner on false front */}
+          {/* SALOON sign banner on false front — gold lettering with a
+           *  slow glow pulse so the sign visibly reflects the dusk sun
+           *  rather than reading as a flat decal. */}
           <rect x="3" y="0" width="16" height="3.5" fill="#3a1a08" stroke="#ffd166" strokeWidth=".15" />
           <text
             x="11"
@@ -77,6 +79,7 @@ export function WantedScene() {
             fontFamily="serif"
             fontWeight="800"
             fill="#ffd166"
+            style={{ animation: 'wantedSaloonGlow 4.2s ease-in-out infinite' }}
           >
             SALOON
           </text>
