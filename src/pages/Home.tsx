@@ -99,6 +99,13 @@ export function Home() {
             badge="LIVE"
             art={<PlaceholderArt label="🃏" tone="#1a3a30" />}
           />
+          <GameCard
+            to="/originals/tower"
+            title="Tower"
+            subtitle="Climb the floors"
+            badge="LIVE"
+            art={<PlaceholderArt label="🗼" tone="#3a1010" />}
+          />
         </div>
       </section>
     </div>

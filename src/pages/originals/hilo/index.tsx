@@ -25,8 +25,6 @@ export function HiloGame() {
   const [accumMult, setAccumMult] = useState(1);
   const [busy, setBusy] = useState(false);
 
-  const inGame = phase === 'playing';
-
   const start = useCallback(() => {
     if (busy) return;
     if (balance.balance < bet || bet <= 0) return;
