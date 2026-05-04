@@ -57,19 +57,46 @@ export function JuanScene() {
         </defs>
         {/* Far flat-topped mesas */}
         <path d="M0,50 L0,30 L8,30 L8,18 L24,18 L24,30 L42,30 L42,22 L62,22 L62,30 L82,30 L82,16 L96,16 L96,30 L100,30 L100,50 Z" fill="url(#jc-mesa-far)" />
-        {/* Cantina building silhouette mid-distance, off-centre right */}
-        <g transform="translate(54 26)">
-          {/* Roof (peaked) */}
-          <path d="M0 4 L 10 -4 L 20 4 L 0 4 Z" fill="url(#jc-cantina)" />
-          {/* Body */}
-          <rect x="0" y="4" width="20" height="12" fill="url(#jc-cantina)" />
-          {/* Door (lit warmly from inside) */}
-          <rect x="8" y="9" width="4" height="7" fill="rgba(255,200,80,.55)" />
-          {/* Windows */}
-          <rect x="2" y="7" width="2.5" height="2.5" fill="rgba(255,200,80,.4)" />
-          <rect x="15" y="7" width="2.5" height="2.5" fill="rgba(255,200,80,.4)" />
-          {/* Porch overhang */}
-          <rect x="-2" y="3" width="24" height="1.2" fill="#1a0a04" />
+        {/* Cantina building silhouette mid-distance, off-centre right.
+         * Adobe-style flat roof + porch + neon "CANTINA" sign + warmly-lit
+         * door & windows + clay-tile awning + railing posts. */}
+        <g transform="translate(52 22)">
+          {/* Adobe body (flat-topped, slightly trapezoidal for that
+           * stucco/adobe silhouette) */}
+          <path d="M 0 4 L 24 4 L 22 20 L 2 20 Z" fill="url(#jc-cantina)" />
+          {/* Adobe parapet wall on top (raised front edge) */}
+          <rect x="-1" y="3" width="26" height="2" fill="url(#jc-cantina)" />
+          {/* Roof beams poking out (vigas) — classic adobe detail */}
+          {[2, 6, 10, 14, 18, 22].map((x, i) => (
+            <rect key={i} x={x - 0.4} y="5" width="0.8" height="1" fill="#0a0204" />
+          ))}
+          {/* Clay-tile awning (curved orange terracotta strip) */}
+          <path d="M -2 7 L 26 7 L 25 9 L -1 9 Z" fill="#a83a14" stroke="#5a1a04" strokeWidth=".15" />
+          <path d="M -1 7 L 25 7" stroke="rgba(255,180,80,.5)" strokeWidth=".25" />
+          {/* CANTINA sign (gold rectangle on facade) */}
+          <rect x="6" y="10" width="12" height="2.5" fill="#3a1a04" stroke="#ffd166" strokeWidth=".25" />
+          <text x="12" y="11.9" textAnchor="middle" fontSize="1.7" fontFamily="serif" fontWeight="800" fill="#ffd166">
+            CANTINA
+          </text>
+          {/* Door (warmly lit from inside, double-doors centred) */}
+          <rect x="10" y="13.5" width="4" height="6.5" fill="rgba(255,200,80,.6)" stroke="#0a0204" strokeWidth=".15" />
+          <line x1="12" y1="13.5" x2="12" y2="20" stroke="#0a0204" strokeWidth=".2" />
+          {/* Door window panels */}
+          <rect x="10.4" y="14" width="1.2" height="1.8" fill="rgba(255,232,168,.7)" />
+          <rect x="12.4" y="14" width="1.2" height="1.8" fill="rgba(255,232,168,.7)" />
+          {/* Side windows (tall, lit) */}
+          <rect x="3" y="13" width="3" height="4" fill="rgba(255,200,80,.5)" stroke="#0a0204" strokeWidth=".15" />
+          <line x1="4.5" y1="13" x2="4.5" y2="17" stroke="#0a0204" strokeWidth=".15" />
+          <line x1="3" y1="15" x2="6" y2="15" stroke="#0a0204" strokeWidth=".15" />
+          <rect x="18" y="13" width="3" height="4" fill="rgba(255,200,80,.5)" stroke="#0a0204" strokeWidth=".15" />
+          <line x1="19.5" y1="13" x2="19.5" y2="17" stroke="#0a0204" strokeWidth=".15" />
+          <line x1="18" y1="15" x2="21" y2="15" stroke="#0a0204" strokeWidth=".15" />
+          {/* Porch railing posts */}
+          <rect x="0" y="17" width=".5" height="3" fill="#0a0204" />
+          <rect x="23.5" y="17" width=".5" height="3" fill="#0a0204" />
+          {/* Hanging lantern at the door */}
+          <circle cx="12" cy="9.5" r=".5" fill="rgba(255,209,102,.85)" />
+          <line x1="12" y1="9" x2="12" y2="7" stroke="#0a0204" strokeWidth=".15" />
         </g>
         {/* Near desert ground line with some texture */}
         <path d="M0,50 L0,40 Q12,38 24,40 Q40,42 56,40 Q72,38 88,42 Q96,44 100,42 L100,50 Z" fill="url(#jc-mesa-near)" />
