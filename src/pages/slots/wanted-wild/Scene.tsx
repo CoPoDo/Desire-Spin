@@ -53,6 +53,17 @@ export function WantedScene() {
         </defs>
         {/* Mesas */}
         <path d="M0,50 L0,32 L8,32 L8,22 L26,22 L26,32 L46,32 L46,26 L66,26 L66,32 L88,32 L88,18 L100,18 L100,50 Z" fill="url(#ww-mesa-far)" />
+        {/* Warm sunset rim along the upper outline of the mesas — the
+         *  dying dusk catching the silhouette tops. Same approach as
+         *  Wolf Gold's mesa moonlight rim but warm-orange instead of
+         *  pale violet. Trace the upper outline only. */}
+        <path
+          d="M0,32 L8,32 L8,22 L26,22 L26,32 L46,32 L46,26 L66,26 L66,32 L88,32 L88,18 L100,18"
+          fill="none"
+          stroke="rgba(255,180,100,.4)"
+          strokeWidth=".25"
+          strokeLinejoin="round"
+        />
         {/* Saloon — main building, slightly left of centre. Real-game-style
          * false-front facade with bold SALOON sign, swinging double doors,
          * batwing door tops, plank cladding, lit windows, balcony rail. */}
