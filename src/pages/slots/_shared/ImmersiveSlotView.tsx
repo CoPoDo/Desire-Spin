@@ -522,6 +522,30 @@ export function ImmersiveSlotView({
     return () => clearTimeout(timer);
   }, []);
 
+  // Idle cell glints — occasional sparkles on random cells while at rest.
+  // Real Pragmatic shows tiny glint highlights on its symbols even between
+  // spins for ambient liveliness.
+  const [idleGlint, setIdleGlint] = useState<{ id: string; col: number; row: number } | null>(null);
+  useEffect(() => {
+    if (busy || autoplay) return;
+    let timer: number;
+    const schedule = () => {
+      const wait = 2400 + Math.random() * 4000; // 2.4-6.4s
+      timer = window.setTimeout(() => {
+        setIdleGlint({
+          id: `gl-${Date.now()}`,
+          col: Math.floor(Math.random() * cfg.cols),
+          row: Math.floor(Math.random() * cfg.rows),
+        });
+        // Auto-clear so the next schedule can fire
+        setTimeout(() => setIdleGlint(null), 900);
+        schedule();
+      }, wait);
+    };
+    schedule();
+    return () => clearTimeout(timer);
+  }, [busy, autoplay, cfg.cols, cfg.rows]);
+
   // Switch music intensity to match game state (base / free spins).
   // Tracks change immediately when entering or exiting a free-spins session.
   const fsActive = freeSpins !== null;
@@ -784,6 +808,29 @@ export function ImmersiveSlotView({
           >
             <Grid grid={grid} cfg={cfg} winning={winning} newKeys={newKeys} renderCell={renderCell} bare />
           </div>
+
+          {/* Idle cell glint — random subtle sparkle when no spin running */}
+          <AnimatePresence>
+            {idleGlint && (
+              <motion.div
+                key={idleGlint.id}
+                className="absolute pointer-events-none rounded-full z-[2]"
+                style={{
+                  left: `${liveInsets.left + (idleGlint.col + 0.5) * (liveInsets.width / cfg.cols)}%`,
+                  top: `${liveInsets.top + (idleGlint.row + 0.5) * (liveInsets.width / cfg.cols)}%`,
+                  width: `${liveInsets.width / cfg.cols * 0.6}%`,
+                  aspectRatio: '1 / 1',
+                  transform: 'translate(-50%, -50%)',
+                  background: 'radial-gradient(circle, rgba(255,255,255,0.7) 0%, rgba(255,233,168,0.4) 30%, transparent 70%)',
+                  mixBlendMode: 'screen',
+                }}
+                initial={{ scale: 0.3, opacity: 0 }}
+                animate={{ scale: [0.3, 1.0, 0.6], opacity: [0, 0.85, 0] }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.85, ease: 'easeOut' }}
+              />
+            )}
+          </AnimatePresence>
 
           {/* Multiplier orb impact rings — expand outward from each landing
               cell with a fading glow. Real Olympus shows a shockwave on
