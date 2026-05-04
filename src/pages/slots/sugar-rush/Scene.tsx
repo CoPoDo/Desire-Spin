@@ -83,8 +83,26 @@ export function SugarRushScene() {
           </linearGradient>
         </defs>
         <path d="M30,12 L 50,0 L 70,12 Z" fill="url(#sr-peak)" />
-        {/* Vanilla-icing drip on peak */}
-        <path d="M 48,1 L 52,1 L 51,4 L 49,4 Z" fill="rgba(255,255,255,.65)" />
+        {/* Vanilla-icing dripping down the candy mountain — the previous
+         *  rectangle drip was a thin white bar that read as decoration.
+         *  Real Sugar Rush mountains have icing visibly running down the
+         *  slopes with rounded bottom edges (gravity-melt). This path
+         *  cap covers the full peak and drips two streams down the
+         *  flanks. */}
+        <path
+          d="M 47,0.5 L 53,0.5 L 53.5,2 Q 53,3 52,3.5
+             L 52.5,8 Q 52,8.5 51,8.3 L 51,4
+             Q 50,4.5 49,4 L 49,7 Q 48.5,7.3 48,7 L 48.5,3.5
+             Q 47,3 46.5,2 Z"
+          fill="rgba(255,250,252,.7)"
+          stroke="rgba(255,200,232,.4)"
+          strokeWidth=".2"
+        />
+        {/* Sprinkle dots stuck in the icing */}
+        <circle cx="49.5" cy="2" r=".25" fill="#ff5560" opacity=".85" />
+        <circle cx="51"   cy="3.5" r=".22" fill="#1fff7a" opacity=".85" />
+        <circle cx="50.2" cy="5" r=".2"  fill="#5fb8ff" opacity=".85" />
+        <circle cx="49"   cy="6" r=".22" fill="#ffd166" opacity=".85" />
       </svg>
 
       {/* Stage-light glow behind the reels — gives the grid focus and
