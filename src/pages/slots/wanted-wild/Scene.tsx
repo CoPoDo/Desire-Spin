@@ -83,9 +83,15 @@ export function WantedScene() {
           >
             SALOON
           </text>
-          {/* Door (lit warmly inside) */}
-          {/* Batwing double doors (saloon-style swing doors) */}
-          <rect x="8" y="11" width="6" height="7" fill="rgba(255,200,80,.6)" stroke="#1a0a02" strokeWidth=".2" />
+          {/* Door (lit warmly inside) — batwing double doors (saloon
+           *  swing doors). The interior gas-lamp glow seen through the
+           *  door flickers in time with the window lamps so the whole
+           *  building reads as one lit-by-flame interior. */}
+          <rect
+            x="8" y="11" width="6" height="7"
+            fill="rgba(255,200,80,.6)" stroke="#1a0a02" strokeWidth=".2"
+            style={{ animation: 'wantedGasLampFlicker 2.05s ease-in-out -0.3s infinite' }}
+          />
           <line x1="11" y1="11" x2="11" y2="18" stroke="#1a0a02" strokeWidth=".25" />
           {/* Slatted batwing pattern */}
           {[12, 13.5, 15, 16.5].map((y, i) => (
