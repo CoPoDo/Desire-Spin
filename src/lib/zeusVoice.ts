@@ -17,6 +17,25 @@
 let lastSpokeAt = 0;
 const COOLDOWN_MS = 800; // avoid voice-stomping when frames fire fast
 let cachedVoice: SpeechSynthesisVoice | null = null;
+let primed = false;
+
+/** Prime the Web Speech API with a silent utterance so subsequent
+ *  speakZeus() calls are recognised as following a user gesture, even
+ *  when they fire from async setTimeout callbacks. Call this once on
+ *  the very first user click to establish the gesture token. */
+export function primeZeus() {
+  if (primed) return;
+  if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+  try {
+    const u = new SpeechSynthesisUtterance('');
+    u.volume = 0; // silent
+    u.rate = 5;
+    window.speechSynthesis.speak(u);
+    primed = true;
+  } catch {
+    // ignore — primer is best-effort
+  }
+}
 
 // Voices load asynchronously on most browsers — the first
 // getVoices() call returns []. Subscribe to the voiceschanged event

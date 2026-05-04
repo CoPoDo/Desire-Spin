@@ -6,7 +6,7 @@ import { useGame } from '../../../game-context';
 import { useMusic } from '../../../hooks/useMusic';
 import { createRng } from '../../../lib/fairness';
 import { fireConfetti } from '../../../lib/confetti';
-import { speakZeus, zeusLineFor } from '../../../lib/zeusVoice';
+import { speakZeus, zeusLineFor, primeZeus } from '../../../lib/zeusVoice';
 import { fmtCurrency, fmtMultiplier } from '../../../lib/format';
 import type {
   Frame,
@@ -536,6 +536,18 @@ export function ImmersiveSlotView({
                   speakZeus(zeusLineFor('bigWin'));
                   scheduleSpin(() => setZeusEyesGlow(false), 1800);
                 }
+              } else if (cfg.id === 'gates-of-olympus' && Math.random() < 0.18) {
+                // Zeus interjection — on ~18% of regular Olympus base
+                // spins (no win, no scatter trigger, no multipliers
+                // landed), Zeus randomly speaks a flavour line and
+                // his eyes flash red. Mirrors real Pragmatic Olympus
+                // where Zeus periodically interjects between spins
+                // even when nothing dramatic happens. This GUARANTEES
+                // the player sees the eye-glow + voice within a few
+                // spins, not waiting for rare events to fire.
+                setZeusEyesGlow(true);
+                speakZeus(zeusLineFor('multiplierLanded'));
+                scheduleSpin(() => setZeusEyesGlow(false), 1100);
               }
             }
             break;
@@ -566,6 +578,10 @@ export function ImmersiveSlotView({
         setStatusMsg('Insufficient balance');
         return;
       }
+      // Prime the Web Speech API on first user click so async voice
+      // calls inside frame handlers are treated as following a user
+      // gesture. Olympus's Zeus voice depends on this firing reliably.
+      primeZeus();
       busyRef.current = true;
       setBusy(true);
       skipRef.current = false; // reset skip on each spin
@@ -969,18 +985,23 @@ export function ImmersiveSlotView({
                       transition={{ duration: 1.2, ease: 'easeOut' }}
                       style={{ inset: 0 }}
                     >
+                      {/* Zeus's eyes — sized 3% wide so they're clearly
+                       *  visible against the painted backdrop. The bg is
+                       *  a tight white-hot core fading through fierce red.
+                       *  Outer drop-shadow halo extends the glow well
+                       *  beyond the dot itself so it reads as RAGE-LIT. */}
                       {/* Left eye */}
                       <span
                         className="absolute rounded-full"
                         style={{
-                          left: '14%',
-                          top: '17.5%',
-                          width: '1.1%',
+                          left: '13%',
+                          top: '18%',
+                          width: '2.6%',
                           aspectRatio: '1 / 1',
                           background:
-                            'radial-gradient(circle, #ffffff 0%, #ff3030 35%, rgba(200,16,46,.85) 60%, transparent 80%)',
+                            'radial-gradient(circle, #ffffff 0%, #ff5050 30%, #c8102e 55%, transparent 75%)',
                           boxShadow:
-                            '0 0 6px rgba(255,48,48,1), 0 0 14px rgba(255,40,40,.85), 0 0 28px rgba(200,16,46,.6)',
+                            '0 0 10px #ff3030, 0 0 24px rgba(255,40,40,.95), 0 0 48px rgba(200,16,46,.75)',
                           mixBlendMode: 'screen',
                         }}
                       />
@@ -988,14 +1009,14 @@ export function ImmersiveSlotView({
                       <span
                         className="absolute rounded-full"
                         style={{
-                          left: '17.6%',
-                          top: '17.5%',
-                          width: '1.1%',
+                          left: '17%',
+                          top: '18%',
+                          width: '2.6%',
                           aspectRatio: '1 / 1',
                           background:
-                            'radial-gradient(circle, #ffffff 0%, #ff3030 35%, rgba(200,16,46,.85) 60%, transparent 80%)',
+                            'radial-gradient(circle, #ffffff 0%, #ff5050 30%, #c8102e 55%, transparent 75%)',
                           boxShadow:
-                            '0 0 6px rgba(255,48,48,1), 0 0 14px rgba(255,40,40,.85), 0 0 28px rgba(200,16,46,.6)',
+                            '0 0 10px #ff3030, 0 0 24px rgba(255,40,40,.95), 0 0 48px rgba(200,16,46,.75)',
                           mixBlendMode: 'screen',
                         }}
                       />
