@@ -897,8 +897,13 @@
   background:
     radial-gradient(circle at 32% 26%, rgba(255, 240, 200, 0.95) 0%, rgba(255, 220, 140, 0.85) 12%, transparent 28%),
     radial-gradient(circle at 50% 55%, #fff5c4 0%, #c8932e 22%, #7a4a04 55%, #3a1a04 80%, #14060a 100%);
-  border: 1.5px solid rgba(20, 4, 4, 0.85);
+  border: none;
   box-shadow:
+    /* Layered rusted-iron housing ring (outside-in): rusted bronze → dark
+     * iron → black. Matches the western "iron-banded gold coin" feel. */
+    0 0 0 1px rgba(180, 130, 50, 0.95),
+    0 0 0 2.5px rgba(80, 40, 12, 0.92),
+    0 0 0 4px rgba(20, 4, 4, 0.95),
     inset 0 0 0 1px rgba(255, 220, 140, 0.7),
     inset 0 0 18px rgba(200, 147, 46, 0.55),
     inset 0 -6px 12px rgba(20, 6, 10, 0.6),
@@ -919,11 +924,14 @@
   letter-spacing: -0.02em;
 }
 .wanted-orb-big {
-  border-width: 3px;
   background:
     radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 1) 0%, rgba(255, 240, 200, 0.95) 12%, transparent 28%),
     radial-gradient(circle at 50% 55%, #fff8c4 0%, #ffd166 18%, #c8932e 50%, #5a3a04 80%, #1a0a04 100%);
   box-shadow:
+    /* Brighter rusted-iron housing on tier-up */
+    0 0 0 1px rgba(210, 155, 60, 1),
+    0 0 0 2.5px rgba(100, 55, 16, 0.95),
+    0 0 0 4px rgba(20, 4, 4, 0.95),
     inset 0 0 22px rgba(255, 209, 102, 0.85),
     inset 0 -8px 14px rgba(20, 8, 4, 0.7),
     0 0 22px rgba(200, 147, 46, 0.95),
@@ -931,11 +939,14 @@
     0 10px 22px rgba(0, 0, 0, 0.65);
 }
 .wanted-orb-huge {
-  border-width: 3px;
   background:
     radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 1) 0%, rgba(255, 248, 200, 0.95) 10%, transparent 28%),
     radial-gradient(circle at 50% 55%, #fffbe0 0%, #ffd166 18%, #ff7a30 45%, #c8102e 75%, #2a0408 100%);
   box-shadow:
+    /* Brightest housing on top tier — gold rim breaks through the rust */
+    0 0 0 1px rgba(255, 220, 130, 1),
+    0 0 0 2.5px rgba(120, 60, 20, 0.95),
+    0 0 0 4px rgba(20, 4, 4, 0.95),
     inset 0 0 28px rgba(255, 200, 80, 0.95),
     inset 0 -10px 16px rgba(58, 8, 4, 0.8),
     0 0 32px rgba(255, 174, 80, 1),
