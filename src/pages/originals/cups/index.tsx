@@ -132,7 +132,11 @@ export function CupsGame() {
                   <motion.div
                     className="text-6xl select-none"
                     animate={
-                      reveal && wasBall
+                      // Lift BOTH the cup the player picked (so they can
+                      // see it was empty) and the cup hiding the ball,
+                      // so the reveal moment shows the truth on both
+                      // ends. Real shell-game reveals work this way.
+                      reveal && (wasBall || isPicked)
                         ? { y: -15 }
                         : { y: 0 }
                     }
