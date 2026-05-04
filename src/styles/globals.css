@@ -126,18 +126,36 @@
     0 0 36px rgba(255, 180, 40, 0.22);
 }
 
-/* Twinkling stars layered on top of the painted scene for animated depth. */
+/* Twinkling stars layered on top of the painted scene for animated depth.
+ * Now packing the Mount Olympus night sky much more densely — real
+ * mythic-Greek-sky paintings of Olympus show a proper field of stars
+ * across the upper third, not just four sparse points. Mix of warm
+ * gold + cool amethyst stars at varied sizes for depth. */
 .olympus-scene::after {
   content: '';
   position: absolute;
   inset: 0;
   pointer-events: none;
   background-image:
-    radial-gradient(2px 2px at 22% 14%, rgba(255, 233, 168, 0.6), transparent 60%),
-    radial-gradient(1.4px 1.4px at 78% 12%, rgba(255, 233, 168, 0.5), transparent 60%),
-    radial-gradient(1px 1px at 12% 18%, rgba(255, 233, 168, 0.55), transparent 60%),
-    radial-gradient(1.6px 1.6px at 88% 22%, rgba(212, 181, 245, 0.5), transparent 60%);
-  opacity: 0.7;
+    radial-gradient(2px 2px at 6% 10%, rgba(255, 233, 168, 0.7), transparent 60%),
+    radial-gradient(1.2px 1.2px at 14% 6%, rgba(212, 181, 245, 0.6), transparent 60%),
+    radial-gradient(2px 2px at 22% 14%, rgba(255, 233, 168, 0.7), transparent 60%),
+    radial-gradient(1px 1px at 30% 8%, rgba(255, 233, 168, 0.55), transparent 60%),
+    radial-gradient(1.6px 1.6px at 38% 16%, rgba(255, 245, 220, 0.65), transparent 60%),
+    radial-gradient(1px 1px at 46% 6%, rgba(212, 181, 245, 0.55), transparent 60%),
+    radial-gradient(1.2px 1.2px at 54% 12%, rgba(255, 233, 168, 0.6), transparent 60%),
+    radial-gradient(2px 2px at 62% 8%, rgba(255, 245, 220, 0.7), transparent 60%),
+    radial-gradient(1.4px 1.4px at 70% 18%, rgba(255, 233, 168, 0.55), transparent 60%),
+    radial-gradient(1px 1px at 78% 12%, rgba(255, 233, 168, 0.6), transparent 60%),
+    radial-gradient(1.4px 1.4px at 84% 6%, rgba(212, 181, 245, 0.55), transparent 60%),
+    radial-gradient(1.6px 1.6px at 88% 22%, rgba(212, 181, 245, 0.6), transparent 60%),
+    radial-gradient(1px 1px at 94% 14%, rgba(255, 233, 168, 0.5), transparent 60%),
+    radial-gradient(2px 2px at 12% 18%, rgba(255, 233, 168, 0.55), transparent 60%),
+    radial-gradient(1.2px 1.2px at 28% 22%, rgba(255, 233, 168, 0.5), transparent 60%),
+    radial-gradient(1px 1px at 42% 24%, rgba(212, 181, 245, 0.45), transparent 60%),
+    radial-gradient(1.4px 1.4px at 58% 24%, rgba(255, 233, 168, 0.55), transparent 60%),
+    radial-gradient(1px 1px at 74% 26%, rgba(255, 233, 168, 0.4), transparent 60%);
+  opacity: 0.75;
   animation: olympusStars 8s ease-in-out infinite;
   mix-blend-mode: screen;
 }
