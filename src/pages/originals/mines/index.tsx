@@ -235,8 +235,9 @@ export function MinesGame() {
           </div>
         ) : (
           <div className="rounded-2xl bg-bg-card border border-edge p-4 space-y-3">
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               <Stat label="Mines" value={`${mineCount}`} />
+              <Stat label="Total Profit" value={fmtCurrency(cashoutAmount - round!.bet)} highlight />
               <Stat label="Next Pick" value={picks + 1 <= GRID_SIZE - mineCount ? fmtMultiplier(nextMult) : '—'} />
             </div>
             <div className="flex gap-2">
@@ -263,11 +264,18 @@ export function MinesGame() {
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
   return (
     <div className="rounded-xl bg-bg-elev border border-edge p-2.5 text-center">
       <div className="text-[10px] uppercase tracking-widest text-ink-mute">{label}</div>
-      <div className="font-mono font-bold text-base text-ink mt-0.5 tabular-nums">{value}</div>
+      <div
+        className={`font-mono font-bold text-sm mt-0.5 tabular-nums ${
+          highlight ? 'text-accent' : 'text-ink'
+        }`}
+        style={highlight ? { textShadow: '0 0 8px rgba(31,255,122,.45)' } : undefined}
+      >
+        {value}
+      </div>
     </div>
   );
 }

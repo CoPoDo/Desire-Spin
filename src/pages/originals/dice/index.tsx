@@ -164,9 +164,19 @@ export function DiceGame() {
           />
         </div>
 
-        {/* Stats */}
+        {/* Stats — multiplier + chance are linked: editing one updates target */}
         <div className="grid grid-cols-3 gap-2">
-          <Stat label="Multiplier" value={fmtMultiplier(multiplier)} />
+          <EditableStat
+            label="Multiplier"
+            value={multiplier}
+            disabled={busy || autoActive}
+            onChange={(v) => {
+              // mult = 0.99 / chance%; chance% = 0.99 / mult * 100 = 99/mult
+              const chance = Math.max(2, Math.min(98, 99 / Math.max(1.01, v)));
+              setTarget(direction === 'over' ? +(100 - chance).toFixed(2) : +chance.toFixed(2));
+            }}
+            format={(v) => fmtMultiplier(v)}
+          />
           <button
             onClick={() => setDirection((d) => (d === 'over' ? 'under' : 'over'))}
             disabled={busy || autoActive}
@@ -175,7 +185,35 @@ export function DiceGame() {
             <div className="text-[10px] uppercase tracking-widest text-ink-mute">Roll {direction}</div>
             <div className="font-mono font-bold text-base text-ink mt-0.5 tabular-nums">{target.toFixed(2)}</div>
           </button>
-          <Stat label="Win Chance" value={`${winChance.toFixed(2)}%`} />
+          <EditableStat
+            label="Win Chance"
+            value={winChance}
+            disabled={busy || autoActive}
+            onChange={(v) => {
+              const c = Math.max(2, Math.min(98, v));
+              setTarget(direction === 'over' ? +(100 - c).toFixed(2) : +c.toFixed(2));
+            }}
+            format={(v) => `${v.toFixed(2)}%`}
+          />
+        </div>
+
+        {/* Quick chance presets */}
+        <div className="flex gap-1.5">
+          {[
+            { label: '50/50', chance: 49.5 },
+            { label: '4×', chance: 24.75 },
+            { label: '10×', chance: 9.9 },
+            { label: '50×', chance: 1.98 },
+          ].map((p) => (
+            <button
+              key={p.label}
+              onClick={() => setTarget(direction === 'over' ? +(100 - p.chance).toFixed(2) : +p.chance.toFixed(2))}
+              disabled={busy || autoActive}
+              className="flex-1 py-1.5 rounded-lg bg-bg-elev border border-edge text-ink-dim hover:text-ink text-[10px] font-bold uppercase tracking-wider disabled:opacity-50"
+            >
+              {p.label}
+            </button>
+          ))}
         </div>
 
         {/* Mode + bet panel */}
@@ -233,11 +271,53 @@ export function DiceGame() {
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+// Click to edit numeric stat, Enter or blur commits — Stake's Dice has the
+// same "click multiplier or chance to drive the slider" interaction.
+function EditableStat({
+  label,
+  value,
+  format,
+  onChange,
+  disabled,
+}: {
+  label: string;
+  value: number;
+  format: (v: number) => string;
+  onChange: (v: number) => void;
+  disabled?: boolean;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState('');
   return (
     <div className="rounded-xl bg-bg-card border border-edge p-3 text-center">
       <div className="text-[10px] uppercase tracking-widest text-ink-mute">{label}</div>
-      <div className="font-mono font-bold text-base text-ink mt-0.5 tabular-nums">{value}</div>
+      {editing ? (
+        <input
+          autoFocus
+          type="number"
+          inputMode="decimal"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={() => {
+            const v = parseFloat(draft);
+            if (Number.isFinite(v)) onChange(v);
+            setEditing(false);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') (e.currentTarget as HTMLInputElement).blur();
+            if (e.key === 'Escape') setEditing(false);
+          }}
+          className="font-mono font-bold text-base text-ink mt-0.5 tabular-nums bg-transparent outline-none w-full text-center"
+        />
+      ) : (
+        <button
+          onClick={() => { if (!disabled) { setDraft(value.toFixed(2)); setEditing(true); } }}
+          disabled={disabled}
+          className="font-mono font-bold text-base text-ink mt-0.5 tabular-nums hover:text-accent transition w-full disabled:opacity-50"
+        >
+          {format(value)}
+        </button>
+      )}
     </div>
   );
 }

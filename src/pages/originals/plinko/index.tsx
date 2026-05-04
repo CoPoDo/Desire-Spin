@@ -40,6 +40,7 @@ export function PlinkoGame() {
   const [autoActive, setAutoActive] = useState(false);
   const [activeBalls, setActiveBalls] = useState<ActiveBall[]>([]);
   const [recentResults, setRecentResults] = useState<{ id: number; multiplier: number }[]>([]);
+  const [flashingBucket, setFlashingBucket] = useState<number | null>(null);
   const ballIdRef = useRef(0);
   const stateRef = useRef({ bet, rows, risk });
   stateRef.current = { bet, rows, risk };
@@ -70,6 +71,9 @@ export function PlinkoGame() {
           result.multiplier >= 2 ? 'big-win' :
           result.multiplier >= 0.5 ? 'win' : 'drop',
         );
+        // Flash the bucket the ball landed in
+        setFlashingBucket(result.bucket);
+        setTimeout(() => setFlashingBucket(null), 600);
         history.record({
           game: 'Plinko',
           bet: b,
@@ -106,7 +110,7 @@ export function PlinkoGame() {
           style={{ aspectRatio: `${rows + 1} / ${rows + 4}` }}
         >
           {/* Pegs and ball animation */}
-          <Board rows={rows} buckets={buckets} mults={mults} activeBalls={activeBalls} />
+          <Board rows={rows} buckets={buckets} mults={mults} activeBalls={activeBalls} flashingBucket={flashingBucket} />
         </div>
 
         {/* Recent results */}
@@ -205,11 +209,13 @@ function Board({
   buckets,
   mults,
   activeBalls,
+  flashingBucket,
 }: {
   rows: number;
   buckets: number;
   mults: number[];
   activeBalls: ActiveBall[];
+  flashingBucket: number | null;
 }) {
   // Geometry: pegs in (rows+1) lines (0..rows), with 2 pegs in the second
   // line, 3 in the third, ... rows+1 in the bottom. Wait — Stake's
@@ -257,9 +263,12 @@ function Board({
       >
         {mults.map((m, i) => {
           const tier = m >= 10 ? 'high' : m >= 2 ? 'mid' : m >= 1 ? 'one' : 'low';
+          const isFlash = flashingBucket === i;
           return (
-            <div
+            <motion.div
               key={i}
+              animate={isFlash ? { scale: [1, 1.18, 1], y: [0, -4, 0] } : { scale: 1, y: 0 }}
+              transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
               className="rounded-md flex items-center justify-center font-mono font-bold text-[8px] sm:text-[10px] tabular-nums"
               style={{
                 background:
@@ -271,11 +280,13 @@ function Board({
                         ? 'linear-gradient(180deg, #1fff7a, #0a7a3a)'
                         : 'linear-gradient(180deg, #2a3142, #1a1f29)',
                 color: tier === 'high' ? '#fff' : tier === 'mid' ? '#1a0f00' : tier === 'one' ? '#0a3a14' : '#9aa3b2',
-                boxShadow: tier !== 'low' ? '0 0 8px currentColor' : undefined,
+                boxShadow: isFlash
+                  ? '0 0 24px currentColor, 0 0 8px currentColor'
+                  : tier !== 'low' ? '0 0 8px currentColor' : undefined,
               }}
             >
               {m < 1 ? m.toFixed(1) : m}×
-            </div>
+            </motion.div>
           );
         })}
       </div>
