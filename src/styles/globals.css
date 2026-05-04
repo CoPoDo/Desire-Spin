@@ -1772,6 +1772,16 @@
   50%      { filter: brightness(1.18); }
 }
 
+/* Big Juan bonus-round held-cell pulse — a slow brightness cycle so
+ * filled cells (locked-in coins/jackpots) have an ambient "still on
+ * the board" glow. Matches real Pragmatic Hold-and-Spin: held cells
+ * stay visibly highlighted between respins so the player tracks
+ * progress without effort. */
+@keyframes bjBonusHeld {
+  0%, 100% { filter: brightness(1)    saturate(1); }
+  50%      { filter: brightness(1.15) saturate(1.1); }
+}
+
 /* Big Juan — fiesta confetti sparks drifting up from below */
 @keyframes bigJuanConfetti {
   0%   { transform: translate(0, 100%) rotate(0deg); opacity: 0; }

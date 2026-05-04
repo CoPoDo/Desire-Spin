@@ -38,6 +38,11 @@ export function BigJuanBonusRound({ bet, scatterCount, seeds, onClose }: BonusRo
   const [busy, setBusy] = useState(false);
   const [finished, setFinished] = useState(false);
   const [recentlyLanded, setRecentlyLanded] = useState<Set<number>>(new Set());
+  /** Empty-cell rolling phase — set true at the start of each roll and
+   *  cleared once the new values are revealed. Drives the "?" flicker on
+   *  empty cells so the player visibly sees them spinning before the
+   *  result lands (matches real Pragmatic Hold-and-Spin). */
+  const [rolling, setRolling] = useState(false);
 
   // Single shared RNG for the whole bonus — all rolls draw from it sequentially
   // so the entire bonus is reproducible from the trigger nonce.
@@ -49,6 +54,9 @@ export function BigJuanBonusRound({ bet, scatterCount, seeds, onClose }: BonusRo
   const roll = useCallback(() => {
     if (busy || finished) return;
     setBusy(true);
+    setRolling(true);
+    setRecentlyLanded(new Set()); // clear last-round highlights immediately
+
     const rng = rngRef.current!;
     const newGrid = [...grid];
     const newlyLanded = new Set<number>();
@@ -67,30 +75,33 @@ export function BigJuanBonusRound({ bet, scatterCount, seeds, onClose }: BonusRo
         }
       }
     }
-    setGrid(newGrid);
-    setRecentlyLanded(newlyLanded);
-    setTotalMult((prev) => +(prev + valueGained).toFixed(2));
-    // Respin accounting
-    let nextRespins = respinsLeft - 1 + extraRespins;
-    const anyNewFill = newlyLanded.size > 0;
-    // If new coin/jackpot lands (not just an "extra"), reset respin counter
-    // to max(current, 3) — classic hold-and-win mechanic.
-    const anyNewValueLanded = Array.from(newlyLanded).some((i) => {
-      const c = newGrid[i]!;
-      return c !== 'empty' && typeof c !== 'string' && c.kind !== 'extra';
-    });
-    if (anyNewValueLanded) {
-      nextRespins = Math.max(nextRespins, 3);
-    }
-    setRespinsLeft(Math.max(0, nextRespins));
 
-    // End conditions
-    const allFilled = newGrid.every(isFilled);
-    if (allFilled || nextRespins <= 0) {
-      setTimeout(() => setFinished(true), 700);
-    }
-    setTimeout(() => setBusy(false), 480);
-    void anyNewFill;
+    // Reveal in two stages: first show the spinning ? for ~520ms, then
+    // snap in the new values. Real Pragmatic Hold-and-Spin shows each
+    // empty cell briefly cycling values before locking in.
+    setTimeout(() => {
+      setGrid(newGrid);
+      setRecentlyLanded(newlyLanded);
+      setRolling(false);
+      setTotalMult((prev) => +(prev + valueGained).toFixed(2));
+      // Respin accounting
+      let nextRespins = respinsLeft - 1 + extraRespins;
+      const anyNewValueLanded = Array.from(newlyLanded).some((i) => {
+        const c = newGrid[i]!;
+        return c !== 'empty' && typeof c !== 'string' && c.kind !== 'extra';
+      });
+      if (anyNewValueLanded) {
+        nextRespins = Math.max(nextRespins, 3);
+      }
+      setRespinsLeft(Math.max(0, nextRespins));
+
+      // End conditions
+      const allFilled = newGrid.every(isFilled);
+      if (allFilled || nextRespins <= 0) {
+        setTimeout(() => setFinished(true), 900);
+      }
+      setTimeout(() => setBusy(false), 480);
+    }, 520);
   }, [busy, finished, grid, respinsLeft]);
 
   // Auto-roll if there are respins left (with breathing room between rounds)
@@ -98,7 +109,12 @@ export function BigJuanBonusRound({ bet, scatterCount, seeds, onClose }: BonusRo
     if (finished) return;
     if (busy) return;
     if (respinsLeft <= 0) return;
-    const t = setTimeout(roll, 750);
+    // Real Pragmatic Hold-and-Spin pacing: ~1.1-1.3s between rolls so
+    // each respin has a visible "spin and stop" moment (the empty cells
+    // flicker with "?" markers via the rolling state below) rather than
+    // popping back-to-back. Pacing matches Big Juan's bonus round in
+    // the real game.
+    const t = setTimeout(roll, 1150);
     return () => clearTimeout(t);
   }, [respinsLeft, busy, finished, roll]);
 
@@ -178,7 +194,7 @@ export function BigJuanBonusRound({ bet, scatterCount, seeds, onClose }: BonusRo
           {grid.map((cell, i) => {
             const justLanded = recentlyLanded.has(i);
             return (
-              <BonusCell key={i} cell={cell} justLanded={justLanded} />
+              <BonusCell key={i} cell={cell} justLanded={justLanded} rolling={rolling} cellIdx={i} />
             );
           })}
         </div>
@@ -255,30 +271,81 @@ export function BigJuanBonusRound({ bet, scatterCount, seeds, onClose }: BonusRo
   );
 }
 
-function BonusCell({ cell, justLanded }: { cell: BonusCellKind; justLanded: boolean }) {
+function BonusCell({
+  cell,
+  justLanded,
+  rolling,
+  cellIdx,
+}: {
+  cell: BonusCellKind;
+  justLanded: boolean;
+  rolling: boolean;
+  cellIdx: number;
+}) {
   const filled = isFilled(cell);
   const label = labelFor(cell);
   const color = colorFor(cell);
+  // During the rolling phase, empty cells show a quick spin of "?"
+  // markers so the player visibly sees them cycling. Each cell starts
+  // its spin staggered by a few frames using cellIdx so the row of
+  // cells doesn't flip in lockstep — matches Pragmatic Hold-and-Spin.
+  const spinningEmpty = rolling && !filled;
   return (
     <motion.div
-      className="aspect-square rounded-lg flex items-center justify-center font-mono font-bold text-sm select-none"
+      className="aspect-square rounded-lg flex items-center justify-center font-mono font-bold text-sm select-none relative overflow-hidden"
       animate={
         justLanded
           ? { scale: [0.4, 1.15, 1], rotate: [0, -8, 0] }
           : { scale: 1 }
       }
-      transition={{ duration: 0.45, ease: 'easeOut' }}
+      transition={{ duration: 0.5, ease: [0.34, 1.4, 0.5, 1] }}
       style={{
         background: filled
           ? `linear-gradient(180deg, ${color}30, rgba(0,0,0,.45))`
           : 'linear-gradient(180deg, rgba(255,255,255,.03), rgba(0,0,0,.45))',
         border: filled ? `2px solid ${color}` : '1.5px solid rgba(200,147,46,.25)',
-        boxShadow: filled ? `0 0 14px ${color}aa, inset 0 1px 0 rgba(255,255,255,.15)` : 'inset 0 1px 0 rgba(255,255,255,.04)',
+        boxShadow: filled
+          ? `0 0 14px ${color}aa, inset 0 1px 0 rgba(255,255,255,.15)`
+          : 'inset 0 1px 0 rgba(255,255,255,.04)',
         color: filled ? '#fff5e0' : '#5a3a04',
         textShadow: filled ? '0 0 8px rgba(0,0,0,.6)' : 'none',
+        // Filled (held) cells get a slow "locked" pulse so the player
+        // can see at a glance which cells are saved. Real Hold-and-Spin
+        // games highlight held cells with a subtle gold breathing glow.
+        animation: filled && !justLanded ? 'bjBonusHeld 2.4s ease-in-out infinite' : undefined,
       }}
     >
-      <span style={{ fontSize: filled ? '0.95rem' : '1.5rem' }}>{label}</span>
+      {spinningEmpty ? (
+        <motion.span
+          key={`spin-${cellIdx}`}
+          className="text-2xl font-extrabold"
+          style={{ color: '#ffd166', textShadow: '0 0 8px rgba(255,209,102,.85)' }}
+          animate={{ opacity: [0.4, 1, 0.4], scale: [0.85, 1.15, 0.85], rotate: [0, 360] }}
+          transition={{
+            duration: 0.32,
+            repeat: Infinity,
+            ease: 'linear',
+            delay: (cellIdx % 3) * 0.05,
+          }}
+        >
+          ?
+        </motion.span>
+      ) : (
+        <span style={{ fontSize: filled ? '0.95rem' : '1.5rem' }}>{label}</span>
+      )}
+      {/* Just-landed flash — bright radial pulse fades out across 700ms */}
+      {justLanded && filled && (
+        <motion.div
+          className="absolute inset-0 pointer-events-none"
+          initial={{ opacity: 0.95 }}
+          animate={{ opacity: 0 }}
+          transition={{ duration: 0.7, ease: 'easeOut' }}
+          style={{
+            background: `radial-gradient(circle, ${color}aa 0%, ${color}55 35%, transparent 70%)`,
+            mixBlendMode: 'screen',
+          }}
+        />
+      )}
     </motion.div>
   );
 }
