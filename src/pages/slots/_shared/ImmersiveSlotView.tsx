@@ -2067,9 +2067,11 @@ export function ImmersiveSlotView({
                   style={
                     bet === v
                       ? {
-                          background: 'linear-gradient(180deg, #fff5c4 0%, #ffd37a 25%, #c8932e 75%, #6a4410 100%)',
-                          border: '1.5px solid #FFE9A8',
-                          boxShadow: 'inset 0 1px 0 rgba(255,255,255,.6), 0 0 18px rgba(255,198,42,.55)',
+                          // Active preset uses theme accent gradient so
+                          // each slot's bet picker feels native.
+                          background: `linear-gradient(180deg, #fff5dc 0%, ${cfg.theme.accent} 30%, ${cfg.theme.accent} 70%, rgba(40,18,0,.7) 100%)`,
+                          border: `1.5px solid ${cfg.theme.accent}`,
+                          boxShadow: `inset 0 1px 0 rgba(255,255,255,.6), 0 0 18px ${cfg.theme.glow}`,
                           textShadow: '0 1px 0 rgba(255,255,255,.4)',
                         }
                       : {
