@@ -111,7 +111,7 @@ export function ImmersiveSlotView({
   archInsets,
   betPresets = DEFAULT_PRESETS,
 }: ImmersiveSlotViewProps) {
-  const { balance, fairness, history, sound } = useGame();
+  const { balance, fairness, history, sound, session } = useGame();
   const music = useMusic({ soundEnabled: sound.enabled });
   const [bet, setBet] = useState(1);
   const [ante, setAnte] = useState(false);
@@ -492,6 +492,7 @@ export function ImmersiveSlotView({
           clientSeed: seeds.clientSeed,
           nonce: seeds.nonce,
         });
+        session.recordSpin(cost, payout, result.freeSpinsAwarded > 0);
       } catch (err) {
         balance.credit(cost);
         setStatusMsg('Spin failed — bet refunded.');

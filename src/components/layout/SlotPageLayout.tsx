@@ -4,6 +4,7 @@ import { useGame } from '../../game-context';
 import { fmtCurrency } from '../../lib/format';
 import { FairnessPanel } from '../fairness/FairnessPanel';
 import { BetHistoryTable } from '../fairness/BetHistoryTable';
+import { SessionStatsPanel } from '../SessionStatsPanel';
 import { BackIcon, MenuDotsIcon } from '../ui/icons';
 
 /** Full-screen immersive layout for a slot game page. No sidebar, no footer.
@@ -13,6 +14,7 @@ export function SlotPageLayout({ children }: { children: ReactNode }) {
   const { balance, sound } = useGame();
   const [fairnessOpen, setFairnessOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [statsOpen, setStatsOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
   // Lock body scroll while the slot page is mounted. Belt-and-suspenders:
@@ -86,6 +88,13 @@ export function SlotPageLayout({ children }: { children: ReactNode }) {
               <span className="text-ink-dim">{sound.enabled ? 'On' : 'Off'}</span>
             </button>
             <button
+              onClick={() => { setStatsOpen(true); setMenuOpen(false); }}
+              className="w-full flex items-center justify-between px-4 py-3 text-sm hover:bg-bg-hover border-t border-edge"
+            >
+              <span>Session stats</span>
+              <span className="text-ink-dim">›</span>
+            </button>
+            <button
               onClick={() => { setHistoryOpen(true); setMenuOpen(false); }}
               className="w-full flex items-center justify-between px-4 py-3 text-sm hover:bg-bg-hover border-t border-edge"
             >
@@ -124,6 +133,7 @@ export function SlotPageLayout({ children }: { children: ReactNode }) {
 
       <FairnessPanel open={fairnessOpen} onClose={() => setFairnessOpen(false)} />
       <BetHistoryTable open={historyOpen} onClose={() => setHistoryOpen(false)} />
+      <SessionStatsPanel open={statsOpen} onClose={() => setStatsOpen(false)} />
     </div>
   );
 }
