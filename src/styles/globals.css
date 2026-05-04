@@ -1290,6 +1290,16 @@
   100% { transform: translate(110vw, -8px) rotate(720deg); opacity: 0; }
 }
 
+/* Cantina papel-picado bunting — subtle desert-breeze sway. The
+ * transform-origin is the top of the SVG (where the string is hung)
+ * so the whole row pivots from its hung point rather than rotating
+ * around the centre. Long 6s cycle keeps it from feeling like a fan
+ * is blowing. */
+@keyframes cantinaBuntingSway {
+  0%, 100% { transform: rotate(-0.6deg) translateX(-1%); }
+  50%      { transform: rotate(0.7deg)  translateX(1%); }
+}
+
 /* Big Juan — fiesta confetti sparks drifting up from below */
 @keyframes bigJuanConfetti {
   0%   { transform: translate(0, 100%) rotate(0deg); opacity: 0; }

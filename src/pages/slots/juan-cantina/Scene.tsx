@@ -156,7 +156,8 @@ export function JuanScene() {
       {/* 4. Papel picado bunting — triangular pennants on a sagging string,
        *    rendered as proper SVG flags rather than rectangular blocks.
        *    Each flag has a small cut-paper diamond in the centre to nod to
-       *    real papel picado's pierced patterns. */}
+       *    real papel picado's pierced patterns. The whole row sways
+       *    gently as if a desert breeze is catching the paper. */}
       <svg
         className="absolute inset-x-0"
         style={{
@@ -164,6 +165,8 @@ export function JuanScene() {
           height: '8%',
           width: '100%',
           filter: 'drop-shadow(0 4px 6px rgba(0,0,0,.4))',
+          animation: 'cantinaBuntingSway 6s ease-in-out infinite',
+          transformOrigin: '50% 0%',
         }}
         viewBox="0 0 100 8"
         preserveAspectRatio="none"
