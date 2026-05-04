@@ -53,5 +53,11 @@ export const pharaohGoldConfig: SlotConfig = {
     glow: 'rgba(255,209,102,0.65)',
     gridClass: 'grid-bg-pharaoh',
     cellClass: 'cell-pharaoh',
+    // Egyptian-themed Pragmatic / RTG slots (John Hunter & the Tomb of
+    // the Scarab Queen, Cleocatra, Eye of Horus, Book of Ra-likes) are
+    // overwhelmingly reel slots — symbols on rotating columns, not
+    // tumbling cascades. Match that real-world inspiration with a
+    // vertical reel-scroll smear on spin start.
+    prespinStyle: 'reel-spin',
   },
 };
