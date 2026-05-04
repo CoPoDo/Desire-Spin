@@ -487,6 +487,11 @@ export function ImmersiveSlotView({
           case 'multiplierApplied': {
             sound.play('mega-win');
             setStatusMsg(`×${fmtMultiplier(frame.sumOfMultipliers)} → ${fmtCurrency(frame.finalPayout)}`);
+            if (cfg.id === 'gates-of-olympus' && frame.sumOfMultipliers >= 50) {
+              setZeusEyesGlow(true);
+              speakZeus(zeusLineFor('bigWin'));
+              scheduleSpin(() => setZeusEyesGlow(false), 1500);
+            }
             // Real-game-style reveal: pop a centered "TOTAL ×N" banner
             // summing all sticky orbs on the grid, then fade. The banner
             // auto-clears under the 1200ms multiplierApplied frame-delay
