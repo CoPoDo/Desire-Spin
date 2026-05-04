@@ -76,9 +76,11 @@ export function BonanzaScene() {
         <path d="M78,28 L74,32 L82,32 Z" fill="url(#mtn-snow)" />
       </svg>
 
-      {/* 3. Mid-distance candy castle — sits right in the middle behind the
-       * grid. Pink+purple turrets with conical caps. Subtle so the grid is
-       * still the focal point. */}
+      {/* 3. Mid-distance candy castle — fairytale silhouette with
+       *    crenellated battlements, conical roofs with candy-stripe pattern,
+       *    a central archway door, lit windows, and pennant flags. Sits
+       *    behind the grid; subtle opacity so the reels stay the focal
+       *    point but the castle reads as a clear sugar-fortress shape. */}
       <svg
         className="absolute inset-x-0"
         style={{ bottom: '24%', height: '14%', width: '100%' }}
@@ -95,25 +97,63 @@ export function BonanzaScene() {
             <stop offset="100%" stopColor="#a83adb" stopOpacity="0.75" />
           </linearGradient>
         </defs>
-        {/* Castle body (centred) */}
-        <rect x="38" y="6" width="24" height="8" fill="url(#cstl)" />
-        {/* Outer turrets (left + right) */}
-        <rect x="34" y="4" width="6" height="10" fill="url(#cstl)" />
-        <rect x="60" y="4" width="6" height="10" fill="url(#cstl)" />
-        {/* Centre tower (taller) */}
-        <rect x="46" y="2" width="8" height="12" fill="url(#cstl)" />
-        {/* Conical roofs */}
-        <path d="M34 4 L 37 0 L 40 4 Z" fill="url(#cstl-roof)" />
-        <path d="M46 2 L 50 -2 L 54 2 Z" fill="url(#cstl-roof)" />
-        <path d="M60 4 L 63 0 L 66 4 Z" fill="url(#cstl-roof)" />
-        {/* Tiny flag pennants */}
-        <path d="M50 -2 L 50 -4 L 53 -3 Z" fill="#ffd166" opacity=".7" />
-        <path d="M37 0 L 37 -2 L 39 -1 Z" fill="#ff5fa2" opacity=".65" />
-        <path d="M63 0 L 63 -2 L 65 -1 Z" fill="#ff5fa2" opacity=".65" />
-        {/* Lit windows (warm orange dots) */}
-        {[40, 44, 50, 56, 62].map((x, i) => (
-          <rect key={i} x={x - 0.5} y="9" width="1" height="1.4" fill="rgba(255,200,80,.55)" />
+        {/* Castle main body with crenellated top — the iconic battlement
+         * silhouette. Drawn as a single path so the alternating notches
+         * are part of the wall rather than overlaid blocks. */}
+        <path
+          d="M 38 14 L 38 7 L 40 7 L 40 6 L 42 6 L 42 7 L 44 7 L 44 6 L 46 6
+             L 46 7 L 48 7 L 48 6 L 52 6 L 52 7 L 54 7 L 54 6 L 56 6
+             L 56 7 L 58 7 L 58 6 L 60 6 L 60 7 L 62 7 L 62 14 Z"
+          fill="url(#cstl)"
+        />
+        {/* Outer turrets with their own crenellations */}
+        <path
+          d="M 34 14 L 34 5 L 35 5 L 35 4 L 36.5 4 L 36.5 5 L 38 5 L 38 4
+             L 39.5 4 L 39.5 5 L 40 5 L 40 14 Z"
+          fill="url(#cstl)"
+        />
+        <path
+          d="M 60 14 L 60 5 L 60.5 5 L 60.5 4 L 62 4 L 62 5 L 63.5 5 L 63.5 4
+             L 65 4 L 65 5 L 66 5 L 66 14 Z"
+          fill="url(#cstl)"
+        />
+        {/* Centre tower (taller, also crenellated) */}
+        <path
+          d="M 46 14 L 46 3 L 47 3 L 47 2 L 48.5 2 L 48.5 3 L 50 3 L 50 2
+             L 51.5 2 L 51.5 3 L 53 3 L 53 2 L 54 2 L 54 14 Z"
+          fill="url(#cstl)"
+        />
+        {/* Conical roofs over the centre + outer turrets */}
+        <path d="M 34 5 L 37 0 L 40 5 Z" fill="url(#cstl-roof)" />
+        <path d="M 46 3 L 50 -2 L 54 3 Z" fill="url(#cstl-roof)" />
+        <path d="M 60 5 L 63 0 L 66 5 Z" fill="url(#cstl-roof)" />
+        {/* Candy-stripe lines on the conical roofs (subtle, just suggesting
+         * peppermint-stick striping from a distance) */}
+        <path d="M 37 0 L 36.5 2 M 37 0 L 37.5 2" stroke="#ffd166" strokeWidth=".15" opacity=".6" />
+        <path d="M 50 -2 L 49 0.5 M 50 -2 L 51 0.5" stroke="#ffd166" strokeWidth=".15" opacity=".6" />
+        <path d="M 63 0 L 62.5 2 M 63 0 L 63.5 2" stroke="#ffd166" strokeWidth=".15" opacity=".6" />
+        {/* Pennant flags on the highest spires */}
+        <path d="M 50 -2 L 50 -4 L 53 -3 Z" fill="#ffd166" opacity=".75" />
+        <line x1="50" y1="-4" x2="50" y2="-2" stroke="#5a2080" strokeWidth=".15" opacity=".5" />
+        <path d="M 37 0 L 37 -2 L 39 -1 Z" fill="#ff5fa2" opacity=".7" />
+        <path d="M 63 0 L 63 -2 L 65 -1 Z" fill="#ff5fa2" opacity=".7" />
+        {/* Central archway door — gives the castle a focal point  */}
+        <path
+          d="M 49 14 L 49 11 Q 49 9 50 9 Q 51 9 51 11 L 51 14 Z"
+          fill="rgba(40, 8, 50, .55)"
+          stroke="rgba(255,255,255,.18)"
+          strokeWidth=".1"
+        />
+        {/* Lit windows (warm orange dots, two rows) */}
+        {[40, 44, 56, 60].map((x, i) => (
+          <rect key={`w1-${i}`} x={x - 0.5} y="9" width="1" height="1.4" fill="rgba(255,200,80,.6)" />
         ))}
+        {[48.5, 51.5].map((x, i) => (
+          <rect key={`w2-${i}`} x={x - 0.4} y="6" width=".8" height="1.2" fill="rgba(255,200,80,.55)" />
+        ))}
+        {/* Tiny window in left + right turrets */}
+        <rect x="36.5" y="8" width="1" height="1.2" fill="rgba(255,200,80,.55)" />
+        <rect x="62.5" y="8" width="1" height="1.2" fill="rgba(255,200,80,.55)" />
       </svg>
 
       {/* Soft candy-spotlight glow behind the reel area — gives the grid
