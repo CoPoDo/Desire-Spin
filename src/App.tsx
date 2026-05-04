@@ -10,6 +10,7 @@ import { SweetBonanza } from './pages/slots/sweet-bonanza';
 import { GatesOfOlympus } from './pages/slots/gates-of-olympus';
 import { DiceGame } from './pages/originals/dice';
 import { LimboGame } from './pages/originals/limbo';
+import { MinesGame } from './pages/originals/mines';
 
 export default function App() {
   return (
@@ -27,6 +28,7 @@ export default function App() {
         />
         <Route path="/originals/dice" element={<DiceGame />} />
         <Route path="/originals/limbo" element={<LimboGame />} />
+        <Route path="/originals/mines" element={<MinesGame />} />
 
         {/* Lobby + non-game routes — full Layout with sidebar */}
         <Route path="/" element={<Layout><Home /></Layout>} />
