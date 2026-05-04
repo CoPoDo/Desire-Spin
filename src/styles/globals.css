@@ -1469,6 +1469,20 @@
   100% { opacity: 0; }
 }
 
+/* Olympus — Zeus eyes ANGRY-PULSE while glowing. Combine the
+ * AnimatePresence opacity envelope (handled by motion.div parent)
+ * with this scale + brightness pulse so the eyes don't just appear,
+ * they FLARE. Real Olympus has Zeus's eyes flash dramatically when
+ * he intervenes; the previous static glow read as "ambient fire"
+ * rather than "Zeus is watching you". */
+.bj-zeus-eye {
+  animation: zeusEyeFlare 0.45s ease-out infinite alternate;
+}
+@keyframes zeusEyeFlare {
+  0%   { transform: scale(1);    filter: brightness(1); }
+  100% { transform: scale(1.25); filter: brightness(1.4); }
+}
+
 /* Screen-shake utility classes (ported from House Edge). Apply to any
  * container — translates + tiny rotation cycles for ~0.35s/0.55s/0.9s
  * to convey tiered impact on big-win moments. Loops once and ends

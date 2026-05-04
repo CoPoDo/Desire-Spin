@@ -1058,33 +1058,39 @@ export function ImmersiveSlotView({
                        *  a tight white-hot core fading through fierce red.
                        *  Outer drop-shadow halo extends the glow well
                        *  beyond the dot itself so it reads as RAGE-LIT. */}
-                      {/* Left eye */}
+                      {/* Left eye — positioned over the painted Zeus's left
+                       *  eye in olympus-bg.png. The painted Zeus is in the
+                       *  upper-left; his eyes sit at approximately
+                       *  (14%, 12%) and (18%, 12%) of the stage container.
+                       *  Earlier coords (top:18%) put the eyes on his
+                       *  chest, which is why the user "didn't see them
+                       *  flash" — they were lit but not over the face. */}
                       <span
-                        className="absolute rounded-full"
+                        className="absolute rounded-full bj-zeus-eye"
                         style={{
-                          left: '13%',
-                          top: '18%',
+                          left: '14%',
+                          top: '11.5%',
                           width: '2.6%',
                           aspectRatio: '1 / 1',
                           background:
                             'radial-gradient(circle, #ffffff 0%, #ff5050 30%, #c8102e 55%, transparent 75%)',
                           boxShadow:
-                            '0 0 10px #ff3030, 0 0 24px rgba(255,40,40,.95), 0 0 48px rgba(200,16,46,.75)',
+                            '0 0 12px #ff3030, 0 0 28px rgba(255,40,40,.95), 0 0 56px rgba(200,16,46,.8)',
                           mixBlendMode: 'screen',
                         }}
                       />
                       {/* Right eye */}
                       <span
-                        className="absolute rounded-full"
+                        className="absolute rounded-full bj-zeus-eye"
                         style={{
-                          left: '17%',
-                          top: '18%',
+                          left: '18%',
+                          top: '11.5%',
                           width: '2.6%',
                           aspectRatio: '1 / 1',
                           background:
                             'radial-gradient(circle, #ffffff 0%, #ff5050 30%, #c8102e 55%, transparent 75%)',
                           boxShadow:
-                            '0 0 10px #ff3030, 0 0 24px rgba(255,40,40,.95), 0 0 48px rgba(200,16,46,.75)',
+                            '0 0 12px #ff3030, 0 0 28px rgba(255,40,40,.95), 0 0 56px rgba(200,16,46,.8)',
                           mixBlendMode: 'screen',
                         }}
                       />
@@ -2575,7 +2581,18 @@ export function ImmersiveSlotView({
         {welcomeSplash && (
           <motion.button
             type="button"
-            onClick={() => setWelcomeSplash(false)}
+            onClick={() => {
+              setWelcomeSplash(false);
+              // Prime Zeus voice on first user gesture so the
+              // SpeechSynthesis API has permission to speak when the
+              // first multiplier or scatter event fires. Browsers
+              // require a user gesture before audio/speech can play;
+              // tapping the welcome splash is the earliest possible
+              // gesture in the slot session, so we use it.
+              if (cfg.id === 'gates-of-olympus') {
+                primeZeus();
+              }
+            }}
             className="fixed inset-0 z-[150] flex flex-col items-center justify-center text-center p-6"
             style={{
               // Welcome splash background tinted with the slot's accent —
