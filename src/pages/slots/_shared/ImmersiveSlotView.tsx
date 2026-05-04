@@ -1110,8 +1110,11 @@ export function ImmersiveSlotView({
                   width: `${liveInsets.width / cfg.cols * 0.9}%`,
                   aspectRatio: '1 / 1',
                   transform: 'translate(-50%, -50%)',
-                  background:
-                    'radial-gradient(circle at 50% 50%, rgba(255,233,168,0.55) 0%, rgba(255,200,40,0.25) 50%, transparent 75%)',
+                  // Orb-impact halo tinted to the slot's accent so the
+                  // landing flash matches each game's palette (Bonanza
+                  // pink, Olympus gold, Sugar Rush magenta, etc.). Was
+                  // hardcoded gold which clashed with non-Olympus themes.
+                  background: `radial-gradient(circle at 50% 50%, ${cfg.theme.accent}8c 0%, ${cfg.theme.accent}40 50%, transparent 75%)`,
                   mixBlendMode: 'screen',
                 }}
                 initial={{ scale: 0.5, opacity: 0 }}
