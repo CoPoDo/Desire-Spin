@@ -1153,6 +1153,14 @@
   100% { transform: translate(-10vw, -8px); opacity: 0; }
 }
 
+/* Wolf Gold — occasional shooting star streak across the upper sky */
+@keyframes wolfShootingStar {
+  0%   { transform: translate(0, 0); opacity: 0; }
+  3%   { opacity: 1; }
+  20%  { transform: translate(36vw, 8vh); opacity: 0; }
+  100% { transform: translate(36vw, 8vh); opacity: 0; }
+}
+
 /* Sweet Bonanza symbol container — vibrant drop-shadow for the candy palette.
  * Larger than Olympus's 78% so the saturated fruits dominate the cell, matching
  * real Sweet Bonanza's punchy filled-cell look. */

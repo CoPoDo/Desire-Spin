@@ -128,6 +128,39 @@ export function WolfScene() {
         </g>
       </svg>
 
+      {/* Cool moonlight stage-light glow behind reels (violet tint) */}
+      <div
+        className="absolute pointer-events-none"
+        style={{
+          left: '50%',
+          top: '46%',
+          transform: 'translate(-50%, -50%)',
+          width: '92%',
+          height: '50%',
+          background:
+            'radial-gradient(ellipse at center, rgba(167,139,250,.3) 0%, rgba(102,56,200,.16) 40%, transparent 75%)',
+          filter: 'blur(8px)',
+          mixBlendMode: 'screen',
+        }}
+      />
+
+      {/* Occasional shooting star streaking across the upper sky.
+       * Long delay (15s cycle) makes it rare/special. */}
+      <div
+        className="absolute"
+        style={{
+          left: '8%',
+          top: '12%',
+          width: '60px',
+          height: '2px',
+          background: 'linear-gradient(90deg, transparent, #fff, #c4d4ff)',
+          borderRadius: '1px',
+          boxShadow: '0 0 8px rgba(255,255,255,.95), 0 0 16px rgba(167,139,250,.6)',
+          animation: 'wolfShootingStar 15s linear infinite',
+          willChange: 'transform, opacity',
+        }}
+      />
+
       {/* Cactus silhouettes — proper SVG saguaros instead of emoji. Pure
        * black silhouettes with a subtle moon-rim highlight on the left edge
        * (matches the moon-light direction). */}
