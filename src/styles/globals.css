@@ -1088,6 +1088,15 @@
   50%      { transform: translateY(0)   rotate(0deg); }
   75%      { transform: translateY(4px)  rotate(-3deg); }
 }
+/* Heart particles drift upward across the candy-cloud scene — signature
+ * Sweet Bonanza ambient touch. Each instance offsets its delay so they
+ * spread across the screen instead of all rising together. */
+@keyframes bonanzaHeartDrift {
+  0%   { transform: translate(0, 100%) rotate(-8deg); opacity: 0; }
+  10%  { opacity: 0.85; }
+  90%  { opacity: 0.85; }
+  100% { transform: translate(15px, -120%) rotate(12deg); opacity: 0; }
+}
 
 /* Sweet Bonanza symbol container — vibrant drop-shadow for the candy palette.
  * Larger than Olympus's 78% so the saturated fruits dominate the cell, matching

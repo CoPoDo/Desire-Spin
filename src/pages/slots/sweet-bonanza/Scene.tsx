@@ -128,7 +128,38 @@ export function BonanzaScene() {
         }}
       />
 
-      {/* 6. Vignette + subtle gold-edge frame */}
+      {/* 6. Drifting heart particles — signature Sweet Bonanza ambient. Each
+          heart starts off-screen at the bottom and drifts up while drifting
+          slightly right, fading in then out. Different sizes + delays + speeds
+          spread them across the scene without feeling synchronized. */}
+      {[
+        { left: '12%', size: 14, dur: 9, delay: 0,    color: '#ff7ad9' },
+        { left: '24%', size: 10, dur: 11, delay: 2.4, color: '#ffaad0' },
+        { left: '38%', size: 18, dur: 10, delay: 4.8, color: '#ff5fa2' },
+        { left: '52%', size: 12, dur: 8.5, delay: 1.2, color: '#ffd1e2' },
+        { left: '68%', size: 16, dur: 12, delay: 3.6, color: '#c042b8' },
+        { left: '82%', size: 11, dur: 10.5, delay: 5.6, color: '#ff7ad9' },
+        { left: '92%', size: 13, dur: 9.5, delay: 0.8, color: '#ffaad0' },
+      ].map((h, i) => (
+        <div
+          key={i}
+          className="absolute select-none"
+          style={{
+            left: h.left,
+            bottom: '-10%',
+            fontSize: `${h.size}px`,
+            color: h.color,
+            filter: `drop-shadow(0 0 6px ${h.color}aa)`,
+            animation: `bonanzaHeartDrift ${h.dur}s linear ${h.delay}s infinite`,
+            mixBlendMode: 'screen',
+            willChange: 'transform, opacity',
+          }}
+        >
+          ❤
+        </div>
+      ))}
+
+      {/* 7. Vignette + subtle gold-edge frame */}
       <div
         className="absolute inset-0"
         style={{
