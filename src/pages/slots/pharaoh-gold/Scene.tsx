@@ -93,12 +93,16 @@ export function PharaohScene() {
         {/* Big back pyramid */}
         <path d="M 30 50 L 50 14 L 70 50 Z" fill="url(#ph-pyramid)" />
         <path d="M 50 14 L 70 50 L 60 50 Z" fill="url(#ph-pyramid-shade)" />
+        {/* Sun-catching limestone rim along the lit (left) edge */}
+        <path d="M 30 50 L 50 14" fill="none" stroke="rgba(255,209,102,.5)" strokeWidth=".25" strokeLinecap="round" />
         {/* Mid-size pyramid right */}
         <path d="M 64 50 L 78 22 L 92 50 Z" fill="url(#ph-pyramid)" />
         <path d="M 78 22 L 92 50 L 84 50 Z" fill="url(#ph-pyramid-shade)" />
+        <path d="M 64 50 L 78 22" fill="none" stroke="rgba(255,209,102,.5)" strokeWidth=".22" strokeLinecap="round" />
         {/* Small pyramid left */}
         <path d="M 8 50 L 22 28 L 36 50 Z" fill="url(#ph-pyramid)" opacity=".9" />
         <path d="M 22 28 L 36 50 L 30 50 Z" fill="url(#ph-pyramid-shade)" />
+        <path d="M 8 50 L 22 28" fill="none" stroke="rgba(255,209,102,.4)" strokeWidth=".2" strokeLinecap="round" />
         {/* Great Sphinx silhouette — sits between the small left pyramid
          * and the big back pyramid. Properly sized + detailed so the iconic
          * silhouette reads cleanly: lion body crouched on plinth, raised
