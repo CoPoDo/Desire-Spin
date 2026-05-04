@@ -14,6 +14,7 @@ import {
   useAutoBetRunner,
 } from '../_shared/AutoBetController';
 import { multiplierAt, rollBust, timeForMultiplier } from './engine';
+import { fireConfetti } from '../../../lib/confetti';
 
 type Phase = 'idle' | 'running' | 'crashed' | 'cashed';
 
@@ -61,6 +62,14 @@ export function CrashGame() {
       if (win) {
         balance.credit(payout);
         sound.play(cashedAt! >= 10 ? 'mega-win' : cashedAt! >= 3 ? 'big-win' : 'win');
+        // Confetti scaled to cash-out multiplier — small for hop-out
+        // safety, big for held-it-late wins.
+        if (cashedAt! >= 2) {
+          fireConfetti({
+            count: cashedAt! >= 20 ? 130 : cashedAt! >= 5 ? 80 : 50,
+            colors: ['#1fff7a', '#22d3ee', '#ffd166', '#ffffff'],
+          });
+        }
       } else {
         sound.play('drop');
       }
