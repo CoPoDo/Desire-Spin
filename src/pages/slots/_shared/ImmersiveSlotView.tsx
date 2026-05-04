@@ -618,10 +618,19 @@ export function ImmersiveSlotView({
 
   // Auto-play loop: when autoplay state is set, the effect kicks off
   // sequential spins, decrementing the counter each time, until exhausted,
-  // out of balance, or the user stops it. Doesn't run during free spins
-  // (those self-execute inside playRound's frames).
+  // out of balance, or the user stops it.
+  //
+  // Pauses while any of these are active so a player isn't dragged into
+  // the next spin before they've absorbed the celebration:
+  //   - bigWin overlay (BIG/HUGE/MEGA/EPIC/SENSATIONAL/COLOSSAL)
+  //   - free spins trigger overlay
+  //   - free spins outro overlay
+  //   - lightning strike overlay
+  //   - retrigger callout
+  // Real Pragmatic also pauses autoplay on big wins by default.
   useEffect(() => {
     if (!autoplay || busyRef.current || freeSpins) return;
+    if (bigWin || fsOverlay || fsOutroOverlay || lightningStrike || retrigger) return;
     const adjBet = ante ? +(bet * cfg.ante.betMultiplier).toFixed(2) : bet;
     if (balance.balance < adjBet) {
       setAutoplay(null);
@@ -638,7 +647,7 @@ export function ImmersiveSlotView({
       });
     }, 200);
     return () => clearTimeout(t);
-  }, [autoplay, busy, freeSpins, ante, balance.balance, bet, cfg.ante.betMultiplier, runRound]);
+  }, [autoplay, busy, freeSpins, bigWin, fsOverlay, fsOutroOverlay, lightningStrike, retrigger, ante, balance.balance, bet, cfg.ante.betMultiplier, runRound]);
 
   const buyCost = useMemo(() => cfg.buyBonusCost * bet, [cfg.buyBonusCost, bet]);
   const inFree = freeSpins !== null;
