@@ -872,18 +872,72 @@ export function ImmersiveSlotView({
               }} />
             </motion.div>
           </AnimatePresence>
-          {/* Grid positioned inside the arch. The blur+darken on .prespin
-              gives a "reels stopping" feel right before initialDrop. */}
+          {/* Grid positioned inside the arch. The pre-spin transition
+              matches what the real-game inspiration does — see
+              prespinStyle docs in types.ts. */}
           <div
             className="absolute"
-            style={{
-              left: `${liveInsets.left}%`,
-              top: `${liveInsets.top}%`,
-              width: `${liveInsets.width}%`,
-              filter: prespin ? 'blur(4px) brightness(0.65)' : undefined,
-              transform: prespin ? 'scale(0.98)' : undefined,
-              transition: 'filter 160ms ease-out, transform 160ms ease-out',
-            }}
+            style={(() => {
+              const base = {
+                left: `${liveInsets.left}%`,
+                top: `${liveInsets.top}%`,
+                width: `${liveInsets.width}%`,
+              } as const;
+              if (!prespin) {
+                return {
+                  ...base,
+                  transition:
+                    'transform 220ms ease-out, opacity 220ms ease-out, filter 220ms ease-out',
+                };
+              }
+              switch (cfg.theme.prespinStyle) {
+                case 'fall':
+                  // Tumble slots: old symbols drop down off the grid with
+                  // gravity-like acceleration (ease-in). New ones cascade
+                  // in from above when initialDrop fires.
+                  return {
+                    ...base,
+                    transform: 'translateY(22%)',
+                    opacity: 0,
+                    transition:
+                      'transform 220ms cubic-bezier(.5,0,1,1), opacity 220ms ease-in',
+                  };
+                case 'puff':
+                  // Cluster slots (Sugar Rush): cells shrink-pop in place
+                  // rather than fall, then new ones drop in from above.
+                  return {
+                    ...base,
+                    transform: 'scale(0.86)',
+                    opacity: 0,
+                    filter: 'brightness(1.2) saturate(1.15)',
+                    transition:
+                      'transform 200ms ease-in, opacity 200ms ease-in, filter 200ms ease-out',
+                  };
+                case 'reel-spin':
+                  // Real reel slots (Wolf Gold, Wanted): reels scroll
+                  // upward fast. CSS has no directional blur, so we fake
+                  // vertical motion with a stretchY scale + fast upward
+                  // translate + a small symmetric blur. Reads as "reels
+                  // smeared upward" rather than "out-of-focus image".
+                  return {
+                    ...base,
+                    transform: 'translateY(-10%) scaleY(1.18)',
+                    transformOrigin: 'top center',
+                    filter: 'blur(1.5px) brightness(0.78)',
+                    opacity: 0.6,
+                    transition:
+                      'transform 200ms ease-out, filter 200ms ease-out, opacity 200ms ease-out',
+                  };
+                default:
+                  // Legacy fallback for slots not yet migrated.
+                  return {
+                    ...base,
+                    filter: 'blur(4px) brightness(0.65)',
+                    transform: 'scale(0.98)',
+                    transition: 'filter 160ms ease-out, transform 160ms ease-out',
+                  };
+              }
+            })()}
           >
             <Grid grid={grid} cfg={cfg} winning={winning} newKeys={newKeys} renderCell={renderCell} bare />
           </div>

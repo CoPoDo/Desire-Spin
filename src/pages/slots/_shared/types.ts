@@ -148,5 +148,18 @@ export type SlotConfig = {
     cellClass: string;
     /** Class added to the page-level wrapper for atmosphere (e.g. `olympus-stage`). */
     stageClass?: string;
+    /** How the grid transitions when SPIN is pressed before new symbols
+     *  arrive. Each option matches what the real-game inspiration does:
+     *
+     *   - 'fall'      tumble slots (Sweet Bonanza, Gates of Olympus): old
+     *                 symbols drop down off the grid, no blur. New symbols
+     *                 cascade in from above.
+     *   - 'puff'      cluster slots (Sugar Rush): old symbols pop/shrink in
+     *                 place, then new ones drop in.
+     *   - 'reel-spin' real reel slots (Wolf Gold, Wanted): vertical motion
+     *                 blur per column (not omni-directional blur).
+     *
+     *  When omitted, falls back to the legacy blur+darken effect. */
+    prespinStyle?: 'fall' | 'puff' | 'reel-spin';
   };
 };

@@ -119,5 +119,11 @@ export const sweetBonanzaConfig: SlotConfig = {
     glow: 'rgba(255,95,162,0.55)',
     gridClass: 'grid-bg-bonanza',
     cellClass: 'cell-bonanza',
+    // Real Sweet Bonanza on spin start: existing candies cascade DOWN off
+    // the grid, then new candies cascade in from above. No blur — tumble
+    // slots don't have spinning reels. This 'fall' transition mirrors that
+    // — the old grid translates downward + fades, then initialDrop fires
+    // and new cells animate in from above (existing Grid behaviour).
+    prespinStyle: 'fall',
   },
 };
