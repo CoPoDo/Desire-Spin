@@ -35,6 +35,7 @@ import { MiniRouletteGame } from './pages/originals/mini-roulette';
 import { ScratchGame } from './pages/originals/scratch';
 import { PenaltyGame } from './pages/originals/penalty';
 import { TreasureGame } from './pages/originals/treasure';
+import { BigBassGame } from './pages/originals/big-bass';
 
 export default function App() {
   return (
@@ -77,6 +78,7 @@ export default function App() {
         <Route path="/originals/scratch" element={<ScratchGame />} />
         <Route path="/originals/penalty" element={<PenaltyGame />} />
         <Route path="/originals/treasure" element={<TreasureGame />} />
+        <Route path="/originals/big-bass" element={<BigBassGame />} />
 
         {/* Lobby + non-game routes — full Layout with sidebar */}
         <Route path="/" element={<Layout><Home /></Layout>} />
