@@ -49,9 +49,10 @@ export function Grid({
           const isWin = winning.has(`${c}:${r}`);
           const isNew = newKeys.has(cell.key);
           // Per-column stagger: leftmost column drops first, then the next,
-          // etc. — matches real Pragmatic's left-to-right reel reveal. Adds
-          // a few hundred ms of cinematic pacing without hurting overall flow.
-          const columnDelay = isNew ? c * 0.05 : 0;
+          // etc. — matches real Pragmatic's left-to-right reel reveal. 80ms
+          // per column (was 50ms — a touch too fast) lines up with how the
+          // real Sweet Bonanza / Olympus reels reveal column-by-column.
+          const columnDelay = isNew ? c * 0.08 : 0;
           return (
             <motion.div
               key={cell.key}

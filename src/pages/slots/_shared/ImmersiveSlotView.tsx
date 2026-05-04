@@ -85,7 +85,8 @@ export type ImmersiveSlotViewProps = {
 // dropping, so highlights painted on top of still-falling symbols.
 // The FS frames stay long for dramatic pacing (audited in earlier pass).
 const FRAME_DELAY: Record<string, number> = {
-  initialDrop: 700,         // matches col-staggered drop completion (~670ms)
+  initialDrop: 850,         // matches col-staggered drop completion
+                            //   (5*80ms stagger + 420ms drop = ~820ms)
   lightningStrike: 1500,    // dramatic Zeus pause
   multipliersLanded: 480,   // subtle orb thump
   wins: 600,                // winning highlight hold
