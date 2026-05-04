@@ -113,6 +113,13 @@ export function Home() {
             badge="LIVE"
             art={<PlaceholderArt label="🔢" tone="#1a3a3a" />}
           />
+          <GameCard
+            to="/originals/roulette"
+            title="Roulette"
+            subtitle="European, single 0"
+            badge="LIVE"
+            art={<PlaceholderArt label="🟢" tone="#1a3a1a" />}
+          />
         </div>
       </section>
     </div>

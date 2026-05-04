@@ -17,6 +17,7 @@ import { WheelGame } from './pages/originals/wheel';
 import { HiloGame } from './pages/originals/hilo';
 import { TowerGame } from './pages/originals/tower';
 import { KenoGame } from './pages/originals/keno';
+import { RouletteGame } from './pages/originals/roulette';
 
 export default function App() {
   return (
@@ -41,6 +42,7 @@ export default function App() {
         <Route path="/originals/hilo" element={<HiloGame />} />
         <Route path="/originals/tower" element={<TowerGame />} />
         <Route path="/originals/keno" element={<KenoGame />} />
+        <Route path="/originals/roulette" element={<RouletteGame />} />
 
         {/* Lobby + non-game routes — full Layout with sidebar */}
         <Route path="/" element={<Layout><Home /></Layout>} />
