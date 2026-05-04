@@ -657,6 +657,33 @@ export function ImmersiveSlotView({
         </div>
       )}
 
+      {/* "Tap to skip" hint — pulses subtly during a busy spin to remind the
+          player they can fast-forward. Hidden on autoplay (which already
+          shows AUTO indicator) and during the FS overlays (those are short).
+          Real Pragmatic Olympus shows a similar hint. */}
+      <AnimatePresence>
+        {busy && !autoplay && !fsOverlay && !fsOutroOverlay && !lightningStrike && !bigWin && (
+          <motion.div
+            className="absolute z-20 left-1/2 pointer-events-none px-3 py-1 rounded-full text-[9px] uppercase tracking-[0.24em] font-mono font-semibold text-[#FFE0A8]"
+            style={{
+              bottom: '120px',
+              transform: 'translateX(-50%)',
+              background: 'rgba(0,0,0,0.45)',
+              border: '1px solid rgba(255,233,168,.3)',
+              textShadow: '0 0 10px rgba(255,200,40,.5)',
+            }}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: [0.45, 0.85, 0.45] }}
+            exit={{ opacity: 0, y: 4 }}
+            transition={{
+              opacity: { duration: 1.4, repeat: Infinity, ease: 'easeInOut' },
+            }}
+          >
+            Tap to skip
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Painted backdrop scene fills available space, preserves aspect ratio.
           pt-12 clears the floating top bar; min-h-0 + overflow-hidden lets the
           flex-1 area shrink properly so the bottom bar is always in view.
