@@ -819,7 +819,18 @@ export function ImmersiveSlotView({
         aria-label={busy ? 'Tap to skip animation' : 'Reels'}
       >
         <div
-          className={`relative h-full ${inFree ? 'olympus-fs-mode' : ''}`}
+          // Stage container — gets a shake class while a big-win
+          // celebration is playing. Tier intensity decides the shake
+          // strength: BIG → light, HUGE → medium, MEGA+ → heavy.
+          className={`relative h-full ${inFree ? 'olympus-fs-mode' : ''} ${
+            bigWin
+              ? bigWin.tier.intensity >= 1.7
+                ? 'shake-heavy'
+                : bigWin.tier.intensity >= 1.0
+                  ? 'shake-medium'
+                  : 'shake-light'
+              : ''
+          }`}
           style={{
             aspectRatio: `${backdropAspect.w} / ${backdropAspect.h}`,
             // height: 100% via flex parent; width derived from aspect-ratio.
