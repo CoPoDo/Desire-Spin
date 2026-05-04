@@ -1012,14 +1012,18 @@
   transform: translateZ(0);
   will-change: transform;
 }
+/* Pharaoh scatter is a winged scarab — give it a hover-flutter motion
+ * (slight vertical bob + scale lift) instead of an in-place pulse so it
+ * actually feels like a beetle holding altitude with its wings. Real
+ * Egyptian scarab amulets are often shown as winged sun-scarabs. */
 .pharaoh-sym-scatter {
-  animation: pharaohScatterPulse 1.7s ease-in-out infinite;
+  animation: pharaohScatterHover 1.8s ease-in-out infinite;
   filter: drop-shadow(0 3px 6px rgba(0,0,0,.7))
           drop-shadow(0 0 14px rgba(255, 209, 102, 0.8));
 }
-@keyframes pharaohScatterPulse {
-  0%, 100% { transform: scale(1) translateZ(0); opacity: 0.95; }
-  50%      { transform: scale(1.05) translateZ(0); opacity: 1; }
+@keyframes pharaohScatterHover {
+  0%, 100% { transform: translateY(0) scale(1) translateZ(0); opacity: 0.95; }
+  50%      { transform: translateY(-6%) scale(1.04) translateZ(0); opacity: 1; }
 }
 .pharaoh-sym-hero {
   animation: pharaohHeroPulse 2.0s ease-in-out infinite;
