@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { loadJson, saveJson } from '../../../lib/storage';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useGame } from '../../../game-context';
+import { useMusic } from '../../../hooks/useMusic';
 import { createRng } from '../../../lib/fairness';
 import { fmtCurrency, fmtMultiplier } from '../../../lib/format';
 import type {
@@ -104,6 +105,7 @@ export function ImmersiveSlotView({
   betPresets = DEFAULT_PRESETS,
 }: ImmersiveSlotViewProps) {
   const { balance, fairness, history, sound } = useGame();
+  const music = useMusic({ soundEnabled: sound.enabled });
   const [bet, setBet] = useState(1);
   const [ante, setAnte] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -388,6 +390,10 @@ export function ImmersiveSlotView({
       setStatusMsg('');
       setWinTotal(0);
       sound.play('spin');
+      // Kick off background music on first user interaction (browser autoplay
+      // policy requires a user gesture). switchIntensity is no-op if already
+      // playing the right track.
+      music.start(freeSpins ? 'free' : 'base');
       balance.debit(cost);
 
       try {
@@ -429,6 +435,20 @@ export function ImmersiveSlotView({
     },
     [ante, balance, bet, cfg, fairness, history, playFrames, sound],
   );
+
+  // Switch music intensity to match game state (base / free spins).
+  // Tracks change immediately when entering or exiting a free-spins session.
+  const fsActive = freeSpins !== null;
+  useEffect(() => {
+    music.start(fsActive ? 'free' : 'base');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fsActive]);
+
+  // Duck music briefly during big-win celebrations.
+  useEffect(() => {
+    if (bigWin) music.duck(2200 + bigWin.tier.intensity * 400, 0.2);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bigWin]);
 
   // Auto-play loop: when autoplay state is set, the effect kicks off
   // sequential spins, decrementing the counter each time, until exhausted,
@@ -848,6 +868,15 @@ export function ImmersiveSlotView({
               onClick={() => setPaytableOpen(true)}
               className="w-8 h-8 rounded-full bg-bg-card border border-edge text-ink-dim hover:bg-bg-hover flex items-center justify-center text-sm leading-none font-serif italic font-bold"
             >i</button>
+            <button
+              aria-label={music.musicEnabled ? 'Music on' : 'Music off'}
+              onClick={() => music.setMusicEnabled(!music.musicEnabled)}
+              className={`w-8 h-8 rounded-full border flex items-center justify-center text-sm leading-none ${
+                music.musicEnabled
+                  ? 'bg-bg-card border-[#ffc62a]/40 text-[#ffe9a8]'
+                  : 'bg-bg-card border-edge text-ink-mute'
+              }`}
+            >♪</button>
           </div>
           <label className="flex items-center gap-1.5 cursor-pointer text-[10px] uppercase tracking-wider text-ink-dim w-full justify-center">
             <input
