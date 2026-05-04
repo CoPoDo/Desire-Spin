@@ -53,6 +53,10 @@ export type MultiplierLanding = {
 /** Frames the renderer plays in order. */
 export type Frame =
   | { kind: 'initialDrop'; grid: Grid }
+  /** Lightning Strike (real Olympus): Zeus appears, raises arm, lightning slams
+      a batch of multiplier orbs onto the board before the first win-check.
+      Visually distinct from normal multiplier drops during tumbles. */
+  | { kind: 'lightningStrike'; landings: MultiplierLanding[]; grid: Grid }
   | { kind: 'multipliersLanded'; landings: MultiplierLanding[]; grid: Grid }
   | {
       kind: 'wins';

@@ -50,21 +50,46 @@ export type ImmersiveSlotViewProps = {
   betPresets?: number[];
 };
 
-const FRAME_DELAY = {
+const FRAME_DELAY: Record<string, number> = {
   initialDrop: 380,
+  lightningStrike: 1500,
   multipliersLanded: 600,
   wins: 700,
   tumble: 340,
   scattersWon: 800,
-  freeSpinsAwarded: 1100,
-  freeSpinsBegin: 900,
-  freeSpinsEnd: 1100,
+  freeSpinsAwarded: 1200,
+  freeSpinsBegin: 1100,
+  freeSpinsEnd: 1400,
   multiplierApplied: 1100,
   final: 0,
-} as const;
+};
+
+// Per-frame minimum delay so turbo doesn't make things janky (avoids stacking
+// multiple state changes within a single render frame which can drop animations).
+const TURBO_MIN_DELAY: Record<string, number> = {
+  initialDrop: 200,
+  lightningStrike: 900, // Lightning Strike never goes super fast — too iconic
+  multipliersLanded: 280,
+  wins: 320,
+  tumble: 200,
+  scattersWon: 400,
+  freeSpinsAwarded: 800,
+  freeSpinsBegin: 700,
+  freeSpinsEnd: 900,
+  multiplierApplied: 600,
+};
 
 const TURBO_FACTOR = 0.30;
 const SKIP_DELAY_FACTOR = 0.05;
+// Big visual moments are never skippable past these floors — keeps the
+// celebration legible even when the user is mashing.
+const SKIP_MIN_DELAY: Record<string, number> = {
+  lightningStrike: 600,
+  freeSpinsAwarded: 400,
+  freeSpinsBegin: 350,
+  freeSpinsEnd: 450,
+  multiplierApplied: 350,
+};
 const DEFAULT_PRESETS = [0.2, 0.5, 1, 2, 5, 10, 20, 50, 100];
 const AUTOPLAY_OPTIONS = [10, 25, 50, 100, 0] as const; // 0 = infinite
 
@@ -90,6 +115,8 @@ export function ImmersiveSlotView({
   const [paytableOpen, setPaytableOpen] = useState(false);
   const [floatingMults, setFloatingMults] = useState<MultiplierLanding[]>([]);
   const [fsOverlay, setFsOverlay] = useState<{ count: number; reason: 'scatter' | 'retrigger' | 'buy' } | null>(null);
+  const [fsOutroOverlay, setFsOutroOverlay] = useState<{ totalPayout: number } | null>(null);
+  const [lightningStrike, setLightningStrike] = useState<boolean>(false);
   const [betSheetOpen, setBetSheetOpen] = useState(false);
   const [turbo, setTurbo] = useState<boolean>(() => loadJson<boolean>('turbo', false));
   const [autoplay, setAutoplay] = useState<{ remaining: number; infinite: boolean } | null>(null);
@@ -140,6 +167,33 @@ export function ImmersiveSlotView({
             setWinning(new Set());
             lastGrid = frame.grid;
             sound.play('drop');
+            // Detect scatters in initial grid; play scatter-land sound for each.
+            const scatters = countScattersInGrid(frame.grid, cfg.scatterId);
+            if (scatters > 0) {
+              for (let i = 0; i < scatters; i++) {
+                setTimeout(() => sound.play('scatter-land'), i * 110);
+              }
+            }
+            break;
+          }
+          case 'lightningStrike': {
+            // Real-Olympus signature: Zeus appears, lifts arm, lightning slams
+            // multiplier orbs onto the board. Dramatic full-screen overlay.
+            sound.play('lightning-strike');
+            setLightningStrike(true);
+            // Stagger orb thunks during the strike for impact.
+            for (let i = 0; i < frame.landings.length; i++) {
+              setTimeout(() => sound.play('multiplier'), 600 + i * 110);
+            }
+            // Apply the new grid (with multipliers) about 80% through the
+            // strike animation so the orbs visually appear during the boom.
+            setTimeout(() => {
+              setFloatingMults(frame.landings);
+              setGrid(frame.grid);
+              lastGrid = frame.grid;
+            }, 600);
+            // Hide overlay near the end of the frame delay.
+            setTimeout(() => setLightningStrike(false), 1300);
             break;
           }
           case 'wins': {
@@ -180,10 +234,13 @@ export function ImmersiveSlotView({
             break;
           }
           case 'freeSpinsAwarded': {
-            sound.play('big-win');
+            sound.play('free-spins-trigger');
             if (frame.reason !== 'retrigger') {
               setFsOverlay({ count: frame.count, reason: frame.reason });
-              setTimeout(() => setFsOverlay(null), 2200);
+              setTimeout(() => setFsOverlay(null), 2400);
+            } else {
+              // retrigger gets a small "+5" pulse via status, no big overlay
+              setStatusMsg(`+${frame.count} retrigger!`);
             }
             setFreeSpins((s) => {
               if (frame.reason === 'retrigger' && s) {
@@ -195,16 +252,20 @@ export function ImmersiveSlotView({
           }
           case 'freeSpinsBegin': {
             setFreeSpins({ remaining: frame.total, total: frame.total, running: 0 });
+            sound.play('free-spins-trigger');
             break;
           }
           case 'multiplierApplied': {
-            sound.play('big-win');
+            sound.play('mega-win');
             setStatusMsg(`×${fmtMultiplier(frame.sumOfMultipliers)} → ${fmtCurrency(frame.finalPayout)}`);
             break;
           }
           case 'freeSpinsEnd': {
+            sound.play('free-spins-end');
+            // Show outro overlay summarizing the FS session win.
+            setFsOutroOverlay({ totalPayout: frame.totalPayout });
+            setTimeout(() => setFsOutroOverlay(null), 2400);
             setFreeSpins(null);
-            sound.play('big-win');
             const mx = frame.totalPayout / Math.max(betUsed, 0.01);
             if (mx >= 20) setBigWin({ payout: frame.totalPayout, multiplier: mx });
             break;
@@ -222,9 +283,14 @@ export function ImmersiveSlotView({
             break;
           }
         }
-        let delay = FRAME_DELAY[frame.kind] ?? 200;
-        if (turboRef.current) delay *= TURBO_FACTOR;
-        if (skipRef.current) delay *= SKIP_DELAY_FACTOR;
+        const baseDelay = FRAME_DELAY[frame.kind] ?? 200;
+        let delay = baseDelay;
+        if (turboRef.current) {
+          delay = Math.max(baseDelay * TURBO_FACTOR, TURBO_MIN_DELAY[frame.kind] ?? 0);
+        }
+        if (skipRef.current) {
+          delay = Math.max(baseDelay * SKIP_DELAY_FACTOR, SKIP_MIN_DELAY[frame.kind] ?? 0);
+        }
         if (delay > 0) await sleep(delay);
       }
     },
@@ -653,6 +719,115 @@ export function ImmersiveSlotView({
         </>
       )}
 
+      {/* === Lightning Strike (Zeus arm-raise) overlay ===
+          Real-Olympus signature feature: dramatic dim, lightning streaks
+          across the screen, Zeus silhouette glows, and multiplier orbs
+          slam onto the board (handled by the playFrames staggered timeouts). */}
+      <AnimatePresence>
+        {lightningStrike && (
+          <motion.div
+            className="fixed inset-0 z-[110] pointer-events-none flex items-center justify-center overflow-hidden"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
+          >
+            {/* Dim background */}
+            <div className="absolute inset-0" style={{
+              background:
+                'radial-gradient(ellipse at center, rgba(80,30,10,.55) 0%, rgba(0,0,0,.85) 65%)',
+            }} />
+            {/* Lightning bolts — three thick zags zip across at staggered times */}
+            {[0, 1, 2].map((i) => (
+              <motion.div
+                key={i}
+                className="absolute"
+                style={{
+                  left: `${15 + i * 28}%`,
+                  top: 0,
+                  bottom: 0,
+                  width: '3px',
+                  background:
+                    'linear-gradient(180deg, transparent, #fffbe1 12%, #ffe9a8 30%, #ffc62a 60%, transparent 100%)',
+                  filter: 'drop-shadow(0 0 24px rgba(255,200,80,.95)) drop-shadow(0 0 60px rgba(255,140,40,.8))',
+                  transform: `skewX(${i % 2 === 0 ? -8 : 8}deg)`,
+                }}
+                initial={{ opacity: 0, scaleY: 0 }}
+                animate={{ opacity: [0, 1, 0.9, 0], scaleY: [0.4, 1, 1, 1] }}
+                transition={{ duration: 0.55, delay: i * 0.18, ease: 'easeOut' }}
+              />
+            ))}
+            {/* Screen flash */}
+            <motion.div
+              className="absolute inset-0 bg-[#fffbe1]"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: [0, 0.55, 0, 0.3, 0] }}
+              transition={{ duration: 0.7, times: [0, 0.05, 0.18, 0.25, 0.4] }}
+            />
+            {/* Zeus title */}
+            <motion.div
+              className="relative z-10 text-center"
+              initial={{ scale: 0.5, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 220, damping: 16, delay: 0.3 }}
+            >
+              <div className="font-serif italic font-bold olympus-fs-title"
+                   style={{ fontSize: 'clamp(34px, 9vw, 64px)' }}>
+                LIGHTNING<br/>STRIKE
+              </div>
+              <div className="olympus-fs-sub mt-2 text-[10px] md:text-sm">
+                Zeus has spoken
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* === Free-spins outro overlay ===
+          Plays at the end of a free-spins session showing the total won. */}
+      <AnimatePresence>
+        {fsOutroOverlay && (
+          <motion.div
+            className="olympus-fs-overlay fixed inset-0 z-[120] flex flex-col items-center justify-center text-center p-6 pointer-events-none"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.35 }}
+          >
+            <motion.div
+              className="olympus-fs-sub text-[10px] md:text-sm mb-2"
+              initial={{ y: -8, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+            >
+              Free Spins Complete
+            </motion.div>
+            <motion.div
+              className="olympus-fs-title"
+              style={{ fontSize: 'clamp(28px, 8vw, 56px)' }}
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: 'spring', stiffness: 220, damping: 14 }}
+            >
+              TOTAL WIN
+            </motion.div>
+            <motion.div
+              className="font-mono font-bold mt-2"
+              style={{
+                fontSize: 'clamp(28px, 9vw, 56px)',
+                color: '#FFE9A8',
+                textShadow: '0 0 24px rgba(255,200,40,.9), 0 4px 8px rgba(0,0,0,.6)',
+              }}
+              initial={{ scale: 0.4, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.18, type: 'spring' }}
+            >
+              {fmtCurrency(fsOutroOverlay.totalPayout)}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Free-spins trigger overlay */}
       <AnimatePresence>
         {fsOverlay && (
@@ -765,4 +940,10 @@ function makeBlank(cfg: SlotConfig): TGrid {
 
 function sleep(ms: number) {
   return new Promise<void>((res) => setTimeout(res, ms));
+}
+
+function countScattersInGrid(grid: TGrid, scatterId: string): number {
+  let n = 0;
+  for (const col of grid) for (const cell of col) if (cell.symbolId === scatterId) n++;
+  return n;
 }

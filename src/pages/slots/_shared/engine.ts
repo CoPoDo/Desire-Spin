@@ -230,8 +230,37 @@ export function spin(rng: Rng, cfg: SlotConfig, opts: SpinOptions, mode: SpinMod
 
   let working: Grid = clone(grid);
 
-  // Initial multiplier roll (Zeus throws multipliers at any time, including before
-  // the first win is checked). Real Olympus / Sweet Bonanza behavior.
+  // === Lightning Strike feature (real Olympus signature) ===
+  // In base mode only, with ~6% probability per spin, Zeus raises his arm and
+  // strikes the board with 2-6 multiplier orbs at random (separate from the
+  // per-tumble random multiplier mechanic). This is a distinct, dramatic
+  // moment with its own UI overlay & sound.
+  if (mode === 'base' && rng.next() < 0.06) {
+    const strikeCount = 2 + rng.nextInt(5); // 2..6 orbs
+    const landings: MultiplierLanding[] = [];
+    const used = new Set<string>();
+    let attempts = 0;
+    const valuesWeights = cfg.multiplierTableBase.values.map(([, w]) => w);
+    while (landings.length < strikeCount && attempts < 60) {
+      attempts++;
+      const c = rng.nextInt(cfg.cols);
+      const r = rng.nextInt(cfg.rows);
+      const key = `${c}:${r}`;
+      if (used.has(key)) continue;
+      const cell = working[c]?.[r];
+      if (!cell || cell.multiplier !== undefined || cell.symbolId === cfg.scatterId) continue;
+      used.add(key);
+      const vIdx = rng.weighted(valuesWeights);
+      const value = cfg.multiplierTableBase.values[vIdx]![0];
+      landings.push({ col: c, row: r, value, key: nextKey() });
+    }
+    if (landings.length > 0) {
+      working = applyMultiplierLandings(working, landings);
+      frames.push({ kind: 'lightningStrike', landings, grid: clone(working) });
+    }
+  }
+
+  // Initial multiplier roll (per-tumble Zeus drops, distinct from the strike).
   {
     const initialLandings = rollMultipliers(working, cfg, rng, mode);
     if (initialLandings.length > 0) {

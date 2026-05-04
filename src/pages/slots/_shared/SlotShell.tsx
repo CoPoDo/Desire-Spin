@@ -17,8 +17,9 @@ import type { CellRenderer } from './Grid';
 import { Paytable } from './Paytable';
 import { buyBonusRound, playRound } from './engine';
 
-const FRAME_DELAY = {
+const FRAME_DELAY: Record<string, number> = {
   initialDrop: 380,
+  lightningStrike: 1500,
   multipliersLanded: 600,
   wins: 720,
   tumble: 350,
@@ -28,7 +29,7 @@ const FRAME_DELAY = {
   freeSpinsEnd: 1100,
   multiplierApplied: 1100,
   final: 0,
-} as const;
+};
 
 const BET_PRESETS = [0.2, 0.5, 1, 2, 5, 10, 20, 50, 100];
 
