@@ -10,6 +10,7 @@ import { SweetBonanza } from './pages/slots/sweet-bonanza';
 import { GatesOfOlympus } from './pages/slots/gates-of-olympus';
 import { SugarRush } from './pages/slots/sugar-rush';
 import { JuanCantina } from './pages/slots/juan-cantina';
+import { WantedWild } from './pages/slots/wanted-wild';
 import { DiceGame } from './pages/originals/dice';
 import { LimboGame } from './pages/originals/limbo';
 import { MinesGame } from './pages/originals/mines';
@@ -63,6 +64,10 @@ export default function App() {
         <Route
           path="/slots/juan-cantina"
           element={<SlotPageLayout><JuanCantina /></SlotPageLayout>}
+        />
+        <Route
+          path="/slots/wanted-wild"
+          element={<SlotPageLayout><WantedWild /></SlotPageLayout>}
         />
         <Route path="/originals/dice" element={<DiceGame />} />
         <Route path="/originals/limbo" element={<LimboGame />} />

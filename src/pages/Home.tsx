@@ -3,6 +3,7 @@ import { BonanzaArt } from './slots/sweet-bonanza/Art';
 import { OlympusArt } from './slots/gates-of-olympus/Art';
 import { SugarRushArt } from './slots/sugar-rush/Art';
 import { JuanCantinaArt } from './slots/juan-cantina/Art';
+import { WantedWildArt } from './slots/wanted-wild/Art';
 
 export function Home() {
   return (
@@ -45,10 +46,12 @@ export function Home() {
             art={<SugarRushArt />}
           />
           <GameCard
+            to="/slots/wanted-wild"
             title="Wanted Dead or a Wild"
-            subtitle="Coming soon"
-            disabled
-            art={<PlaceholderArt label="🤠" tone="#3a2010" />}
+            subtitle="Tumble · Western shoot-out"
+            badge="NEW"
+            bg="linear-gradient(180deg, #d8442a 0%, #2a0810 100%)"
+            art={<WantedWildArt />}
           />
         </div>
       </section>
