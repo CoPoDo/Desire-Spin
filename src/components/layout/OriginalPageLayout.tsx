@@ -1,4 +1,5 @@
 import { ReactNode, useEffect, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { useGame } from '../../game-context';
 import { fmtCurrency } from '../../lib/format';
@@ -80,14 +81,25 @@ export function OriginalPageLayout({
         </div>
       </header>
 
-      {menuOpen && (
-        <>
-          <button
-            aria-label="Close menu"
-            onClick={() => setMenuOpen(false)}
-            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
-          />
-          <div className="fixed top-14 right-3 z-50 w-56 rounded-2xl bg-bg-card border border-edge shadow-2xl overflow-hidden">
+      <AnimatePresence>
+        {menuOpen && (
+          <>
+            <motion.button
+              aria-label="Close menu"
+              onClick={() => setMenuOpen(false)}
+              className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.18 }}
+            />
+            <motion.div
+              className="fixed top-14 right-3 z-50 w-56 rounded-2xl bg-bg-card border border-edge shadow-2xl overflow-hidden"
+              initial={{ opacity: 0, y: -8, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -6, scale: 0.96 }}
+              transition={{ type: 'spring', stiffness: 360, damping: 26 }}
+            >
             <button
               onClick={() => sound.setEnabled(!sound.enabled)}
               className="w-full flex items-center justify-between px-4 py-3 text-sm hover:bg-bg-hover"
@@ -126,9 +138,10 @@ export function OriginalPageLayout({
             >
               <span>Back to lobby</span>
             </Link>
-          </div>
-        </>
-      )}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       <main className="flex-1 min-h-0 overflow-auto">{children}</main>
 
