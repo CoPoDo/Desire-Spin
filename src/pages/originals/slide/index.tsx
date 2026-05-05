@@ -54,6 +54,11 @@ export function SlideGame() {
     // (smaller stops finish faster, big stops take longer but cap at 2.5s).
     const dur = Math.min(2500, 350 + Math.log10(r.stop) * 700);
     const start = performance.now();
+    // Milestone chimes during the climb — match Crash / Aviator / Limbo
+    // pattern so the player audibly hears the slider crossing key
+    // multiplier thresholds during the ascent.
+    const milestones = [1.5, 2, 3, 5, 10, 25, 50, 100, 250, 500, 1000];
+    let lastMilestone = 0;
     return new Promise<number>((resolve) => {
       const tick = (now: number) => {
         const dt = now - start;
@@ -62,6 +67,11 @@ export function SlideGame() {
         const eased = 1 - Math.pow(1 - progress, 2.2);
         const cur = 1 + (r.stop - 1) * eased;
         setLiveValue(+cur.toFixed(2));
+        // Check milestones — chime on each crossing.
+        while (lastMilestone < milestones.length && cur >= milestones[lastMilestone]!) {
+          sound.play(lastMilestone >= 7 ? 'big-win' : lastMilestone >= 4 ? 'win' : 'coin');
+          lastMilestone++;
+        }
         if (progress < 1) {
           animRef.current = requestAnimationFrame(tick);
         } else {
