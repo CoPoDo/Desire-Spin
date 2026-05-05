@@ -12,6 +12,7 @@ import * as MiniRoulette from '../src/pages/originals/mini-roulette/engine';
 import * as Mines from '../src/pages/originals/mines/engine';
 import * as Tower from '../src/pages/originals/tower/engine';
 import * as Cups from '../src/pages/originals/cups/engine';
+import * as Plinko from '../src/pages/originals/plinko/engine';
 
 /** Regression tests for the RTP audit landed earlier in this branch.
  *  Each game's expected RTP target is specified inline; the test asserts
@@ -117,6 +118,35 @@ describe('Originals RTP — regression', () => {
     expect(Tower.stepMultiplierFor('hard')).toBeCloseTo(1.98, 2); // 2/1 × 0.99
     expect(Tower.stepMultiplierFor('expert')).toBeCloseTo(2.97, 2); // 3/1 × 0.99
     expect(Tower.stepMultiplierFor('master')).toBeCloseTo(3.96, 2); // 4/1 × 0.99
+  });
+
+  it('Plinko: every (risk, rows) is 95-101% RTP (analytical)', () => {
+    function nCk(n: number, k: number): number {
+      if (k < 0 || k > n) return 0;
+      if (k === 0 || k === n) return 1;
+      k = Math.min(k, n - k);
+      let r = 1;
+      for (let i = 1; i <= k; i++) r = (r * (n - k + i)) / i;
+      return r;
+    }
+    const RISKS: Plinko.Risk[] = ['low', 'medium', 'high'];
+    for (const risk of RISKS) {
+      for (let rows = 8; rows <= 16; rows++) {
+        const arr = Plinko.multipliersFor(risk, rows);
+        let rtp = 0;
+        for (let k = 0; k <= rows; k++) {
+          const p = nCk(rows, k) / Math.pow(2, rows);
+          rtp += p * (arr[k] ?? 0);
+        }
+        // Plinko uses Stake's published payout tables verbatim; the
+        // single-decimal values can't always hit 99% exactly. Empirical
+        // range of all 27 (risk, rows) configs: 96.28% (high 15) to
+        // 99.16% (high 11). 95-101% bound catches gross regressions
+        // (e.g. anyone copy-pasting a Wheel table here).
+        expect(rtp).toBeGreaterThan(0.95);
+        expect(rtp).toBeLessThan(1.01);
+      }
+    }
   });
 
   it('Cups: 99% RTP per difficulty (analytical)', () => {
