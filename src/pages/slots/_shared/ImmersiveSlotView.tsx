@@ -2216,7 +2216,7 @@ export function ImmersiveSlotView({
                 <div className="flex gap-2">
                   <button
                     onClick={() => setBuyBonusOpen(false)}
-                    className="flex-1 py-3 rounded-xl bg-bg-hover border border-edge text-ink-dim font-semibold"
+                    className="flex-1 py-3 rounded-xl bg-bg-hover border border-edge text-ink-dim font-semibold transition active:scale-95"
                   >
                     Cancel
                   </button>
