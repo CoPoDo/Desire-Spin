@@ -146,12 +146,28 @@ export function HiloGame() {
       <div className="flex flex-col p-4 gap-4 max-w-md mx-auto w-full">
         {/* Card area */}
         <div className="rounded-2xl bg-bg-card border border-edge p-4 min-h-[260px] flex flex-col items-center justify-center gap-3">
-          <div className="text-[10px] uppercase tracking-widest text-ink-mute">
-            {!current ? 'Place bet to deal' :
-             phase === 'lost' ? 'Wrong guess' :
-             picks === 0 ? 'Higher or lower?' :
-             `Streak ${picks} · ${fmtMultiplier(accumMult)}`}
-          </div>
+          {/* Header streak/multiplier display — scale-pops on each correct
+           *  guess so the chain build-up reads as progress (rather than a
+           *  silently incrementing number). Real Stake Hilo's win chain
+           *  feels alive; the previous static text felt stuck. */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={`hdr-${phase}-${picks}-${current ? '1' : '0'}`}
+              initial={picks > 0 && phase === 'playing' ? { scale: 0.7, opacity: 0, y: -4 } : { scale: 1, opacity: 1, y: 0 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 480, damping: 22 }}
+              className={`text-[10px] uppercase tracking-widest ${
+                phase === 'playing' && picks > 0 ? 'text-accent font-bold' :
+                phase === 'lost' ? 'text-accent-hot' : 'text-ink-mute'
+              }`}
+            >
+              {!current ? 'Place bet to deal' :
+               phase === 'lost' ? 'Wrong guess' :
+               picks === 0 ? 'Higher or lower?' :
+               `Streak ${picks} · ${fmtMultiplier(accumMult)}`}
+            </motion.div>
+          </AnimatePresence>
           <div className="flex items-center gap-3">
             {previous && phase !== 'idle' && <CardView card={previous} faded />}
             <AnimatePresence mode="wait">

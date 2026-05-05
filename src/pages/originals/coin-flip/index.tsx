@@ -65,7 +65,7 @@ export function CoinFlipGame() {
         session.recordSpin(bet, 0, false);
       }
       setBusy(false);
-    }, 800);
+    }, 520);
   }, [phase, busy, fairness, sound, history, session, bet]);
 
   const cashOut = useCallback(() => {
@@ -215,10 +215,13 @@ function Coin({ phase, lastFlip }: { phase: Phase; lastFlip: Side | null }) {
       className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center font-bold text-3xl"
       animate={
         isFlipping
-          ? { rotateY: [0, 720], scale: [1, 1.1, 1] }
+          ? { rotateY: [0, 900], scale: [1, 1.12, 1] }
           : { rotateY: 0, scale: 1 }
       }
-      transition={{ duration: isFlipping ? 0.7 : 0.25 }}
+      transition={{
+        duration: isFlipping ? 0.48 : 0.22,
+        ease: isFlipping ? [0.16, 1, 0.3, 1] : 'easeOut',
+      }}
       style={{
         background:
           showSide === 'heads'

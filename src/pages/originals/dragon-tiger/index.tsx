@@ -256,8 +256,24 @@ function CardSlot({
         <span>{icon}</span>
         <span style={{ color: picked ? accent : undefined }}>{label}</span>
       </div>
-      <div
+      <motion.div
         className="relative aspect-[3/4] rounded-xl overflow-hidden"
+        animate={
+          winning
+            ? {
+                // Pulse on victory: glow ramps up + frame brightens
+                // briefly. Real Stake D/T flashes the winning slot for
+                // ~600ms before the result text settles.
+                boxShadow: [
+                  `0 0 18px ${accent}66`,
+                  `0 0 36px ${accent}ff`,
+                  `0 0 24px ${accent}aa`,
+                ],
+                scale: [1, 1.04, 1],
+              }
+            : {}
+        }
+        transition={{ duration: 0.55, times: [0, 0.45, 1], ease: 'easeOut' }}
         style={{
           background: revealed
             ? 'linear-gradient(180deg, #f8f5ee, #d4cfc0)'
@@ -279,11 +295,20 @@ function CardSlot({
             <motion.div
               key={`${card.rank}-${card.suit}`}
               className="absolute inset-0"
-              initial={{ rotateY: 90, opacity: 0 }}
-              animate={{ rotateY: 0, opacity: 1 }}
-              transition={{ duration: 0.35, ease: 'easeOut' }}
+              // Springy flip with a small scale-pop on landing — the
+              // previous flat easeOut had no "snap" moment, so the
+              // reveal felt like a slow rotation rather than a card
+              // flicked into place.
+              initial={{ rotateY: 110, opacity: 0, scale: 0.85 }}
+              animate={{ rotateY: 0, opacity: 1, scale: [0.85, 1.05, 1] }}
+              transition={{
+                duration: 0.42,
+                ease: [0.16, 1, 0.3, 1],
+                scale: { duration: 0.42, times: [0, 0.7, 1] },
+              }}
               style={{
                 color: suitIsRed(card.suit) ? '#c8102e' : '#15191f',
+                transformOrigin: 'center center',
               }}
             >
               {/* Corner pips matching the rest of the card games */}
@@ -314,7 +339,7 @@ function CardSlot({
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
+      </motion.div>
     </div>
   );
 }

@@ -127,6 +127,36 @@ export function LimboGame() {
               )}
             </motion.div>
           </AnimatePresence>
+          {/* Progress bar — fills from 0 to (result/target) over the same
+           *  700ms as the CountUp. Real Stake Limbo shows a horizontal
+           *  rocket-trail bar that creeps right while the number climbs;
+           *  if it crosses the target line the bar locks green, otherwise
+           *  red. Adds the "tension release" beat that pure number-only
+           *  reveal lacked. Target marker shown as vertical line. */}
+          {lastResult !== null && (
+            <div className="relative w-full max-w-[260px] h-1.5 mt-3 rounded-full bg-bg-elev overflow-hidden">
+              <motion.div
+                key={`bar-${lastResult}`}
+                className="absolute inset-y-0 left-0 rounded-full"
+                initial={{ width: '0%' }}
+                animate={{ width: `${Math.min(100, (lastResult / Math.max(target, 1.01)) * 100)}%` }}
+                transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+                style={{
+                  background: lastWin
+                    ? 'linear-gradient(90deg, #1fff7a, #5dffae)'
+                    : 'linear-gradient(90deg, #ff3d8b, #ff7aa8)',
+                  boxShadow: lastWin
+                    ? '0 0 10px rgba(31,255,122,.7)'
+                    : '0 0 10px rgba(255,61,139,.45)',
+                }}
+              />
+              {/* Target marker — fixed line where the threshold sits */}
+              <div
+                className="absolute inset-y-[-2px] w-px bg-ink-dim/60"
+                style={{ left: '100%', transform: 'translateX(-1px)' }}
+              />
+            </div>
+          )}
           <div className="mt-3 text-xs text-ink-dim">
             {lastWin === null
               ? `Target ${target.toFixed(2)}× to win`
