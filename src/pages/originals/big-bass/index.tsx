@@ -108,10 +108,11 @@ export function BigBassGame() {
           <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
             {reels.map((s, i) => {
               const meta = symbolById(s);
-              const inWin =
-                lastResult?.lineSymbol &&
-                i < (lastResult.lineLength) &&
-                lastResult.lineSymbol === s;
+              // Anywhere-rule: highlight only the cells that are part of
+              // the winning symbol set (returned by the engine as
+              // winningPositions). Was index-based (i < lineLength)
+              // assuming leftmost-consecutive — broken with the new rule.
+              const inWin = !!lastResult?.winningPositions?.includes(i);
               const isScatter = s === 'scatter';
               const scatterWin = isScatter && (lastResult?.scatterCount ?? 0) >= 3;
               const highlight = inWin || scatterWin;

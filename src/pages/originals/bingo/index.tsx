@@ -100,7 +100,10 @@ export function BingoGame() {
           return next;
         });
       }
-      setTimeout(drawNext, 220);
+      // Faster pacing now that we draw 40 numbers (was 12). 130ms each
+      // gives ~5.2s total — fast enough to stay engaging without
+      // feeling rushed. The "tick" SFX still plays per draw.
+      setTimeout(drawNext, 130);
     };
     setTimeout(drawNext, 380);
   }, [busy, balance, bet, fairness, sound, history, session]);

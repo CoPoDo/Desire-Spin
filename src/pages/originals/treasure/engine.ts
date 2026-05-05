@@ -8,19 +8,21 @@ import type { Rng } from '../../../lib/fairness';
  *  whole bet; cashing out pays bet × accumulated multiplier from the
  *  revealed tiles so far.
  *
- *  Tile multiplier pool (weights /1000):
- *    0.3×  450
- *    0.7×  300
- *    1.0×  170
- *    3.0×   60
- *    10×    18
+ *  Tile multiplier pool (weights /1000) — pool mean = 0.790:
+ *    0.3×  600
+ *    0.7×  250
+ *    1.0×  100
+ *    3.0×   35
+ *    10×    13
  *    50×     2
- *  Pool mean ≈ 0.135 + 0.21 + 0.17 + 0.18 + 0.18 + 0.10 = 0.975 ≈ 0.98
  *
  *  With 6 traps / 25 tiles, P(survive K clicks) = C(19, K)/C(25, K).
- *  Optimal stopping ~3 reveals; peak EV ≈ 0.99 with this pool.
- *  (Sub-optimal play returns less, like Mines — the math is fair, not
- *   forgiving.)
+ *  Optimal-stop EV per click count:
+ *    K=1: 60%   K=2: 90%   K=3: 99.8% ← peak    K=4: 96.8%   K=5: 86.4%
+ *  So a strict optimal player tops out at ~99.8% RTP (cash out after 3
+ *  clicks). The previous calibration had pool mean 0.975 → peak EV 123%
+ *  at K=3 (player-favorable — bug). Audit caught this; pool mean
+ *  reduced to 0.79 to bring peak EV back to ~99%.
  */
 
 export const GRID_SIZE = 25;
@@ -31,11 +33,11 @@ export type Tile =
   | { kind: 'treasure'; multiplier: number };
 
 const POOL: { mult: number; w: number }[] = [
-  { mult: 0.3, w: 450 },
-  { mult: 0.7, w: 300 },
-  { mult: 1.0, w: 170 },
-  { mult: 3.0, w: 60 },
-  { mult: 10,  w: 18 },
+  { mult: 0.3, w: 600 },
+  { mult: 0.7, w: 250 },
+  { mult: 1.0, w: 100 },
+  { mult: 3.0, w: 35 },
+  { mult: 10,  w: 13 },
   { mult: 50,  w: 2 },
 ];
 const POOL_TOTAL = POOL.reduce((s, p) => s + p.w, 0);

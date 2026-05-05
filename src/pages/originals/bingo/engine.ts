@@ -1,6 +1,6 @@
 import type { Rng } from '../../../lib/fairness';
 
-/** Bingo — classic 5×5 player card with FREE center, 12 sequential
+/** Bingo — classic 5×5 player card with FREE center, 40 sequential
  *  number draws from 1–75. Numbers per column follow standard layout:
  *
  *      B (col 0): 1..15   (5 numbers)
@@ -14,17 +14,14 @@ import type { Rng } from '../../../lib/fairness';
  *  middle column and both diagonals only need 4 numbers because the
  *  FREE square pre-marks itself.
  *
- *  Pay table (line count):
- *    0 lines :  0×
- *    1 line  :  2×
- *    2 lines :  6×
- *    3 lines : 20×
- *    4+ lines: 100×
- *
- *  RTP is approximate (computing exact P(k lines) requires inclusion-
- *  exclusion across 12 overlapping lines). Empirically lands ~85–95% —
- *  in the typical-mini-bingo range, slightly higher house edge than
- *  the 99% target on most other originals.
+ *  Pay table (line count) — calibrated for ~98.5% RTP @ 40 draws via
+ *  Monte Carlo (was 0.4% RTP at 12 draws — players almost never won):
+ *    0 lines :  0×        (P ≈ 55.3%)
+ *    1 line  :  1.4×      (P ≈ 32.0%)
+ *    2 lines :  3×        (P ≈ 10.0%)
+ *    3 lines :  6×        (P ≈ 2.2%)
+ *    4 lines : 15×        (P ≈ 0.4%)
+ *    5+ lines: 50×        (P ≈ 0.1%, capped tier)
  */
 
 export const COLUMN_RANGES = [
@@ -37,14 +34,15 @@ export const COLUMN_RANGES = [
 
 export const COLUMN_LETTERS = ['B', 'I', 'N', 'G', 'O'] as const;
 
-export const DRAW_COUNT = 12;
+export const DRAW_COUNT = 40;
 
 export const PAY_TABLE: Record<number, number> = {
   0: 0,
-  1: 2,
-  2: 6,
-  3: 20,
-  4: 100, // capped tier
+  1: 1.4,
+  2: 3,
+  3: 6,
+  4: 15,
+  5: 50, // 5+ lines (capped tier)
 };
 
 /** Generate a 5×5 bingo card. tiles[0..24] in row-major order. The
@@ -133,7 +131,7 @@ export function play(rng: Rng, bet: number): BingoResult {
   }
   const completedLines = computeLineMatches(card, marked);
   const lineCount = completedLines.length;
-  const tier = Math.min(4, lineCount);
+  const tier = Math.min(5, lineCount);
   const multiplier = PAY_TABLE[tier] ?? 0;
   return {
     card,
