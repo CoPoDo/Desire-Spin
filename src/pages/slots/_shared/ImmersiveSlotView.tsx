@@ -2039,11 +2039,20 @@ export function ImmersiveSlotView({
             <button
               aria-label={turbo ? 'Turbo on' : 'Turbo off'}
               onClick={() => setTurbo((t) => !t)}
-              className={`w-8 h-8 rounded-full border flex items-center justify-center transition ${
+              className="w-8 h-8 rounded-full border flex items-center justify-center transition"
+              style={
                 turbo
-                  ? 'bg-gradient-to-b from-[#ffc62a] to-[#c8932e] border-[#ffe9a8] text-[#1a0f00] shadow-[0_0_14px_rgba(255,198,42,.6)]'
-                  : 'bg-bg-card border-edge text-ink-dim'
-              }`}
+                  ? {
+                      // Active turbo button — was hardcoded gold gradient.
+                      // Now uses theme accent so the toggle feels native
+                      // to the slot.
+                      background: `linear-gradient(180deg, ${cfg.theme.accent} 0%, ${cfg.theme.accent}dd 60%, rgba(0,0,0,.4) 100%)`,
+                      borderColor: cfg.theme.accent,
+                      color: '#1a0f00',
+                      boxShadow: `0 0 14px ${cfg.theme.glow}`,
+                    }
+                  : { color: 'var(--ink-dim, #9aa3b2)' }
+              }
             >
               <TurboIcon size={16} />
             </button>
@@ -2065,11 +2074,18 @@ export function ImmersiveSlotView({
             <button
               aria-label={music.musicEnabled ? 'Music on' : 'Music off'}
               onClick={() => music.setMusicEnabled(!music.musicEnabled)}
-              className={`w-8 h-8 rounded-full border flex items-center justify-center ${
+              className="w-8 h-8 rounded-full border flex items-center justify-center bg-bg-card"
+              style={
                 music.musicEnabled
-                  ? 'bg-bg-card border-[#ffc62a]/40 text-[#ffe9a8]'
-                  : 'bg-bg-card border-edge text-ink-mute'
-              }`}
+                  ? {
+                      // Music-on indicator now uses theme accent border
+                      // + accent icon. Was hardcoded gold even on Wolf
+                      // Gold / Bonanza / etc.
+                      borderColor: `${cfg.theme.accent}66`,
+                      color: cfg.theme.accent,
+                    }
+                  : { borderColor: 'var(--edge-color, #2a3142)', color: 'var(--ink-mute, #6b7280)' }
+              }
             >
               {music.musicEnabled ? <MusicIcon size={16} /> : <MusicMutedIcon size={16} />}
             </button>
@@ -2082,17 +2098,20 @@ export function ImmersiveSlotView({
             style={
               ante
                 ? {
-                    background: 'linear-gradient(180deg, #ffd37a 0%, #c8932e 100%)',
+                    // Active ante toggle — was hardcoded gold. Now derives
+                    // from the slot's theme accent so each game's "ante on"
+                    // state lights up in its own colour.
+                    background: `linear-gradient(180deg, ${cfg.theme.accent} 0%, ${cfg.theme.accent}cc 100%)`,
                     color: '#1a0f00',
-                    border: '1px solid #fff5c4',
+                    border: `1px solid #fff5c4`,
                     boxShadow:
-                      'inset 0 1px 0 rgba(255,255,255,.5), 0 0 14px rgba(255,198,42,.55)',
+                      `inset 0 1px 0 rgba(255,255,255,.5), 0 0 14px ${cfg.theme.glow}`,
                     textShadow: '0 1px 0 rgba(255,255,255,.4)',
                   }
                 : {
-                    background: 'rgba(255,233,168,.06)',
-                    color: '#FFE0A8',
-                    border: '1px solid rgba(255,198,42,.35)',
+                    background: `${cfg.theme.accent}10`,
+                    color: cfg.theme.accent,
+                    border: `1px solid ${cfg.theme.accent}59`,
                   }
             }
           >
