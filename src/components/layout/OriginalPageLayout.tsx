@@ -47,7 +47,7 @@ export function OriginalPageLayout({
         <Link
           to="/"
           aria-label="Back to lobby"
-          className="flex items-center justify-center w-9 h-9 rounded-full bg-bg-card border border-edge text-ink-dim hover:text-ink"
+          className="flex items-center justify-center w-9 h-9 rounded-full bg-bg-card border border-edge text-ink-dim hover:text-ink transition active:scale-90"
         >
           <BackIcon size={18} strokeWidth={2.4} />
         </Link>
@@ -73,7 +73,7 @@ export function OriginalPageLayout({
           <button
             aria-label="Menu"
             onClick={() => setMenuOpen((v) => !v)}
-            className="flex items-center justify-center w-9 h-9 rounded-full bg-bg-card border border-edge text-ink-dim hover:text-ink"
+            className="flex items-center justify-center w-9 h-9 rounded-full bg-bg-card border border-edge text-ink-dim hover:text-ink transition active:scale-90"
           >
             <MenuDotsIcon size={18} strokeWidth={2.4} />
           </button>

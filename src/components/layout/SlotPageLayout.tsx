@@ -57,7 +57,7 @@ export function SlotPageLayout({
         <Link
           to="/"
           aria-label="Back to lobby"
-          className="flex items-center justify-center w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm border border-white/10 text-white/90 hover:bg-black/60"
+          className="flex items-center justify-center w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm border border-white/10 text-white/90 hover:bg-black/60 transition active:scale-90"
         >
           <BackIcon size={20} strokeWidth={2.4} />
         </Link>
@@ -108,7 +108,7 @@ export function SlotPageLayout({
         <button
           aria-label="Menu"
           onClick={() => setMenuOpen((v) => !v)}
-          className="flex items-center justify-center w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm border border-white/10 text-white/90 hover:bg-black/60"
+          className="flex items-center justify-center w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm border border-white/10 text-white/90 hover:bg-black/60 transition active:scale-90"
         >
           <MenuDotsIcon size={20} strokeWidth={2.4} />
         </button>
