@@ -170,7 +170,11 @@ function FeaturesTab({ cfg }: { cfg: SlotConfig }) {
           </div>
           <div>
             <div className="text-[10px] uppercase tracking-widest text-ink-mute">Max Win</div>
-            <div className="font-mono font-bold text-base mt-0.5" style={accentStyle}>5,000×</div>
+            {/* Was hardcoded "5,000×". Now reads cfg.maxWinMultiplier so
+             *  Bonanza shows 21,100×, Wolf Gold 9,500×, Wanted 12,500×, etc. */}
+            <div className="font-mono font-bold text-base mt-0.5" style={accentStyle}>
+              {(cfg.maxWinMultiplier ?? 5000).toLocaleString()}×
+            </div>
           </div>
         </div>
       </div>
