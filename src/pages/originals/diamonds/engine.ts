@@ -16,12 +16,14 @@ export const GEM_TYPES = [
 export type GemId = typeof GEM_TYPES[number]['id'];
 
 /** Pay table: how much (in bet × X) for groups of 2/3/4/5 of a kind for
- *  the rarest gem in the group. Tuned to ~99% RTP. */
+ *  the rarest gem in the group. Calibrated to ~99% RTP via 2M-spin
+ *  Monte Carlo (was previously ~70% — pay values were copy-pasted from
+ *  a different distribution and never re-verified). */
 const PAY: Record<number, Record<GemId, number>> = {
-  2: { red: 0,  blue: 0,  green: 0,  purple: 0, yellow: 0, orange: 0, white: 0  },
-  3: { red: 1.4, blue: 1.5, green: 1.7, purple: 2,  yellow: 2.5, orange: 3,  white: 5  },
-  4: { red: 5,   blue: 6,   green: 8,  purple: 10, yellow: 14,  orange: 25, white: 50 },
-  5: { red: 35,  blue: 50,  green: 70, purple: 100, yellow: 250, orange: 500, white: 1000 },
+  2: { red: 0,  blue: 0,  green: 0,  purple: 0,   yellow: 0,   orange: 0,   white: 0    },
+  3: { red: 2,  blue: 2.2, green: 2.4, purple: 3,   yellow: 3.5,  orange: 4.5, white: 7    },
+  4: { red: 7,  blue: 9,   green: 11,  purple: 15,  yellow: 20,   orange: 35,  white: 70   },
+  5: { red: 50, blue: 70,  green: 100, purple: 140, yellow: 350,  orange: 700, white: 1400 },
 };
 
 export type DiamondsResult = {

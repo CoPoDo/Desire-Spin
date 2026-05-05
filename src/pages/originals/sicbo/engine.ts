@@ -90,7 +90,14 @@ export function payoutMultiplier(bet: Bet, r: Roll): number {
     case 'specificTriple':
       return triple && r[0] === bet.face ? SPECIFIC_TRIPLE_PAYOUT : 0;
     case 'total':
-      return sum === bet.sum && !triple ? (SUM_PAYOUTS[bet.sum] ?? 0) : 0;
+      // Sum bets win on ANY 3-dice combination producing that sum,
+      // including triples (Stake / standard Sic Bo convention). The
+      // earlier `&& !triple` exclusion broke RTP on sums 6/9/12/15
+      // (where a triple shares that sum) — payouts were calibrated
+      // against the full ways-count, but triples were silently
+      // disqualified, so RTP fell to ~89-95% for those sums instead
+      // of the 99% target.
+      return sum === bet.sum ? (SUM_PAYOUTS[bet.sum] ?? 0) : 0;
   }
 }
 

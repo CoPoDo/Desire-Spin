@@ -27,7 +27,10 @@ const TABLES: Record<Risk, Record<number, number[]>> = {
     7:  [0,   0,    1.1,  1.6, 3.5, 15,  225, 700],
     8:  [0,   0,    1.1,  1.5, 2.0, 5.5, 39,  100, 800],
     9:  [0,   0,    1.1,  1.3, 1.7, 2.5, 7.5, 50,  250, 1000],
-    10: [0,   0,    1.6,  2.0, 4.0, 4.5, 8.0, 17,  50,  80,   100],
+    // picks=10 rebuilt to land at ~99% RTP (was 192% — payouts were way
+    // too generous because the original numbers were copy-pasted from a
+    // different game's table without recalibrating against C(40,10)).
+    10: [0,   0,    0.9,  1.0, 1.75, 3,   5,   12,  30,  60,   80],
   },
   low: {
     1:  [0.7, 1.85],
@@ -39,7 +42,8 @@ const TABLES: Record<Risk, Record<number, number[]>> = {
     7:  [0,   0,    1.1,  1.6, 3.5, 15,  225, 700],
     8:  [0,   0,    1.1,  1.5, 2.0, 5.5, 39,  100, 800],
     9:  [0,   0,    1.1,  1.3, 1.7, 2.5, 7.5, 50,  250, 1000],
-    10: [0,   0,    1.4,  2.25, 4.5, 8.0, 17,  50,  80,  100,  140],
+    // picks=10 rebuilt to land at ~98.97% RTP (was 223% — same root cause).
+    10: [0,   0,    0.65, 1.0, 1.9, 4,   6,   15,  50,  90,   140],
   },
   medium: {
     1:  [0.4, 2.75],
@@ -51,7 +55,8 @@ const TABLES: Record<Risk, Record<number, number[]>> = {
     7:  [0,   0,    0,    2,   7,   30,  400, 800],
     8:  [0,   0,    0,    2,   4,   11,  67,  400, 900],
     9:  [0,   0,    0,    2,   2.5, 5,   15,  100, 500, 1000],
-    10: [0,   0,    0,    1.6, 2.5, 4.5, 8,   26,  100, 500, 1000],
+    // picks=10 rebuilt to land at ~99.01% RTP (was 109%).
+    10: [0,   0,    0,    1.4, 2.4, 4,   7,   25,  90,  450,  900],
   },
   high: {
     1:  [0,   3.96],

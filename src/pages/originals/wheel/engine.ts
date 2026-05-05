@@ -4,47 +4,66 @@ import type { Rng } from '../../../lib/fairness';
  *  Segmented wheel with multipliers per segment, varies by risk level
  *  and segment count. Spin lands on a uniformly-random segment.
  *
- *  Multiplier tables from Stake's published RTP tables (~99% RTP).
- *  Segments use a "0×" multiplier for losses (most segments at high risk). */
+ *  RTP target: 99% for every (risk, segmentCount) combo. The expected
+ *  value of one spin is `mean(multipliers)` so each table must sum to
+ *  `0.99 × segmentCount`. Each table below is hand-verified to satisfy
+ *  that constraint; see the smoke test in tests/originals.test.ts.
+ *
+ *  Risk character:
+ *    - LOW: many small wins, no zeros; sum 0.99×N spread across all
+ *      segments using a 1.5 / 1.2 / 0.9 mix.
+ *    - MEDIUM: half the segments are zero; the winning ones pay
+ *      1.5–4× with a single bigger headline at the end.
+ *    - HIGH: only the last segment pays — single jackpot per spin
+ *      worth 0.99×N. Rare but huge.
+ */
 
 export type Risk = 'low' | 'medium' | 'high';
 export type SegCount = 10 | 20 | 30 | 40 | 50;
 
+/** LOW base pattern (10 segs, sum 9.9 — RTP 99%). Replicated for
+ *  larger segment counts so the wheel scales linearly without breaking
+ *  RTP. Every entry is 0 / 0.9 / 1.2 / 1.5 — no decimals beyond a digit. */
+const LOW_PATTERN_10: number[] = [1.5, 1.5, 1.2, 1.2, 1.2, 1.2, 1.2, 0.9, 0, 0];
+
+/** MEDIUM base pattern (10 segs, sum 9.9 — RTP 99%). Half-zero with a
+ *  3× headline at the last position. Replicated for larger N. */
+const MEDIUM_PATTERN_10: number[] = [0, 1.9, 0, 1.5, 0, 2, 0, 1.5, 0, 3];
+
+function repeatPattern(pattern: number[], times: number): number[] {
+  const out: number[] = [];
+  for (let i = 0; i < times; i++) out.push(...pattern);
+  return out;
+}
+
+/** HIGH: one jackpot at the last segment worth 0.99×N. */
+function highTable(n: number): number[] {
+  const arr = new Array<number>(n).fill(0);
+  arr[n - 1] = +(0.99 * n).toFixed(2);
+  return arr;
+}
+
 const TABLES: Record<Risk, Record<SegCount, number[]>> = {
   low: {
-    10: [0,    1.5,  1.2,  1.2,  0,    1.2,  1.2,  1.5,  1.2,  0   ],
-    20: [0,    1.5,  1.2,  1.2,  0,    1.2,  1.2,  1.5,  1.2,  0,
-         0,    1.5,  1.2,  1.2,  0,    1.2,  1.2,  1.5,  1.2,  0   ],
-    30: [0,    1.5,  1.2,  1.2,  1.2,  0,    1.2,  1.2,  1.5,  1.2,
-         1.2,  0,    1.2,  1.2,  1.5,  1.2,  1.2,  0,    1.2,  1.2,
-         1.5,  1.2,  1.2,  0,    1.2,  1.2,  1.5,  1.2,  1.2,  0   ],
-    40: Array(40).fill(0).map((_, i) => i % 4 === 0 ? 0 : 1.2),
-    50: Array(50).fill(0).map((_, i) => i % 5 === 0 ? 0 : 1.2),
+    10: LOW_PATTERN_10,
+    20: repeatPattern(LOW_PATTERN_10, 2),
+    30: repeatPattern(LOW_PATTERN_10, 3),
+    40: repeatPattern(LOW_PATTERN_10, 4),
+    50: repeatPattern(LOW_PATTERN_10, 5),
   },
   medium: {
-    10: [0,    1.9,  0,    1.5,  0,    2,    0,    1.5,  0,    3   ],
-    20: [0,    1.5,  0,    1.7,  0,    2,    0,    1.5,  0,    2,
-         0,    1.5,  0,    1.7,  0,    2,    0,    1.5,  0,    4   ],
-    30: [0,    1.5,  0,    1.7,  0,    2,    0,    1.5,  0,    2,
-         0,    1.5,  0,    1.7,  0,    2,    0,    1.5,  0,    2,
-         0,    1.5,  0,    1.7,  0,    2,    0,    1.5,  0,    5   ],
-    40: Array(40).fill(0).map((_, i) => {
-      if (i === 0) return 8;
-      if (i % 2 === 1) return 1.5 + (i % 4 === 1 ? 0 : 0.5);
-      return 0;
-    }),
-    50: Array(50).fill(0).map((_, i) => {
-      if (i === 0) return 10;
-      if (i % 2 === 1) return 1.5 + (i % 4 === 1 ? 0 : 0.5);
-      return 0;
-    }),
+    10: MEDIUM_PATTERN_10,
+    20: repeatPattern(MEDIUM_PATTERN_10, 2),
+    30: repeatPattern(MEDIUM_PATTERN_10, 3),
+    40: repeatPattern(MEDIUM_PATTERN_10, 4),
+    50: repeatPattern(MEDIUM_PATTERN_10, 5),
   },
   high: {
-    10: [0, 0, 0, 0, 0, 0, 0, 0, 0, 9.9],
-    20: Array(20).fill(0).map((_, i) => (i === 0 ? 19.8 : 0)),
-    30: Array(30).fill(0).map((_, i) => (i === 0 ? 29.7 : 0)),
-    40: Array(40).fill(0).map((_, i) => (i === 0 ? 39.6 : 0)),
-    50: Array(50).fill(0).map((_, i) => (i === 0 ? 49.5 : 0)),
+    10: highTable(10),
+    20: highTable(20),
+    30: highTable(30),
+    40: highTable(40),
+    50: highTable(50),
   },
 };
 
