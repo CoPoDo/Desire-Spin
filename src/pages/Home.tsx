@@ -332,12 +332,46 @@ function SectionHeader({ title, subtitle }: { title: string; subtitle?: string }
 }
 
 function PlaceholderArt({ label, tone }: { label: string; tone: string }) {
+  // Two soft offset radial-gradient orbs in the tone behind the emoji
+  // — gives every Originals tile a subtle dimensional backdrop instead
+  // of the previous flat top-to-bottom gradient, so the lobby's 22+
+  // emoji-based tiles feel less identical at a glance. The emoji sits
+  // on top with a small drop-shadow so it lifts off the background.
   return (
     <div
-      className="w-full h-full flex items-center justify-center text-6xl"
+      className="w-full h-full flex items-center justify-center text-6xl relative overflow-hidden"
       style={{ background: `linear-gradient(180deg, ${tone}, #0b0f17)` }}
     >
-      <span className="opacity-70">{label}</span>
+      <span
+        className="absolute pointer-events-none"
+        style={{
+          left: '-15%',
+          top: '-10%',
+          width: '70%',
+          height: '70%',
+          background: `radial-gradient(circle at 50% 50%, ${tone} 0%, transparent 65%)`,
+          filter: 'blur(20px)',
+          opacity: 0.85,
+        }}
+      />
+      <span
+        className="absolute pointer-events-none"
+        style={{
+          right: '-20%',
+          bottom: '-15%',
+          width: '80%',
+          height: '70%',
+          background: `radial-gradient(circle at 50% 50%, ${tone} 0%, transparent 65%)`,
+          filter: 'blur(24px)',
+          opacity: 0.6,
+        }}
+      />
+      <span
+        className="relative z-10 opacity-90"
+        style={{ filter: 'drop-shadow(0 6px 14px rgba(0,0,0,.55))' }}
+      >
+        {label}
+      </span>
     </div>
   );
 }
