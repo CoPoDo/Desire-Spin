@@ -151,8 +151,15 @@ export function useSound() {
           tone(60, 200, 'sawtooth', 0.04, 35);
           break;
         case 'thunder':
-          tone(60, 600, 'sawtooth', 0.04, 30);
-          noiseBurst(450, 800, 0.12, 30);
+          // Per-orb thunder rumble — needs to land hard so the player
+          // *feels* Zeus throwing each orb. Layered: sharp crack +
+          // sub-bass rumble + mid-band body. Gain bumped substantially
+          // (0.12 → 0.28 noise, 0.04 → 0.10 sub) so it cuts through
+          // the music bed clearly.
+          noiseBurst(80, 6000, 0.28, 0); // sharp initial crack
+          noiseBurst(420, 700, 0.22, 20); // body rumble
+          tone(55, 500, 'sawtooth', 0.1, 35, 20); // sub-bass thump
+          tone(160, 250, 'square', 0.06, 80, 30);
           break;
         case 'scatter-land':
           // Crackle of electricity + bell tone

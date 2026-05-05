@@ -1185,25 +1185,20 @@ export function ImmersiveSlotView({
                       transition={{ duration: 1.2, ease: 'easeOut' }}
                       style={{ inset: 0 }}
                     >
-                      {/* Zeus's eyes — sized 3% wide so they're clearly
-                       *  visible against the painted backdrop. The bg is
-                       *  a tight white-hot core fading through fierce red.
-                       *  Outer drop-shadow halo extends the glow well
-                       *  beyond the dot itself so it reads as RAGE-LIT. */}
-                      {/* Left eye — positioned over the painted Zeus's left
-                       *  eye in olympus-bg.png. The painted Zeus is in the
-                       *  upper-left and his face is more compact than I'd
-                       *  estimated; his eye sockets sit at approximately
-                       *  (12%, 14%) and (16%, 14%) of the stage container.
-                       *  Earlier guesses (22%/26% at top:10%) put the dots
-                       *  on his cheek/temple area, well to the right of
-                       *  his actual face. Verified by user screenshot. */}
+                      {/* Zeus's eyes — overlay the white-blue glowing eyes
+                       *  already painted in olympus-bg.png. The image is
+                       *  941×1672 native with `background-size: cover` on
+                       *  a same-aspect container, so percentages map 1:1
+                       *  to image coordinates. Zeus's painted eye sockets
+                       *  sit at approximately (22%, 7%) and (27%, 7%).
+                       *  Dots sized 1.8% so they fit inside the painted
+                       *  eye and don't bleed onto his nose/forehead. */}
                       <span
                         className="absolute rounded-full bj-zeus-eye"
                         style={{
-                          left: '12%',
-                          top: '14%',
-                          width: '2.6%',
+                          left: '22%',
+                          top: '7%',
+                          width: '1.8%',
                           aspectRatio: '1 / 1',
                           background:
                             'radial-gradient(circle, #ffffff 0%, #ff5050 30%, #c8102e 55%, transparent 75%)',
@@ -1216,9 +1211,9 @@ export function ImmersiveSlotView({
                       <span
                         className="absolute rounded-full bj-zeus-eye"
                         style={{
-                          left: '16%',
-                          top: '14%',
-                          width: '2.6%',
+                          left: '27%',
+                          top: '7%',
+                          width: '1.8%',
                           aspectRatio: '1 / 1',
                           background:
                             'radial-gradient(circle, #ffffff 0%, #ff5050 30%, #c8102e 55%, transparent 75%)',
