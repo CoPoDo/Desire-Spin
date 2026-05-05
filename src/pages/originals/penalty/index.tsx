@@ -39,7 +39,10 @@ export function PenaltyGame() {
     if (busy) return;
     if (balance.balance < bet || bet <= 0) return;
     setBusy(true);
-    sound.play('click');
+    // Whistle/kick cue — 'drop' at the moment the player commits the
+    // shot reads as the foot striking the ball. The previous 'click'
+    // was tactile but didn't sell the kick.
+    sound.play('drop');
     balance.debit(bet);
     setPhase('shot');
     setKeeperZone(null);
@@ -51,6 +54,8 @@ export function PenaltyGame() {
     // Ball travels for ~700ms; keeper dives in parallel (~600ms).
     setTimeout(() => {
       setKeeperZone(r.keeper);
+      // Keeper-dive whoosh (a tick) so the dive has audio weight.
+      sound.play('tick');
     }, 250);
     setTimeout(() => {
       setGoal(r.goal);
