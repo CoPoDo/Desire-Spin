@@ -6,6 +6,9 @@ import type { SlotConfig } from '../_shared/types';
 export const wolfGoldConfig: SlotConfig = {
   id: 'wolf-gold',
   name: 'Wolf Gold',
+  // Real Wolf Gold (Pragmatic) max-win is 9,500× the bet (jackpot
+  // Grand-pot triggers boost the headline above the standard 5,000×).
+  maxWinMultiplier: 9500,
   cols: 6,
   rows: 5,
   payAnywhereThreshold: 8,

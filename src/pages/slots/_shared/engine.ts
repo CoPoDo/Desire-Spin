@@ -420,6 +420,15 @@ export function playRound(
     allFrames.push({ kind: 'freeSpinsEnd', totalPayout: total });
   }
 
+  // Apply per-slot max-win cap (× bet). Real Pragmatic slots cap a single
+  // round's payout at e.g. Olympus 5,000× / Bonanza 21,100×; without a
+  // cap a lucky free-spins chain with stacked multipliers could
+  // theoretically pay 100,000×+ which (a) doesn't match the real game's
+  // headline number, and (b) could overflow the balance UI on big
+  // tabletops. Default cap: 5000× (standard Pragmatic value).
+  const cap = (cfg.maxWinMultiplier ?? 5000) * opts.bet;
+  if (total > cap) total = cap;
+
   return { frames: allFrames, totalPayout: total, freeSpinsAwarded: awarded };
 }
 
@@ -462,5 +471,8 @@ export function buyBonusRound(rng: Rng, cfg: SlotConfig, opts: SpinOptions): Rou
     }
   }
   allFrames.push({ kind: 'freeSpinsEnd', totalPayout: total });
+  // Same per-slot max-win cap as playRound (see comment there).
+  const cap = (cfg.maxWinMultiplier ?? 5000) * opts.bet;
+  if (total > cap) total = cap;
   return { frames: allFrames, totalPayout: total, freeSpinsAwarded: awarded };
 }

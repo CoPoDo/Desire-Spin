@@ -10,6 +10,8 @@ import type { SlotConfig } from '../_shared/types';
 export const gatesOfOlympusConfig: SlotConfig = {
   id: 'gates-of-olympus',
   name: 'Gates of Olympus',
+  // Real Gates of Olympus max-win is 5,000× the bet.
+  maxWinMultiplier: 5000,
   cols: 6,
   rows: 5,
   payAnywhereThreshold: 8,

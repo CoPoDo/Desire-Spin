@@ -10,6 +10,10 @@ import type { SlotConfig } from '../_shared/types';
 export const wantedWildConfig: SlotConfig = {
   id: 'wanted-wild',
   name: 'Wanted Dead or a Wild',
+  // Real Wanted Dead or a Wild (Hacksaw) max-win is 12,500× the bet.
+  // Slightly higher cap than the Pragmatic-default 5,000× since
+  // it's a high-volatility slot and players expect bigger headlines.
+  maxWinMultiplier: 12500,
   cols: 6,
   rows: 5,
   payAnywhereThreshold: 8,

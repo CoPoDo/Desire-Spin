@@ -14,6 +14,8 @@ import type { SlotConfig } from '../_shared/types';
 export const sugarRushConfig: SlotConfig = {
   id: 'sugar-rush',
   name: 'Sugar Rush',
+  // Real Sugar Rush max-win is 5,000× the bet (Pragmatic published).
+  maxWinMultiplier: 5000,
   cols: 6,
   rows: 5,
   payAnywhereThreshold: 8,

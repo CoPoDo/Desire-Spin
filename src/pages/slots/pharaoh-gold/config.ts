@@ -7,6 +7,8 @@ import type { SlotConfig } from '../_shared/types';
 export const pharaohGoldConfig: SlotConfig = {
   id: 'pharaoh-gold',
   name: "Pharaoh's Gold",
+  // Standard Pragmatic Egyptian-theme max-win 5,000×.
+  maxWinMultiplier: 5000,
   cols: 6,
   rows: 5,
   payAnywhereThreshold: 8,

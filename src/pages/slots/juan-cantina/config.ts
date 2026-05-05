@@ -12,6 +12,9 @@ import type { SlotConfig } from '../_shared/types';
 export const juanCantinaConfig: SlotConfig = {
   id: 'juan-cantina',
   name: "Juan's Cantina",
+  // Cantina is a Bonanza-style cousin; max-win matches the typical
+  // Pragmatic headline of 5,000× displayed in the welcome splash.
+  maxWinMultiplier: 5000,
   cols: 6,
   rows: 5,
   payAnywhereThreshold: 8,

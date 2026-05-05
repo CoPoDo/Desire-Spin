@@ -14,6 +14,9 @@ import type { SlotConfig } from '../_shared/types';
 export const sweetBonanzaConfig: SlotConfig = {
   id: 'sweet-bonanza',
   name: 'Sweet Bonanza',
+  // Real Sweet Bonanza max-win is 21,100× the bet (Pragmatic's
+  // published headline). Matches the welcome-splash banner.
+  maxWinMultiplier: 21100,
   cols: 6,
   rows: 5,
   payAnywhereThreshold: 8,

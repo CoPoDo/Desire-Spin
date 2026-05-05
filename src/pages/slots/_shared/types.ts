@@ -111,6 +111,11 @@ export type SlotConfig = {
   name: string;
   cols: number;
   rows: number;
+  /** Per-spin max-win cap (× bet). Real Pragmatic slots cap winnings at
+   *  this value — Olympus 5,000×, Bonanza 21,100×, etc. Prevents rare
+   *  free-spin chains from paying 100,000× in a session. Default if
+   *  unspecified: 5000 (typical Pragmatic value). */
+  maxWinMultiplier?: number;
   /** Symbol definitions. */
   symbols: SymbolDef[];
   /** Symbol weights for base game (parallel to `symbols`). */
