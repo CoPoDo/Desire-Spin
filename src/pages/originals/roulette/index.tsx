@@ -77,6 +77,13 @@ export function RouletteGame() {
     const rng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
     const bets: Bet[] = Object.entries(chips).map(([k, amount]) => ({ type: typeOf(k), amount }));
     const r = play(rng, bets);
+    // Wheel-tick SFX matching the visual deceleration. Real roulette
+    // wheels click as the ball hops over the frets — silent spinning
+    // felt arcade-y. Schedule sampled from the same ease-out curve
+    // the wheel uses (cubic-bezier 0.22, 1, 0.36, 1) so ticks bunch
+    // up early and space out as the wheel slows.
+    const wheelTicks = [80, 200, 340, 500, 680, 880, 1100, 1340, 1600, 1880, 2150, 2360];
+    wheelTicks.forEach((t) => window.setTimeout(() => sound.play('tick'), t));
     // Animate the wheel for ~2.5s then reveal
     setTimeout(() => {
       setWinning(r.winningNumber);

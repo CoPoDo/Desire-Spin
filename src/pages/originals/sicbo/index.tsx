@@ -79,6 +79,15 @@ export function SicBoGame() {
     setBusy(true);
     sound.play('click');
     balance.debit(totalStake);
+    // Dice-rattle SFX during the spin — three quick rattles then the
+    // dice land. Real Sic Bo opens with the dealer shaking the cup;
+    // silent during the 1s wait felt missing.
+    window.setTimeout(() => sound.play('tick'), 80);
+    window.setTimeout(() => sound.play('tick'), 240);
+    window.setTimeout(() => sound.play('tick'), 400);
+    window.setTimeout(() => sound.play('drop'), 620);
+    window.setTimeout(() => sound.play('drop'), 720);
+    window.setTimeout(() => sound.play('drop'), 820);
     setDice(null);
     setResult(null);
     const seeds = fairness.consumeNonce();

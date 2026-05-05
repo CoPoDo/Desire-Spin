@@ -75,6 +75,9 @@ export function MiniRouletteGame() {
     setBusy(true);
     sound.play('click');
     balance.debit(totalStake);
+    // Wheel-tick SFX during the 2.5s deceleration (mirrors Roulette).
+    const wheelTicks = [80, 200, 340, 500, 680, 880, 1100, 1340, 1600, 1880, 2150, 2360];
+    wheelTicks.forEach((t) => window.setTimeout(() => sound.play('tick'), t));
     const seeds = fairness.consumeNonce();
     const rng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
     const bets: Bet[] = Object.entries(chips).map(([k, amount]) => ({
