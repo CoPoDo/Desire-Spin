@@ -1934,8 +1934,16 @@ export function ImmersiveSlotView({
               <span className="text-[8px] uppercase tracking-[0.2em] text-ink-mute leading-none">
                 {ante ? 'Total' : 'Bet'}
               </span>
-              <span className="font-mono font-semibold text-sm tabular-nums text-[#ffe9a8] min-w-[52px] text-center"
-                    style={{ textShadow: '0 0 10px rgba(255,200,40,.5)' }}>
+              <span
+                className="font-mono font-semibold text-sm tabular-nums min-w-[52px] text-center"
+                style={{
+                  // Bet readout — was hardcoded Olympus gold (#ffe9a8 +
+                  // gold glow). Now uses the slot's theme accent so the
+                  // value pops in each slot's own colour.
+                  color: cfg.theme.accent,
+                  textShadow: `0 0 10px ${cfg.theme.glow}`,
+                }}
+              >
                 {fmtCurrency(ante ? bet * cfg.ante.betMultiplier : bet)}
               </span>
             </button>
