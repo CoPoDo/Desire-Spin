@@ -13,6 +13,7 @@ import {
   WIN_PAYOUT,
   play,
 } from './engine';
+import { fireConfetti } from '../../../lib/confetti';
 
 type Phase = 'idle' | 'reveal' | 'done';
 
@@ -53,6 +54,14 @@ export function RpsGame() {
         if (r.outcome === 'win') {
           balance.credit(r.payout);
           sound.play('big-win');
+          // Win-celebration chip-shower — RPS was the last Original
+          // without it. Modest count (60 chips) since it's a single
+          // 1.97× win, not a big multiplier game. Colours match the
+          // game's win-state palette (green) plus accent gold + white.
+          fireConfetti({
+            count: 60,
+            colors: ['#1fff7a', '#ffd166', '#ffffff'],
+          });
         } else if (r.outcome === 'tie') {
           balance.credit(r.payout); // refund
           sound.play('tick');
