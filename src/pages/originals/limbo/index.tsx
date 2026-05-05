@@ -47,17 +47,32 @@ export function LimboGame() {
       setLastResult(r.result);
       setLastWin(r.win);
       setRecent((prev) => [{ id: `${seeds.nonce}`, result: r.result, win: r.win }, ...prev].slice(0, 8));
+      // Rocket-climb beats during the 700ms CountUp animation — three
+      // accelerating ticks then the result chime lands at the moment
+      // the number stops climbing. Real Stake Limbo has a whoosh that
+      // peaks just before the reveal; the previous code fired the
+      // win/lose chime instantly while the CountUp was still running,
+      // which spoiled the reveal moment. Now the celebration lands ON
+      // the final number.
+      window.setTimeout(() => sound.play('tick'), 120);
+      window.setTimeout(() => sound.play('tick'), 360);
+      window.setTimeout(() => sound.play('tick'), 580);
       if (r.win) {
         balance.credit(r.payout);
-        sound.play(t >= 10 ? 'mega-win' : t >= 3 ? 'big-win' : 'win');
+        window.setTimeout(
+          () => sound.play(t >= 10 ? 'mega-win' : t >= 3 ? 'big-win' : 'win'),
+          720,
+        );
         if (t >= 3) {
-          fireConfetti({
-            count: t >= 50 ? 130 : t >= 10 ? 80 : 50,
-            colors: ['#1fff7a', '#22d3ee', '#ffd166', '#ffffff'],
-          });
+          window.setTimeout(() => {
+            fireConfetti({
+              count: t >= 50 ? 130 : t >= 10 ? 80 : 50,
+              colors: ['#1fff7a', '#22d3ee', '#ffd166', '#ffffff'],
+            });
+          }, 720);
         }
       } else {
-        sound.play('drop');
+        window.setTimeout(() => sound.play('drop'), 720);
       }
       history.record({
         game: 'Limbo',
