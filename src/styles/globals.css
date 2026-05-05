@@ -22,6 +22,29 @@
   ::-webkit-scrollbar-thumb { background: #2a3142; border-radius: 8px; }
   ::-webkit-scrollbar-thumb:hover { background: #3a4258; }
   ::-webkit-scrollbar-track { background: transparent; }
+
+  /* Keyboard-only focus outlines. `:focus-visible` only matches when the
+   * focus came from keyboard nav (not click), so mouse / touch users
+   * never see the ring. Buttons and links get a subtle accent halo.
+   * Prevents the default browser outline appearing as a hard blue
+   * rectangle on dark backgrounds. */
+  button:focus-visible,
+  a:focus-visible,
+  [role="button"]:focus-visible {
+    outline: 2px solid rgba(255, 198, 42, 0.7);
+    outline-offset: 2px;
+    border-radius: inherit;
+  }
+  /* Inputs already use Tailwind's focus-within ring on most call-sites,
+   * but add a fallback so naked <input>s aren't focus-invisible. */
+  input:focus-visible,
+  textarea:focus-visible {
+    outline: 2px solid rgba(255, 198, 42, 0.55);
+    outline-offset: 1px;
+  }
+  /* Don't suppress click-focus: not setting outline:none for :focus
+   * means screen readers / Windows high-contrast still see the focus
+   * indicator if a user mouse-clicks (rare but accessible). */
 }
 
 @layer components {
