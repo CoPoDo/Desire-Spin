@@ -88,7 +88,9 @@ export type ImmersiveSlotViewProps = {
 const FRAME_DELAY: Record<string, number> = {
   initialDrop: 850,         // matches col-staggered drop completion
                             //   (5*80ms stagger + 420ms drop = ~820ms)
-  lightningStrike: 1500,    // dramatic Zeus pause
+  lightningStrike: 400,     // post-stagger settle. Handler awaits
+                            // per-orb landing internally (~300ms each
+                            // + 380ms inhale) so this is just settle.
   multipliersLanded: 360,   // post-stagger settle. The handler now
                             // awaits per-orb landing internally (~280ms
                             // each) so this is just the breath after the
@@ -110,7 +112,8 @@ const FRAME_DELAY: Record<string, number> = {
 // mode shortens these but keeps animations from overlapping.
 const TURBO_MIN_DELAY: Record<string, number> = {
   initialDrop: 380,
-  lightningStrike: 800,
+  lightningStrike: 220,     // turbo post-stagger settle (handler now
+                            // awaits internally, see FRAME_DELAY above).
   multipliersLanded: 180,   // turbo post-stagger settle. The internal
                             // per-orb stagger is also reduced (~140ms)
                             // in turbo so total time stays brief.
@@ -127,7 +130,7 @@ const TURBO_FACTOR = 0.30;
 const SKIP_DELAY_FACTOR = 0.05;
 // Big visual moments are never skippable past these floors.
 const SKIP_MIN_DELAY: Record<string, number> = {
-  lightningStrike: 500,
+  lightningStrike: 150,     // skip post-stagger settle floor.
   freeSpinsAwarded: 320,
   freeSpinsBegin: 260,
   freeSpinsEnd: 360,
@@ -344,40 +347,84 @@ export function ImmersiveSlotView({
             break;
           }
           case 'lightningStrike': {
-            // Real-Olympus signature: Zeus appears, lifts arm, lightning slams
-            // multiplier orbs onto the board. Dramatic full-screen overlay.
+            // Real-Olympus signature Zeus mood: he raises his arm and
+            // SLAMS multiple orbs onto the board in succession. Same
+            // per-orb landing animation as the regular multipliersLanded
+            // frame (bolt + flash + thunder + value pop) — just with an
+            // additional full-screen white-flash overlay + lightning-
+            // strike SFX kicking off the moment.
+            const isZeus = cfg.id === 'gates-of-olympus';
+            const STAGGER = skipRef.current ? 90 : turboRef.current ? 160 : 300;
+            const landings = frame.landings;
             sound.play('lightning-strike');
             setLightningStrike(true);
-            if (cfg.id === 'gates-of-olympus') {
+            if (isZeus) {
               setZeusEyesGlow(true);
               speakAndShout(zeusLineFor('lightningStrike'));
-              scheduleSpin(() => setZeusEyesGlow(false), 1400);
             }
-            // Schedule timings scale with turbo / skip so orbs land BEFORE
-            // the frame ends and the overlay clears, regardless of speed.
-            const lsBase = 1500; // matches lightningStrike frame delay range
-            const speedFactor = skipRef.current ? 0.4 : turboRef.current ? 0.65 : 1.0;
-            const orbStart = lsBase * 0.4 * speedFactor;
-            const orbStep = 110 * speedFactor;
-            const overlayClear = lsBase * 0.85 * speedFactor;
-            // Stagger orb thunks + impact rings during the strike for impact.
-            for (let i = 0; i < frame.landings.length; i++) {
-              const l = frame.landings[i]!;
-              scheduleSpin(() => {
+            // Pre-landing grid (lastGrid is the grid before this batch).
+            const stripFresh = (g: TGrid): TGrid =>
+              g.map((col) => col.map((c) => ({ ...c })));
+            const preGrid: TGrid = lastGrid
+              ? stripFresh(lastGrid)
+              : stripFresh(frame.grid);
+            setGrid(preGrid);
+            // Brief inhale before the first orb lands so the white flash
+            // and "POWER!" voice register first.
+            await sleep(skipRef.current ? 80 : turboRef.current ? 200 : 380);
+            const buildBolt = (col: number, row: number) => {
+              const startX = 18, startY = 22;
+              const endX = ((col + 0.5) / cfg.cols) * 100;
+              const endY = ((row + 0.5) / cfg.rows) * 100;
+              const dx = endX - startX, dy = endY - startY;
+              const seg = (t: number, jitter: number) => {
+                const x = startX + dx * t + (Math.random() - 0.5) * jitter;
+                const y = startY + dy * t + (Math.random() - 0.5) * jitter;
+                return `${x.toFixed(2)} ${y.toFixed(2)}`;
+              };
+              return `M ${startX} ${startY} L ${seg(0.28, 4)} L ${seg(0.55, 5)} L ${seg(0.78, 4)} L ${endX} ${endY}`;
+            };
+            for (let i = 0; i < landings.length; i++) {
+              const m = landings[i]!;
+              const staged: TGrid = preGrid.map((col) => col.map((c) => ({ ...c })));
+              for (let j = 0; j <= i; j++) {
+                const lj = landings[j]!;
+                const cell = staged[lj.col]?.[lj.row];
+                if (cell) {
+                  cell.symbolId = '__mult__';
+                  cell.multiplier = lj.value;
+                  cell.key = lj.key;
+                }
+              }
+              setGrid(staged);
+              lastGrid = staged;
+              setNewKeys((prev) => {
+                const next = new Set(prev);
+                next.add(m.key);
+                return next;
+              });
+              setFloatingMults([m]);
+              setOrbImpacts([{ id: `oi-${m.key}`, col: m.col, row: m.row }]);
+              if (isZeus) {
+                setZeusBolts([{ id: `zb-${m.key}`, d: buildBolt(m.col, m.row), col: m.col, row: m.row }]);
+                sound.play('thunder');
+              } else {
                 sound.play('multiplier');
-                setOrbImpacts((prev) => [...prev, { id: `oi-ls-${l.key}-${i}`, col: l.col, row: l.row }]);
-              }, orbStart + i * orbStep);
+              }
+              if (m.value >= 100) setOrbRumble('lg');
+              else if (m.value >= 25) setOrbRumble('md');
+              else if (m.value >= 10) setOrbRumble('sm');
+              else setOrbRumble(null);
+              if (i < landings.length - 1) await sleep(STAGGER);
             }
-            // Apply the new grid (with multipliers) about 40% through the
-            // strike animation so the orbs visually appear during the boom.
-            scheduleSpin(() => {
-              setFloatingMults(frame.landings);
-              setGrid(frame.grid);
-              lastGrid = frame.grid;
-            }, orbStart);
-            // Clear impacts + hide overlay near the end of the frame delay.
-            scheduleSpin(() => setOrbImpacts([]), overlayClear + 200);
-            scheduleSpin(() => setLightningStrike(false), overlayClear);
+            setGrid(frame.grid);
+            lastGrid = frame.grid;
+            scheduleSpin(() => setOrbImpacts([]), 700);
+            scheduleSpin(() => setZeusBolts([]), 480);
+            scheduleSpin(() => setFloatingMults([]), 800);
+            scheduleSpin(() => setOrbRumble(null), 700);
+            scheduleSpin(() => setZeusEyesGlow(false), 600);
+            scheduleSpin(() => setLightningStrike(false), 350);
             break;
           }
           case 'wins': {
