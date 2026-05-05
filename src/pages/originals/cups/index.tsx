@@ -36,8 +36,16 @@ export function CupsGame() {
     setResult(null);
     setPhase('shuffling');
     setBusy(true);
+    // Shuffle SFX — series of soft ticks during the 1.2s animation so
+    // the player hears the cups sliding rather than watching a silent
+    // shuffle. 6 ticks across 1100ms feels like quick scuffles.
+    const tickTimers: number[] = [];
+    [80, 240, 420, 600, 780, 960].forEach((delay) => {
+      tickTimers.push(window.setTimeout(() => sound.play('tick'), delay));
+    });
     // Brief shuffle animation, then ready to pick
     setTimeout(() => {
+      tickTimers.forEach((id) => clearTimeout(id));
       setPhase('pick');
       setBusy(false);
     }, 1200);

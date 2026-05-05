@@ -102,8 +102,9 @@ export function VideoPokerGame() {
 
   const toggleHold = useCallback((idx: number) => {
     if (phase !== 'hold' || busy) return;
+    sound.play('tick');
     setHeld((prev) => prev.map((h, i) => (i === idx ? !h : h)));
-  }, [phase, busy]);
+  }, [phase, busy, sound]);
 
   return (
     <OriginalPageLayout title="Video Poker">
@@ -138,13 +139,18 @@ export function VideoPokerGame() {
 
         {/* Hand */}
         <div className="rounded-2xl bg-bg-card border border-edge p-3 min-h-[160px]">
-          <AnimatePresence>
-            {hand.length === 0 ? (
-              <div className="flex items-center justify-center min-h-[140px] text-[11px] text-ink-mute uppercase tracking-widest">
-                Place a bet to deal
-              </div>
-            ) : (
-              <div className="flex justify-center gap-2">
+          {hand.length === 0 ? (
+            <div className="flex items-center justify-center min-h-[140px] text-[11px] text-ink-mute uppercase tracking-widest">
+              Place a bet to deal
+            </div>
+          ) : (
+            <div className="flex justify-center gap-2">
+              {/* AnimatePresence directly wraps each per-card key so a
+                  draw replacing only some cards animates only those
+                  cards out — held cards keep their key (held flag in
+                  the index part) and don't re-animate. mode="popLayout"
+                  keeps the row from collapsing during the exit. */}
+              <AnimatePresence mode="popLayout" initial={false}>
                 {hand.map((c, i) => (
                   <CardView
                     key={`${i}-${c.rank}-${c.suit}`}
@@ -154,9 +160,9 @@ export function VideoPokerGame() {
                     interactive={phase === 'hold'}
                   />
                 ))}
-              </div>
-            )}
-          </AnimatePresence>
+              </AnimatePresence>
+            </div>
+          )}
         </div>
 
         {/* Outcome */}
@@ -229,15 +235,20 @@ function CardView({
 }) {
   const red = card.suit === '♥' || card.suit === '♦';
   return (
-    <button
+    <motion.button
       onClick={onToggle}
       disabled={!interactive}
       className="relative active:scale-95 transition"
+      // Deal-in / discard animations live on the outer button so
+      // AnimatePresence (above) can drive them via key changes. When
+      // the player presses Draw, replaced cards (whose key changes)
+      // exit by flipping & dropping; replacements flip in from above.
+      initial={{ y: -20, opacity: 0, rotateY: 180 }}
+      animate={{ y: 0, opacity: 1, rotateY: 0 }}
+      exit={{ y: 50, opacity: 0, rotateY: -180, transition: { duration: 0.22 } }}
+      transition={{ type: 'spring', stiffness: 240, damping: 20 }}
     >
-      <motion.div
-        initial={{ y: -20, opacity: 0, rotateY: 180 }}
-        animate={{ y: 0, opacity: 1, rotateY: 0 }}
-        transition={{ type: 'spring', stiffness: 240, damping: 20 }}
+      <div
         className="relative w-14 h-20 sm:w-16 sm:h-24 rounded-xl font-bold"
         style={{
           background: 'linear-gradient(180deg, #f5f0e4, #e8dfc9)',
@@ -262,7 +273,7 @@ function CardView({
           <div className="text-2xl leading-none">{rankLabel(card.rank)}</div>
           <div className="text-xl mt-0.5">{card.suit}</div>
         </div>
-      </motion.div>
+      </div>
       {held && (
         <div
           className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded text-[8px] font-mono font-bold uppercase"
@@ -271,6 +282,6 @@ function CardView({
           Hold
         </div>
       )}
-    </button>
+    </motion.button>
   );
 }

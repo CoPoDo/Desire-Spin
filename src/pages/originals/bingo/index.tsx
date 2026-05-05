@@ -80,7 +80,6 @@ export function BingoGame() {
       }
       const num = r.draws[i]!;
       i++;
-      sound.play('tick');
       setDrawnSoFar((prev) => [...prev, num]);
       // Check if this number is on the card
       let cardIdx = -1;
@@ -90,6 +89,12 @@ export function BingoGame() {
           break;
         }
       }
+      // Differentiated SFX so the player hears the difference between
+      // a draw that hit their card vs one that missed. Real bingo
+      // calls are silent on miss but the live audience cheers on hit;
+      // we mirror that with a positive 'coin' chime on hit, plain
+      // 'tick' otherwise.
+      sound.play(cardIdx >= 0 ? 'coin' : 'tick');
       if (cardIdx >= 0) {
         setMarked((prev) => {
           const next = new Set(prev);

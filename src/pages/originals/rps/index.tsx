@@ -46,6 +46,13 @@ export function RpsGame() {
       const seeds = fairness.consumeNonce();
       const rng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
       const r = play(rng, bet, move);
+      // Rock-paper-scissors-SHOOT cadence — three thuds during the shake
+      // animation matching the 4-bounce rhythm. Real RPS games (and
+      // playground RPS) have audible "rock, paper, scissors" beats so
+      // the silent shake felt under-paced.
+      window.setTimeout(() => sound.play('drop'), 100);
+      window.setTimeout(() => sound.play('drop'), 380);
+      window.setTimeout(() => sound.play('drop'), 660);
       // Suspense reveal — opponent's hand "shakes" then drops a move
       setTimeout(() => {
         setOpponentMove(r.opponent);
