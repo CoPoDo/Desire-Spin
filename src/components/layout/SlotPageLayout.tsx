@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactNode, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useGame } from '../../game-context';
 import { fmtCurrency } from '../../lib/format';
@@ -10,15 +10,27 @@ import { BackIcon, MenuDotsIcon } from '../ui/icons';
 /** Full-screen immersive layout for a slot game page. No sidebar, no footer.
  *  A compact floating top bar shows back link / game title / balance +
  *  refill / menu — matching the Originals top-bar pattern so the lobby
- *  feels unified. */
+ *  feels unified.
+ *
+ *  `accent` / `accentDeep` opt the title gradient + balance pill + refill
+ *  button into the slot's theme palette. Defaults preserve the original
+ *  Olympus gold so the layout still works for any caller that doesn't
+ *  specify an accent. */
 export function SlotPageLayout({
   children,
   title,
+  accent = '#ffc62a',
+  accentDeep = '#c8932e',
 }: {
   children: ReactNode;
   title?: string;
+  accent?: string;
+  accentDeep?: string;
 }) {
   const { balance, sound } = useGame();
+  // Pre-compute accent-derived rgba values for box-shadows / borders so we
+  // don't have to inline regex-pad the accent hex everywhere.
+  const accentRgba = useMemo(() => hexToRgba(accent), [accent]);
   const [fairnessOpen, setFairnessOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [statsOpen, setStatsOpen] = useState(false);
@@ -55,7 +67,7 @@ export function SlotPageLayout({
             <div
               className="font-display font-extrabold text-sm sm:text-base whitespace-nowrap mr-1.5"
               style={{
-                background: 'linear-gradient(180deg, #fff5c4 0%, #ffd166 60%, #c8932e 100%)',
+                background: `linear-gradient(180deg, #fff5c4 0%, ${accent} 60%, ${accentDeep} 100%)`,
                 WebkitBackgroundClip: 'text',
                 backgroundClip: 'text',
                 color: 'transparent',
@@ -67,18 +79,27 @@ export function SlotPageLayout({
             </div>
           )}
           <div
-            className="px-3 py-1 rounded-full bg-black/45 backdrop-blur-sm border border-[#ffc62a]/35 flex items-center gap-2"
-            style={{ boxShadow: '0 0 18px rgba(255,198,42,.18)' }}
+            className="px-3 py-1 rounded-full bg-black/45 backdrop-blur-sm flex items-center gap-2"
+            style={{
+              border: `1px solid ${accentRgba(0.35)}`,
+              boxShadow: `0 0 18px ${accentRgba(0.18)}`,
+            }}
           >
-            <span className="text-[10px] uppercase tracking-widest text-[#ffe9a8]/70">Bal</span>
-            <span className="font-mono font-semibold text-sm text-[#ffe9a8] tabular-nums">
+            <span className="text-[10px] uppercase tracking-widest" style={{ color: accentRgba(0.7) }}>Bal</span>
+            <span className="font-mono font-semibold text-sm tabular-nums" style={{ color: accent }}>
               {fmtCurrency(balance.balance)}
             </span>
           </div>
           <button
             onClick={() => balance.credit(1000)}
             aria-label="Add 1,000 play money"
-            className="px-2 py-1 rounded-full bg-gradient-to-b from-[#ffc62a] to-[#c8932e] border border-[#ffe9a8]/60 text-[#1a0f00] text-[10px] font-bold uppercase tracking-wider shadow-[0_0_14px_rgba(255,198,42,.5)] active:scale-95 transition"
+            className="px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider active:scale-95 transition"
+            style={{
+              background: `linear-gradient(180deg, ${accent}, ${accentDeep})`,
+              border: `1px solid ${accentRgba(0.6)}`,
+              color: '#1a0f00',
+              boxShadow: `0 0 14px ${accentRgba(0.5)}`,
+            }}
           >
             +1k
           </button>
@@ -158,4 +179,16 @@ export function SlotPageLayout({
       <SessionStatsPanel open={statsOpen} onClose={() => setStatsOpen(false)} />
     </div>
   );
+}
+
+/** Tiny hex→rgba helper. Returns a function that takes alpha and emits
+ *  rgba() — lets us interpolate the accent into shadows/borders without
+ *  hand-padding `${accent}55` style hex strings (which break for 4/8-char
+ *  hex inputs). Memoised at the call-site for stable identity. */
+function hexToRgba(hex: string): (alpha: number) => string {
+  const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})/i.exec(hex);
+  const r = m ? parseInt(m[1]!, 16) : 255;
+  const g = m ? parseInt(m[2]!, 16) : 198;
+  const b = m ? parseInt(m[3]!, 16) : 42;
+  return (alpha: number) => `rgba(${r},${g},${b},${alpha})`;
 }

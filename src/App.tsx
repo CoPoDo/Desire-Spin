@@ -7,12 +7,19 @@ import { Home } from './pages/Home';
 import { Settings } from './pages/Settings';
 import { ComingSoon } from './components/layout/ComingSoon';
 import { SweetBonanza } from './pages/slots/sweet-bonanza';
+import { sweetBonanzaConfig } from './pages/slots/sweet-bonanza/config';
 import { GatesOfOlympus } from './pages/slots/gates-of-olympus';
+import { gatesOfOlympusConfig } from './pages/slots/gates-of-olympus/config';
 import { SugarRush } from './pages/slots/sugar-rush';
+import { sugarRushConfig } from './pages/slots/sugar-rush/config';
 import { JuanCantina } from './pages/slots/juan-cantina';
+import { juanCantinaConfig } from './pages/slots/juan-cantina/config';
 import { WantedWild } from './pages/slots/wanted-wild';
+import { wantedWildConfig } from './pages/slots/wanted-wild/config';
 import { PharaohGold } from './pages/slots/pharaoh-gold';
+import { pharaohGoldConfig } from './pages/slots/pharaoh-gold/config';
 import { WolfGold } from './pages/slots/wolf-gold';
+import { wolfGoldConfig } from './pages/slots/wolf-gold/config';
 import { BigJuan } from './pages/slots/big-juan';
 import { DiceGame } from './pages/originals/dice';
 import { LimboGame } from './pages/originals/limbo';
@@ -51,38 +58,41 @@ export default function App() {
     <ErrorBoundary>
       <GameProvider>
         <Routes>
-        {/* Slot games — fullscreen immersive layout, no sidebar/footer */}
+        {/* Slot games — fullscreen immersive layout, no sidebar/footer.
+         *  Each slot passes its own theme accent so the top-bar (title
+         *  gradient, balance pill, refill button) lights up in the slot's
+         *  own colour rather than the shared Olympus gold. */}
         <Route
           path="/slots/sweet-bonanza"
-          element={<SlotPageLayout title="Sweet Bonanza"><SweetBonanza /></SlotPageLayout>}
+          element={<SlotPageLayout title="Sweet Bonanza" accent={sweetBonanzaConfig.theme.accent} accentDeep="#a8307a"><SweetBonanza /></SlotPageLayout>}
         />
         <Route
           path="/slots/gates-of-olympus"
-          element={<SlotPageLayout title="Gates of Olympus"><GatesOfOlympus /></SlotPageLayout>}
+          element={<SlotPageLayout title="Gates of Olympus" accent={gatesOfOlympusConfig.theme.accent} accentDeep="#c8932e"><GatesOfOlympus /></SlotPageLayout>}
         />
         <Route
           path="/slots/sugar-rush"
-          element={<SlotPageLayout title="Sugar Rush"><SugarRush /></SlotPageLayout>}
+          element={<SlotPageLayout title="Sugar Rush" accent={sugarRushConfig.theme.accent} accentDeep="#c8408a"><SugarRush /></SlotPageLayout>}
         />
         <Route
           path="/slots/juan-cantina"
-          element={<SlotPageLayout title="Juan's Cantina"><JuanCantina /></SlotPageLayout>}
+          element={<SlotPageLayout title="Juan's Cantina" accent={juanCantinaConfig.theme.accent} accentDeep="#a86018"><JuanCantina /></SlotPageLayout>}
         />
         <Route
           path="/slots/wanted-wild"
-          element={<SlotPageLayout title="Wanted Dead or a Wild"><WantedWild /></SlotPageLayout>}
+          element={<SlotPageLayout title="Wanted Dead or a Wild" accent={wantedWildConfig.theme.accent} accentDeep="#7a4a18"><WantedWild /></SlotPageLayout>}
         />
         <Route
           path="/slots/pharaoh-gold"
-          element={<SlotPageLayout title="Pharaoh's Gold"><PharaohGold /></SlotPageLayout>}
+          element={<SlotPageLayout title="Pharaoh's Gold" accent={pharaohGoldConfig.theme.accent} accentDeep="#a8761a"><PharaohGold /></SlotPageLayout>}
         />
         <Route
           path="/slots/wolf-gold"
-          element={<SlotPageLayout title="Wolf Gold"><WolfGold /></SlotPageLayout>}
+          element={<SlotPageLayout title="Wolf Gold" accent={wolfGoldConfig.theme.accent} accentDeep="#6638c8"><WolfGold /></SlotPageLayout>}
         />
         <Route
           path="/slots/big-juan"
-          element={<SlotPageLayout title="Big Juan"><BigJuan /></SlotPageLayout>}
+          element={<SlotPageLayout title="Big Juan" accent="#ffd166" accentDeep="#c8932e"><BigJuan /></SlotPageLayout>}
         />
         <Route path="/originals/dice" element={<DiceGame />} />
         <Route path="/originals/limbo" element={<LimboGame />} />
