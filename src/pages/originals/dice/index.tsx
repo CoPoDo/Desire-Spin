@@ -19,6 +19,7 @@ import {
   play,
   winChanceFor,
 } from './engine';
+import { fireConfetti } from '../../../lib/confetti';
 
 export function DiceGame() {
   const { balance, fairness, sound, history, session } = useGame();
@@ -54,7 +55,21 @@ export function DiceGame() {
       setRecentRolls((r) => [{ id: `${seeds.nonce}`, roll: result.roll, win: result.win }, ...r].slice(0, 8));
       if (result.win) {
         balance.credit(result.payout);
-        sound.play('win');
+        // Sound + confetti tier on the win multiplier — matches the
+        // pattern used by Crash, Limbo, Tower, Hilo, etc. (≥4× = big
+        // celebration, ≥10× = mega, ≥40× = epic). Real Stake Dice
+        // doesn't ship confetti but every other Original we mirror does;
+        // adding it here for parity.
+        sound.play(
+          result.multiplier >= 10 ? 'mega-win' :
+          result.multiplier >= 4 ? 'big-win' : 'win',
+        );
+        if (result.multiplier >= 4) {
+          fireConfetti({
+            count: result.multiplier >= 40 ? 130 : result.multiplier >= 10 ? 80 : 50,
+            colors: ['#1fff7a', '#22d3ee', '#ffd166', '#ffffff'],
+          });
+        }
       } else {
         sound.play('drop');
       }
