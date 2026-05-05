@@ -31,8 +31,13 @@
   .pill {
     @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium;
   }
+  /* Button base — adds tap-feedback (active:scale-95) so every .btn-primary
+   * / .btn-ghost / .btn-danger across the app gets a tactile press response.
+   * Disabled state suppresses the scale to avoid pressing-while-locked
+   * looking interactive. transition is now `all` (was colors-only) so the
+   * scale animates smoothly. */
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-colors disabled:opacity-50 disabled:pointer-events-none;
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition disabled:opacity-50 disabled:pointer-events-none active:scale-95 disabled:active:scale-100;
   }
   .btn-primary {
     @apply btn bg-accent text-bg hover:bg-accent/90;
