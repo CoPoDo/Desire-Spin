@@ -148,9 +148,13 @@ export function ImmersiveSlotView({
   fsTriggerTitle,
   archInsets,
   betPresets = DEFAULT_PRESETS,
-  maxWinLabel = '5,000×',
+  maxWinLabel,
 }: ImmersiveSlotViewProps) {
   const { balance, fairness, history, sound, session } = useGame();
+  // Derive default maxWinLabel from cfg.maxWinMultiplier so each slot's
+  // welcome splash + status pills auto-match the engine's cap. Callers
+  // can still override via the prop (legacy slots use this).
+  const maxWinDisplay = maxWinLabel ?? `${(cfg.maxWinMultiplier ?? 5000).toLocaleString()}×`;
   const music = useMusic({ soundEnabled: sound.enabled });
   const [bet, setBet] = useState(1);
   const [ante, setAnte] = useState(false);
@@ -2793,7 +2797,7 @@ export function ImmersiveSlotView({
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.5, type: 'spring', stiffness: 220, damping: 14 }}
             >
-              {maxWinLabel}
+              {maxWinDisplay}
             </motion.div>
             <motion.div
               className="absolute bottom-12 left-1/2 -translate-x-1/2 text-[10px] uppercase tracking-[0.3em]"
