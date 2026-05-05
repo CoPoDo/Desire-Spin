@@ -41,6 +41,7 @@ export function AviatorGame() {
   const [recent, setRecent] = useState<{ id: string; bust: number; cashedAt: number | null }[]>([]);
 
   const startTimeRef = useRef<number>(0);
+  const lastClimbMilestoneRef = useRef<number>(0);
   const rafRef = useRef<number | null>(null);
   const cashedAtRef = useRef<number | null>(null);
   const bustRef = useRef<number | null>(null);
@@ -99,6 +100,17 @@ export function AviatorGame() {
     const elapsed = (performance.now() - startTimeRef.current) / 1000;
     const m = multiplierAt(elapsed);
     setCurrentMult(m);
+    // Climb milestones — same scheme as Crash so the round audibly
+    // accelerates as the plane climbs higher.
+    const milestones = [1.5, 2, 3, 5, 10, 25, 50, 100, 250, 500, 1000];
+    while (
+      lastClimbMilestoneRef.current < milestones.length &&
+      m >= milestones[lastClimbMilestoneRef.current]!
+    ) {
+      const idx = lastClimbMilestoneRef.current;
+      sound.play(idx >= 7 ? 'big-win' : idx >= 4 ? 'win' : 'coin');
+      lastClimbMilestoneRef.current += 1;
+    }
     const bAt = bustRef.current;
     if (bAt === null) return;
     const auto = autoCashoutRef.current;
@@ -144,6 +156,7 @@ export function AviatorGame() {
     phaseRef.current = 'flying';
     setPhase('flying');
     startTimeRef.current = performance.now();
+    lastClimbMilestoneRef.current = 0;
     rafRef.current = requestAnimationFrame(tick);
   }, [phase, balance, bet, fairness, sound, tick]);
 
@@ -185,6 +198,7 @@ export function AviatorGame() {
       phaseRef.current = 'flying';
       setPhase('flying');
       startTimeRef.current = performance.now();
+      lastClimbMilestoneRef.current = 0;
       rafRef.current = requestAnimationFrame(tick);
     });
   }, [autoCashoutEnabled, balance, bet, fairness, sound, tick]);

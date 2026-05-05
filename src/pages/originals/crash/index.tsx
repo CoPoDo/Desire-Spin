@@ -39,6 +39,11 @@ export function CrashGame() {
   const cashedAtRef = useRef<number | null>(null);
   const bustRef = useRef<number | null>(null);
   const phaseRef = useRef<Phase>('idle');
+  // Last milestone we played a climb-tick for. Reset on round start;
+  // increments as multiplier crosses each [1.5, 2, 3, 5, 10, 25, 50,
+  // 100, 250, 500, 1000]× threshold so the player audibly hears the
+  // round building. Real Crash games do this with rising whoosh tones.
+  const lastClimbMilestoneRef = useRef<number>(0);
   const autoCashoutRef = useRef<{ enabled: boolean; target: number }>({ enabled: false, target: 2.0 });
   useEffect(() => {
     autoCashoutRef.current = { enabled: autoCashoutEnabled, target: autoCashout };
@@ -97,6 +102,18 @@ export function CrashGame() {
     const elapsed = (performance.now() - startTimeRef.current) / 1000;
     const m = multiplierAt(elapsed);
     setCurrentMult(m);
+    // Climb-tick milestones — chime each time the multiplier crosses
+    // a power-of-X threshold so the round audibly accelerates.
+    const milestones = [1.5, 2, 3, 5, 10, 25, 50, 100, 250, 500, 1000];
+    while (
+      lastClimbMilestoneRef.current < milestones.length &&
+      m >= milestones[lastClimbMilestoneRef.current]!
+    ) {
+      const idx = lastClimbMilestoneRef.current;
+      // Higher milestones get more dramatic SFX
+      sound.play(idx >= 7 ? 'big-win' : idx >= 4 ? 'win' : 'coin');
+      lastClimbMilestoneRef.current += 1;
+    }
     const bAt = bustRef.current;
     if (bAt === null) return;
     // Auto-cashout fires first if its target is below the bust
@@ -144,6 +161,7 @@ export function CrashGame() {
     phaseRef.current = 'running';
     setPhase('running');
     startTimeRef.current = performance.now();
+    lastClimbMilestoneRef.current = 0;
     rafRef.current = requestAnimationFrame(tick);
   }, [phase, balance, bet, fairness, sound, tick]);
 
@@ -191,6 +209,7 @@ export function CrashGame() {
       phaseRef.current = 'running';
       setPhase('running');
       startTimeRef.current = performance.now();
+      lastClimbMilestoneRef.current = 0;
       rafRef.current = requestAnimationFrame(tick);
     });
   }, [autoCashoutEnabled, balance, bet, fairness, sound, tick]);
