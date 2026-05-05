@@ -73,7 +73,15 @@ export function TowerGame() {
         });
         session.recordSpin(round.bet, next.payout, false);
       } else {
-        sound.play('win');
+        // Climbing-tone progression — earlier steps play 'win', mid
+        // steps escalate to 'big-win', last step plays 'mega-win' so
+        // the audio crescendo matches the visual height. Real Stake
+        // Tower has a clearly ascending pitch as the player climbs.
+        // (next.step is the row the player just completed.)
+        sound.play(
+          next.step >= 7 ? 'mega-win' :
+          next.step >= 4 ? 'big-win' : 'win',
+        );
       }
     },
     [round, balance, fairness, history, session, sound],

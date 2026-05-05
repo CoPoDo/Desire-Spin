@@ -64,7 +64,11 @@ export function TreasureGame() {
           session.recordSpin(bet, 0, false);
         }
       } else {
-        sound.play('tick');
+        // Tier the SFX by tile value so a 50× treasure feels audibly
+        // different from a 0.3× scrap. Pre-fix all tiles played the
+        // same dull 'tick' regardless of size, missing the "treasure
+        // hunt" thrill.
+        sound.play(tile.multiplier >= 5 ? 'coin' : 'tick');
         setAccumulated((prev) => +(prev + tile.multiplier).toFixed(2));
       }
     },
