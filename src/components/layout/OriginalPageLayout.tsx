@@ -143,7 +143,11 @@ export function OriginalPageLayout({
         )}
       </AnimatePresence>
 
-      <main className="flex-1 min-h-0 overflow-auto">{children}</main>
+      {/* Content area — safe-area-inset-bottom padding so action buttons
+          (Cash Out, Bet, Deal, Roll) on phones with a home indicator
+          don't sit under the gesture bar. Each game's own bottom
+          padding stacks on top of this. */}
+      <main className="flex-1 min-h-0 overflow-auto pb-[max(env(safe-area-inset-bottom),0px)]">{children}</main>
 
       <FairnessPanel open={fairnessOpen} onClose={() => setFairnessOpen(false)} />
       <BetHistoryTable open={historyOpen} onClose={() => setHistoryOpen(false)} />
