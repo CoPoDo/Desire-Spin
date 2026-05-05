@@ -266,11 +266,16 @@ export function CrashGame() {
             })()}
           </svg>
 
-          {/* Center multiplier */}
+          {/* Center multiplier — keyed on PHASE only (not currentMult) so
+           *  the spring scale-pop fires once per phase transition rather
+           *  than every tick. Previously remounted on every frame which
+           *  cancelled the animation immediately and created numeric
+           *  chop. Now scale-pops at takeoff and at cash-out / crash,
+           *  with smooth value updates in between. */}
           <div className="relative z-10 flex flex-col items-center justify-center h-full min-h-[220px] py-6">
             <AnimatePresence mode="wait">
               <motion.div
-                key={phase + '-' + (lost ? bust : currentMult)}
+                key={phase}
                 initial={{ scale: 0.7, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.85, opacity: 0 }}
@@ -289,7 +294,7 @@ export function CrashGame() {
                         : 'none',
                 }}
               >
-                {currentMult.toFixed(2)}×
+                {(lost ? (bust ?? currentMult) : currentMult).toFixed(2)}×
               </motion.div>
             </AnimatePresence>
             <div className="mt-2 text-xs text-ink-dim h-4">
@@ -308,9 +313,9 @@ export function CrashGame() {
                 key="bust-flash"
                 className="absolute inset-0 pointer-events-none"
                 initial={{ opacity: 0 }}
-                animate={{ opacity: [0, 0.85, 0] }}
+                animate={{ opacity: [0, 0.95, 0] }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: 0.6, times: [0, 0.18, 1] }}
+                transition={{ duration: 0.4, times: [0, 0.18, 1] }}
                 style={{
                   background:
                     'radial-gradient(ellipse at center, rgba(255,61,139,.55) 0%, rgba(255,61,139,.18) 40%, transparent 75%)',
