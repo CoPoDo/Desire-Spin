@@ -85,6 +85,14 @@ export function MinesGame() {
     setRound(next);
     if (next.hitMine) {
       sound.play('drop');
+      // Mine-reveal cascade — non-clicked bombs reveal with random
+      // 0-300ms delays per the CardView animate-presence stagger.
+      // Schedule a short 'tick' for each so the cascade has audio
+      // weight matching the visual reveal. Capped at 6 to avoid spam.
+      const otherMines = Math.min(6, mineCount - 1);
+      for (let i = 0; i < otherMines; i++) {
+        window.setTimeout(() => sound.play('tick'), 60 + i * 70);
+      }
       // Reveal all mines briefly
       setTimeout(() => {
         history.record({
