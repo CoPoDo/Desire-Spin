@@ -184,18 +184,25 @@ export function SicBoGame() {
         {recent.length > 0 && (
           <div className="flex items-center gap-1 overflow-x-auto py-1">
             <span className="text-[10px] uppercase tracking-widest text-ink-mute mr-1 flex-shrink-0">Recent</span>
-            {recent.map((r) => (
-              <span
-                key={r.id}
-                className={`font-mono font-semibold text-[11px] tabular-nums w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 ${
-                  r.sum >= 11 && r.sum <= 17 ? 'bg-accent-hot/30 text-accent-hot' :
-                  r.sum >= 4 && r.sum <= 10 ? 'bg-accent/30 text-accent' :
-                  'bg-accent-gold/30 text-accent-gold'
-                }`}
-              >
-                {r.sum}
-              </span>
-            ))}
+            <AnimatePresence initial={false}>
+              {recent.map((r) => (
+                <motion.span
+                  key={r.id}
+                  layout
+                  initial={{ scale: 0.6, opacity: 0, x: -12 }}
+                  animate={{ scale: 1, opacity: 1, x: 0 }}
+                  exit={{ scale: 0.8, opacity: 0 }}
+                  transition={{ type: 'spring', stiffness: 360, damping: 22 }}
+                  className={`font-mono font-semibold text-[11px] tabular-nums w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 ${
+                    r.sum >= 11 && r.sum <= 17 ? 'bg-accent-hot/30 text-accent-hot' :
+                    r.sum >= 4 && r.sum <= 10 ? 'bg-accent/30 text-accent' :
+                    'bg-accent-gold/30 text-accent-gold'
+                  }`}
+                >
+                  {r.sum}
+                </motion.span>
+              ))}
+            </AnimatePresence>
           </div>
         )}
 
