@@ -324,6 +324,43 @@ export function CrashGame() {
               />
             )}
           </AnimatePresence>
+          {/* Bust shrapnel — 14 particles fly outward from screen-center
+           *  on impact. The flash + shake on their own read as "screen
+           *  effect"; particles add a physical "rocket exploded into
+           *  pieces" beat that matches real Crash games' impact moment. */}
+          <AnimatePresence>
+            {lost && (
+              <>
+                {Array.from({ length: 14 }).map((_, i) => {
+                  const angle = (i / 14) * Math.PI * 2 + (i % 2 ? 0.22 : -0.18);
+                  const dist = 100 + (i % 5) * 22;
+                  const dx = Math.cos(angle) * dist;
+                  const dy = Math.sin(angle) * dist - 12; // bias slightly upward
+                  const sz = 5 + (i % 3) * 2;
+                  return (
+                    <motion.span
+                      key={`bust-debris-${i}`}
+                      className="absolute pointer-events-none rounded-full"
+                      style={{
+                        left: '50%',
+                        top: '50%',
+                        width: sz,
+                        height: sz,
+                        background:
+                          i % 3 === 0 ? '#ff3d8b' : i % 3 === 1 ? '#ffd166' : '#ffffff',
+                        boxShadow: '0 0 8px rgba(255,61,139,.7)',
+                        zIndex: 5,
+                      }}
+                      initial={{ x: 0, y: 0, opacity: 1, scale: 1 }}
+                      animate={{ x: dx, y: dy, opacity: 0, scale: 0.3, rotate: 280 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.7, ease: [0.22, 0.5, 0.4, 0.96] }}
+                    />
+                  );
+                })}
+              </>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Bust history bar chart — like Stake's "Last X rounds" view */}
