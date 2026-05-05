@@ -210,16 +210,23 @@ export function LimboGame() {
         {recent.length > 0 && (
           <div className="flex items-center gap-1.5 overflow-x-auto py-1">
             <span className="text-[10px] uppercase tracking-widest text-ink-mute mr-1 flex-shrink-0">Recent</span>
-            {recent.map((r) => (
-              <span
-                key={r.id}
-                className={`font-mono font-semibold text-xs tabular-nums px-2 py-1 rounded-lg flex-shrink-0 ${
-                  r.win ? 'bg-accent/15 text-accent' : 'bg-bg-elev text-ink-mute'
-                }`}
-              >
-                {r.result.toFixed(2)}×
-              </span>
-            ))}
+            <AnimatePresence initial={false}>
+              {recent.map((r) => (
+                <motion.span
+                  key={r.id}
+                  layout
+                  initial={{ scale: 0.6, opacity: 0, x: -12 }}
+                  animate={{ scale: 1, opacity: 1, x: 0 }}
+                  exit={{ scale: 0.8, opacity: 0 }}
+                  transition={{ type: 'spring', stiffness: 360, damping: 22 }}
+                  className={`font-mono font-semibold text-xs tabular-nums px-2 py-1 rounded-lg flex-shrink-0 ${
+                    r.win ? 'bg-accent/15 text-accent' : 'bg-bg-elev text-ink-mute'
+                  }`}
+                >
+                  {r.result.toFixed(2)}×
+                </motion.span>
+              ))}
+            </AnimatePresence>
           </div>
         )}
       </div>
