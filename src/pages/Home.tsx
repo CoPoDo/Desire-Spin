@@ -312,9 +312,20 @@ export function Home() {
 function SectionHeader({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
     <div className="flex items-end justify-between mb-3">
-      <div>
-        <h2 className="font-display text-2xl font-bold">{title}</h2>
-        {subtitle && <p className="text-sm text-ink-dim">{subtitle}</p>}
+      <div className="flex items-center gap-3">
+        {/* Vertical accent rail to the left of the title — same colour
+         *  as the lobby's primary accent so each section header reads
+         *  as a "label" with a nice visual hook (Stake's lobby uses
+         *  a similar treatment on its category headers). */}
+        <span
+          className="block w-[3px] h-7 rounded-full bg-accent"
+          style={{ boxShadow: '0 0 10px rgba(255,198,42,.55)' }}
+          aria-hidden="true"
+        />
+        <div>
+          <h2 className="font-display text-2xl font-bold leading-tight">{title}</h2>
+          {subtitle && <p className="text-sm text-ink-dim leading-tight">{subtitle}</p>}
+        </div>
       </div>
     </div>
   );
