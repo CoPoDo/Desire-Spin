@@ -1511,10 +1511,14 @@ export function ImmersiveSlotView({
                 key={`fm-${m.key}`}
                 className="absolute pointer-events-none font-serif italic font-bold z-[7]"
                 style={{
-                  color: '#FFE9A8',
+                  // Floating multiplier value (e.g. "100×") — was hardcoded
+                  // gold + gold textShadow. Now uses each slot's accent so
+                  // the popping number matches the slot's own colour
+                  // (pink on Bonanza, violet on Wolf, etc.).
+                  color: cfg.theme.accent,
                   left: `${liveInsets.left + (m.col + 0.5) * (liveInsets.width / cfg.cols)}%`,
                   top: `${liveInsets.top + (m.row + 0.5) * (liveInsets.width / cfg.cols)}%`,
-                  textShadow: '0 0 18px rgba(255,200,40,.95), 0 2px 4px rgba(0,0,0,.7)',
+                  textShadow: `0 0 18px ${cfg.theme.glow}, 0 2px 4px rgba(0,0,0,.7)`,
                   fontSize: 'clamp(20px, 5vw, 32px)',
                   transform: 'translate(-50%, -50%)',
                 }}
@@ -2405,8 +2409,11 @@ export function ImmersiveSlotView({
                 className="font-mono uppercase tracking-[0.3em] font-bold"
                 style={{
                   fontSize: 'clamp(10px, 2.6vw, 16px)',
-                  color: '#FFE0A8',
-                  textShadow: '0 0 12px rgba(255,200,40,.85), 0 1px 2px rgba(0,0,0,.6)',
+                  // Retrigger "FREE SPINS" subtext — was hardcoded gold,
+                  // now uses theme accent so the +N spins callout matches
+                  // the FS-trigger banner (which is already themed).
+                  color: cfg.theme.accent,
+                  textShadow: `0 0 12px ${cfg.theme.glow}, 0 1px 2px rgba(0,0,0,.6)`,
                 }}
               >
                 Free Spins
@@ -2764,9 +2771,10 @@ export function ImmersiveSlotView({
               Provably fair · play money
             </motion.div>
             <motion.div
-              className="font-mono uppercase tracking-[0.32em] text-[#FFE0A8] text-[11px] mb-1"
+              className="font-mono uppercase tracking-[0.32em] text-[11px] mb-1"
+              style={{ color: cfg.theme.accent, opacity: 0.85 }}
               initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+              animate={{ opacity: 0.85 }}
               transition={{ delay: 0.4 }}
             >
               Max Win
