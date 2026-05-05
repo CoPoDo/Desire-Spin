@@ -46,7 +46,13 @@ export function ScratchGame() {
   const revealTile = useCallback(
     (idx: number) => {
       if (phase !== 'reveal' || revealed[idx]) return;
-      sound.play('tick');
+      // Differentiated reveal SFX — scratching ONE of the winning trio
+      // tiles plays a positive 'coin' chime so the player audibly
+      // knows they hit one of the matched cells. Other tiles get the
+      // plain 'tick' scratch. Real scratch-cards have a separate
+      // "ding" for matched symbols vs the dull rasp on misses.
+      const isWinningTile = result?.winningPositions.includes(idx) ?? false;
+      sound.play(isWinningTile ? 'coin' : 'tick');
       setRevealed((prev) => {
         const next = [...prev];
         next[idx] = true;
