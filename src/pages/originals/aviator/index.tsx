@@ -304,31 +304,50 @@ export function AviatorGame() {
               ))}
             </>
           )}
-          {/* Plane / explosion */}
+          {/* Plane / explosion — on bust the plane visibly tumbles
+           *  toward the ground (rotates + falls 30%) over 600ms before
+           *  the 💥 swap settles. Real Aviator shows the plane spinning
+           *  away off-screen rather than instantly transforming. */}
           <motion.div
             className="absolute pointer-events-none select-none"
             initial={false}
-            animate={{
-              left: `${5 + distancePct * 90}%`,
-              top: `${95 - altitudePct * 90}%`,
-            }}
-            transition={{ duration: 0.12, ease: 'linear' }}
+            animate={
+              lost
+                ? {
+                    left: `${5 + distancePct * 90}%`,
+                    top: `${Math.min(98, 95 - altitudePct * 90 + 30)}%`,
+                    rotate: -110,
+                  }
+                : {
+                    left: `${5 + distancePct * 90}%`,
+                    top: `${95 - altitudePct * 90}%`,
+                    rotate: inGame || won ? -12 : 0,
+                  }
+            }
+            transition={
+              lost
+                ? { duration: 0.6, ease: [0.36, 0, 0.66, 1] }
+                : { duration: 0.12, ease: 'linear' }
+            }
             style={{
               transform: 'translate(-50%, -50%)',
               fontSize: 'clamp(28px, 7vw, 44px)',
               filter: lost
                 ? 'drop-shadow(0 0 12px rgba(255,61,139,.95))'
                 : 'drop-shadow(0 4px 8px rgba(0,0,0,.5))',
-              rotate: inGame || won ? '-12deg' : '0deg',
             }}
           >
             {lost ? '💥' : '✈️'}
           </motion.div>
-          {/* Centered multiplier */}
+          {/* Centered multiplier — keyed on phase only (same fix Crash
+           *  got): the previous key included currentMult so the spring
+           *  scale-pop remounted on every animation tick during flight,
+           *  making the counter visibly judder. Now the pop fires once
+           *  per phase change. */}
           <div className="relative z-10 flex flex-col items-center justify-center min-h-[260px]">
             <AnimatePresence mode="wait">
               <motion.div
-                key={phase + '-' + (lost ? bust : currentMult)}
+                key={phase}
                 initial={{ scale: 0.7, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.85, opacity: 0 }}
@@ -345,7 +364,7 @@ export function AviatorGame() {
                       : '0 0 18px rgba(0,0,0,.5), 0 0 12px rgba(255,255,255,.25)',
                 }}
               >
-                {currentMult.toFixed(2)}×
+                {(lost ? (bust ?? currentMult) : currentMult).toFixed(2)}×
               </motion.div>
             </AnimatePresence>
             <div className="mt-2 text-xs text-white/85 h-4">
