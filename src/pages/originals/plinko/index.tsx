@@ -62,6 +62,17 @@ export function PlinkoGame() {
       const id = ++ballIdRef.current;
       setActiveBalls((prev) => [...prev, { id, drop: result, rows: r }]);
 
+      // Peg-tick SFX synced to the visual fall — one tick per row
+      // contact, with sqrt scaling so they accelerate as the ball
+      // descends (matches the gravity-style keyframe timing in the
+      // Ball component). Real Plinko makes an audible tick each time
+      // the ball strikes a peg; the silent drop felt sterile.
+      const visualDur = Math.sqrt(r) * 320 + 300;
+      for (let i = 0; i < r; i++) {
+        const at = visualDur * Math.sqrt(i + 1) / Math.sqrt(r + 1);
+        window.setTimeout(() => sound.play('tick'), at);
+      }
+
       // Animation duration scales with rows (gravity-like: faster per row).
       const animDur = r * 110 + 250;
       setTimeout(() => {
