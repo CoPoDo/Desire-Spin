@@ -1974,7 +1974,7 @@ export function ImmersiveSlotView({
           <button
             onClick={() => setBuyBonusOpen(true)}
             disabled={busy || inFree || autoplay !== null || balance.balance < buyCost}
-            className="w-full px-2 py-1.5 rounded-lg disabled:opacity-40 disabled:saturate-50 relative overflow-hidden"
+            className="w-full px-2 py-1.5 rounded-lg disabled:opacity-40 disabled:saturate-50 relative overflow-hidden transition active:scale-[0.97] disabled:active:scale-100"
             style={{
               // Theme-tinted Buy Bonus button — bright accent at top
               // fading into a deeper anchor at the bottom. Was a fixed
@@ -2098,7 +2098,7 @@ export function ImmersiveSlotView({
             onClick={() => setAnte((v) => !v)}
             disabled={busy || inFree || autoplay !== null}
             aria-pressed={ante}
-            className="w-full px-2 py-1 rounded-lg text-[10px] uppercase tracking-[0.16em] font-bold leading-none transition disabled:opacity-40"
+            className="w-full px-2 py-1 rounded-lg text-[10px] uppercase tracking-[0.16em] font-bold leading-none transition active:scale-95 disabled:opacity-40 disabled:active:scale-100"
             style={
               ante
                 ? {
