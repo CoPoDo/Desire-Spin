@@ -53,6 +53,12 @@ export function WheelGame() {
     const targetAbs = -(r.segment * (360 / seg)) - (360 / seg) / 2;
     const next = Math.floor(rotation / 360) * 360 + fullRots * 360 + targetAbs;
     setRotation(next);
+    // Pointer-tick SFX during the 3.2s wheel deceleration. Sampled
+    // from the same ease-out curve the wheel uses, so ticks bunch up
+    // early and stretch out as the wheel slows. Real Wheel-of-Fortune
+    // pointers click each segment edge — the silent spin felt mute.
+    const wheelTicks = [80, 200, 340, 500, 680, 880, 1100, 1340, 1600, 1880, 2150, 2410, 2660, 2880, 3060];
+    wheelTicks.forEach((t) => window.setTimeout(() => sound.play('tick'), t));
     return new Promise<number>((resolve) => {
       setTimeout(() => {
         setLastResult({ multiplier: r.multiplier, segment: r.segment });
