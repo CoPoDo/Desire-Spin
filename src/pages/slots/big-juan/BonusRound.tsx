@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createRng, type Rng } from '../../../lib/fairness';
 import { fmtCurrency } from '../../../lib/format';
+import { useGame } from '../../../game-context';
 import {
   type BonusCellKind,
   JACKPOTS,
@@ -33,6 +34,7 @@ export type BonusRoundProps = {
 const SIZE = 9; // 3×3 grid
 
 export function BigJuanBonusRound({ bet, scatterCount, seeds, onClose }: BonusRoundProps) {
+  const { sound } = useGame();
   const [grid, setGrid] = useState<BonusCellKind[]>(() => Array(SIZE).fill('empty') as BonusCellKind[]);
   const [respinsLeft, setRespinsLeft] = useState(() => bonusInitialRespins(scatterCount));
   const [totalMult, setTotalMult] = useState(0);
@@ -69,12 +71,15 @@ export function BigJuanBonusRound({ bet, scatterCount, seeds, onClose }: BonusRo
     setBusy(true);
     setRolling(true);
     setRecentlyLanded(new Set()); // clear last-round highlights immediately
+    // Roll-start cue: a click as the empty cells start cycling.
+    sound.play('click');
 
     const rng = rngRef.current!;
     const newGrid = [...grid];
     const newlyLanded = new Set<number>();
     let extraRespins = 0;
     let valueGained = 0;
+    let landedJackpot = false;
     for (let i = 0; i < SIZE; i++) {
       if (isFilled(newGrid[i]!)) continue;
       const rolled = bonusRollOne(rng);
@@ -85,6 +90,11 @@ export function BigJuanBonusRound({ bet, scatterCount, seeds, onClose }: BonusRo
           extraRespins += 1;
         } else {
           valueGained += bonusCellValue(rolled);
+          // Jackpot symbols (mini/minor/major/grand) are bigger wins
+          // than coin values; mark them for a louder cue on land.
+          if (typeof rolled !== 'string' && rolled.kind === 'jackpot') {
+            landedJackpot = true;
+          }
         }
       }
     }
@@ -97,6 +107,18 @@ export function BigJuanBonusRound({ bet, scatterCount, seeds, onClose }: BonusRo
       setRecentlyLanded(newlyLanded);
       setRolling(false);
       setTotalMult((prev) => +(prev + valueGained).toFixed(2));
+      // Land SFX — match the magnitude of what just hit. Jackpot cells
+      // get a 'big-win' fanfare; multi-coin lands play 'win'; single
+      // coin or extra-respin only plays 'coin'; nothing landed → drop.
+      if (landedJackpot) {
+        sound.play('big-win');
+      } else if (newlyLanded.size > 1) {
+        sound.play('win');
+      } else if (newlyLanded.size === 1) {
+        sound.play('coin');
+      } else {
+        sound.play('drop');
+      }
       // Respin accounting
       let nextRespins = respinsLeft - 1 + extraRespins;
       const anyNewValueLanded = Array.from(newlyLanded).some((i) => {
@@ -111,11 +133,19 @@ export function BigJuanBonusRound({ bet, scatterCount, seeds, onClose }: BonusRo
       // End conditions
       const allFilled = newGrid.every(isFilled);
       if (allFilled || nextRespins <= 0) {
-        setTimeout(() => setFinished(true), 900);
+        // Tier the bonus-end fanfare so a 5× collect feels different
+        // from a 500×+ epic finish.
+        setTimeout(() => {
+          sound.play(
+            totalMult + valueGained >= 100 ? 'mega-win' :
+            totalMult + valueGained >= 20 ? 'big-win' : 'free-spins-end',
+          );
+          setFinished(true);
+        }, 900);
       }
       setTimeout(() => setBusy(false), 480);
     }, 520);
-  }, [busy, finished, grid, respinsLeft]);
+  }, [busy, finished, grid, respinsLeft, totalMult, sound]);
 
   // Auto-roll if there are respins left (with breathing room between rounds)
   useEffect(() => {
