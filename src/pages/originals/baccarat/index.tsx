@@ -51,16 +51,27 @@ export function BaccaratGame() {
     (['player', 'banker', 'tie'] as Side[]).forEach((s) => {
       if (bets[s] > 0) totalPayout += payoutFor(s, bets[s], r.winner);
     });
+    // Per-card deal SFX matching the staggered CardView entrance
+    // (delay = i * 100ms in HandPanel). Both hands deal in parallel,
+    // so the max card index drives total deal duration. 2-3 cards
+    // per side → 600ms max.
+    const totalCards = Math.max(r.player.length, r.banker.length);
+    for (let i = 0; i < totalCards; i++) {
+      window.setTimeout(() => sound.play('drop'), 80 + i * 180);
+    }
+    const settleAt = 80 + totalCards * 180 + 120;
     if (totalPayout > 0) {
       balance.credit(totalPayout);
-      sound.play(totalPayout >= totalBet * 5 ? 'mega-win' : totalPayout > totalBet ? 'big-win' : 'win');
-      if (totalPayout > totalBet) {
-        fireConfetti({
-          count: totalPayout >= totalBet * 5 ? 130 : 70,
-        });
-      }
+      window.setTimeout(() => {
+        sound.play(totalPayout >= totalBet * 5 ? 'mega-win' : totalPayout > totalBet ? 'big-win' : 'win');
+        if (totalPayout > totalBet) {
+          fireConfetti({
+            count: totalPayout >= totalBet * 5 ? 130 : 70,
+          });
+        }
+      }, settleAt);
     } else {
-      sound.play('drop');
+      window.setTimeout(() => sound.play('drop'), settleAt);
     }
     history.record({
       game: 'Baccarat',
