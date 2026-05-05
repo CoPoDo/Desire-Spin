@@ -51,7 +51,25 @@ export function CasesGame() {
     }
     setReel(strip);
     spinKey.current += 1;
+    // Ratcheting tick SFX matching the carousel's deceleration. Real
+    // CS:GO / Stake case-opening has a distinctive "tick tick … tick …
+    // … tick" sound as each tile slides past the indicator, slowing
+    // toward the reveal. Without it the visual feels mute. Schedule
+    // is sampled from the ease curve [0.15, 0.55, 0.2, 1] so ticks
+    // pile up at the start and space out toward the end.
+    const tickAt = [
+      80, 165, 245, 325, 410, 495, 590, 690, 800, 920,   // dense early
+      1050, 1190, 1340, 1500, 1670, 1850, 2040,           // mid-spacing
+      2230, 2420, 2610, 2790, 2950, 3060,                 // anticipation
+    ];
+    const tickTimers: number[] = [];
+    for (const t of tickAt) {
+      tickTimers.push(window.setTimeout(() => sound.play('tick'), t));
+    }
     // After scroll animation finishes (~3.0s), reveal result + payout.
+    setTimeout(() => {
+      tickTimers.forEach((id) => clearTimeout(id));
+    }, 3100);
     setTimeout(() => {
       setResult(r.item);
       setPhase('reveal');

@@ -144,8 +144,47 @@ export function PumpGame() {
 
         {/* Balloon — container shakes when the balloon pops */}
         <div
-          className={`rounded-2xl bg-bg-card border border-edge p-6 flex items-center justify-center min-h-[220px] ${round?.popped ? 'shake-medium' : ''}`}
+          className={`relative rounded-2xl bg-bg-card border border-edge p-6 flex items-center justify-center min-h-[220px] overflow-hidden ${round?.popped ? 'shake-medium' : ''}`}
         >
+          {/* Pop debris — 12 little balloon-shred particles fly outward
+           *  radially when the balloon pops. Adds the "splat" feedback
+           *  that a single 💥 emoji on its own lacks. Each particle has
+           *  a randomised offset angle so they don't look mechanical. */}
+          <AnimatePresence>
+            {round?.popped && (
+              <>
+                {Array.from({ length: 12 }).map((_, i) => {
+                  const angle = (i / 12) * Math.PI * 2 + (i % 2 ? 0.18 : -0.12);
+                  const dist = 90 + (i % 4) * 18;
+                  const dx = Math.cos(angle) * dist;
+                  const dy = Math.sin(angle) * dist;
+                  return (
+                    <motion.span
+                      key={`debris-${i}`}
+                      className="absolute pointer-events-none rounded-full"
+                      style={{
+                        left: '50%',
+                        top: '50%',
+                        width: 8 + (i % 3) * 2,
+                        height: 8 + (i % 3) * 2,
+                        background:
+                          i % 3 === 0
+                            ? '#ff3d8b'
+                            : i % 3 === 1
+                              ? '#ff7aa3'
+                              : '#ffd166',
+                        boxShadow: '0 0 8px rgba(255,61,139,.6)',
+                      }}
+                      initial={{ x: 0, y: 0, opacity: 1, scale: 1 }}
+                      animate={{ x: dx, y: dy, opacity: 0, scale: 0.4, rotate: 240 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.55, ease: [0.25, 0.46, 0.45, 0.94] }}
+                    />
+                  );
+                })}
+              </>
+            )}
+          </AnimatePresence>
           <AnimatePresence mode="wait">
             {round?.popped ? (
               <motion.div
@@ -153,7 +192,7 @@ export function PumpGame() {
                 initial={{ scale: 1.2 }}
                 animate={{ scale: [1.2, 2.2, 0], opacity: [1, 1, 0] }}
                 transition={{ duration: 0.6 }}
-                className="text-7xl"
+                className="text-7xl relative z-10"
                 style={{ filter: 'drop-shadow(0 0 18px rgba(255,61,139,.85))' }}
               >
                 💥
