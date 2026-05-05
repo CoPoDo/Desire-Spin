@@ -2564,8 +2564,11 @@ export function ImmersiveSlotView({
               className="font-mono font-bold mt-2"
               style={{
                 fontSize: 'clamp(28px, 9vw, 56px)',
-                color: '#FFE9A8',
-                textShadow: '0 0 24px rgba(255,200,40,.9), 0 4px 8px rgba(0,0,0,.6)',
+                // FS-outro payout — was hardcoded gold #FFE9A8 + gold
+                // glow. Now uses the slot's accent so the climactic
+                // total-win number lights up in the slot's own colour.
+                color: cfg.theme.accent,
+                textShadow: `0 0 24px ${cfg.theme.glow}, 0 4px 8px rgba(0,0,0,.6)`,
               }}
               initial={{ scale: 0.4, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
