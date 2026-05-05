@@ -56,6 +56,9 @@ export function HiloGame() {
       const stepMult =
         direction === 'higher' ? higherMult(current.rank) : lowerMult(current.rank);
 
+      // Card-deal thunk lands ~120ms in so the flip animation has audio
+      // weight rather than 350ms of silence before the result chime.
+      window.setTimeout(() => sound.play('drop'), 120);
       setTimeout(() => {
         setPrevious(current);
         setCurrent(next);
