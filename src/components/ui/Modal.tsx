@@ -43,7 +43,7 @@ export function Modal({
             role="dialog"
             aria-modal="true"
             aria-label={title}
-            className={`relative w-full ${widthCls} card p-0 max-h-[92vh] flex flex-col`}
+            className={`relative w-full ${widthCls} card p-0 max-h-[calc(100dvh-1rem)] sm:max-h-[92dvh] flex flex-col`}
             initial={{ y: 20, opacity: 0, scale: 0.98 }}
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: 20, opacity: 0, scale: 0.98 }}

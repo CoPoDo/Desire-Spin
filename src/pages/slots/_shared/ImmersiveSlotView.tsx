@@ -2224,7 +2224,7 @@ export function ImmersiveSlotView({
             <motion.div
               role="dialog"
               aria-modal="true"
-              className="fixed inset-x-4 top-1/2 -translate-y-1/2 z-[145] max-w-sm mx-auto rounded-3xl overflow-hidden"
+              className="fixed inset-x-4 top-1/2 -translate-y-1/2 z-[145] max-w-sm mx-auto rounded-3xl overflow-y-auto max-h-[calc(100dvh-1.5rem)]"
               style={{
                 // Theme-tinted dialog backdrop. Was hardcoded Olympus
                 // amber + amethyst.
