@@ -217,8 +217,10 @@ export function CrashGame() {
   return (
     <OriginalPageLayout title="Crash">
       <div className="flex flex-col p-4 gap-4 max-w-md mx-auto w-full">
-        {/* Multiplier display + curve */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-4 relative overflow-hidden min-h-[260px]">
+        {/* Multiplier display + curve. Stage shakes on bust — mirrors
+         *  Aviator's camera-shake-on-impact polish so both crash-style
+         *  games have parity on the explosion moment. */}
+        <div className={`rounded-2xl bg-bg-card border border-edge p-4 relative overflow-hidden min-h-[260px] ${lost ? 'shake-medium' : ''}`}>
           {/* Curve viz */}
           <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 60" preserveAspectRatio="none">
             <defs>
@@ -297,6 +299,26 @@ export function CrashGame() {
               {phase === 'idle' && 'Place a bet to start'}
             </div>
           </div>
+          {/* Bust flash — quick red radial pulse fades in then out so the
+           *  crash moment has visible "boom" feedback layered over the
+           *  shake. Real Stake Crash flashes the screen briefly on bust. */}
+          <AnimatePresence>
+            {lost && (
+              <motion.div
+                key="bust-flash"
+                className="absolute inset-0 pointer-events-none"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: [0, 0.85, 0] }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.6, times: [0, 0.18, 1] }}
+                style={{
+                  background:
+                    'radial-gradient(ellipse at center, rgba(255,61,139,.55) 0%, rgba(255,61,139,.18) 40%, transparent 75%)',
+                  mixBlendMode: 'screen',
+                }}
+              />
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Bust history bar chart — like Stake's "Last X rounds" view */}
