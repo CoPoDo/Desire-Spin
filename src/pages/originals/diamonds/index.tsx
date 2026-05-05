@@ -39,9 +39,13 @@ export function DiamondsGame() {
     const seeds = fairness.consumeNonce();
     const rng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
     const r = play(rng, b);
-    // Reveal cards one by one for drama
+    // Reveal cards one by one for drama. Per-gem 'tick' keeps the
+    // sequence audibly paced — silent reveal felt clinical for what's
+    // meant to be a "diamond hunt" game. Increase the cadence on the
+    // final gem so it lands with a tiny crescendo.
     for (let i = 0; i < 5; i++) {
       await new Promise<void>((res) => setTimeout(res, 220));
+      sound.play('tick');
       setRevealing(i + 1);
     }
     setResult(r);
