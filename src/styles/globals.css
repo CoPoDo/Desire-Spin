@@ -603,7 +603,7 @@
 }
 /* Per-slot themed gold/accent FS typography. Each slot's outer stage
  * container sets --slot-fs-grad / --slot-fs-glow / --slot-fs-sub-color
- * inline (in ImmersiveSlotView and SlotShell) so the FS-trigger banner
+ * inline (in ImmersiveSlotView) so the FS-trigger banner
  * and dialog headers light up in the slot's own colour rather than
  * Olympus gold. Fallbacks preserve the original Olympus look if a
  * caller doesn't set the vars (e.g. legacy non-themed mounts). */

@@ -65,7 +65,7 @@ If you want to use **Netlify** or **Cloudflare Pages** instead: same flow, diffe
 | State hooks | `src/hooks/{useBalance,useFairness,useBetHistory,useSound}.ts` |
 | App shell | `src/App.tsx`, `src/components/layout/*` |
 | Fairness UI | `src/components/fairness/*` |
-| Slot engine | `src/pages/slots/_shared/{engine,types,Grid,SlotShell,BetControls,Paytable}.{ts,tsx}` |
+| Slot engine | `src/pages/slots/_shared/{engine,types,Grid,ImmersiveSlotView,BetControls,Paytable}.{ts,tsx}` |
 | Sweet Bonanza | `src/pages/slots/sweet-bonanza/{config.ts,index.tsx,symbols.tsx,Art.tsx}` |
 | Gates of Olympus | `src/pages/slots/gates-of-olympus/{config.ts,index.tsx,symbols.tsx,Art.tsx}` |
 | Tests | `tests/{sha256,fairness,engine}.test.ts` |
