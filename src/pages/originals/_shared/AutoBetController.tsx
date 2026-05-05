@@ -79,7 +79,7 @@ export function AutoConfigFields({
           <button
             onClick={() => onChange({ ...config, count: 0 })}
             disabled={disabled}
-            className="px-3 rounded-lg bg-bg-elev border border-edge text-ink-dim text-xs font-bold"
+            className="px-3 rounded-lg bg-bg-elev border border-edge text-ink-dim hover:text-ink hover:border-accent/40 text-xs font-bold transition active:scale-95 disabled:opacity-50 disabled:active:scale-100"
           >
             ∞
           </button>
