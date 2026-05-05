@@ -2300,7 +2300,7 @@ export function ImmersiveSlotView({
             </div>
             <button
               onClick={() => setAutoplaySheetOpen(false)}
-              className="mt-3 w-full py-2.5 rounded-xl text-sm"
+              className="mt-3 w-full py-2.5 rounded-xl text-sm transition active:scale-95"
               style={{
                 color: cfg.theme.accent,
                 background: `${cfg.theme.accent}0d`,
@@ -2369,7 +2369,7 @@ export function ImmersiveSlotView({
             </div>
             <button
               onClick={() => setBetSheetOpen(false)}
-              className="mt-3 w-full py-2.5 rounded-xl text-sm"
+              className="mt-3 w-full py-2.5 rounded-xl text-sm transition active:scale-95"
               style={{
                 color: cfg.theme.accent,
                 background: `${cfg.theme.accent}0d`,
