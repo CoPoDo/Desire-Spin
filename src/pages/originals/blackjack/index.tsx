@@ -62,6 +62,34 @@ export function BlackjackGame() {
     return createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
   }, [fairness]);
 
+  const finalizeRound = useCallback(
+    (r: RoundState) => {
+      if (r.phase !== 'done') return;
+      if (r.payout > 0) balance.credit(r.payout);
+      const profit = r.payout - r.bet;
+      if (r.outcome === 'player-blackjack' || profit > r.bet) {
+        fireConfetti({ count: r.outcome === 'player-blackjack' ? 130 : 70 });
+      }
+      sound.play(
+        r.outcome === 'player-blackjack' || profit > r.bet ? 'big-win' :
+        profit > 0 ? 'win' :
+        profit === 0 ? 'click' :
+        'drop',
+      );
+      history.record({
+        game: 'Blackjack',
+        bet: r.bet,
+        payout: r.payout,
+        multiplier: r.payout / Math.max(r.bet, 0.01),
+        serverSeedHash: fairness.hash,
+        clientSeed: '',
+        nonce: 0,
+      });
+      session.recordSpin(r.bet, r.payout, false);
+    },
+    [balance, sound, history, fairness, session],
+  );
+
   const onHit = useCallback(() => {
     if (!round || round.phase !== 'player' || busy) return;
     setBusy(true);
@@ -73,7 +101,7 @@ export function BlackjackGame() {
       finalizeRound(r);
     }
     setTimeout(() => setBusy(false), 220);
-  }, [round, busy, nextRng, sound]);
+  }, [round, busy, nextRng, sound, finalizeRound]);
 
   const onStand = useCallback(() => {
     if (!round || round.phase !== 'player' || busy) return;
@@ -120,34 +148,6 @@ export function BlackjackGame() {
       setBusy(false);
     }, settleAt);
   }, [round, busy, balance, sound, nextRng, finalizeRound]);
-
-  const finalizeRound = useCallback(
-    (r: RoundState) => {
-      if (r.phase !== 'done') return;
-      if (r.payout > 0) balance.credit(r.payout);
-      const profit = r.payout - r.bet;
-      if (r.outcome === 'player-blackjack' || profit > r.bet) {
-        fireConfetti({ count: r.outcome === 'player-blackjack' ? 130 : 70 });
-      }
-      sound.play(
-        r.outcome === 'player-blackjack' || profit > r.bet ? 'big-win' :
-        profit > 0 ? 'win' :
-        profit === 0 ? 'click' :
-        'drop',
-      );
-      history.record({
-        game: 'Blackjack',
-        bet: r.bet,
-        payout: r.payout,
-        multiplier: r.payout / Math.max(r.bet, 0.01),
-        serverSeedHash: fairness.hash,
-        clientSeed: '',
-        nonce: 0,
-      });
-      session.recordSpin(r.bet, r.payout, false);
-    },
-    [balance, sound, history, fairness, session],
-  );
 
   const reset = useCallback(() => {
     setRound(null);

@@ -92,7 +92,10 @@ export function BigJuanBonusRound({ bet, scatterCount, seeds, onClose }: BonusRo
           valueGained += bonusCellValue(rolled);
           // Jackpot symbols (mini/minor/major/grand) are bigger wins
           // than coin values; mark them for a louder cue on land.
-          if (typeof rolled !== 'string' && rolled.kind === 'jackpot') {
+          if (
+            typeof rolled !== 'string' &&
+            (rolled.kind === 'mini' || rolled.kind === 'minor' || rolled.kind === 'major' || rolled.kind === 'grand')
+          ) {
             landedJackpot = true;
           }
         }
