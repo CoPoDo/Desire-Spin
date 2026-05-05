@@ -467,7 +467,7 @@ export function BigJuan() {
         <button
           onClick={() => setBetSheetOpen(true)}
           disabled={busy || inFs}
-          className="flex flex-col items-start px-3 py-2 rounded-xl bg-bg-card/80 backdrop-blur-sm border border-edge disabled:opacity-50 flex-shrink-0"
+          className="flex flex-col items-start px-3 py-2 rounded-xl bg-bg-card/80 backdrop-blur-sm border border-edge disabled:opacity-50 flex-shrink-0 transition active:scale-95 disabled:active:scale-100"
           aria-label="Bet amount"
         >
           <span className="text-[8px] uppercase tracking-widest text-ink-mute">Bet</span>
@@ -479,7 +479,7 @@ export function BigJuan() {
           onClick={() => setBuyBonusConfirm(true)}
           disabled={busy || !!bonus || !!autoplay || balance.balance < buyBonusCost}
           aria-label="Buy bonus"
-          className="flex flex-col items-center justify-center w-12 h-12 rounded-xl border disabled:opacity-50 flex-shrink-0"
+          className="flex flex-col items-center justify-center w-12 h-12 rounded-xl border disabled:opacity-50 flex-shrink-0 transition active:scale-95 disabled:active:scale-100"
           style={{
             background: 'linear-gradient(180deg, rgba(255,85,96,.25), rgba(0,0,0,.4))',
             borderColor: 'rgba(255,85,96,.6)',
@@ -493,7 +493,7 @@ export function BigJuan() {
         <button
           onClick={() => setPaytableOpen(true)}
           aria-label="Pay table"
-          className="flex items-center justify-center w-11 h-11 rounded-full bg-black/40 backdrop-blur-sm border border-[#ffd166]/40 text-[#ffd166] text-base flex-shrink-0"
+          className="flex items-center justify-center w-11 h-11 rounded-full bg-black/40 backdrop-blur-sm border border-[#ffd166]/40 text-[#ffd166] text-base flex-shrink-0 transition active:scale-90"
         >
           ⓘ
         </button>
@@ -514,7 +514,7 @@ export function BigJuan() {
         <button
           aria-label="Turbo"
           onClick={() => setTurbo((t) => !t)}
-          className="flex items-center justify-center w-11 h-11 rounded-full backdrop-blur-sm border text-base flex-shrink-0"
+          className="flex items-center justify-center w-11 h-11 rounded-full backdrop-blur-sm border text-base flex-shrink-0 transition active:scale-90"
           style={{
             background: turbo ? 'rgba(31,255,122,.2)' : 'rgba(20,20,30,.6)',
             borderColor: turbo ? 'rgba(31,255,122,.6)' : 'rgba(255,255,255,.15)',
@@ -530,7 +530,7 @@ export function BigJuan() {
           }}
           disabled={busy || !!bonus}
           aria-label={autoplay ? 'Stop autoplay' : 'Auto-play'}
-          className="flex flex-col items-center justify-center w-12 h-12 rounded-xl border disabled:opacity-50 flex-shrink-0"
+          className="flex flex-col items-center justify-center w-12 h-12 rounded-xl border disabled:opacity-50 flex-shrink-0 transition active:scale-95 disabled:active:scale-100"
           style={{
             background: autoplay
               ? 'linear-gradient(180deg, rgba(31,255,122,.25), rgba(0,0,0,.4))'
