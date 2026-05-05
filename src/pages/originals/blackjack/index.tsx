@@ -81,9 +81,22 @@ export function BlackjackGame() {
     const rng = nextRng();
     const r = stand(rng, round);
     setRound(r);
-    finalizeRound(r);
-    setTimeout(() => setBusy(false), 320);
-  }, [round, busy, nextRng]);
+    // Schedule a 'drop' SFX for each new dealer card revealed during
+    // the deal-out animation. The entry animation delays each card
+    // by index*450ms so we mirror that with audible deals.
+    const newDealerCards = r.dealer.length - 1; // hole card flip + each new draw
+    for (let i = 0; i < newDealerCards; i++) {
+      window.setTimeout(() => sound.play('drop'), 50 + i * 450);
+    }
+    // Finalize after the deal-out completes so the outcome chime lands
+    // *after* the dealer's final card flips into place (was firing
+    // simultaneously with the first card, drowning out the reveal).
+    const settleAt = 200 + newDealerCards * 450;
+    window.setTimeout(() => {
+      finalizeRound(r);
+      setBusy(false);
+    }, settleAt);
+  }, [round, busy, nextRng, finalizeRound, sound]);
 
   const onDouble = useCallback(() => {
     if (!round || round.phase !== 'player' || busy || round.player.length !== 2) return;
@@ -94,9 +107,19 @@ export function BlackjackGame() {
     const rng = nextRng();
     const r = double(rng, round);
     setRound(r);
-    finalizeRound(r);
-    setTimeout(() => setBusy(false), 320);
-  }, [round, busy, balance, sound, nextRng]);
+    // Same staggered reveal as Stand — double draws one player card
+    // (counted via the new dealer-card count) plus the dealer's full
+    // hand. SFX per card; finalize after the last one lands.
+    const newDealerCards = r.dealer.length - 1;
+    for (let i = 0; i < newDealerCards; i++) {
+      window.setTimeout(() => sound.play('drop'), 50 + i * 450);
+    }
+    const settleAt = 200 + newDealerCards * 450;
+    window.setTimeout(() => {
+      finalizeRound(r);
+      setBusy(false);
+    }, settleAt);
+  }, [round, busy, balance, sound, nextRng, finalizeRound]);
 
   const finalizeRound = useCallback(
     (r: RoundState) => {
@@ -154,7 +177,14 @@ export function BlackjackGame() {
             )}
           </div>
           <div className="flex gap-2 justify-center min-h-[100px]">
-            {dealerVisible.map((c, i) => <CardView key={i} card={c} delay={i * 100} />)}
+            {/* Dealer cards: during the player phase only the first card
+                shows + a face-down placeholder. After stand, each new
+                dealer card eases in 450ms apart (was 100ms) so the
+                player can read each rank as it lands. The first card
+                stays mounted (delay=0) and only NEW cards animate. */}
+            {dealerVisible.map((c, i) => (
+              <CardView key={i} card={c} delay={i === 0 ? 0 : (i - 1) * 450 + 50} />
+            ))}
             {round && round.phase === 'player' && (
               <CardView hidden delay={100} />
             )}
