@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
 import { useGame } from '../../../game-context';
 import { createRng } from '../../../lib/fairness';
@@ -227,16 +227,23 @@ export function SlideGame() {
             <span className="text-[10px] uppercase tracking-widest text-ink-mute mr-1 flex-shrink-0">
               Recent
             </span>
-            {recent.map((r) => (
-              <span
-                key={r.id}
-                className={`font-mono font-semibold text-[10px] tabular-nums px-1.5 py-1 rounded-md flex-shrink-0 ${
-                  r.win ? 'bg-accent/15 text-accent' : 'bg-bg-elev text-ink-mute'
-                }`}
-              >
-                {fmtMultiplier(r.stop)}
-              </span>
-            ))}
+            <AnimatePresence initial={false}>
+              {recent.map((r) => (
+                <motion.span
+                  key={r.id}
+                  layout
+                  initial={{ scale: 0.6, opacity: 0, x: -12 }}
+                  animate={{ scale: 1, opacity: 1, x: 0 }}
+                  exit={{ scale: 0.8, opacity: 0 }}
+                  transition={{ type: 'spring', stiffness: 360, damping: 22 }}
+                  className={`font-mono font-semibold text-[10px] tabular-nums px-1.5 py-1 rounded-md flex-shrink-0 ${
+                    r.win ? 'bg-accent/15 text-accent' : 'bg-bg-elev text-ink-mute'
+                  }`}
+                >
+                  {fmtMultiplier(r.stop)}
+                </motion.span>
+              ))}
+            </AnimatePresence>
           </div>
         )}
 

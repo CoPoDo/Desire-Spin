@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
 import { useGame } from '../../../game-context';
 import { createRng } from '../../../lib/fairness';
@@ -212,22 +212,29 @@ export function WheelGame() {
         {recent.length > 0 && (
           <div className="flex items-center gap-1.5 overflow-x-auto py-1">
             <span className="text-[10px] uppercase tracking-widest text-ink-mute mr-1 flex-shrink-0">Recent</span>
-            {recent.map((r) => (
-              <span
-                key={r.id}
-                className={`font-mono font-semibold text-xs tabular-nums px-2 py-1 rounded-lg flex-shrink-0 ${
-                  r.m >= 10
-                    ? 'bg-accent-gold/20 text-accent-gold'
-                    : r.m >= 2
-                      ? 'bg-accent/15 text-accent'
-                      : r.m >= 1
-                        ? 'bg-accent-cyan/15 text-accent-cyan'
-                        : 'bg-accent-hot/15 text-accent-hot'
-                }`}
-              >
-                {r.m}×
-              </span>
-            ))}
+            <AnimatePresence initial={false}>
+              {recent.map((r) => (
+                <motion.span
+                  key={r.id}
+                  layout
+                  initial={{ scale: 0.6, opacity: 0, x: -12 }}
+                  animate={{ scale: 1, opacity: 1, x: 0 }}
+                  exit={{ scale: 0.8, opacity: 0 }}
+                  transition={{ type: 'spring', stiffness: 360, damping: 22 }}
+                  className={`font-mono font-semibold text-xs tabular-nums px-2 py-1 rounded-lg flex-shrink-0 ${
+                    r.m >= 10
+                      ? 'bg-accent-gold/20 text-accent-gold'
+                      : r.m >= 2
+                        ? 'bg-accent/15 text-accent'
+                        : r.m >= 1
+                          ? 'bg-accent-cyan/15 text-accent-cyan'
+                          : 'bg-accent-hot/15 text-accent-hot'
+                  }`}
+                >
+                  {r.m}×
+                </motion.span>
+              ))}
+            </AnimatePresence>
           </div>
         )}
 
