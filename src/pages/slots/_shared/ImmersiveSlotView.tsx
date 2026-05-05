@@ -945,13 +945,15 @@ export function ImmersiveSlotView({
           }}
         >
           <div className="flex flex-col items-center px-1.5">
-            <span className="text-[8px] uppercase tracking-widest text-[#FFE0A8]">Spins</span>
-            <span className="font-serif italic font-bold text-lg leading-none text-[#ffe9a8] tabular-nums"
-                  style={{ textShadow: '0 0 12px rgba(255,200,40,.8)' }}>
+            <span className="text-[8px] uppercase tracking-widest" style={{ color: cfg.theme.accent, opacity: 0.85 }}>Spins</span>
+            <span
+              className="font-serif italic font-bold text-lg leading-none tabular-nums"
+              style={{ color: cfg.theme.accent, textShadow: `0 0 12px ${cfg.theme.glow}` }}
+            >
               {(freeSpins.total - freeSpins.remaining)}/{freeSpins.total}
             </span>
           </div>
-          <span className="text-[#FFE0A8]/40 self-center">·</span>
+          <span className="self-center" style={{ color: cfg.theme.accent, opacity: 0.4 }}>·</span>
           {/* TOTAL MULTIPLIER — more prominent: brighter when active, springs/
               pulses when value increases. Real Olympus emphasizes this stat. */}
           <motion.div
@@ -962,31 +964,30 @@ export function ImmersiveSlotView({
             transition={{ duration: 0.6 }}
             key={gridMultiplierTotal}
             style={gridMultiplierTotal > 0 ? {
-              background: 'linear-gradient(180deg, rgba(255,200,80,.18), rgba(180,40,40,.08))',
-              boxShadow: '0 0 14px rgba(255,200,40,.4)',
+              background: `linear-gradient(180deg, ${cfg.theme.accent}38, ${cfg.theme.accent}10)`,
+              boxShadow: `0 0 14px ${cfg.theme.glow}`,
             } : undefined}
           >
-            <span className="text-[8px] uppercase tracking-widest text-[#FFE0A8]">Total Mult</span>
+            <span className="text-[8px] uppercase tracking-widest" style={{ color: cfg.theme.accent, opacity: 0.85 }}>Total Mult</span>
             <CountUp
               value={gridMultiplierTotal}
               format={(n) => `${n.toFixed(0)}×`}
               duration={350}
-              className={`font-serif italic font-extrabold text-xl leading-none tabular-nums ${
-                gridMultiplierTotal > 0 ? 'text-[#fff7d6]' : 'text-[#FFE0A8]/55'
-              }`}
+              className="font-serif italic font-extrabold text-xl leading-none tabular-nums"
               style={gridMultiplierTotal > 0 ? {
-                textShadow: '0 0 14px rgba(255,200,40,1), 0 0 24px rgba(255,140,40,.7)',
-              } : undefined}
+                color: '#fff7d6',
+                textShadow: `0 0 14px ${cfg.theme.accent}, 0 0 24px ${cfg.theme.glow}`,
+              } : { color: cfg.theme.accent, opacity: 0.55 }}
             />
           </motion.div>
-          <span className="text-[#FFE0A8]/40 self-center">·</span>
+          <span className="self-center" style={{ color: cfg.theme.accent, opacity: 0.4 }}>·</span>
           <div className="flex flex-col items-center px-1.5">
-            <span className="text-[8px] uppercase tracking-widest text-[#FFE0A8]">Won</span>
+            <span className="text-[8px] uppercase tracking-widest" style={{ color: cfg.theme.accent, opacity: 0.85 }}>Won</span>
             <CountUp
               value={freeSpins.running}
               format={fmtCurrency}
-              className="font-serif italic font-bold text-lg leading-none text-[#ffe9a8] tabular-nums"
-              style={{ textShadow: '0 0 12px rgba(255,200,40,.8)' }}
+              className="font-serif italic font-bold text-lg leading-none tabular-nums"
+              style={{ color: cfg.theme.accent, textShadow: `0 0 12px ${cfg.theme.glow}` }}
             />
           </div>
         </div>
