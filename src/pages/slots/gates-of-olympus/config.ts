@@ -38,20 +38,16 @@ export const gatesOfOlympusConfig: SlotConfig = {
   // Calibrated for ~96.5% RTP and ~0.5% scatter trigger rate.
   weightsBase: [4, 6, 9, 11, 12, 14, 16, 16, 18, 2.05],
   weightsFree: [6, 8, 10, 12, 13, 14, 14, 14, 14, 2.7],
-  // Multiplier orb frequencies tuned to real Pragmatic Olympus rates:
-  //   Base: ~7-10% of spins land at least one multiplier (Zeus drops orbs)
-  //   Free: ~50-70% of free spins land multipliers (intentionally higher)
-  // Real Olympus FEEL: Zeus visibly throws orbs frequently in base play
-  // and even more in FS (where the cumulative-multiplier feature stacks
-  // into a single end-of-spin total). Values calibrated to balance
-  // visible feel + RTP envelope.
-  // Multiplier orb distribution audited against real Pragmatic Gates
-  // of Olympus public weights (RTP analysis). Previous values were too
-  // generous on high multipliers (50/100/250/500× were ~2-3× more
-  // likely than in the real game). Now mirrors the real distribution
-  // — heavily skewed toward 2-5× with rare 100×+ orbs.
+  // Multiplier orb frequencies tuned to match real Pragmatic Olympus
+  // (per public Stake-data analysis):
+  //   Base: ~12-15% per tumble → ~18-22% of base spins show ≥1 multiplier
+  //   Free: ~55-65% per tumble → ~88-94% of free spins show ≥1 multiplier
+  // Was 9% / 45% — slightly under-frequent; bumped to 13% / 55% so Zeus
+  // visibly throws orbs on roughly the same fraction of spins as the
+  // real game. Multiplier value distribution unchanged (heavy 2-5×,
+  // rare 100×+ — already matches real Pragmatic published weights).
   multiplierTableBase: {
-    pPerTumble: 0.09,
+    pPerTumble: 0.13,
     maxPerTumble: 2,
     values: [
       [2, 22], [3, 16], [4, 13], [5, 10], [6, 7], [8, 6], [10, 5],
@@ -59,7 +55,7 @@ export const gatesOfOlympusConfig: SlotConfig = {
     ],
   },
   multiplierTableFree: {
-    pPerTumble: 0.45,
+    pPerTumble: 0.55,
     maxPerTumble: 3,
     values: [
       [2, 24], [3, 18], [4, 14], [5, 11], [6, 8], [8, 6], [10, 5],

@@ -89,11 +89,10 @@ const FRAME_DELAY: Record<string, number> = {
   initialDrop: 850,         // matches col-staggered drop completion
                             //   (5*80ms stagger + 420ms drop = ~820ms)
   lightningStrike: 1500,    // dramatic Zeus pause
-  multipliersLanded: 720,   // orb-thump pause — lets the eyes-glow,
-                            // speech bubble, and rumble register before
-                            // the next tumble sweeps them away. Was 480
-                            // which felt rushed (user feedback "bonus
-                            // going way too fast").
+  multipliersLanded: 360,   // post-stagger settle. The handler now
+                            // awaits per-orb landing internally (~280ms
+                            // each) so this is just the breath after the
+                            // last orb lands before the next frame fires.
   wins: 600,                // winning highlight hold
   tumble: 850,              // matches tumble cells landing in last
                             //   column (5*80ms stagger + 420ms drop ≈
@@ -112,9 +111,9 @@ const FRAME_DELAY: Record<string, number> = {
 const TURBO_MIN_DELAY: Record<string, number> = {
   initialDrop: 380,
   lightningStrike: 800,
-  multipliersLanded: 320,   // bumped from 220 to match base frame
-                            // bump — even in turbo, multipliers need a
-                            // beat to register.
+  multipliersLanded: 180,   // turbo post-stagger settle. The internal
+                            // per-orb stagger is also reduced (~140ms)
+                            // in turbo so total time stays brief.
   wins: 280,
   tumble: 460,
   scattersWon: 380,
@@ -410,73 +409,111 @@ export function ImmersiveSlotView({
             break;
           }
           case 'multipliersLanded': {
-            setFloatingMults(frame.landings);
-            setGrid(frame.grid);
-            lastGrid = frame.grid;
-            sound.play('multiplier');
-            // Zeus's eyes glow red + voice line when multipliers land
-            // on the board — only on Olympus. Real Pragmatic Olympus
-            // has a sampled VO; we approximate with deep TTS via
-            // lib/zeusVoice.
-            if (cfg.id === 'gates-of-olympus') {
+            // Real Pragmatic Olympus: when Zeus drops multiplier orbs,
+            // the board pauses and orbs land ONE-BY-ONE with a thunder
+            // crack on each. Previous version dropped them all
+            // simultaneously which felt rushed. Now stagger ~280ms per
+            // orb (140ms in turbo) with per-orb thunder + bolt + impact.
+            const isZeus = cfg.id === 'gates-of-olympus';
+            const STAGGER = skipRef.current ? 70 : turboRef.current ? 140 : 280;
+            const landings = frame.landings;
+            // Build the pre-landing grid by stripping new orb cells back
+            // to placeholders. lastGrid (previous frame's grid) doesn't
+            // include these new orbs, so it's the cleanest "before" state.
+            const stripFresh = (g: TGrid): TGrid => {
+              const next: TGrid = g.map((col) => col.map((c) => ({ ...c })));
+              return next;
+            };
+            const preGrid: TGrid = lastGrid
+              ? stripFresh(lastGrid)
+              : (() => {
+                  // No lastGrid: synthesise one from frame.grid by clearing
+                  // the new landing cells. The cell will render as empty
+                  // briefly, which is fine for the rare initial-spin case.
+                  const c = stripFresh(frame.grid);
+                  for (const m of landings) {
+                    const cell = c[m.col]?.[m.row];
+                    if (cell && cell.key === m.key) {
+                      cell.multiplier = undefined;
+                    }
+                  }
+                  return c;
+                })();
+            // Show the "before" grid first so orbs visibly POP IN one
+            // at a time.
+            setGrid(preGrid);
+            // Speak Zeus's line on the first orb (gives a "Zeus is
+            // intervening" cue alongside the eyes-glow + thunder).
+            if (isZeus && landings.length > 0) {
               setZeusEyesGlow(true);
               speakAndShout(zeusLineFor('multiplierLanded'));
-              scheduleSpin(() => setZeusEyesGlow(false), 1100);
-              // Lightning-bolt TRAIL from Zeus's hand (top-left ~18%/22%)
-              // to each orb landing — real Olympus shows electric arcs
-              // streaking from Zeus to where the orbs land before they
-              // appear. Each bolt is a randomised zigzag path generated
-              // procedurally. These render as SVG paths in the overlay.
-              const bolts = frame.landings.map((l, i) => {
-                const startX = 18; // Zeus hand approx, % of board width
-                const startY = 22;
-                const endX = ((l.col + 0.5) / cfg.cols) * 100;
-                const endY = ((l.row + 0.5) / cfg.rows) * 100;
-                // Build a 4-segment zigzag between start and end with
-                // small lateral jitters so each bolt looks unique.
-                const dx = endX - startX;
-                const dy = endY - startY;
-                const seg = (t: number, jitter: number) => {
-                  const x = startX + dx * t + (Math.random() - 0.5) * jitter;
-                  const y = startY + dy * t + (Math.random() - 0.5) * jitter;
-                  return `${x.toFixed(2)} ${y.toFixed(2)}`;
-                };
-                const d = `M ${startX} ${startY} L ${seg(0.28, 4)} L ${seg(0.55, 5)} L ${seg(0.78, 4)} L ${endX} ${endY}`;
-                return { id: `zb-${l.key}-${i}`, d, col: l.col, row: l.row };
+              scheduleSpin(() => setZeusEyesGlow(false), STAGGER * landings.length + 600);
+            }
+
+            // Stagger each orb's landing with full audiovisual emphasis.
+            const buildBolt = (col: number, row: number) => {
+              const startX = 18, startY = 22;
+              const endX = ((col + 0.5) / cfg.cols) * 100;
+              const endY = ((row + 0.5) / cfg.rows) * 100;
+              const dx = endX - startX, dy = endY - startY;
+              const seg = (t: number, jitter: number) => {
+                const x = startX + dx * t + (Math.random() - 0.5) * jitter;
+                const y = startY + dy * t + (Math.random() - 0.5) * jitter;
+                return `${x.toFixed(2)} ${y.toFixed(2)}`;
+              };
+              return `M ${startX} ${startY} L ${seg(0.28, 4)} L ${seg(0.55, 5)} L ${seg(0.78, 4)} L ${endX} ${endY}`;
+            };
+
+            for (let i = 0; i < landings.length; i++) {
+              const m = landings[i]!;
+              // Stage the grid: include landings[0..i].
+              const staged: TGrid = preGrid.map((col) => col.map((c) => ({ ...c })));
+              for (let j = 0; j <= i; j++) {
+                const lj = landings[j]!;
+                const cell = staged[lj.col]?.[lj.row];
+                if (cell) {
+                  cell.symbolId = '__mult__';
+                  cell.multiplier = lj.value;
+                  cell.key = lj.key;
+                }
+              }
+              setGrid(staged);
+              lastGrid = staged;
+              // Mark THIS orb's key as "new" so the Grid's per-cell drop
+              // animation fires (initial scale 0.85, drop-in from above)
+              // instead of materialising silently.
+              setNewKeys((prev) => {
+                const next = new Set(prev);
+                next.add(m.key);
+                return next;
               });
-              setZeusBolts(bolts);
-              scheduleSpin(() => setZeusBolts([]), 480);
+              // Per-orb visual emphasis (cleared by the next iteration
+              // or the post-loop settle).
+              setFloatingMults([m]);
+              setOrbImpacts([{ id: `oi-${m.key}`, col: m.col, row: m.row }]);
+              if (isZeus) {
+                setZeusBolts([{ id: `zb-${m.key}`, d: buildBolt(m.col, m.row), col: m.col, row: m.row }]);
+                sound.play('thunder');
+              } else {
+                sound.play('multiplier');
+              }
+              // Per-orb screen rumble scaled to this orb's value.
+              if (m.value >= 100) setOrbRumble('lg');
+              else if (m.value >= 25) setOrbRumble('md');
+              else if (m.value >= 10) setOrbRumble('sm');
+              else setOrbRumble(null);
+              // Wait before the next orb (unless this is the last).
+              if (i < landings.length - 1) await sleep(STAGGER);
             }
-            // Impact rings — each orb gets an expanding ring at its
-            // landing position. Real Olympus shows a shockwave + ground-
-            // crack as the orb slams in.
-            const impacts = frame.landings.map((l) => ({
-              id: `oi-${l.key}`,
-              col: l.col,
-              row: l.row,
-            }));
-            setOrbImpacts(impacts);
+
+            // Final settle: ensure exact frame grid + clear short-lived
+            // visual flourishes so the next frame doesn't inherit them.
+            setGrid(frame.grid);
+            lastGrid = frame.grid;
             scheduleSpin(() => setOrbImpacts([]), 700);
-            // Screen rumble — scaled to the highest multiplier on screen
-            // so a 2× drops a small thump and a 100×+ shakes the camera
-            // hard. Real Pragmatic Olympus has this exact escalation.
-            // Thunder SFX only on Olympus (Zeus theme); other slots get
-            // the rumble shake only — their own ambient music carries
-            // the moment without an out-of-context thunder crack.
-            const maxMult = Math.max(0, ...frame.landings.map((l) => l.value));
-            const isZeus = cfg.id === 'gates-of-olympus';
-            if (maxMult >= 100) {
-              setOrbRumble('lg');
-              if (isZeus) sound.play('thunder');
-              scheduleSpin(() => setOrbRumble(null), 700);
-            } else if (maxMult >= 25) {
-              setOrbRumble('md');
-              if (isZeus) sound.play('thunder');
-              scheduleSpin(() => setOrbRumble(null), 500);
-            } else if (maxMult >= 10) {
-              setOrbRumble('sm');
-              scheduleSpin(() => setOrbRumble(null), 350);
-            }
+            scheduleSpin(() => setZeusBolts([]), 480);
+            scheduleSpin(() => setFloatingMults([]), 800);
+            scheduleSpin(() => setOrbRumble(null), 700);
             break;
           }
           case 'tumble': {
@@ -1108,16 +1145,17 @@ export function ImmersiveSlotView({
                        *  beyond the dot itself so it reads as RAGE-LIT. */}
                       {/* Left eye — positioned over the painted Zeus's left
                        *  eye in olympus-bg.png. The painted Zeus is in the
-                       *  upper-left; his face is centred around (24%, 10%)
-                       *  in the image. His glowing painted eyes sit at
-                       *  approximately (22%, 10%) and (26%, 10%). Earlier
-                       *  values (14%/18%) were on the LEFT cheek/temple
-                       *  not over the eye sockets. */}
+                       *  upper-left and his face is more compact than I'd
+                       *  estimated; his eye sockets sit at approximately
+                       *  (12%, 14%) and (16%, 14%) of the stage container.
+                       *  Earlier guesses (22%/26% at top:10%) put the dots
+                       *  on his cheek/temple area, well to the right of
+                       *  his actual face. Verified by user screenshot. */}
                       <span
                         className="absolute rounded-full bj-zeus-eye"
                         style={{
-                          left: '22%',
-                          top: '10%',
+                          left: '12%',
+                          top: '14%',
                           width: '2.6%',
                           aspectRatio: '1 / 1',
                           background:
@@ -1131,8 +1169,8 @@ export function ImmersiveSlotView({
                       <span
                         className="absolute rounded-full bj-zeus-eye"
                         style={{
-                          left: '26%',
-                          top: '10%',
+                          left: '16%',
+                          top: '14%',
                           width: '2.6%',
                           aspectRatio: '1 / 1',
                           background:
@@ -1158,7 +1196,7 @@ export function ImmersiveSlotView({
                     <motion.div
                       key={zeusCallout.key}
                       className="absolute pointer-events-none z-[12]"
-                      style={{ left: '32%', top: '6%' }}
+                      style={{ left: '22%', top: '11%' }}
                       initial={{ opacity: 0, scale: 0.5, y: 8 }}
                       animate={{ opacity: 1, scale: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.85 }}
