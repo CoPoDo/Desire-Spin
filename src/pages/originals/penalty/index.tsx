@@ -170,6 +170,31 @@ export function PenaltyGame() {
                   opacity: 0.6,
                 }}
               />
+              {/* Net-ripple — radial pulse centered on the goal-zone the
+               *  ball hit. Real penalty kicks visibly bulge the back of
+               *  the net on impact; without this the goal felt silent. */}
+              <AnimatePresence>
+                {phase === 'reveal' && goal === true && (
+                  <motion.div
+                    key="net-ripple"
+                    className="absolute pointer-events-none rounded-full"
+                    style={{
+                      left: `${ZONE_POS[zone].x}%`,
+                      top: `${ZONE_POS[zone].y}%`,
+                      transform: 'translate(-50%, -50%)',
+                      width: '40%',
+                      aspectRatio: '1 / 1',
+                      background:
+                        'radial-gradient(circle, rgba(255,255,255,.55) 0%, rgba(255,255,255,.18) 35%, transparent 70%)',
+                      mixBlendMode: 'screen',
+                    }}
+                    initial={{ scale: 0.3, opacity: 0 }}
+                    animate={{ scale: [0.3, 1.4, 1.0], opacity: [0, 0.95, 0] }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.55, times: [0, 0.35, 1] }}
+                  />
+                )}
+              </AnimatePresence>
               {/* Zone targets — clickable in idle phase */}
               {ZONES.map((z) => {
                 const pos = ZONE_POS[z];
