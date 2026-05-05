@@ -390,8 +390,18 @@ function Hero() {
           Zero real money, zero stakes.
         </p>
       </div>
-      <div className="absolute -right-16 -bottom-16 w-[420px] h-[420px] rounded-full bg-accent/15 blur-3xl pointer-events-none" />
-      <div className="absolute -right-32 top-10 w-[260px] h-[260px] rounded-full bg-accent-violet/20 blur-3xl pointer-events-none" />
+      {/* Ambient blob lighting — slow opacity-pulse on offset cycles so
+       *  the hero card has gentle "breathing" colour wash instead of a
+       *  static glow. Real Stake's lobby hero uses similar ambient
+       *  motion. */}
+      <div
+        className="absolute -right-16 -bottom-16 w-[420px] h-[420px] rounded-full bg-accent/15 blur-3xl pointer-events-none"
+        style={{ animation: 'heroBlobBreathe 7s ease-in-out infinite' }}
+      />
+      <div
+        className="absolute -right-32 top-10 w-[260px] h-[260px] rounded-full bg-accent-violet/20 blur-3xl pointer-events-none"
+        style={{ animation: 'heroBlobBreathe 9s ease-in-out -3s infinite' }}
+      />
     </section>
   );
 }

@@ -1980,3 +1980,13 @@
   0%, 100% { transform: scale(1) translateZ(0); }
   50%      { transform: scale(1.04) translateZ(0); }
 }
+
+/* Lobby Hero ambient blob breathing — slow opacity + scale pulse so the
+ * corner accent / violet glow blobs gently swell and fade instead of
+ * sitting static. Two blobs use offset cycle durations + a -3s delay
+ * (set inline) so they pulse out of sync, which reads as ambient
+ * lighting rather than a synchronised effect. */
+@keyframes heroBlobBreathe {
+  0%, 100% { opacity: 0.85; transform: scale(1); }
+  50%      { opacity: 1.05; transform: scale(1.06); }
+}
