@@ -27,11 +27,17 @@ export function Paytable({
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={
-              'px-3 py-2 text-sm font-medium capitalize transition border-b-2 ' +
-              (tab === t
-                ? 'text-[#ffe9a8] border-[#ffc62a]'
-                : 'text-ink-dim border-transparent hover:text-ink')
+            className="px-3 py-2 text-sm font-medium capitalize transition border-b-2"
+            style={
+              tab === t
+                ? {
+                    // Active tab — was hardcoded Olympus gold. Now derives
+                    // from the slot's accent so each game's paytable has
+                    // its own colour identity.
+                    color: cfg.theme.accent,
+                    borderBottomColor: cfg.theme.accent,
+                  }
+                : { color: 'var(--ink-dim, #9aa3b2)', borderBottomColor: 'transparent' }
             }
           >
             {t === 'paytable' ? 'Paytable' : t === 'rules' ? 'How to Play' : 'Features'}
@@ -98,35 +104,36 @@ function RulesTab({ cfg }: { cfg: SlotConfig }) {
   // the lobby (Bonanza, Sugar Rush, Cantina, Wanted, Pharaoh, Wolf) don't
   // have that feature, so the section was misleading there.
   const isOlympus = cfg.id === 'gates-of-olympus';
+  const accent = cfg.theme.accent;
   return (
     <div className="space-y-4 text-sm leading-relaxed">
-      <Section title="Pay Anywhere">
+      <Section title="Pay Anywhere" accent={accent}>
         Wins are awarded for {cfg.payAnywhereThreshold}+ matching symbols anywhere on the
         {' '}{cfg.cols}×{cfg.rows} grid — no paylines required.
         Higher symbol counts (10+ and 12+) pay larger multipliers of the bet.
       </Section>
-      <Section title="Tumble Feature">
+      <Section title="Tumble Feature" accent={accent}>
         After every win, the winning symbols disappear and new symbols drop in from above
         to fill the gaps. Tumbles continue as long as new wins keep forming, building bigger
         chains.
       </Section>
-      <Section title="Multiplier Symbols">
+      <Section title="Multiplier Symbols" accent={accent}>
         Random multiplier orbs (2× to 500×) can land on any spin or tumble. In the base
         game, the multiplier applies to the chain it lands in. In free spins, every
         multiplier that lands sticks on the grid; at the end of each spin, all multiplier
         values sum together and apply to that spin's total win.
       </Section>
       {isOlympus && (
-        <Section title="Lightning Strike">
+        <Section title="Lightning Strike" accent={accent}>
           Occasionally before the first win check, Zeus will appear and strike the board
           with 2–6 multiplier orbs at once. A dramatic full-screen moment that can lead to
           massive cascades.
         </Section>
       )}
-      <Section title="Bet">
+      <Section title="Bet" accent={accent}>
         Adjust your bet with the −/+ buttons or tap the bet amount for a preset menu.
       </Section>
-      <Section title="Provably Fair">
+      <Section title="Provably Fair" accent={accent}>
         Every spin is deterministic from the server seed (committed before each bet via
         SHA-256 hash), your client seed, and a per-bet nonce. Open the Fairness panel
         from the menu to verify any past bet.
@@ -136,58 +143,64 @@ function RulesTab({ cfg }: { cfg: SlotConfig }) {
 }
 
 function FeaturesTab({ cfg }: { cfg: SlotConfig }) {
+  // Per-slot accent — was hardcoded Olympus gold throughout the FeaturesTab
+  // headlines, stat values, and inline emphasis. Now each slot's paytable
+  // info screen lights up in its own colour.
+  const accent = cfg.theme.accent;
+  const glow = cfg.theme.glow;
+  const accentStyle = { color: accent } as const;
+  const glowStyle = { color: accent, textShadow: `0 0 6px ${glow}` } as const;
   return (
     <div className="space-y-4 text-sm leading-relaxed">
       <div className="card bg-bg-elev/60 p-4">
         <div className="grid grid-cols-3 gap-3 text-center">
           <div>
             <div className="text-[10px] uppercase tracking-widest text-ink-mute">RTP</div>
-            <div className="font-mono font-bold text-base text-[#ffe9a8] mt-0.5">~96.5%</div>
+            <div className="font-mono font-bold text-base mt-0.5" style={accentStyle}>~96.5%</div>
           </div>
           <div>
             <div className="text-[10px] uppercase tracking-widest text-ink-mute">Volatility</div>
-            <div className="text-[#ffc62a] mt-0.5 leading-none flex justify-center gap-0.5">
+            <div className="mt-0.5 leading-none flex justify-center gap-0.5" style={accentStyle}>
               {/* 5/5 stars matching real game's high-volatility rating */}
               {[0, 1, 2, 3, 4].map((i) => (
-                <span key={i}
-                      style={{ filter: 'drop-shadow(0 0 6px rgba(255,200,40,.7))' }}>★</span>
+                <span key={i} style={{ filter: `drop-shadow(0 0 6px ${glow})` }}>★</span>
               ))}
             </div>
             <div className="text-[9px] text-ink-mute mt-0.5">High</div>
           </div>
           <div>
             <div className="text-[10px] uppercase tracking-widest text-ink-mute">Max Win</div>
-            <div className="font-mono font-bold text-base text-[#ffe9a8] mt-0.5">5,000×</div>
+            <div className="font-mono font-bold text-base mt-0.5" style={accentStyle}>5,000×</div>
           </div>
         </div>
       </div>
-      <Section title="Free Spins">
+      <Section title="Free Spins" accent={accent}>
         Land {cfg.scatterTriggerCount}+ scatters anywhere to trigger {' '}
-        <strong className="text-[#ffe9a8]">{cfg.freeSpinsAwardOnTrigger} free spins</strong>.
+        <strong style={glowStyle}>{cfg.freeSpinsAwardOnTrigger} free spins</strong>.
         During free spins, multiplier orbs persist on the grid and sum together to multiply
         the spin's total win.
       </Section>
-      <Section title="Retrigger">
+      <Section title="Retrigger" accent={accent}>
         {cfg.scatterRetriggerCount}+ scatters during free spins awards an additional {' '}
-        <strong className="text-[#ffe9a8]">+{cfg.freeSpinsAwardOnRetrigger}</strong> spins.
+        <strong style={glowStyle}>+{cfg.freeSpinsAwardOnRetrigger}</strong> spins.
       </Section>
-      <Section title="Ante Bet">
+      <Section title="Ante Bet" accent={accent}>
         Toggle the Ante checkbox to increase your bet by {' '}
         <strong>{Math.round((cfg.ante.betMultiplier - 1) * 100)}%</strong>{' '}
         and roughly {cfg.ante.scatterWeightBoost.toFixed(1)}× your scatter chance — more
         frequent free-spin triggers.
       </Section>
-      <Section title="Buy Bonus">
+      <Section title="Buy Bonus" accent={accent}>
         Tap "Buy {cfg.buyBonusCost}×" to skip the wait and enter the bonus round directly,
         for a cost of <strong>{cfg.buyBonusCost}× your current bet</strong> (about
         {' '}{fmtCurrency(cfg.buyBonusCost)} per unit bet).
       </Section>
-      <Section title="Auto-play / Turbo">
+      <Section title="Auto-play / Turbo" accent={accent}>
         Tap the ⚡ button to enable turbo (faster spins). Tap the ↻ button to start
         auto-play with a configurable spin count. Auto-play pauses if your balance falls
         below the bet.
       </Section>
-      <Section title="Tap to Skip">
+      <Section title="Tap to Skip" accent={accent}>
         Tap anywhere on the painted scene during a spin to fast-forward animations to
         the end. The reels still resolve to the same outcome — only the timing changes.
       </Section>
@@ -195,10 +208,10 @@ function FeaturesTab({ cfg }: { cfg: SlotConfig }) {
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, children, accent }: { title: string; children: React.ReactNode; accent: string }) {
   return (
     <div>
-      <h3 className="font-semibold text-[#ffe9a8] mb-1.5">{title}</h3>
+      <h3 className="font-semibold mb-1.5" style={{ color: accent }}>{title}</h3>
       <p className="text-ink-dim">{children}</p>
     </div>
   );
