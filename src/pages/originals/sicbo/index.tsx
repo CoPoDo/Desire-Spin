@@ -334,7 +334,13 @@ export function SicBoGame() {
               disabled={busy || totalStake === 0 || balance.balance < totalStake}
               className="flex-[2] py-2.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
             >
-              {busy ? 'Rolling…' : 'Roll'}
+              {busy
+                ? 'Rolling…'
+                : totalStake === 0
+                  ? 'Place chips first'
+                  : balance.balance < totalStake
+                    ? 'Insufficient balance'
+                    : `Roll · ${fmtCurrency(totalStake)}`}
             </button>
           </div>
         </div>

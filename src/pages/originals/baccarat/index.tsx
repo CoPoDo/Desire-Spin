@@ -136,9 +136,15 @@ export function BaccaratGame() {
             <button
               onClick={deal}
               disabled={busy || totalBet === 0 || balance.balance < totalBet}
-              className="flex-[2] py-2.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 active:scale-[0.99]"
+              className="flex-[2] py-2.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
             >
-              {busy ? 'Dealing…' : 'Deal'}
+              {busy
+                ? 'Dealing…'
+                : totalBet === 0
+                  ? 'Place a bet first'
+                  : balance.balance < totalBet
+                    ? 'Insufficient balance'
+                    : `Deal · ${fmtCurrency(totalBet)}`}
             </button>
           </div>
         </div>
