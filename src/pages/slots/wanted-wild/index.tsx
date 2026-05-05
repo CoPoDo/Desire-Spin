@@ -18,7 +18,7 @@ export function WantedWild() {
       // a bounty-poster-style banner instead.
       fsTriggerGlyph="⭐"
       fsTriggerTitle="DEAD OR ALIVE"
-      maxWinLabel="5,000×"
+      maxWinLabel="12,500×"
       renderCell={({ symbolId, multiplier }) => {
         if (multiplier !== undefined) {
           return (

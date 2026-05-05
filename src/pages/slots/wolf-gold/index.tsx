@@ -17,7 +17,7 @@ export function WolfGold() {
       // are wrong. Use a full-moon glyph and the actual bonus name.
       fsTriggerGlyph="🌕"
       fsTriggerTitle="MONEY RESPIN"
-      maxWinLabel="5,000×"
+      maxWinLabel="9,500×"
       renderCell={({ symbolId, multiplier }) => {
         if (multiplier !== undefined) {
           return (
