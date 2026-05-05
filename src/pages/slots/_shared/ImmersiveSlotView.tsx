@@ -1933,7 +1933,7 @@ export function ImmersiveSlotView({
               aria-label="Decrease bet"
               onClick={stepDown}
               disabled={busy || autoplay !== null || presetIdx === 0}
-              className="w-8 h-8 rounded-full bg-bg-card border border-edge text-ink hover:bg-bg-hover disabled:opacity-40 flex items-center justify-center"
+              className="w-8 h-8 rounded-full bg-bg-card border border-edge text-ink hover:bg-bg-hover disabled:opacity-40 flex items-center justify-center transition active:scale-90 disabled:active:scale-100"
             >
               <MinusIcon />
             </button>
@@ -1962,7 +1962,7 @@ export function ImmersiveSlotView({
               aria-label="Increase bet"
               onClick={stepUp}
               disabled={busy || autoplay !== null || presetIdx === betPresets.length - 1}
-              className="w-8 h-8 rounded-full bg-bg-card border border-edge text-ink hover:bg-bg-hover disabled:opacity-40 flex items-center justify-center"
+              className="w-8 h-8 rounded-full bg-bg-card border border-edge text-ink hover:bg-bg-hover disabled:opacity-40 flex items-center justify-center transition active:scale-90 disabled:active:scale-100"
             >
               <PlusIcon />
             </button>
@@ -2060,14 +2060,14 @@ export function ImmersiveSlotView({
               aria-label="Auto play"
               onClick={() => setAutoplaySheetOpen(true)}
               disabled={busy || inFree}
-              className="w-8 h-8 rounded-full bg-bg-card border border-edge text-ink-dim hover:bg-bg-hover disabled:opacity-40 flex items-center justify-center"
+              className="w-8 h-8 rounded-full bg-bg-card border border-edge text-ink-dim hover:bg-bg-hover disabled:opacity-40 flex items-center justify-center transition active:scale-90 disabled:active:scale-100"
             >
               <AutoplayIcon size={16} />
             </button>
             <button
               aria-label="Game info / paytable"
               onClick={() => setPaytableOpen(true)}
-              className="w-8 h-8 rounded-full bg-bg-card border border-edge text-ink-dim hover:bg-bg-hover flex items-center justify-center"
+              className="w-8 h-8 rounded-full bg-bg-card border border-edge text-ink-dim hover:bg-bg-hover flex items-center justify-center transition active:scale-90"
             >
               <InfoIcon size={16} />
             </button>
