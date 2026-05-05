@@ -38,9 +38,9 @@ export function BetInput({
             className="flex-1 bg-transparent outline-none font-mono font-semibold text-sm tabular-nums w-full"
           />
         </div>
-        <button onClick={half} disabled={disabled} className="px-3 rounded-lg bg-bg-elev border border-edge text-ink-dim hover:text-ink text-xs font-semibold disabled:opacity-50">½</button>
-        <button onClick={dbl} disabled={disabled} className="px-3 rounded-lg bg-bg-elev border border-edge text-ink-dim hover:text-ink text-xs font-semibold disabled:opacity-50">2×</button>
-        <button onClick={max} disabled={disabled} className="px-3 rounded-lg bg-bg-elev border border-edge text-ink-dim hover:text-ink text-xs font-semibold disabled:opacity-50">Max</button>
+        <button onClick={half} disabled={disabled} className="px-3 rounded-lg bg-bg-elev border border-edge text-ink-dim hover:text-ink hover:border-accent/40 text-xs font-semibold transition active:scale-95 disabled:opacity-50 disabled:active:scale-100">½</button>
+        <button onClick={dbl} disabled={disabled} className="px-3 rounded-lg bg-bg-elev border border-edge text-ink-dim hover:text-ink hover:border-accent/40 text-xs font-semibold transition active:scale-95 disabled:opacity-50 disabled:active:scale-100">2×</button>
+        <button onClick={max} disabled={disabled} className="px-3 rounded-lg bg-bg-elev border border-edge text-ink-dim hover:text-ink hover:border-accent/40 text-xs font-semibold transition active:scale-95 disabled:opacity-50 disabled:active:scale-100">Max</button>
       </div>
     </div>
   );
