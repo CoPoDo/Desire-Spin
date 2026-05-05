@@ -39,11 +39,27 @@ export function MiniSlotGame() {
     const rng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
     const r = spin(rng, b);
 
-    // Reveal reels one at a time for drama
+    // Reveal reels one at a time for drama. Each reel visibly SPINS
+    // before settling — quickly cycling through random symbols every
+    // 60ms for ~280ms then locking on the final symbol with a 'drop'
+    // thunk. Real slot machines never just morph from one emoji to
+    // another; the rapid cycle sells the "reel pulled the right
+    // symbol" moment. Per-cycle 'tick' adds the audible spin click.
     setWinning([false, false, false]);
     setLastOutcome(null);
     for (let i = 0; i < 3; i++) {
-      await new Promise<void>((res) => setTimeout(res, 280));
+      const SPIN_TICKS = 5;
+      for (let t = 0; t < SPIN_TICKS; t++) {
+        await new Promise<void>((res) => setTimeout(res, 60));
+        const rand = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)]!.id;
+        setReels((prev) => {
+          const next = [...prev];
+          next[i] = rand;
+          return next;
+        });
+        sound.play('tick');
+      }
+      // Final settle on the actual result
       setReels((prev) => {
         const next = [...prev];
         next[i] = r.reels[i]!;

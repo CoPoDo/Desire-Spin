@@ -39,8 +39,18 @@ export function RaceGame() {
     const seeds = fairness.consumeNonce();
     const rng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
     const result = play(rng, bet, picked);
+    // Race ambient — gallop SFX as horses run. Schedule 9 'tick'
+    // sounds at uneven intervals across the 3.4s race so the player
+    // hears "hoofbeats" rather than silence. The previous race played
+    // only the start click + final reveal chime.
+    const galloperSchedule = [120, 480, 820, 1160, 1480, 1820, 2160, 2520, 2900];
+    const galloperTimers: number[] = [];
+    galloperSchedule.forEach((d) => {
+      galloperTimers.push(window.setTimeout(() => sound.play('tick'), d));
+    });
     // Race animation runs ~3.5s before reveal
     setTimeout(() => {
+      galloperTimers.forEach((id) => clearTimeout(id));
       setWinner(result.winner);
       setPhase('done');
       if (result.win) {
