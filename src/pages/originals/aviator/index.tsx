@@ -237,7 +237,10 @@ export function AviatorGame() {
               transition: 'opacity .4s',
             }}
           />
-          {/* Trail */}
+          {/* Trail — solid glowing arc from launch corner to current
+           *  plane position. Real Aviator shows a thick gold contrail
+           *  with a brighter leading edge; the previous thin dashed
+           *  line read as a graph-curve, not exhaust. */}
           <svg
             className="absolute inset-0 w-full h-full pointer-events-none"
             viewBox="0 0 100 100"
@@ -246,19 +249,61 @@ export function AviatorGame() {
             <defs>
               <linearGradient id="aviator-trail" x1="0" y1="1" x2="1" y2="0">
                 <stop offset="0%" stopColor={lost ? '#ff3d8b' : '#ffd166'} stopOpacity="0.0" />
-                <stop offset="100%" stopColor={lost ? '#ff3d8b' : '#ffd166'} stopOpacity="0.6" />
+                <stop offset="65%" stopColor={lost ? '#ff3d8b' : '#ffd166'} stopOpacity="0.45" />
+                <stop offset="100%" stopColor={lost ? '#ff8aa3' : '#ffe9a8'} stopOpacity="0.95" />
               </linearGradient>
+              <filter id="aviator-trail-glow" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="0.6" />
+              </filter>
             </defs>
+            {/* Outer halo stroke */}
             <path
               d={`M 5 95 Q ${distancePct * 50} ${95 - altitudePct * 80} ${distancePct * 95} ${95 - altitudePct * 90}`}
               fill="none"
               stroke="url(#aviator-trail)"
-              strokeWidth="2.2"
+              strokeWidth="3.6"
               strokeLinecap="round"
-              strokeDasharray="3 1.5"
+              opacity={inGame || won || lost ? 0.55 : 0}
+              filter="url(#aviator-trail-glow)"
+            />
+            {/* Bright inner core */}
+            <path
+              d={`M 5 95 Q ${distancePct * 50} ${95 - altitudePct * 80} ${distancePct * 95} ${95 - altitudePct * 90}`}
+              fill="none"
+              stroke="url(#aviator-trail)"
+              strokeWidth="1.6"
+              strokeLinecap="round"
               opacity={inGame || won || lost ? 1 : 0}
             />
           </svg>
+          {/* Exhaust puffs — three small cloud particles that spawn
+           *  just behind the plane and drift back / down while fading.
+           *  Cycle-keyed so each new puff plays from scratch as the
+           *  plane climbs. Real Aviator has visible exhaust; this fakes
+           *  it without a physics particle system. */}
+          {inGame && (
+            <>
+              {[0, 0.4, 0.8].map((delay, i) => (
+                <motion.span
+                  key={`puff-${i}-${Math.floor(currentMult * 2)}`}
+                  className="absolute pointer-events-none rounded-full"
+                  style={{
+                    left: `${5 + distancePct * 90}%`,
+                    top: `${95 - altitudePct * 90}%`,
+                    width: '14px',
+                    height: '14px',
+                    background:
+                      'radial-gradient(circle at 40% 40%, rgba(255,255,255,.85), rgba(255,209,102,.55) 50%, transparent 75%)',
+                    transform: 'translate(-50%, -50%)',
+                    mixBlendMode: 'screen',
+                  }}
+                  initial={{ opacity: 0.85, scale: 0.6, x: 0, y: 0 }}
+                  animate={{ opacity: 0, scale: 1.6, x: -22, y: 14 }}
+                  transition={{ duration: 1.0, delay, repeat: Infinity, ease: 'easeOut' }}
+                />
+              ))}
+            </>
+          )}
           {/* Plane / explosion */}
           <motion.div
             className="absolute pointer-events-none select-none"
