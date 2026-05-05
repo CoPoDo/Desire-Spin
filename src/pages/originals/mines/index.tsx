@@ -41,7 +41,45 @@ export function MinesGame() {
   }, [balance, bet, mineCount, round, fairness, sound]);
 
   const onTile = useCallback((idx: number) => {
-    if (!round || round.done || round.revealed.has(idx) || busyClick) return;
+    if (busyClick) return;
+
+    // Click-to-start: if no round is active (or the previous round
+    // finished), start a fresh round AND reveal the clicked tile in one
+    // go. Saves the user a separate "Bet $X" tap — Stake-style Mines on
+    // some clients does the same.
+    if (!round || round.done) {
+      if (balance.balance < bet || bet <= 0) return;
+      setBusyClick(true);
+      sound.play('click');
+      balance.debit(bet);
+      const seeds = fairness.consumeNonce();
+      const rng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
+      const fresh = startRound(rng, bet, mineCount);
+      const next = reveal(fresh, idx);
+      setRound(next);
+      if (next.hitMine) {
+        sound.play('drop');
+        setTimeout(() => {
+          history.record({
+            game: 'Mines',
+            bet: fresh.bet,
+            payout: 0,
+            multiplier: 0,
+            serverSeedHash: fairness.hash,
+            clientSeed: '',
+            nonce: 0,
+          });
+          session.recordSpin(fresh.bet, 0, false);
+        }, 100);
+      } else {
+        sound.play('win');
+      }
+      setTimeout(() => setBusyClick(false), 100);
+      return;
+    }
+
+    // Active round — reveal a tile, ignore already-revealed clicks.
+    if (round.revealed.has(idx)) return;
     setBusyClick(true);
     const next = reveal(round, idx);
     setRound(next);
@@ -64,7 +102,7 @@ export function MinesGame() {
       sound.play('win');
     }
     setTimeout(() => setBusyClick(false), 100);
-  }, [round, busyClick, sound, history, fairness, session]);
+  }, [round, busyClick, balance, bet, mineCount, sound, history, fairness, session]);
 
   const doCashOut = useCallback(() => {
     if (!round || round.done || round.revealed.size === 0) return;
@@ -118,7 +156,9 @@ export function MinesGame() {
             {!round || round.done ? (
               <motion.div key="idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                 <div className="text-[10px] uppercase tracking-widest text-ink-mute">
-                  {round?.hitMine ? 'Boom — try again' : round?.done ? 'Cashed out' : 'Set your bet & mines'}
+                  {round?.hitMine ? 'Boom — tap a tile to play again'
+                    : round?.done ? 'Cashed out — tap a tile for next round'
+                    : 'Tap any tile to start'}
                 </div>
                 {round?.done && (
                   <div className={`font-mono font-bold text-2xl mt-1 tabular-nums ${
@@ -161,7 +201,16 @@ export function MinesGame() {
                 <button
                   key={i}
                   onClick={() => onTile(i)}
-                  disabled={!inGame || isRevealed}
+                  // Tiles are interactive any time there's no in-progress
+                  // round (so a click on an idle tile starts the round)
+                  // OR the round is in-progress and the tile hasn't been
+                  // revealed yet. The only case we hard-disable is no
+                  // balance to start a new round.
+                  disabled={
+                    inGame
+                      ? isRevealed
+                      : balance.balance < bet || bet <= 0
+                  }
                   className="relative rounded-lg flex items-center justify-center text-2xl font-bold transition-all duration-150 active:scale-95"
                   style={{
                     background: safeRevealed
@@ -247,7 +296,7 @@ export function MinesGame() {
               disabled={!round?.done && (balance.balance < bet || bet <= 0)}
               className="w-full py-3.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
             >
-              {round?.done ? 'Play Again' : `Bet ${fmtCurrency(bet)}`}
+              {round?.done ? 'Reset Grid' : `Bet ${fmtCurrency(bet)} · or tap a tile`}
             </button>
           </div>
         ) : (
