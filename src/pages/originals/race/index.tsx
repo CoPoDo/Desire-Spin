@@ -45,9 +45,11 @@ export function RaceGame() {
       setPhase('done');
       if (result.win) {
         balance.credit(result.payout);
-        sound.play('big-win');
+        // Tier SFX with multiplier — picking the underdog (~10×) and
+        // picking the favourite (~1.5×) sounded the same.
+        sound.play(result.multiplier >= 10 ? 'mega-win' : result.multiplier >= 4 ? 'big-win' : 'win');
         fireConfetti({
-          count: 80,
+          count: result.multiplier >= 5 ? 130 : 80,
           colors: ['#1fff7a', '#ffd166', '#ffffff'],
         });
       } else {

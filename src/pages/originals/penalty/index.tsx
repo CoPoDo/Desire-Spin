@@ -58,7 +58,10 @@ export function PenaltyGame() {
       setPhase('reveal');
       if (r.goal) {
         balance.credit(r.payout);
-        sound.play('big-win');
+        // Tier SFX with the goal-zone multiplier — corner risk shots
+        // can hit ≥10× while wide-zone shots pay ~1.5×; flat 'big-win'
+        // sounded the same for both.
+        sound.play(r.multiplier >= 10 ? 'mega-win' : r.multiplier >= 4 ? 'big-win' : 'win');
         fireConfetti({
           count: r.multiplier >= 6 ? 130 : 80,
           colors: ['#1fff7a', '#ffffff', '#ffd166'],
