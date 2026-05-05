@@ -1000,13 +1000,18 @@ export function ImmersiveSlotView({
       <AnimatePresence>
         {busy && !autoplay && !fsOverlay && !fsOutroOverlay && !lightningStrike && !bigWin && (
           <motion.div
-            className="absolute z-20 left-1/2 pointer-events-none px-3 py-1 rounded-full text-[9px] uppercase tracking-[0.24em] font-mono font-semibold text-[#FFE0A8]"
+            className="absolute z-20 left-1/2 pointer-events-none px-3 py-1 rounded-full text-[9px] uppercase tracking-[0.24em] font-mono font-semibold"
             style={{
               bottom: '120px',
               transform: 'translateX(-50%)',
               background: 'rgba(0,0,0,0.45)',
-              border: '1px solid rgba(255,233,168,.3)',
-              textShadow: '0 0 10px rgba(255,200,40,.5)',
+              // Tap-to-skip hint — was hardcoded gold border + gold text
+              // shadow. Now uses the slot's accent so the hint reads
+              // native to each game (pink on Bonanza, violet on Wolf,
+              // etc.). Real Pragmatic varies this colour per slot.
+              color: cfg.theme.accent,
+              border: `1px solid ${cfg.theme.accent}4d`,
+              textShadow: `0 0 10px ${cfg.theme.glow}`,
             }}
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: [0.45, 0.85, 0.45] }}
@@ -1709,14 +1714,19 @@ export function ImmersiveSlotView({
                   <div
                     className="flex flex-col items-center px-4 py-1 rounded-full backdrop-blur-sm"
                     style={{
-                      background: 'linear-gradient(180deg, rgba(80,40,5,.78), rgba(40,20,2,.9))',
-                      border: '1.5px solid rgba(255,233,168,.6)',
-                      boxShadow:
-                        'inset 0 1px 0 rgba(255,255,255,.3), 0 0 22px rgba(255,200,40,.55), 0 4px 10px rgba(0,0,0,.5)',
+                      // Live "Win" pill — was Olympus-gold (warm-brown
+                      // gradient + gold glow). Now derives from the
+                      // slot's accent so the live tally pops in the
+                      // game's own colour during a chain of tumble wins.
+                      background: `linear-gradient(180deg, ${cfg.theme.accent}30, rgba(0,0,0,.55))`,
+                      border: `1.5px solid ${cfg.theme.accent}99`,
+                      boxShadow: `inset 0 1px 0 rgba(255,255,255,.25), 0 0 22px ${cfg.theme.glow}, 0 4px 10px rgba(0,0,0,.5)`,
                     }}
                   >
-                    <span className="uppercase tracking-widest text-[#FFE0A8] leading-none"
-                          style={{ fontSize: `${labelSize}px` }}>
+                    <span
+                      className="uppercase tracking-widest leading-none"
+                      style={{ fontSize: `${labelSize}px`, color: cfg.theme.accent, opacity: 0.9 }}
+                    >
                       Win
                     </span>
                     <CountUp
@@ -1726,7 +1736,7 @@ export function ImmersiveSlotView({
                       className="font-serif italic font-bold text-[#fff7d6] leading-none tabular-nums"
                       style={{
                         fontSize: `${fontSize}px`,
-                        textShadow: '0 0 14px rgba(255,200,40,.95), 0 1px 2px rgba(0,0,0,.6)',
+                        textShadow: `0 0 14px ${cfg.theme.accent}, 0 1px 2px rgba(0,0,0,.6)`,
                       }}
                     />
                   </div>
