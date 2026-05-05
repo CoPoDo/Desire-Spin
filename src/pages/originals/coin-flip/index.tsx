@@ -70,7 +70,9 @@ export function CoinFlipGame() {
 
   const cashOut = useCallback(() => {
     if (phase !== 'choosing' || streak === 0) return;
-    sound.play('big-win');
+    // Tier SFX with cash-out multiplier — a 10-streak (~1024×) and a
+    // 1-streak (1.98×) sounded the same. Now ≥10× = mega.
+    sound.play(accumMult >= 10 ? 'mega-win' : 'big-win');
     balance.credit(cashoutAmount);
     if (accumMult >= 2) {
       fireConfetti({

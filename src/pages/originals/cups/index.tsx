@@ -55,9 +55,12 @@ export function CupsGame() {
       setPhase('reveal');
       if (r.win) {
         balance.credit(r.payout);
-        sound.play(r.multiplier >= 4 ? 'big-win' : 'win');
+        // Cups multipliers cap at 3.96× (4-cup setting) so the previous
+        // ≥4 threshold for 'big-win' never fired. Lowered to ≥3 so the
+        // hardest difficulty win is audibly distinct from 2/3-cup wins.
+        sound.play(r.multiplier >= 3 ? 'big-win' : 'win');
         fireConfetti({
-          count: r.multiplier >= 4 ? 110 : 60,
+          count: r.multiplier >= 3 ? 110 : 60,
         });
       } else {
         sound.play('drop');

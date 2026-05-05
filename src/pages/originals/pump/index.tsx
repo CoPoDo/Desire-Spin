@@ -69,7 +69,9 @@ export function PumpGame() {
 
   const doCashOut = useCallback(() => {
     if (!round || round.popped || round.cashed || round.pumps === 0) return;
-    sound.play('big-win');
+    // Tier SFX with the cash-out multiplier so a 1.1× safety hop and a
+    // 50× full-pump risk run feel different at the audio level.
+    sound.play(currentMult >= 10 ? 'mega-win' : currentMult >= 3 ? 'big-win' : 'win');
     const next = cashOut(round);
     setRound(next);
     balance.credit(next.payout);

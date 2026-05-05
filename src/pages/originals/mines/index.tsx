@@ -68,7 +68,10 @@ export function MinesGame() {
 
   const doCashOut = useCallback(() => {
     if (!round || round.done || round.revealed.size === 0) return;
-    sound.play('big-win');
+    // Tier SFX with cash-out multiplier — Mines with 20+ mines can
+    // chain to 100×+ with the right risk; flat 'big-win' sounded the
+    // same as a 1.05× safety hop. Now ≥10× = mega.
+    sound.play(currentMult >= 10 ? 'mega-win' : 'big-win');
     const next = cashOut(round);
     setRound(next);
     balance.credit(next.payout);

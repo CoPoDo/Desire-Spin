@@ -86,7 +86,10 @@ export function HiloGame() {
 
   const cashOut = useCallback(() => {
     if (phase !== 'playing' || picks === 0) return;
-    sound.play('big-win');
+    // Tier the SFX with the cash-out multiplier — flat 'big-win' on
+    // every cash-out (even tiny 1.05× chains) read as same-volume regardless
+    // of stake. Now ≥10× = mega, ≥3× = big, otherwise win.
+    sound.play(accumMult >= 10 ? 'mega-win' : accumMult >= 3 ? 'big-win' : 'win');
     const payout = +(bet * accumMult).toFixed(2);
     balance.credit(payout);
     if (accumMult >= 2) {

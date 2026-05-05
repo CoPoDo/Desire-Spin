@@ -81,7 +81,10 @@ export function TowerGame() {
 
   const doCashOut = useCallback(() => {
     if (!round || round.done || round.step === 0) return;
-    sound.play('big-win');
+    // Tier SFX with cash-out multiplier — Hardcore mode can chain to
+    // 100×+, Easy peaks at ~10×; flat 'big-win' sounded the same for
+    // both. Now ≥10× = mega, otherwise big.
+    sound.play(currentMult >= 10 ? 'mega-win' : 'big-win');
     const next = cashOut(round);
     setRound(next);
     balance.credit(next.payout);
