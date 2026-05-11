@@ -290,6 +290,46 @@ export function AviatorGame() {
               transition: 'opacity .4s',
             }}
           />
+          {/* Parallax cloud drift — two tiled layers scroll leftward at
+              different speeds during flight to sell the plane's forward
+              motion. Real Aviator-style clients always animate the
+              background; a static sky looks like the trail is growing
+              without the plane actually going anywhere. */}
+          {inGame && !lost && (
+            <>
+              <motion.div
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  backgroundImage: `
+                    radial-gradient(18% 12% at 18% 28%, rgba(255,255,255,.30), transparent 70%),
+                    radial-gradient(14% 10% at 62% 18%, rgba(255,255,255,.22), transparent 70%),
+                    radial-gradient(20% 12% at 86% 52%, rgba(255,255,255,.28), transparent 70%)
+                  `,
+                  backgroundSize: '50% 100%',
+                  backgroundRepeat: 'repeat-x',
+                  opacity: 0.55,
+                  mixBlendMode: 'screen',
+                }}
+                animate={{ backgroundPositionX: ['0%', '-50%'] }}
+                transition={{ duration: 18, repeat: Infinity, ease: 'linear' }}
+              />
+              <motion.div
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  backgroundImage: `
+                    radial-gradient(28% 16% at 30% 70%, rgba(255,255,255,.32), transparent 70%),
+                    radial-gradient(24% 14% at 78% 82%, rgba(255,255,255,.28), transparent 70%)
+                  `,
+                  backgroundSize: '50% 100%',
+                  backgroundRepeat: 'repeat-x',
+                  opacity: 0.6,
+                  mixBlendMode: 'screen',
+                }}
+                animate={{ backgroundPositionX: ['0%', '-50%'] }}
+                transition={{ duration: 9, repeat: Infinity, ease: 'linear' }}
+              />
+            </>
+          )}
           <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
             <defs>
               <linearGradient id="aviator-trail" x1="0" y1="1" x2="1" y2="0">
