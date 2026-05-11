@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
 import { useGame } from '../../../game-context';
+import { useHotkey } from '../../../hooks/useHotkey';
 import { createRng } from '../../../lib/fairness';
 import { fmtCurrency } from '../../../lib/format';
 import { BetInput } from '../_shared/BetInput';
@@ -97,6 +98,20 @@ export function RpsGame() {
     setOpponentMove(null);
     setOutcome(null);
   }, []);
+
+  // Keyboard shortcuts: R / P / S for the three moves. Resets first
+  // if a previous round is showing so player can chain rounds.
+  const fire = useCallback((m: Move) => {
+    if (busy) return;
+    if (phase === 'done') reset();
+    start(m);
+  }, [busy, phase, reset, start]);
+  useHotkey('r', () => fire('rock'), true);
+  useHotkey('R', () => fire('rock'), true);
+  useHotkey('p', () => fire('paper'), true);
+  useHotkey('P', () => fire('paper'), true);
+  useHotkey('s', () => fire('scissors'), true);
+  useHotkey('S', () => fire('scissors'), true);
 
   const profitOnWin = +(bet * WIN_PAYOUT - bet).toFixed(2);
 
