@@ -469,3 +469,125 @@ export function PinataSvg({ size = '100%' }: { size?: string | number }) {
     </svg>
   );
 }
+
+/** Señorita — alias for DiabloSvg. The original art is a fiesta dancer
+ *  (red dress, hibiscus, hair-bun); "Señorita" is just the correct name
+ *  per spec §3 ("Señorita — woman with dark hair, red rose..."). We
+ *  keep both exports so older imports don't break. */
+export { DiabloSvg as SenoritaSvg };
+
+/** Hot Sauce Bottle — small glass bottle with a chili label, red sauce,
+ *  cork top (spec §3). One of the two equal-paying high symbols
+ *  alongside Vihuela. */
+export function HotSauceSvg({ size = '100%' }: { size?: string | number }) {
+  return (
+    <svg viewBox="0 0 64 64" width={size} height={size}>
+      <defs>
+        <linearGradient id="bj-hs-glass" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#fff5dc" stopOpacity=".85" />
+          <stop offset="20%" stopColor="#ffd0c0" stopOpacity=".5" />
+          <stop offset="100%" stopColor="#5a0810" stopOpacity=".3" />
+        </linearGradient>
+        <linearGradient id="bj-hs-sauce" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#ff7a40" />
+          <stop offset="35%" stopColor="#ff3320" />
+          <stop offset="100%" stopColor="#5a0810" />
+        </linearGradient>
+        <linearGradient id="bj-hs-cork" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#c89058" />
+          <stop offset="100%" stopColor="#5a3018" />
+        </linearGradient>
+      </defs>
+      {/* Cork top */}
+      <rect x="27" y="6" width="10" height="6" rx="1.4" fill="url(#bj-hs-cork)" stroke="#3a1a08" strokeWidth=".5" />
+      {/* Bottle neck */}
+      <rect x="28" y="12" width="8" height="6" fill="url(#bj-hs-sauce)" stroke="#3a0408" strokeWidth=".5" />
+      {/* Glass shoulder + body — sauce visible through glass */}
+      <path d="M 22 22 Q 22 18 28 18 L 36 18 Q 42 18 42 22 L 42 54 Q 42 58 38 58 L 26 58 Q 22 58 22 54 Z"
+            fill="url(#bj-hs-sauce)" stroke="#3a0408" strokeWidth=".8" strokeLinejoin="round" />
+      {/* Glass highlight */}
+      <path d="M 24 22 Q 24 26 25 38 L 26 38 Q 25.5 26 25.5 22 Z" fill="rgba(255,255,255,.45)" />
+      <path d="M 40 24 Q 40 32 40 42" stroke="rgba(255,255,255,.2)" strokeWidth="1.4" fill="none" />
+      {/* Paper label */}
+      <rect x="24" y="30" width="16" height="18" fill="#fff5e0" stroke="#3a0408" strokeWidth=".5" rx=".5" />
+      {/* Label chili icon */}
+      <path d="M 28 36 Q 30 33 33 34 Q 35 35 35 39 Q 35 43 32 44 Q 29 44 28 41 Z"
+            fill="#c8102e" stroke="#3a0408" strokeWidth=".4" />
+      {/* Stem on chili */}
+      <path d="M 33 33 Q 35 31 36 33" stroke="#1a8a3a" strokeWidth="1" fill="none" strokeLinecap="round" />
+      {/* Label text mark */}
+      <line x1="26" y1="46" x2="38" y2="46" stroke="#3a0408" strokeWidth=".4" />
+      <text x="32" y="46.5" textAnchor="middle" fontSize="3" fontFamily="ui-serif, Georgia, serif"
+            fontWeight="700" fill="#3a0408">HOT</text>
+      {/* Flame above cork — heat lines */}
+      <path d="M 30 4 Q 32 1 34 4" stroke="#ff5560" strokeWidth=".8" fill="none" strokeLinecap="round" opacity=".7" />
+      <path d="M 28 2 Q 31 -1 32 2" stroke="#ffd166" strokeWidth=".6" fill="none" strokeLinecap="round" opacity=".5" />
+      {/* Drip on side */}
+      <path d="M 41 50 Q 42 54 41 56 Q 40 54 41 50 Z" fill="#ff3320" stroke="#3a0408" strokeWidth=".3" />
+    </svg>
+  );
+}
+
+/** Chihuahua — small tan dog wearing a tiny sombrero with tongue out
+ *  (spec §3). Tan body, dark eyes, sombrero perched on its head, alert
+ *  triangle ears poking out. */
+export function ChihuahuaSvg({ size = '100%' }: { size?: string | number }) {
+  return (
+    <svg viewBox="0 0 64 64" width={size} height={size}>
+      <defs>
+        <radialGradient id="bj-ch-fur" cx="50%" cy="42%" r="60%">
+          <stop offset="0%" stopColor="#ffe2b2" />
+          <stop offset="55%" stopColor="#d8a060" />
+          <stop offset="100%" stopColor="#6a3a14" />
+        </radialGradient>
+        <linearGradient id="bj-ch-hat" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#ff8a8a" />
+          <stop offset="40%" stopColor="#ff5560" />
+          <stop offset="100%" stopColor="#5a0810" />
+        </linearGradient>
+        <linearGradient id="bj-ch-trim" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#fff5c4" />
+          <stop offset="100%" stopColor="#a8761a" />
+        </linearGradient>
+      </defs>
+      {/* Body — small seated chihuahua silhouette */}
+      <ellipse cx="32" cy="46" rx="14" ry="11" fill="url(#bj-ch-fur)" stroke="#5a3018" strokeWidth=".8" />
+      {/* Front legs */}
+      <ellipse cx="26" cy="54" rx="2.4" ry="3.2" fill="url(#bj-ch-fur)" stroke="#5a3018" strokeWidth=".5" />
+      <ellipse cx="38" cy="54" rx="2.4" ry="3.2" fill="url(#bj-ch-fur)" stroke="#5a3018" strokeWidth=".5" />
+      {/* Belly highlight */}
+      <ellipse cx="32" cy="50" rx="6" ry="5" fill="#fff5dc" opacity=".4" />
+      {/* Head — apple-shaped, classic chihuahua */}
+      <ellipse cx="32" cy="28" rx="11" ry="11" fill="url(#bj-ch-fur)" stroke="#5a3018" strokeWidth=".8" />
+      {/* Ears — large, alert, triangular */}
+      <path d="M 22 24 L 18 12 L 26 18 Z" fill="url(#bj-ch-fur)" stroke="#5a3018" strokeWidth=".6" />
+      <path d="M 42 24 L 46 12 L 38 18 Z" fill="url(#bj-ch-fur)" stroke="#5a3018" strokeWidth=".6" />
+      {/* Inner ear pink */}
+      <path d="M 22 22 L 21 16 L 25 19 Z" fill="#ffb0c0" opacity=".7" />
+      <path d="M 42 22 L 43 16 L 39 19 Z" fill="#ffb0c0" opacity=".7" />
+      {/* Eyes — big and round */}
+      <ellipse cx="27" cy="27" rx="2" ry="2.2" fill="#1a0a04" />
+      <ellipse cx="37" cy="27" rx="2" ry="2.2" fill="#1a0a04" />
+      <ellipse cx="27.5" cy="26.5" rx=".6" ry=".7" fill="#fff" />
+      <ellipse cx="37.5" cy="26.5" rx=".6" ry=".7" fill="#fff" />
+      {/* Snout */}
+      <ellipse cx="32" cy="33" rx="4" ry="3" fill="#fff5dc" stroke="#5a3018" strokeWidth=".4" />
+      {/* Black nose */}
+      <ellipse cx="32" cy="31" rx="1.4" ry="1" fill="#1a0a04" />
+      {/* Tongue sticking out — comedy beat */}
+      <path d="M 31 34 Q 32 38 33 34 Q 33.5 36 32 37 Q 30.5 36 31 34 Z" fill="#ff5a8a" stroke="#5a0820" strokeWidth=".3" />
+      {/* Mouth line above tongue */}
+      <path d="M 30 33.5 Q 32 35 34 33.5" stroke="#5a3018" strokeWidth=".3" fill="none" strokeLinecap="round" />
+      {/* Tiny sombrero perched on head */}
+      <ellipse cx="32" cy="14" rx="14" ry="3" fill="url(#bj-ch-hat)" stroke="#3a0408" strokeWidth=".7" />
+      <path d="M 26 14 Q 25 8 32 7 Q 39 8 38 14 Z" fill="url(#bj-ch-hat)" stroke="#3a0408" strokeWidth=".7" />
+      <path d="M 25.5 13 Q 32 11 38.5 13 L 38.5 11 Q 32 9 25.5 11 Z" fill="url(#bj-ch-trim)" stroke="#5a3a04" strokeWidth=".25" />
+      {/* Sombrero pom-poms */}
+      <circle cx="20" cy="14" r="1" fill="#1fff7a" stroke="#0a3a18" strokeWidth=".2" />
+      <circle cx="44" cy="14" r="1" fill="#5fb8ff" stroke="#0a3a18" strokeWidth=".2" />
+      {/* Whiskers */}
+      <line x1="28" y1="34" x2="22" y2="35" stroke="#5a3018" strokeWidth=".25" />
+      <line x1="36" y1="34" x2="42" y2="35" stroke="#5a3018" strokeWidth=".25" />
+    </svg>
+  );
+}

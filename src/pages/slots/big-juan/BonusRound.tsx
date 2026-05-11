@@ -4,171 +4,233 @@ import { createRng, type Rng } from '../../../lib/fairness';
 import { fmtCurrency } from '../../../lib/format';
 import { useGame } from '../../../game-context';
 import {
-  type BonusCellKind,
   JACKPOTS,
-  bonusCellValue,
-  bonusInitialRespins,
-  bonusRollOne,
-  isFilled,
+  JACKPOT_THRESHOLD,
+  type FourthReelOutcome,
+  type JackpotTier,
+  type RespinSymbol,
+  resolveRespin,
+  rollRespin,
 } from './engine';
 import { fireConfetti } from '../../../lib/confetti';
+import { PinataSvg } from './symbols';
 
-/** Big Juan bonus respins mini-grid (3×3, Money-Train-style hold-and-win).
+/** Big Juan Respins feature — full clone of the spec §7 mechanics.
  *
- *  Flow:
- *    - Initial respin count derived from scatterCount (10/12/14)
- *    - Each round: empty cells re-roll via bonusRollOne()
- *    - If at least one cell newly fills: respins reset to max(current, 3)
- *    - If no new fill: respins -= 1
- *    - Round ends when respins === 0 OR all 9 cells filled
- *    - On end: total payout = bet × Σ(coin/jackpot values)
+ *  Layout:
+ *
+ *    ┌───┬───┬───┐   ┌─────┐
+ *    │ 0 │ 1 │ 2 │   │     │
+ *    ├───┼───┼───┤   │ 4th │
+ *    │ 3 │BAG│ 4 │   │ R   │   ← single tall cell, 3 outcomes
+ *    ├───┼───┼───┤   │     │
+ *    │ 5 │ 6 │ 7 │   └─────┘
+ *    └───┴───┴───┘
+ *
+ *  Each respin: 8 outer cells + 4th-reel cell roll. Resolution depends on
+ *  the 4th reel:
+ *    BLANK → nothing collects; respin -= 1
+ *    WIN   → coins + bag pay out, jackpot meters tick, +extra-spin tokens
+ *            add to respin counter; respin -= 1
+ *    BOOST → coins added permanently to bag value; jackpot/extra DO NOT
+ *            collect; respin -= 1
+ *
+ *  Per spec §7.3 the bag starts at 1× bet. Jackpot meters fill at 3/4/5/5.
+ *  Cap = 2,600× bet hits → end immediately.
  */
+
 export type BonusRoundProps = {
   bet: number;
   scatterCount: number;
-  /** Seed material so the bonus is provably-fair from a single nonce. */
+  /** Pre-rolled override: if set, the bonus's first roll uses this scatter
+   *  count to seed the initial respins. Used by Bonus Buy. */
+  initialRespinsOverride?: number;
   seeds: { serverSeed: string; clientSeed: string; nonce: number };
   onClose: (totalPayoutMultiplier: number) => void;
 };
 
-const SIZE = 9; // 3×3 grid
+const RESPIN_AWARD: Record<number, number> = { 3: 10, 4: 12, 5: 15 };
 
-export function BigJuanBonusRound({ bet, scatterCount, seeds, onClose }: BonusRoundProps) {
+export function BigJuanBonusRound({
+  bet,
+  scatterCount,
+  initialRespinsOverride,
+  seeds,
+  onClose,
+}: BonusRoundProps) {
   const { sound } = useGame();
-  const [grid, setGrid] = useState<BonusCellKind[]>(() => Array(SIZE).fill('empty') as BonusCellKind[]);
-  const [respinsLeft, setRespinsLeft] = useState(() => bonusInitialRespins(scatterCount));
-  const [totalMult, setTotalMult] = useState(0);
-  const [busy, setBusy] = useState(false);
-  const [finished, setFinished] = useState(false);
-  const [recentlyLanded, setRecentlyLanded] = useState<Set<number>>(new Set());
-  /** Empty-cell rolling phase — set true at the start of each roll and
-   *  cleared once the new values are revealed. Drives the "?" flicker on
-   *  empty cells so the player visibly sees them spinning before the
-   *  result lands (matches real Pragmatic Hold-and-Spin). */
-  const [rolling, setRolling] = useState(false);
 
-  // Fiesta confetti shower fires once the bonus completes, scaled to
-  // the size of the win. Real Pragmatic Big Juan ends the bonus with
-  // a celebratory chip-shower; same here.
-  useEffect(() => {
-    if (!finished) return;
-    const tier = totalMult >= 500 ? 'epic' : totalMult >= 100 ? 'big' : 'small';
-    fireConfetti({
-      count: tier === 'epic' ? 200 : tier === 'big' ? 130 : 80,
-      colors: ['#ff5560', '#ffd166', '#1fff7a', '#5fb8ff', '#c042b8', '#ffae50', '#ffffff'],
-    });
-  }, [finished, totalMult]);
-
-  // Single shared RNG for the whole bonus — all rolls draw from it sequentially
-  // so the entire bonus is reproducible from the trigger nonce.
+  // Single shared RNG — entire bonus reproducible from a single nonce.
   const rngRef = useRef<Rng | null>(null);
   if (!rngRef.current) {
     rngRef.current = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
   }
 
-  const roll = useCallback(() => {
-    if (busy || finished) return;
-    setBusy(true);
-    setRolling(true);
-    setRecentlyLanded(new Set()); // clear last-round highlights immediately
-    // Roll-start cue: a click as the empty cells start cycling.
+  // ── Round state ─────────────────────────────────────────
+  const initialRespins = initialRespinsOverride ?? RESPIN_AWARD[scatterCount] ?? 10;
+  const [respinsLeft, setRespinsLeft] = useState(initialRespins);
+  const [bagValue, setBagValue] = useState(1); // Spec §7.3: starts at 1× bet
+  const [meters, setMeters] = useState<Record<JackpotTier, number>>({
+    mini: 0, minor: 0, major: 0, grand: 0,
+  });
+  const [cumulativeMult, setCumulativeMult] = useState(0);
+  const [outer, setOuter] = useState<RespinSymbol[]>(() => Array(8).fill({ kind: 'blank' as const }));
+  const [fourth, setFourth] = useState<FourthReelOutcome | null>(null);
+  const [phase, setPhase] = useState<'intro' | 'spinning' | 'fourth' | 'resolving' | 'idle' | 'jackpot' | 'finished'>('intro');
+  const [jackpotFiring, setJackpotFiring] = useState<{ tier: JackpotTier; amount: number } | null>(null);
+  const [lastRespinKind, setLastRespinKind] = useState<FourthReelOutcome | null>(null);
+  const [coinsLanded, setCoinsLanded] = useState<Set<number>>(new Set());
+  // Note: extra-spin token animations are inlined via coin-stream visuals
+  // rather than a separate counter overlay (kept simple per spec §10b.8).
+  /** Cap-hit flag — when the running total or pending payout would exceed
+   *  2,600× bet. End immediately per spec §7.7. */
+  const [cappedAtMax, setCappedAtMax] = useState(false);
+
+  const totalPayoutMult = cumulativeMult;
+  const totalPayout = bet * totalPayoutMult;
+
+  // ── Intro: short "GET READY" beat before the first respin ──────────
+  useEffect(() => {
+    if (phase !== 'intro') return;
+    const t = setTimeout(() => setPhase('idle'), 800);
+    return () => clearTimeout(t);
+  }, [phase]);
+
+  // ── End-of-feature confetti shower ─────────────────────────────────
+  useEffect(() => {
+    if (phase !== 'finished') return;
+    const tier = totalPayoutMult >= 1000 ? 'epic' : totalPayoutMult >= 100 ? 'big' : 'small';
+    fireConfetti({
+      count: tier === 'epic' ? 240 : tier === 'big' ? 150 : 80,
+      colors: ['#ff5560', '#ffd166', '#1fff7a', '#5fb8ff', '#c042b8', '#ffae50', '#ffffff'],
+    });
+  }, [phase, totalPayoutMult]);
+
+  // ── Auto-start each respin from idle ───────────────────────────────
+  useEffect(() => {
+    if (phase !== 'idle') return;
+    if (respinsLeft <= 0 || cappedAtMax) {
+      // End-of-feature — emit final fanfare then call onClose.
+      setPhase('finished');
+      sound.play(totalPayoutMult >= 100 ? 'mega-win' : 'big-win');
+      const t = setTimeout(() => onClose(totalPayoutMult), 3200);
+      return () => clearTimeout(t);
+    }
+    const t = setTimeout(() => kickRespin(), 600);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, respinsLeft, cappedAtMax]);
+
+  // ── Kick off a respin: roll, then animate outer cells, then 4th reel ──
+  const kickRespin = useCallback(() => {
+    setPhase('spinning');
+    setLastRespinKind(null);
+    setCoinsLanded(new Set());
+    setFourth(null);
     sound.play('click');
 
     const rng = rngRef.current!;
-    const newGrid = [...grid];
-    const newlyLanded = new Set<number>();
-    let extraRespins = 0;
-    let valueGained = 0;
-    let landedJackpot = false;
-    for (let i = 0; i < SIZE; i++) {
-      if (isFilled(newGrid[i]!)) continue;
-      const rolled = bonusRollOne(rng);
-      if (rolled !== 'empty') {
-        newGrid[i] = rolled;
-        newlyLanded.add(i);
-        if (typeof rolled !== 'string' && rolled.kind === 'extra') {
-          extraRespins += 1;
-        } else {
-          valueGained += bonusCellValue(rolled);
-          // Jackpot symbols (mini/minor/major/grand) are bigger wins
-          // than coin values; mark them for a louder cue on land.
-          if (
-            typeof rolled !== 'string' &&
-            (rolled.kind === 'mini' || rolled.kind === 'minor' || rolled.kind === 'major' || rolled.kind === 'grand')
-          ) {
-            landedJackpot = true;
-          }
+    const sample = rollRespin(rng);
+
+    // Outer cells reveal staggered (~80ms per cell). Real spec §10b.7
+    // says ~0.6s for the 8 cells to land.
+    sample.outer.forEach((sym, i) => {
+      setTimeout(() => {
+        setOuter((prev) => {
+          const next = [...prev];
+          next[i] = sym;
+          return next;
+        });
+        if (sym.kind === 'coin' || sym.kind === 'extra' ||
+            sym.kind === 'mini' || sym.kind === 'minor' ||
+            sym.kind === 'major' || sym.kind === 'grand') {
+          sound.play('drop');
         }
-      }
-    }
+      }, 80 * (i + 1));
+    });
 
-    // Reveal in two stages: first show the spinning ? for ~520ms, then
-    // snap in the new values. Real Pragmatic Hold-and-Spin shows each
-    // empty cell briefly cycling values before locking in.
+    // 4th reel spins ~1.2s after the last outer cell.
     setTimeout(() => {
-      setGrid(newGrid);
-      setRecentlyLanded(newlyLanded);
-      setRolling(false);
-      setTotalMult((prev) => +(prev + valueGained).toFixed(2));
-      // Land SFX — match the magnitude of what just hit. Jackpot cells
-      // get a 'big-win' fanfare; multi-coin lands play 'win'; single
-      // coin or extra-respin only plays 'coin'; nothing landed → drop.
-      if (landedJackpot) {
-        sound.play('big-win');
-      } else if (newlyLanded.size > 1) {
-        sound.play('win');
-      } else if (newlyLanded.size === 1) {
-        sound.play('coin');
+      setPhase('fourth');
+      // 4th reel "spins" visually for ~1.2s before settling.
+      setTimeout(() => {
+        setFourth(sample.fourth);
+        // Settle SFX based on outcome.
+        if (sample.fourth === 'win') sound.play('big-win');
+        else if (sample.fourth === 'boost') sound.play('coin');
+        else sound.play('drop');
+        // Resolve after a short settle.
+        setTimeout(() => resolve(sample), 480);
+      }, 1200);
+    }, 80 * 9);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sound]);
+
+  // ── Resolve the respin against current state ─────────────────────────
+  const resolve = useCallback((sample: { outer: RespinSymbol[]; fourth: FourthReelOutcome }) => {
+    setPhase('resolving');
+    const res = resolveRespin(sample, { bagValue, meters, cumulativeMult });
+    setLastRespinKind(res.kind);
+    // Mark which outer cells contained value-yielding symbols for animation.
+    const animSet = new Set<number>();
+    sample.outer.forEach((s, i) => {
+      if (s.kind !== 'blank') animSet.add(i);
+    });
+    setCoinsLanded(animSet);
+
+    // Apply state changes — wait briefly so the player sees the
+    // collect/boost animation play first.
+    const applyDelay = res.kind === 'blank' ? 350 : res.jackpotHits.length > 0 ? 1100 : 800;
+    setTimeout(() => {
+      setBagValue(res.newBagValue);
+      setMeters(res.newMeters);
+      setCumulativeMult((prev) => +(prev + res.paid).toFixed(4));
+      // Apply respin counter: decrement by 1, then add extra spins from
+      // win-side collects.
+      setRespinsLeft((prev) => Math.max(0, prev - 1 + res.extraSpins));
+
+      if (res.cappedAtMax) {
+        setCappedAtMax(true);
+      }
+
+      // Jackpot fanfare — fire one banner per jackpot hit, sequential.
+      if (res.jackpotHits.length > 0) {
+        setPhase('jackpot');
+        let i = 0;
+        const playNext = () => {
+          if (i >= res.jackpotHits.length) {
+            // After all jackpots, clear outer + back to idle.
+            setOuter((prev) => prev.map(() => ({ kind: 'blank' })));
+            setPhase('idle');
+            return;
+          }
+          const hit = res.jackpotHits[i]!;
+          setJackpotFiring(hit);
+          sound.play('mega-win');
+          const dur = hit.tier === 'grand' ? 4500 : hit.tier === 'major' ? 2800 : hit.tier === 'minor' ? 2200 : 1800;
+          setTimeout(() => {
+            setJackpotFiring(null);
+            i++;
+            setTimeout(playNext, 300);
+          }, dur);
+        };
+        setTimeout(playNext, 250);
       } else {
-        sound.play('drop');
-      }
-      // Respin accounting
-      let nextRespins = respinsLeft - 1 + extraRespins;
-      const anyNewValueLanded = Array.from(newlyLanded).some((i) => {
-        const c = newGrid[i]!;
-        return c !== 'empty' && typeof c !== 'string' && c.kind !== 'extra';
-      });
-      if (anyNewValueLanded) {
-        nextRespins = Math.max(nextRespins, 3);
-      }
-      setRespinsLeft(Math.max(0, nextRespins));
-
-      // End conditions
-      const allFilled = newGrid.every(isFilled);
-      if (allFilled || nextRespins <= 0) {
-        // Tier the bonus-end fanfare so a 5× collect feels different
-        // from a 500×+ epic finish.
+        // Clear the outer cells for the next respin (per spec §7.5: coins
+        // and jackpot/extra symbols disappear at end of spin unless the
+        // 4th reel was BOOST — in which case they get absorbed into the
+        // bag; either way the cells reset to blank for the next respin).
         setTimeout(() => {
-          sound.play(
-            totalMult + valueGained >= 100 ? 'mega-win' :
-            totalMult + valueGained >= 20 ? 'big-win' : 'free-spins-end',
-          );
-          setFinished(true);
-        }, 900);
+          setOuter((prev) => prev.map(() => ({ kind: 'blank' })));
+          setPhase('idle');
+        }, 500);
       }
-      setTimeout(() => setBusy(false), 480);
-    }, 520);
-  }, [busy, finished, grid, respinsLeft, totalMult, sound]);
-
-  // Auto-roll if there are respins left (with breathing room between rounds)
-  useEffect(() => {
-    if (finished) return;
-    if (busy) return;
-    if (respinsLeft <= 0) return;
-    // Real Pragmatic Hold-and-Spin pacing: ~1.1-1.3s between rolls so
-    // each respin has a visible "spin and stop" moment (the empty cells
-    // flicker with "?" markers via the rolling state below) rather than
-    // popping back-to-back. Pacing matches Big Juan's bonus round in
-    // the real game.
-    const t = setTimeout(roll, 1150);
-    return () => clearTimeout(t);
-  }, [respinsLeft, busy, finished, roll]);
-
-  const totalPayout = bet * totalMult;
+    }, applyDelay);
+  }, [bagValue, meters, cumulativeMult, sound]);
 
   return (
     <motion.div
-      className="fixed inset-0 z-[200] flex flex-col items-center justify-center p-4"
+      className="fixed inset-0 z-[200] flex flex-col items-center justify-start p-3 overflow-hidden"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -178,162 +240,168 @@ export function BigJuanBonusRound({ bet, scatterCount, seeds, onClose }: BonusRo
         backdropFilter: 'blur(4px)',
       }}
     >
-      {/* Title */}
-      <div
-        className="font-display font-extrabold text-2xl mb-1 text-center"
-        style={{
-          background: 'linear-gradient(180deg, #ffd166 0%, #ff5560 80%)',
-          WebkitBackgroundClip: 'text',
-          backgroundClip: 'text',
-          color: 'transparent',
-          filter: 'drop-shadow(0 2px 4px rgba(0,0,0,.6)) drop-shadow(0 0 12px rgba(255,209,102,.5))',
-        }}
-      >
-        BONUS ROUND
-      </div>
-      <div className="text-[10px] uppercase tracking-widest text-[#FFE0A8] mb-3">
-        Hold &amp; Win · {scatterCount} 🎉 trigger
-      </div>
-
-      {/* Jackpots strip */}
-      <div className="flex gap-1.5 mb-4">
-        {(['mini', 'minor', 'major', 'grand'] as const).map((tier) => (
-          <div
-            key={tier}
-            className="flex flex-col items-center px-2.5 py-1 rounded-lg border"
-            style={{
-              background:
-                tier === 'grand'
-                  ? 'linear-gradient(180deg, rgba(255,85,96,.3), rgba(0,0,0,.4))'
-                  : tier === 'major'
-                    ? 'linear-gradient(180deg, rgba(255,209,102,.25), rgba(0,0,0,.4))'
-                    : 'rgba(0,0,0,.4)',
-              borderColor:
-                tier === 'grand'
-                  ? '#ff5560'
-                  : tier === 'major'
-                    ? '#ffd166'
-                    : 'rgba(255,209,102,.4)',
-            }}
-          >
-            <span className="text-[8px] uppercase tracking-widest text-[#FFE0A8]">{tier}</span>
-            <span
-              className="font-mono font-bold text-xs tabular-nums"
-              style={{ color: tier === 'grand' ? '#ff8a8a' : '#ffd166' }}
-            >
-              {JACKPOTS[tier]}×
-            </span>
-          </div>
-        ))}
-      </div>
-
-      {/* 3×3 mini-grid */}
-      <div
-        className="rounded-2xl p-3"
-        style={{
-          background: 'linear-gradient(180deg, #2a0810 0%, #5a0810 50%, #14040a 100%)',
-          border: '3px solid #c8932e',
-          boxShadow: '0 0 0 1px rgba(255,209,102,.3), inset 0 1px 0 rgba(255,209,102,.4), 0 12px 30px rgba(0,0,0,.6)',
-        }}
-      >
-        <div className="grid grid-cols-3 gap-1.5" style={{ width: 'min(280px, 80vw)' }}>
-          {grid.map((cell, i) => {
-            const justLanded = recentlyLanded.has(i);
-            return (
-              <BonusCell key={i} cell={cell} justLanded={justLanded} rolling={rolling} cellIdx={i} />
-            );
-          })}
+      {/* Header: title + scatter trigger */}
+      <div className="text-center pt-12 pb-2">
+        <div
+          className="font-display font-extrabold text-2xl mb-0.5"
+          style={{
+            background: 'linear-gradient(180deg, #ffd166 0%, #ff5560 80%)',
+            WebkitBackgroundClip: 'text',
+            backgroundClip: 'text',
+            color: 'transparent',
+            filter: 'drop-shadow(0 2px 4px rgba(0,0,0,.6)) drop-shadow(0 0 14px rgba(255,209,102,.55))',
+          }}
+        >
+          RESPINS
+        </div>
+        <div className="text-[10px] uppercase tracking-widest text-[#FFE0A8] flex items-center justify-center gap-1.5">
+          <span className="inline-block w-3 h-3"><PinataSvg /></span>
+          {scatterCount} scatter trigger
         </div>
       </div>
 
-      {/* Stats row */}
-      <div className="flex items-center gap-4 mt-4">
-        <div className="flex flex-col items-center px-3 py-1.5 rounded-xl bg-bg-card/80 border border-edge">
-          <span className="text-[8px] uppercase tracking-widest text-ink-mute">Respins</span>
-          <span className="font-mono font-bold text-lg text-[#ffd166] tabular-nums">{respinsLeft}</span>
+      {/* Main play area — jackpot meters | 3x3 grid | 4th reel */}
+      <div className="flex items-center justify-center gap-2 flex-1 w-full max-w-md">
+        {/* Left rail: 4 jackpot meters stacked. Each shows tier + payout
+            + segment progress (filled / required). Per spec §9: floats
+            on the left side of the feature screen. */}
+        <div className="flex flex-col gap-1.5 w-[68px] flex-shrink-0">
+          {(['mini', 'minor', 'major', 'grand'] as JackpotTier[]).map((tier) => (
+            <JackpotMeter
+              key={tier}
+              tier={tier}
+              filled={meters[tier]}
+              threshold={JACKPOT_THRESHOLD[tier]}
+              payoutMult={JACKPOTS[tier]}
+            />
+          ))}
         </div>
-        <div className="flex flex-col items-center px-3 py-1.5 rounded-xl bg-bg-card/80 border border-edge">
-          <span className="text-[8px] uppercase tracking-widest text-ink-mute">Total</span>
-          <span className="font-mono font-bold text-lg text-[#ffd166] tabular-nums">{fmtCurrency(totalPayout)}</span>
-        </div>
-        <div className="flex flex-col items-center px-3 py-1.5 rounded-xl bg-bg-card/80 border border-edge">
-          <span className="text-[8px] uppercase tracking-widest text-ink-mute">Filled</span>
-          <span className="font-mono font-bold text-lg text-ink tabular-nums">
-            {grid.filter(isFilled).length}/9
-          </span>
+
+        {/* Centre: 3x3 grid with sticky bag, and 4th reel to the right. */}
+        <div className="flex items-center gap-2 flex-1 justify-center">
+          <BonusGrid
+            outer={outer}
+            bagValue={bagValue}
+            phase={phase}
+            coinsLanded={coinsLanded}
+            lastRespinKind={lastRespinKind}
+          />
+          <FourthReelCell phase={phase} value={fourth} />
         </div>
       </div>
 
-      {/* Finish overlay — fiesta celebration with Spanish flair.
-       *  Real Pragmatic Big Juan rings out the bonus with mariachi
-       *  music + a "¡VIVA!" celebration banner; we mirror that beat. */}
+      {/* Stats bar — respins / total win / bag value */}
+      <div className="flex items-center justify-center gap-2 w-full max-w-md mt-3 mb-1 px-3">
+        <StatTile label="Respins" value={String(respinsLeft)} accent="#ffd166" />
+        <StatTile label="Total Win" value={fmtCurrency(totalPayout)} accent="#1fff7a" wide />
+        <StatTile label="Money Bag" value={`${bagValue.toFixed(2)}×`} accent="#ff8a40" />
+      </div>
+
+      {/* Current respin status hint */}
+      <div className="text-[10px] uppercase tracking-widest text-[#FFE0A8]/70 h-4 mb-1">
+        {phase === 'intro' && 'Get ready…'}
+        {phase === 'spinning' && 'Rolling…'}
+        {phase === 'fourth' && 'Awaiting 4th reel…'}
+        {phase === 'resolving' && lastRespinKind === 'win' && 'WIN — collecting'}
+        {phase === 'resolving' && lastRespinKind === 'boost' && 'BOOST — bag growing'}
+        {phase === 'resolving' && lastRespinKind === 'blank' && 'No win'}
+        {phase === 'jackpot' && '🎉 JACKPOT!'}
+        {phase === 'finished' && (cappedAtMax ? 'MAX WIN!' : 'Round complete')}
+        {phase === 'idle' && respinsLeft > 0 && 'Next respin…'}
+      </div>
+
+      {/* Jackpot fanfare overlay — fires once per filled meter, sequentially. */}
       <AnimatePresence>
-        {finished && (
+        {jackpotFiring && (
           <motion.div
-            className="absolute inset-0 z-10 flex flex-col items-center justify-center p-4"
-            initial={{ opacity: 0, backdropFilter: 'blur(0px)' }}
-            animate={{ opacity: 1, backdropFilter: 'blur(8px)' }}
-            transition={{ duration: 0.4 }}
+            className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              initial={{ scale: 0.35, opacity: 0, rotate: -6 }}
+              animate={{ scale: 1, opacity: 1, rotate: 0 }}
+              exit={{ scale: 1.25, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 240, damping: 16 }}
+              className="px-8 py-5 rounded-3xl font-display font-extrabold text-center"
+              style={{
+                background:
+                  jackpotFiring.tier === 'grand'
+                    ? 'linear-gradient(180deg, #a78bfa, #5a1aa8)'
+                    : jackpotFiring.tier === 'major'
+                      ? 'linear-gradient(180deg, #ff8a40, #c8102e)'
+                      : jackpotFiring.tier === 'minor'
+                        ? 'linear-gradient(180deg, #ffd166, #c8932e)'
+                        : 'linear-gradient(180deg, #5fb8ff, #1a5a8a)',
+                color: '#fff5e0',
+                border: '3px solid #fff5c4',
+                boxShadow: '0 0 60px rgba(255,209,102,.9), 0 0 100px rgba(255,85,96,.6)',
+                textShadow: '0 2px 6px rgba(0,0,0,.7)',
+              }}
+            >
+              <div className="text-[11px] uppercase tracking-widest opacity-85">{jackpotFiring.tier}</div>
+              <div className="text-3xl mt-1 mb-1">JACKPOT!</div>
+              <div className="text-xl font-mono tabular-nums">
+                {fmtCurrency(jackpotFiring.amount * bet)}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* End-of-feature TOTAL WIN banner */}
+      <AnimatePresence>
+        {phase === 'finished' && (
+          <motion.div
+            className="absolute inset-0 z-40 flex flex-col items-center justify-center backdrop-blur-md"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             style={{
-              background:
-                'radial-gradient(70% 50% at 50% 38%, rgba(255,209,102,.25), rgba(0,0,0,.78) 70%)',
+              background: 'radial-gradient(70% 50% at 50% 42%, rgba(255,209,102,.22), rgba(0,0,0,.78) 70%)',
             }}
           >
             <motion.div
-              className="font-display font-extrabold text-2xl mb-1 tracking-widest"
               initial={{ scale: 0.4, opacity: 0, y: -10 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
-              transition={{ type: 'spring', stiffness: 280, damping: 14 }}
+              transition={{ type: 'spring', stiffness: 260, damping: 18 }}
+              className="font-display font-extrabold text-3xl tracking-widest mb-1"
               style={{
                 background: 'linear-gradient(180deg, #fff5c4 0%, #ffd166 50%, #ff5560 100%)',
                 WebkitBackgroundClip: 'text',
                 backgroundClip: 'text',
                 color: 'transparent',
-                filter: 'drop-shadow(0 0 28px rgba(255,209,102,.95)) drop-shadow(0 0 48px rgba(255,85,96,.6)) drop-shadow(0 4px 8px rgba(0,0,0,.6))',
+                filter: 'drop-shadow(0 0 28px rgba(255,209,102,.95))',
               }}
             >
-              {totalMult >= 500 ? '¡VIVA BIG JUAN!' : totalMult >= 100 ? '¡FIESTA!' : '¡GRACIAS!'}
+              {cappedAtMax ? 'MAX WIN!' : '¡FIESTA!'}
             </motion.div>
             <motion.div
-              className="font-display font-extrabold text-lg mb-3 uppercase tracking-[0.3em]"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.2 }}
-              style={{
-                color: '#FFE0A8',
-                textShadow: '0 2px 6px rgba(0,0,0,.7)',
-              }}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="text-[10px] uppercase tracking-[0.32em] text-[#FFE0A8] mb-3"
             >
-              Bonus Complete
+              Total Bonus Win
             </motion.div>
             <motion.div
-              className="font-mono font-extrabold tabular-nums mb-6"
-              initial={{ scale: 0.5, opacity: 0 }}
+              initial={{ scale: 0.85, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.35, type: 'spring', stiffness: 240, damping: 16 }}
-              style={{
-                fontSize: 'clamp(36px, 11vw, 64px)',
-                color: '#ffd166',
-                textShadow: '0 0 32px rgba(255,209,102,.95), 0 0 56px rgba(255,85,96,.6), 0 4px 8px rgba(0,0,0,.7)',
-              }}
+              transition={{ delay: 0.55, type: 'spring', stiffness: 240, damping: 18 }}
+              className="font-mono font-extrabold text-4xl tabular-nums text-[#fff5c4]"
+              style={{ textShadow: '0 0 24px rgba(255,209,102,.85), 0 4px 8px rgba(0,0,0,.6)' }}
             >
               {fmtCurrency(totalPayout)}
             </motion.div>
-            <motion.button
-              onClick={() => onClose(totalMult)}
-              className="px-8 py-3.5 rounded-2xl font-display font-extrabold text-base uppercase tracking-wider"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6 }}
-              style={{
-                background: 'linear-gradient(180deg, #ffd166 0%, #c8932e 60%, #5a3a04 100%)',
-                color: '#1a0a04',
-                border: '2px solid #fff5c4',
-                boxShadow: '0 0 28px rgba(255,209,102,.7), 0 4px 14px rgba(0,0,0,.55)',
-              }}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.9 }}
+              className="text-[11px] mt-2 font-mono text-[#ffd166]/85 tabular-nums"
             >
-              Collect
-            </motion.button>
+              {totalPayoutMult.toFixed(2)}× bet
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -341,105 +409,343 @@ export function BigJuanBonusRound({ bet, scatterCount, seeds, onClose }: BonusRo
   );
 }
 
-function BonusCell({
-  cell,
-  justLanded,
-  rolling,
-  cellIdx,
-}: {
-  cell: BonusCellKind;
-  justLanded: boolean;
-  rolling: boolean;
-  cellIdx: number;
-}) {
-  const filled = isFilled(cell);
-  const label = labelFor(cell);
-  const color = colorFor(cell);
-  // During the rolling phase, empty cells show a quick spin of "?"
-  // markers so the player visibly sees them cycling. Each cell starts
-  // its spin staggered by a few frames using cellIdx so the row of
-  // cells doesn't flip in lockstep — matches Pragmatic Hold-and-Spin.
-  const spinningEmpty = rolling && !filled;
+// =============================================================================
+// SUB-COMPONENTS
+// =============================================================================
+
+function StatTile({ label, value, accent, wide }: { label: string; value: string; accent: string; wide?: boolean }) {
   return (
-    <motion.div
-      className="aspect-square rounded-lg flex items-center justify-center font-mono font-bold text-sm select-none relative overflow-hidden"
-      animate={
-        justLanded
-          ? { scale: [0.4, 1.15, 1], rotate: [0, -8, 0] }
-          : { scale: 1 }
-      }
-      transition={{ duration: 0.5, ease: [0.34, 1.4, 0.5, 1] }}
+    <div
+      className={`flex flex-col items-center px-3 py-1.5 rounded-xl bg-black/55 border ${wide ? 'flex-1' : ''}`}
+      style={{ borderColor: `${accent}55` }}
+    >
+      <span className="text-[8px] uppercase tracking-widest text-[#FFE0A8]/65">{label}</span>
+      <span className="font-mono font-bold text-base tabular-nums" style={{ color: accent }}>
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function JackpotMeter({
+  tier, filled, threshold, payoutMult,
+}: {
+  tier: JackpotTier;
+  filled: number;
+  threshold: number;
+  payoutMult: number;
+}) {
+  const color =
+    tier === 'grand' ? '#a78bfa'
+    : tier === 'major' ? '#ff5560'
+    : tier === 'minor' ? '#ffd166'
+    : '#5fb8ff';
+  const segments = Array.from({ length: threshold }, (_, i) => i < filled);
+  return (
+    <div
+      className="rounded-lg px-1.5 py-1 border"
       style={{
-        background: filled
-          ? `linear-gradient(180deg, ${color}30, rgba(0,0,0,.45))`
-          : 'linear-gradient(180deg, rgba(255,255,255,.03), rgba(0,0,0,.45))',
-        border: filled ? `2px solid ${color}` : '1.5px solid rgba(200,147,46,.25)',
-        boxShadow: filled
-          ? `0 0 14px ${color}aa, inset 0 1px 0 rgba(255,255,255,.15)`
-          : 'inset 0 1px 0 rgba(255,255,255,.04)',
-        color: filled ? '#fff5e0' : '#5a3a04',
-        textShadow: filled ? '0 0 8px rgba(0,0,0,.6)' : 'none',
-        // Filled (held) cells get a slow "locked" pulse so the player
-        // can see at a glance which cells are saved. Real Hold-and-Spin
-        // games highlight held cells with a subtle gold breathing glow.
-        animation: filled && !justLanded ? 'bjBonusHeld 2.4s ease-in-out infinite' : undefined,
+        background: `linear-gradient(180deg, ${color}25, rgba(0,0,0,.55))`,
+        borderColor: `${color}88`,
+        boxShadow: filled > 0 ? `0 0 6px ${color}66, inset 0 1px 0 rgba(255,255,255,.1)` : 'inset 0 1px 0 rgba(255,255,255,.08)',
       }}
     >
-      {spinningEmpty ? (
-        <motion.span
-          key={`spin-${cellIdx}`}
-          className="text-2xl font-extrabold"
-          style={{ color: '#ffd166', textShadow: '0 0 8px rgba(255,209,102,.85)' }}
-          animate={{ opacity: [0.4, 1, 0.4], scale: [0.85, 1.15, 0.85], rotate: [0, 360] }}
-          transition={{
-            duration: 0.32,
-            repeat: Infinity,
-            ease: 'linear',
-            delay: (cellIdx % 3) * 0.05,
-          }}
-        >
-          ?
-        </motion.span>
-      ) : (
-        <span style={{ fontSize: filled ? '0.95rem' : '1.5rem' }}>{label}</span>
-      )}
-      {/* Just-landed flash — bright radial pulse fades out across 700ms */}
-      {justLanded && filled && (
-        <motion.div
-          className="absolute inset-0 pointer-events-none"
-          initial={{ opacity: 0.95 }}
-          animate={{ opacity: 0 }}
-          transition={{ duration: 0.7, ease: 'easeOut' }}
-          style={{
-            background: `radial-gradient(circle, ${color}aa 0%, ${color}55 35%, transparent 70%)`,
-            mixBlendMode: 'screen',
-          }}
-        />
-      )}
+      <div className="text-[7px] uppercase tracking-widest font-display font-bold leading-none text-center"
+           style={{ color, textShadow: `0 0 4px ${color}88` }}>
+        {tier}
+      </div>
+      <div className="text-[8px] font-mono font-bold tabular-nums leading-none text-center text-[#fff5e0] mt-0.5"
+           style={{ textShadow: `0 0 4px ${color}88, 0 1px 1px rgba(0,0,0,.6)` }}>
+        {payoutMult}×
+      </div>
+      <div className="flex gap-0.5 justify-center mt-1">
+        {segments.map((isOn, i) => (
+          <div
+            key={i}
+            className="rounded-full"
+            style={{
+              width: 5, height: 5,
+              background: isOn ? color : 'rgba(255,255,255,.1)',
+              boxShadow: isOn ? `0 0 4px ${color}` : 'inset 0 0 1px rgba(0,0,0,.4)',
+              transition: 'background 0.3s, box-shadow 0.3s',
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function BonusGrid({
+  outer, bagValue, phase, coinsLanded, lastRespinKind,
+}: {
+  outer: RespinSymbol[];
+  bagValue: number;
+  phase: string;
+  coinsLanded: Set<number>;
+  lastRespinKind: FourthReelOutcome | null;
+}) {
+  // 9-cell grid. Index 4 = sticky money bag. Outer indices 0,1,2,3,5,6,7,8
+  // map to the outer[0..7] array (skipping the center).
+  return (
+    <div
+      className="rounded-2xl p-2 relative"
+      style={{
+        background: 'linear-gradient(180deg, #2a0810 0%, #5a0810 50%, #14040a 100%)',
+        border: '3px solid #c8932e',
+        boxShadow: '0 0 0 1px rgba(255,209,102,.3), inset 0 1px 0 rgba(255,209,102,.4), 0 12px 30px rgba(0,0,0,.6)',
+      }}
+    >
+      <div className="grid grid-cols-3 gap-1.5" style={{ width: 'min(220px, 64vw)' }}>
+        {Array.from({ length: 9 }).map((_, gridIdx) => {
+          if (gridIdx === 4) {
+            return (
+              <MoneyBagCell
+                key="bag"
+                value={bagValue}
+                pulse={phase === 'resolving' && lastRespinKind === 'boost'}
+              />
+            );
+          }
+          // Map: 0,1,2 → outer[0,1,2]; 3 → outer[3]; 5 → outer[4];
+          // 6,7,8 → outer[5,6,7].
+          const outerIdx = gridIdx < 4 ? gridIdx : gridIdx === 5 ? 4 : gridIdx - 2;
+          const sym = outer[outerIdx]!;
+          return (
+            <OuterCell
+              key={gridIdx}
+              symbol={sym}
+              spinning={phase === 'spinning' && sym.kind === 'blank'}
+              landed={coinsLanded.has(outerIdx)}
+              fadingOut={phase === 'resolving' && lastRespinKind === 'blank' && sym.kind !== 'blank'}
+              collectingForWin={phase === 'resolving' && lastRespinKind === 'win' && sym.kind !== 'blank'}
+              streamingToBag={phase === 'resolving' && lastRespinKind === 'boost' && sym.kind === 'coin'}
+            />
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function MoneyBagCell({ value, pulse }: { value: number; pulse: boolean }) {
+  return (
+    <motion.div
+      className="relative aspect-square rounded-lg flex flex-col items-center justify-center"
+      style={{
+        background: 'radial-gradient(circle at 35% 30%, #ffd166 0%, #c8932e 40%, #5a3a04 90%)',
+        border: '2px solid #fff5c4',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,.4), 0 0 14px rgba(255,209,102,.5), 0 4px 8px rgba(0,0,0,.5)',
+      }}
+      animate={pulse ? { scale: [1, 1.18, 1.08], rotate: [0, -2, 2, 0] } : { scale: 1 }}
+      transition={{ duration: 0.8, ease: 'easeOut' }}
+    >
+      <span className="text-2xl drop-shadow-md leading-none">💰</span>
+      <span
+        className="font-mono font-extrabold text-[11px] tabular-nums mt-1 leading-none"
+        style={{
+          color: '#5a0810',
+          textShadow: '0 1px 0 rgba(255,255,255,.4)',
+        }}
+      >
+        {value.toFixed(2)}×
+      </span>
     </motion.div>
   );
 }
 
-function labelFor(cell: BonusCellKind): string {
-  if (cell === 'empty') return '·';
-  if (typeof cell === 'string') return '?';
-  if (cell.kind === 'coin') return `${cell.value}×`;
-  if (cell.kind === 'extra') return '+1';
-  if (cell.kind === 'mini') return 'MINI';
-  if (cell.kind === 'minor') return 'MINOR';
-  if (cell.kind === 'major') return 'MAJOR';
-  if (cell.kind === 'grand') return 'GRAND';
-  return '';
+function OuterCell({
+  symbol, spinning, landed, fadingOut, collectingForWin, streamingToBag,
+}: {
+  symbol: RespinSymbol;
+  spinning: boolean;
+  landed: boolean;
+  fadingOut: boolean;
+  collectingForWin: boolean;
+  streamingToBag: boolean;
+}) {
+  const baseStyle = {
+    background: 'linear-gradient(180deg, rgba(255,255,255,.04), rgba(0,0,0,.45))',
+    border: '1px solid rgba(200,147,46,.25)',
+  };
+  return (
+    <motion.div
+      className="aspect-square rounded-lg flex items-center justify-center relative overflow-hidden"
+      style={baseStyle}
+      initial={landed ? { scale: 0.5, opacity: 0 } : false}
+      animate={
+        collectingForWin
+          ? { scale: [1, 1.15, 0.4], opacity: [1, 1, 0], y: [0, -4, 30] }
+          : streamingToBag
+            ? { scale: [1, 1.1, 0.5], opacity: [1, 1, 0], x: 8, y: 4 }
+            : fadingOut
+              ? { scale: 0.85, opacity: 0 }
+              : landed
+                ? { scale: 1, opacity: 1 }
+                : { scale: 1, opacity: 1 }
+      }
+      transition={
+        collectingForWin
+          ? { duration: 0.7, ease: 'easeIn' }
+          : streamingToBag
+            ? { duration: 0.55, ease: 'easeIn' }
+            : fadingOut
+              ? { duration: 0.4 }
+              : { duration: 0.25, ease: [0.34, 1.4, 0.5, 1] }
+      }
+    >
+      <RespinSymbolGlyph symbol={symbol} spinning={spinning} />
+    </motion.div>
+  );
 }
 
-function colorFor(cell: BonusCellKind): string {
-  if (cell === 'empty') return '#5a3a04';
-  if (typeof cell === 'string') return '#5a3a04';
-  if (cell.kind === 'coin') return '#ffd166';
-  if (cell.kind === 'extra') return '#1fff7a';
-  if (cell.kind === 'mini') return '#5fb8ff';
-  if (cell.kind === 'minor') return '#a78bfa';
-  if (cell.kind === 'major') return '#ffae50';
-  if (cell.kind === 'grand') return '#ff5560';
-  return '#5a3a04';
+function RespinSymbolGlyph({ symbol, spinning }: { symbol: RespinSymbol; spinning: boolean }) {
+  if (spinning) {
+    // "?" flicker while the cell is rolling.
+    return (
+      <motion.span
+        className="font-display font-extrabold text-2xl text-[#ffd166]/70"
+        animate={{ opacity: [0.3, 0.95, 0.3], scale: [0.85, 1.05, 0.85] }}
+        transition={{ duration: 0.32, repeat: Infinity, ease: 'easeInOut' }}
+      >
+        ?
+      </motion.span>
+    );
+  }
+  if (symbol.kind === 'blank') return null;
+  if (symbol.kind === 'coin') {
+    return (
+      <div className="flex flex-col items-center justify-center">
+        <span className="text-xl leading-none">🪙</span>
+        <span
+          className="font-mono font-extrabold text-[10px] tabular-nums leading-none mt-0.5"
+          style={{ color: '#fff5c4', textShadow: '0 1px 1px rgba(0,0,0,.6), 0 0 4px rgba(255,209,102,.85)' }}
+        >
+          {symbol.value}×
+        </span>
+      </div>
+    );
+  }
+  if (symbol.kind === 'extra') {
+    return (
+      <div className="flex flex-col items-center justify-center">
+        <span className="text-xl leading-none">🎊</span>
+        <span
+          className="font-mono font-bold text-[9px] tabular-nums leading-none mt-0.5"
+          style={{ color: '#1fff7a', textShadow: '0 0 4px rgba(31,255,122,.85)' }}
+        >
+          +1
+        </span>
+      </div>
+    );
+  }
+  // Jackpot symbols
+  const color =
+    symbol.kind === 'grand' ? '#a78bfa'
+    : symbol.kind === 'major' ? '#ff5560'
+    : symbol.kind === 'minor' ? '#ffd166'
+    : '#5fb8ff';
+  const glyph =
+    symbol.kind === 'grand' ? '💎'
+    : symbol.kind === 'major' ? '🔴'
+    : symbol.kind === 'minor' ? '🟡'
+    : '🔵';
+  return (
+    <div className="flex flex-col items-center justify-center">
+      <span className="text-lg leading-none" style={{ filter: `drop-shadow(0 0 4px ${color}aa)` }}>
+        {glyph}
+      </span>
+      <span
+        className="font-display font-extrabold text-[7px] uppercase tracking-widest leading-none mt-0.5"
+        style={{ color, textShadow: `0 0 3px ${color}88` }}
+      >
+        {symbol.kind}
+      </span>
+    </div>
+  );
+}
+
+function FourthReelCell({ phase, value }: { phase: string; value: FourthReelOutcome | null }) {
+  const spinning = phase === 'spinning' || phase === 'fourth';
+  // "Tall" cell to the right of the 3x3.
+  return (
+    <div
+      className="rounded-2xl p-2 flex items-center justify-center"
+      style={{
+        background: 'linear-gradient(180deg, #2a0810 0%, #5a0810 50%, #14040a 100%)',
+        border: '3px solid #c8932e',
+        boxShadow: '0 0 0 1px rgba(255,209,102,.3), inset 0 1px 0 rgba(255,209,102,.4), 0 12px 30px rgba(0,0,0,.6)',
+        width: 'min(76px, 22vw)',
+        height: 'min(220px, 64vw)',
+      }}
+    >
+      <div
+        className="w-full h-full rounded-lg flex items-center justify-center text-center overflow-hidden relative"
+        style={{
+          background: 'linear-gradient(180deg, rgba(255,255,255,.04), rgba(0,0,0,.55))',
+          border: '1px solid rgba(200,147,46,.3)',
+        }}
+      >
+        <AnimatePresence mode="wait">
+          {spinning && value === null ? (
+            <motion.div
+              key="spin"
+              className="font-display font-extrabold text-3xl text-[#ffd166]/65"
+              animate={{ opacity: [0.3, 0.95, 0.3], y: [-8, 8, -8] }}
+              transition={{ duration: 0.35, repeat: Infinity, ease: 'easeInOut' }}
+              exit={{ opacity: 0 }}
+            >
+              ?
+            </motion.div>
+          ) : value === 'win' ? (
+            <motion.div
+              key="win"
+              initial={{ scale: 0.4, opacity: 0, rotate: -6 }}
+              animate={{ scale: [0.4, 1.15, 1], opacity: 1, rotate: 0 }}
+              transition={{ duration: 0.55, ease: [0.34, 1.4, 0.5, 1] }}
+              exit={{ opacity: 0 }}
+              className="font-display font-extrabold text-base px-2 py-1 rounded-md"
+              style={{
+                background: 'linear-gradient(180deg, #ffd166 0%, #c8932e 100%)',
+                color: '#5a0810',
+                border: '2px solid #fff5c4',
+                boxShadow: '0 0 16px rgba(255,209,102,.85)',
+                textShadow: '0 1px 0 rgba(255,255,255,.45)',
+              }}
+            >
+              WIN
+            </motion.div>
+          ) : value === 'boost' ? (
+            <motion.div
+              key="boost"
+              initial={{ scale: 0.4, opacity: 0, rotate: 6 }}
+              animate={{ scale: [0.4, 1.15, 1], opacity: 1, rotate: 0 }}
+              transition={{ duration: 0.55, ease: [0.34, 1.4, 0.5, 1] }}
+              exit={{ opacity: 0 }}
+              className="font-display font-extrabold text-[12px] px-2 py-1 rounded-md leading-tight"
+              style={{
+                background: 'linear-gradient(180deg, #ff8a40 0%, #c8102e 100%)',
+                color: '#fff5c4',
+                border: '2px solid #fff5c4',
+                boxShadow: '0 0 16px rgba(255,138,64,.85)',
+                textShadow: '0 1px 1px rgba(0,0,0,.6)',
+              }}
+            >
+              BOOST
+            </motion.div>
+          ) : value === 'blank' ? (
+            <motion.div
+              key="blank"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="text-[#ffd166]/30 text-xs uppercase tracking-widest"
+            >
+              —
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
 }
