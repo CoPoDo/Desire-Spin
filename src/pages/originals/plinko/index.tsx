@@ -39,6 +39,11 @@ export function PlinkoGame() {
   const [mode, setMode] = useState<Mode>('manual');
   const [autoConfig, setAutoConfig] = useState<AutoConfig>({ count: 10, stopOnProfit: 0, stopOnLoss: 0 });
   const [autoActive, setAutoActive] = useState(false);
+  /** Bulk-drop count for the manual drop button. Real Stake Plinko
+   *  lets a single click queue 1/5/10/25 balls in rapid succession.
+   *  Total cost shown on the button so the player sees the stake
+   *  before pressing. */
+  const [bulkCount, setBulkCount] = useState<1 | 5 | 10 | 25>(1);
   const [activeBalls, setActiveBalls] = useState<ActiveBall[]>([]);
   const [recentResults, setRecentResults] = useState<{ id: number; multiplier: number }[]>([]);
   const [flashingBucket, setFlashingBucket] = useState<number | null>(null);
@@ -205,14 +210,41 @@ export function PlinkoGame() {
             </>
           )}
           {mode === 'manual' ? (
-            <button
-              onClick={() => void drop()}
-              disabled={balance.balance < bet || bet <= 0}
-              style={{ touchAction: 'manipulation' }}
-              className="w-full py-3.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
-            >
-              Drop · {fmtCurrency(bet)}
-            </button>
+            <>
+              {/* Bulk-drop selector — one click queues N balls with
+                  small stagger so they fall in a cascade. Real Stake
+                  Plinko has this for rapid play. */}
+              <div className="flex gap-1.5">
+                {([1, 5, 10, 25] as const).map((n) => (
+                  <button
+                    key={n}
+                    onClick={() => setBulkCount(n)}
+                    disabled={autoActive}
+                    className={`flex-1 py-1.5 rounded-lg text-[11px] font-mono font-bold tabular-nums transition disabled:opacity-50 ${
+                      bulkCount === n
+                        ? 'bg-accent-gold text-bg shadow-[0_0_10px_rgba(255,209,102,.45)]'
+                        : 'bg-bg-elev border border-edge text-ink-dim hover:text-ink'
+                    }`}
+                  >
+                    ×{n}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => {
+                  // Stagger drops 80ms apart so the balls fall in a
+                  // visible cascade rather than overlapping perfectly.
+                  for (let i = 0; i < bulkCount; i++) {
+                    window.setTimeout(() => { void drop(); }, i * 80);
+                  }
+                }}
+                disabled={balance.balance < bet * bulkCount || bet <= 0}
+                style={{ touchAction: 'manipulation' }}
+                className="w-full py-3.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
+              >
+                Drop {bulkCount > 1 ? `×${bulkCount}` : ''} · {fmtCurrency(bet * bulkCount)}
+              </button>
+            </>
           ) : (
             <button
               onClick={() => setAutoActive((a) => !a)}
