@@ -2,6 +2,7 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
 import { useGame } from '../../../game-context';
+import { useHotkey } from '../../../hooks/useHotkey';
 import { createRng } from '../../../lib/fairness';
 import { fmtCurrency, fmtMultiplier } from '../../../lib/format';
 import { BetInput } from '../_shared/BetInput';
@@ -254,6 +255,13 @@ export function MinesGame() {
     runOnce: playOneAutoRound,
     onStop: () => setAutoActive(false),
   });
+
+  // Space-to-cashout — only when a round is in progress. Outside a
+  // round Space would be ambiguous (which tile?). Real Stake binds
+  // Space to "Cash Out" mid-round.
+  useHotkey(' ', () => {
+    if (inGame && picks > 0) doCashOut();
+  }, mode === 'manual');
 
   return (
     <OriginalPageLayout title="Mines">
