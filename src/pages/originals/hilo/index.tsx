@@ -24,6 +24,10 @@ export function HiloGame() {
   const [phase, setPhase] = useState<Phase>('idle');
   const [current, setCurrent] = useState<Card | null>(null);
   const [previous, setPrevious] = useState<Card | null>(null);
+  /** History of drawn cards across the current streak. Most recent
+   *  first. Real Stake Hilo shows this strip so players can track
+   *  which way the deck has been going. Cleared on round end. */
+  const [cardHistory, setCardHistory] = useState<Card[]>([]);
   const [picks, setPicks] = useState(0);
   const [accumMult, setAccumMult] = useState(1);
   const [busy, setBusy] = useState(false);
@@ -40,6 +44,7 @@ export function HiloGame() {
     setPrevious(null);
     setPicks(0);
     setAccumMult(1);
+    setCardHistory([first]);
     setPhase('playing');
   }, [busy, balance, bet, fairness, sound]);
 
@@ -64,6 +69,7 @@ export function HiloGame() {
       setTimeout(() => {
         setPrevious(current);
         setCurrent(next);
+        setCardHistory((h) => [next, ...h].slice(0, 12));
         if (correct) {
           const nextMult = +(accumMult * stepMult).toFixed(4);
           setAccumMult(nextMult);
@@ -130,6 +136,7 @@ export function HiloGame() {
     setTimeout(() => {
       setPrevious(current);
       setCurrent(next);
+      setCardHistory((h) => [next, ...h].slice(0, 12));
       setBusy(false);
     }, 250);
   }, [current, phase, busy, fairness, sound]);
@@ -140,6 +147,7 @@ export function HiloGame() {
     setPrevious(null);
     setPicks(0);
     setAccumMult(1);
+    setCardHistory([]);
   }, []);
 
   const hMult = current ? higherMult(current.rank) : 0;
@@ -199,6 +207,46 @@ export function HiloGame() {
             </AnimatePresence>
           </div>
         </div>
+
+        {/* Streak ladder — recent cards drawn this round. Real Stake
+            Hilo shows this strip so players can track which way the
+            deck has been going. Most recent first; cleared on reset. */}
+        {cardHistory.length > 1 && (
+          <div className="rounded-xl bg-bg-card border border-edge p-2.5">
+            <div className="text-[10px] uppercase tracking-widest text-ink-mute mb-1.5 px-1">
+              This streak ({cardHistory.length})
+            </div>
+            <div className="flex items-center gap-1 overflow-x-auto">
+              <AnimatePresence initial={false}>
+                {cardHistory.map((c, i) => {
+                  const red = c.suit === '♥' || c.suit === '♦';
+                  return (
+                    <motion.span
+                      key={`${i}-${c.rank}-${c.suit}`}
+                      layout
+                      initial={{ scale: 0.5, opacity: 0, x: -8 }}
+                      animate={{ scale: 1, opacity: 1, x: 0 }}
+                      exit={{ scale: 0.6, opacity: 0 }}
+                      transition={{ type: 'spring', stiffness: 380, damping: 24 }}
+                      className="font-mono font-bold text-[11px] tabular-nums min-w-[28px] h-[28px] px-1 rounded-md flex flex-col items-center justify-center flex-shrink-0 leading-none"
+                      style={{
+                        background: i === 0
+                          ? 'linear-gradient(180deg, #fffbe1, #ffe9a8)'
+                          : 'linear-gradient(180deg, #f5f0e4, #e8dfc9)',
+                        border: i === 0 ? '1.5px solid #c8932e' : '1px solid rgba(200,147,46,.5)',
+                        color: red ? '#c8102e' : '#1a0f00',
+                        boxShadow: i === 0 ? '0 0 8px rgba(255,209,102,.5)' : 'none',
+                      }}
+                    >
+                      <span>{rankLabel(c.rank)}</span>
+                      <span className="text-[9px]">{c.suit}</span>
+                    </motion.span>
+                  );
+                })}
+              </AnimatePresence>
+            </div>
+          </div>
+        )}
 
         {/* Pre-game / lost */}
         {phase !== 'playing' ? (
