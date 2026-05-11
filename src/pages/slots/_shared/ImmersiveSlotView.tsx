@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { loadJson, saveJson } from '../../../lib/storage';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useGame } from '../../../game-context';
+import { useHotkey } from '../../../hooks/useHotkey';
 import { useMusic } from '../../../hooks/useMusic';
 import { createRng } from '../../../lib/fairness';
 import { fireConfetti } from '../../../lib/confetti';
@@ -840,6 +841,19 @@ export function ImmersiveSlotView({
     },
     [ante, balance, bet, cfg, fairness, history, playFrames, sound],
   );
+
+  // Space-to-spin hotkey — real Pragmatic mobile players Space-spam
+  // through bonuses. Disabled while autoplay is running (it has its
+  // own loop) and while the bigWin overlay is showing (so the
+  // celebration animation isn't cut short).
+  useHotkey(' ', () => {
+    if (autoplay) {
+      setAutoplay(null);
+      return;
+    }
+    if (busy || balance.balance < (ante ? bet * cfg.ante.betMultiplier : bet)) return;
+    runRound('spin');
+  }, !autoplay);
 
   // Ambient lightning — every 12-30s a faint distant lightning flash flickers
   // across the painted scene's sky area. Pure atmosphere, independent of
