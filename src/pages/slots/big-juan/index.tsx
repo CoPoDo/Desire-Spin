@@ -635,16 +635,18 @@ export function BigJuan() {
         <JuanCharacter mood={juanMood} />
 
         {/* Wild Switch banner */}
+        {/* Wild Switch banner — flex-centered wrapper so the animated
+         *  motion.div's transform (scale) doesn't clobber the centering
+         *  translate (which Tailwind's -translate-x-1/2 would have set
+         *  via the same CSS `transform` property). */}
         <AnimatePresence>
           {showWildSwitch && (
-            <motion.div
-              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 pointer-events-none"
-              initial={{ scale: 0.5, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 1.2, opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 280, damping: 16 }}
-            >
-              <div
+            <div className="absolute inset-0 z-40 flex items-center justify-center pointer-events-none">
+              <motion.div
+                initial={{ scale: 0.5, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 1.2, opacity: 0 }}
+                transition={{ type: 'spring', stiffness: 280, damping: 16 }}
                 className="px-6 py-3 rounded-2xl font-display font-extrabold text-2xl text-center"
                 style={{
                   background: 'linear-gradient(180deg, #ff5560, #c8102e)',
@@ -655,40 +657,34 @@ export function BigJuan() {
                 }}
               >
                 WILD SWITCH! 🌶️
-              </div>
-            </motion.div>
+              </motion.div>
+            </div>
           )}
         </AnimatePresence>
 
-        {/* FS trigger banner — multi-phase per bible Part 8.1.
-         *    Phase 'pulse' shows just the piñata icon throbbing (the
-         *    moment the player realises 3+ scatters landed).
-         *    Phase 'banner' brings in the BONUS! + respins-count text. */}
+        {/* FS trigger banner — multi-phase per bible Part 8.1. */}
         <AnimatePresence>
           {showFsTrigger !== null && triggerPhase === 'pulse' && (
-            <motion.div
-              key="trigger-pulse"
-              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 pointer-events-none"
-              initial={{ scale: 0.6, opacity: 0 }}
-              animate={{ scale: [1, 1.18, 1], opacity: 1 }}
-              exit={{ scale: 1.2, opacity: 0 }}
-              transition={{ duration: 0.55, repeat: Infinity, ease: 'easeInOut' }}
-            >
-              <span className="inline-block" style={{ width: 88, height: 88, filter: 'drop-shadow(0 0 30px rgba(255,209,102,.95))' }}>
+            <div key="trigger-pulse-wrap" className="absolute inset-0 z-40 flex items-center justify-center pointer-events-none">
+              <motion.span
+                initial={{ scale: 0.6, opacity: 0 }}
+                animate={{ scale: [1, 1.18, 1], opacity: 1 }}
+                exit={{ scale: 1.2, opacity: 0 }}
+                transition={{ duration: 0.55, repeat: Infinity, ease: 'easeInOut' }}
+                className="inline-block"
+                style={{ width: 88, height: 88, filter: 'drop-shadow(0 0 30px rgba(255,209,102,.95))' }}
+              >
                 <PinataSvg />
-              </span>
-            </motion.div>
+              </motion.span>
+            </div>
           )}
           {showFsTrigger !== null && triggerPhase === 'banner' && (
-            <motion.div
-              key="trigger-banner"
-              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 pointer-events-none"
-              initial={{ scale: 0.5, opacity: 0, rotate: -8 }}
-              animate={{ scale: 1, opacity: 1, rotate: 0 }}
-              exit={{ scale: 1.2, opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 280, damping: 16 }}
-            >
-              <div
+            <div key="trigger-banner-wrap" className="absolute inset-0 z-40 flex items-center justify-center pointer-events-none">
+              <motion.div
+                initial={{ scale: 0.5, opacity: 0, rotate: -8 }}
+                animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                exit={{ scale: 1.2, opacity: 0 }}
+                transition={{ type: 'spring', stiffness: 280, damping: 16 }}
                 className="px-7 py-4 rounded-2xl font-display font-extrabold text-center"
                 style={{
                   background: 'linear-gradient(180deg, #ffd166, #ff5560)',
@@ -706,8 +702,8 @@ export function BigJuan() {
                 <div className="text-base mt-1">
                   {showFsTrigger}× PIÑATA · {showFsTrigger === 3 ? 10 : showFsTrigger === 4 ? 12 : 15} FREE RESPINS
                 </div>
-              </div>
-            </motion.div>
+              </motion.div>
+            </div>
           )}
         </AnimatePresence>
       </main>
@@ -1055,13 +1051,20 @@ export function BigJuan() {
               onClick={() => setBuyBonusConfirm(false)}
               aria-label="Cancel buy bonus"
             />
-            <motion.div
-              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[160] w-[min(92vw,360px)] max-h-[calc(100dvh-1.5rem)] overflow-y-auto rounded-2xl p-5"
-              initial={{ scale: 0.85, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 280, damping: 22 }}
-              style={{
+            {/* Centering wrapper — Tailwind's -translate-x-1/2 was being
+             *  overwritten by framer-motion's animated transform (scale),
+             *  which kept the modal's left edge at left:50% and pushed it
+             *  off-screen on phones. A non-animated flex parent centers
+             *  the modal so the motion.div is free to animate transforms
+             *  without affecting positioning. */}
+            <div className="fixed inset-0 z-[160] flex items-center justify-center p-4 pointer-events-none">
+              <motion.div
+                className="pointer-events-auto w-[min(92vw,360px)] max-h-[calc(100dvh-1.5rem)] overflow-y-auto rounded-2xl p-5"
+                initial={{ scale: 0.85, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                transition={{ type: 'spring', stiffness: 280, damping: 22 }}
+                style={{
                 background: 'radial-gradient(80% 60% at 50% 38%, #c8102e 0%, #5a0810 60%, #14040a 100%)',
                 border: '2px solid #ffd166',
                 boxShadow: '0 0 32px rgba(255,85,96,.55), 0 16px 32px rgba(0,0,0,.6)',
@@ -1122,7 +1125,8 @@ export function BigJuan() {
                   Buy · {fmtCurrency(buyBonusCost)}
                 </button>
               </div>
-            </motion.div>
+              </motion.div>
+            </div>
           </>
         )}
       </AnimatePresence>
@@ -1341,8 +1345,12 @@ function Paytable({
             onClick={onClose}
             aria-label="Close paytable"
           />
+          {/* Centering wrapper — see Buy Bonus modal for why this is
+           *  separated from the animated motion.div (Tailwind translate
+           *  + framer-motion scale conflict pushes the modal off-screen). */}
+          <div className="fixed inset-0 z-[160] flex items-center justify-center p-3 pointer-events-none">
           <motion.div
-            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[160] w-[min(94vw,440px)] max-h-[calc(100dvh-1.5rem)] overflow-y-auto rounded-2xl p-5"
+            className="pointer-events-auto w-[min(94vw,440px)] max-h-[calc(100dvh-1.5rem)] overflow-y-auto rounded-2xl p-5"
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
@@ -1532,6 +1540,7 @@ function Paytable({
               </div>
             </div>
           </motion.div>
+          </div>
         </>
       )}
     </AnimatePresence>
