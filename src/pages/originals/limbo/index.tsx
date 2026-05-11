@@ -211,6 +211,24 @@ export function LimboGame() {
           <div className="flex items-center justify-between text-[10px] uppercase tracking-widest text-ink-mute mt-2">
             <span>1.01×</span><span>5×</span><span>25×</span><span>100×</span>
           </div>
+          {/* Quick-pick presets — common targets players set with one tap.
+              Matches Stake's shortcut chips below the slider. */}
+          <div className="flex gap-1.5 mt-3">
+            {[1.5, 2, 4, 10, 100].map((t) => (
+              <button
+                key={t}
+                onClick={() => setTarget(t)}
+                disabled={busy || autoActive}
+                className={`flex-1 py-1.5 rounded-lg text-[11px] font-mono font-bold tabular-nums transition disabled:opacity-50 ${
+                  Math.abs(target - t) < 0.01
+                    ? 'bg-accent text-bg shadow-[0_0_10px_rgba(31,255,122,.45)]'
+                    : 'bg-bg-elev border border-edge text-ink-dim hover:text-ink hover:border-accent/40'
+                }`}
+              >
+                {t}×
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-2">
