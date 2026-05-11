@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
+import { useHotkey } from '../../../hooks/useHotkey';
 import { useGame } from '../../../game-context';
 import { createRng } from '../../../lib/fairness';
 import { fmtCurrency } from '../../../lib/format';
@@ -99,6 +100,8 @@ export function WheelGame() {
     runOnce: playOnce,
     onStop: () => setAutoActive(false),
   });
+
+  useHotkey(' ', () => { if (mode === 'manual') void playOnce(); }, !autoActive);
 
   return (
     <OriginalPageLayout title="Wheel">

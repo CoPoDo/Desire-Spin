@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
+import { useHotkey } from '../../../hooks/useHotkey';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
 import { useGame } from '../../../game-context';
@@ -81,6 +82,8 @@ export function DiamondsGame() {
     runOnce: playOnce,
     onStop: () => setAutoActive(false),
   });
+
+  useHotkey(' ', () => { if (mode === 'manual') void playOnce(); }, !autoActive);
 
   return (
     <OriginalPageLayout title="Diamonds">
