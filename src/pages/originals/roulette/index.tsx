@@ -246,11 +246,23 @@ export function RouletteGame() {
           </div>
         )}
 
-        {/* Betting board */}
+        {/* Betting board — column-major layout matching real European
+            roulette: top row = column 3 (3,6,...,36), middle = column 2,
+            bottom = column 1. The 0 cell spans all three rows on the
+            left; the "2:1" column-bet cells span the right edge so the
+            player can bet on an entire 12-number column. */}
         <div className="rounded-2xl bg-bg-card border border-edge p-2 space-y-1.5">
-          {/* 0 + 36 numbers */}
+          {/* Number table */}
           <div className="flex gap-1">
-            <NumberCell n={0} chip={chips[keyOf({ kind: 'number', n: 0 })]} onClick={() => placeChip({ kind: 'number', n: 0 })} className="w-12" />
+            {/* 0 cell — visually spans all three rows */}
+            <NumberCell
+              n={0}
+              chip={chips[keyOf({ kind: 'number', n: 0 })]}
+              onClick={() => placeChip({ kind: 'number', n: 0 })}
+              className="w-10 h-auto self-stretch"
+              fullHeight
+            />
+            {/* 12 columns × 3 rows of numbers */}
             <div className="flex-1 grid grid-cols-12 gap-1">
               {numberCells.map((n) => (
                 <NumberCell
@@ -261,10 +273,24 @@ export function RouletteGame() {
                 />
               ))}
             </div>
+            {/* Column bets — one per row. Top-row column bet = column 3
+                (numbers 3, 6, 9, ..., 36); middle = column 2; bottom
+                = column 1. Each pays 2:1 (3× including stake). */}
+            <div className="flex flex-col gap-1 w-9">
+              {[3, 2, 1].map((c) => (
+                <BetCell
+                  key={c}
+                  label="2:1"
+                  compact
+                  chip={chips[keyOf({ kind: 'column', column: c as 1 | 2 | 3 })]}
+                  onClick={() => placeChip({ kind: 'column', column: c as 1 | 2 | 3 })}
+                />
+              ))}
+            </div>
           </div>
           {/* Dozens */}
           <div className="flex gap-1">
-            <div className="w-12" />
+            <div className="w-10" />
             <div className="flex-1 grid grid-cols-3 gap-1">
               {[1, 2, 3].map((d) => (
                 <BetCell
@@ -275,10 +301,11 @@ export function RouletteGame() {
                 />
               ))}
             </div>
+            <div className="w-9" />
           </div>
           {/* Outside bets */}
           <div className="flex gap-1">
-            <div className="w-12" />
+            <div className="w-10" />
             <div className="flex-1 grid grid-cols-6 gap-1">
               <BetCell label="1-18" chip={chips[keyOf({ kind: 'half', half: 'low' })]} onClick={() => placeChip({ kind: 'half', half: 'low' })} />
               <BetCell label="Even" chip={chips[keyOf({ kind: 'parity', parity: 'even' })]} onClick={() => placeChip({ kind: 'parity', parity: 'even' })} />
@@ -287,6 +314,7 @@ export function RouletteGame() {
               <BetCell label="Odd" chip={chips[keyOf({ kind: 'parity', parity: 'odd' })]} onClick={() => placeChip({ kind: 'parity', parity: 'odd' })} />
               <BetCell label="19-36" chip={chips[keyOf({ kind: 'half', half: 'high' })]} onClick={() => placeChip({ kind: 'half', half: 'high' })} />
             </div>
+            <div className="w-9" />
           </div>
         </div>
 
@@ -350,17 +378,22 @@ function NumberCell({
   chip,
   onClick,
   className = '',
+  fullHeight = false,
 }: {
   n: number;
   chip?: number;
   onClick: () => void;
   className?: string;
+  /** When true, drop the aspect-square constraint so the cell can
+   *  stretch (used by the 0 cell which spans all three rows of the
+   *  number grid). */
+  fullHeight?: boolean;
 }) {
   const color = colorOf(n);
   return (
     <button
       onClick={onClick}
-      className={`relative aspect-square rounded font-mono font-bold text-[10px] sm:text-xs flex items-center justify-center transition active:scale-95 ${className}`}
+      className={`relative ${fullHeight ? '' : 'aspect-square'} rounded font-mono font-bold text-[10px] sm:text-xs flex items-center justify-center transition active:scale-95 ${className}`}
       style={{
         background:
           color === 'red' ? '#c8102e' :
@@ -388,16 +421,21 @@ function BetCell({
   tone,
   chip,
   onClick,
+  compact = false,
 }: {
   label: string;
   tone?: 'red' | 'black';
   chip?: number;
   onClick: () => void;
+  /** Column bets are tall+narrow; use aspect-square so they match the
+   *  number cells' row height instead of the default 2:1 outside-bet
+   *  proportions. */
+  compact?: boolean;
 }) {
   return (
     <button
       onClick={onClick}
-      className="relative aspect-[2/1] rounded font-mono font-bold text-[10px] sm:text-xs flex items-center justify-center transition active:scale-95"
+      className={`relative ${compact ? 'aspect-square' : 'aspect-[2/1]'} rounded font-mono font-bold text-[10px] sm:text-xs flex items-center justify-center transition active:scale-95`}
       style={{
         background:
           tone === 'red' ? '#c8102e' :
