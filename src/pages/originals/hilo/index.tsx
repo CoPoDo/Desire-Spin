@@ -8,7 +8,9 @@ import { BetInput } from '../_shared/BetInput';
 import {
   type Card,
   drawCard,
+  higherChance,
   higherMult,
+  lowerChance,
   lowerMult,
   rankLabel,
 } from './engine';
@@ -142,6 +144,15 @@ export function HiloGame() {
 
   const hMult = current ? higherMult(current.rank) : 0;
   const lMult = current ? lowerMult(current.rank) : 0;
+  const hPct = current ? higherChance(current.rank) * 100 : 0;
+  const lPct = current ? lowerChance(current.rank) * 100 : 0;
+  // Real Stake Hilo label convention: at the boundary cards (Ace
+  // can't go lower, King can't go higher) the button just reads
+  // "Same" since that's the only winning outcome. Middle cards use
+  // "Higher or Same" / "Lower or Same" matching our engine's
+  // inclusive rule.
+  const hLabel = current?.rank === 13 ? 'Same' : current?.rank === 1 ? 'Higher' : 'Higher or =';
+  const lLabel = current?.rank === 1 ? 'Same' : current?.rank === 13 ? 'Lower' : 'Lower or =';
   const cashoutAmount = +(bet * accumMult).toFixed(2);
 
   return (
@@ -208,26 +219,39 @@ export function HiloGame() {
           </div>
         ) : (
           <div className="space-y-3">
-            {/* Higher / Lower buttons */}
+            {/* Higher / Lower buttons. Real Stake Hilo always shows the
+                win chance directly on each button so the player can
+                weigh risk vs payout at a glance. The arrow icon makes
+                the direction unmistakable on phones. */}
             <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={() => guess('higher')}
                 disabled={busy}
-                className="rounded-xl bg-bg-card border border-edge p-4 hover:bg-bg-hover disabled:opacity-50 transition active:scale-[0.98]"
+                className="rounded-xl bg-bg-card border border-edge p-3 hover:bg-bg-hover disabled:opacity-50 transition active:scale-[0.98]"
               >
-                <div className="text-xs uppercase tracking-widest text-ink-mute">Higher or =</div>
+                <div className="text-[10px] uppercase tracking-widest text-ink-mute flex items-center justify-center gap-1">
+                  <span className="text-accent">▲</span> {hLabel}
+                </div>
                 <div className="font-mono font-bold text-xl text-accent mt-1 tabular-nums">
                   {hMult > 0 ? fmtMultiplier(hMult) : '—'}
+                </div>
+                <div className="text-[9px] font-mono text-ink-mute tabular-nums mt-0.5">
+                  {hPct > 0 ? `${hPct.toFixed(1)}%` : '—'}
                 </div>
               </button>
               <button
                 onClick={() => guess('lower')}
                 disabled={busy}
-                className="rounded-xl bg-bg-card border border-edge p-4 hover:bg-bg-hover disabled:opacity-50 transition active:scale-[0.98]"
+                className="rounded-xl bg-bg-card border border-edge p-3 hover:bg-bg-hover disabled:opacity-50 transition active:scale-[0.98]"
               >
-                <div className="text-xs uppercase tracking-widest text-ink-mute">Lower or =</div>
+                <div className="text-[10px] uppercase tracking-widest text-ink-mute flex items-center justify-center gap-1">
+                  <span className="text-accent">▼</span> {lLabel}
+                </div>
                 <div className="font-mono font-bold text-xl text-accent mt-1 tabular-nums">
                   {lMult > 0 ? fmtMultiplier(lMult) : '—'}
+                </div>
+                <div className="text-[9px] font-mono text-ink-mute tabular-nums mt-0.5">
+                  {lPct > 0 ? `${lPct.toFixed(1)}%` : '—'}
                 </div>
               </button>
             </div>
