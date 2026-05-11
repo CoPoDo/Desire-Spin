@@ -29,6 +29,7 @@ function keyOf(bet: Bet): string {
     case 'anyTriple': return 'anyTriple';
     case 'specificTriple': return `triple:${bet.face}`;
     case 'total': return `total:${bet.sum}`;
+    case 'singleDie': return `single:${bet.face}`;
   }
 }
 function betOf(key: string): Bet {
@@ -37,6 +38,9 @@ function betOf(key: string): Bet {
   }
   if (key.startsWith('triple:')) {
     return { kind: 'specificTriple', face: parseInt(key.slice(7)) };
+  }
+  if (key.startsWith('single:')) {
+    return { kind: 'singleDie', face: parseInt(key.slice(7)) };
   }
   // total:N
   return { kind: 'total', sum: parseInt(key.slice(6)) };
@@ -250,6 +254,30 @@ export function SicBoGame() {
               onClick={() => placeChip({ kind: 'even' })}
               tone="violet"
             />
+          </div>
+        </div>
+
+        {/* Single die row — pick a face, pays 2× / 3× / 4× per count
+            of that face on the three dice. ~92% RTP (real Sic Bo
+            convention). High variance, low EV. */}
+        <div className="rounded-2xl bg-bg-card border border-edge p-2 space-y-1.5">
+          <div className="text-[10px] uppercase tracking-widest text-ink-mute px-1 mb-1">
+            Single Die <span className="text-ink-dim font-normal normal-case">· pays 2× / 3× / 4× per count</span>
+          </div>
+          <div className="grid grid-cols-6 gap-1">
+            {[1, 2, 3, 4, 5, 6].map((face) => (
+              <BetCell
+                key={face}
+                label={`${face}`}
+                sub="dice"
+                payout={2}
+                chip={chips[keyOf({ kind: 'singleDie', face })]}
+                onClick={() => placeChip({ kind: 'singleDie', face })}
+                tone="cyan"
+                compact
+                hidePayout
+              />
+            ))}
           </div>
         </div>
 

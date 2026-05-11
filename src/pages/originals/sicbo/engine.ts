@@ -61,7 +61,8 @@ export type Bet =
   | { kind: 'even' }
   | { kind: 'anyTriple' }
   | { kind: 'specificTriple'; face: number } // 1..6
-  | { kind: 'total'; sum: number };          // 4..17
+  | { kind: 'total'; sum: number }           // 4..17
+  | { kind: 'singleDie'; face: number };     // 1..6, pays per count
 
 export type Roll = [number, number, number];
 
@@ -98,6 +99,17 @@ export function payoutMultiplier(bet: Bet, r: Roll): number {
       // disqualified, so RTP fell to ~89-95% for those sums instead
       // of the 99% target.
       return sum === bet.sum ? (SUM_PAYOUTS[bet.sum] ?? 0) : 0;
+    case 'singleDie': {
+      // Real Sic Bo "single die" wager: pays 1:1 / 2:1 / 3:1 (returns
+      // 2× / 3× / 4× including stake) when the chosen face appears
+      // on 1 / 2 / 3 of the three dice. RTP = (75×2 + 15×3 + 1×4)/216
+      // ≈ 92.13% — high house edge by design, matches real Sic Bo.
+      const count =
+        (r[0] === bet.face ? 1 : 0) +
+        (r[1] === bet.face ? 1 : 0) +
+        (r[2] === bet.face ? 1 : 0);
+      return count === 0 ? 0 : count + 1; // 2× / 3× / 4×
+    }
   }
 }
 
