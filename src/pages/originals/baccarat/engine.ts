@@ -44,7 +44,16 @@ export type BaccaratRound = {
   playerTotal: number;
   bankerTotal: number;
   winner: Side;
+  /** First two cards of each side match in rank — pays the pair side
+   *  bets. Computed at deal time. */
+  playerPair: boolean;
+  bankerPair: boolean;
 };
+
+/** Side-bet kinds supported on the Baccarat table. The two main bets
+ *  (player/banker/tie) are Side; the two side bets are first-two-card
+ *  pair bets at 11:1, matching real Punto Banco. */
+export type BetKind = Side | 'playerPair' | 'bankerPair';
 
 export function play(rng: Rng): BaccaratRound {
   const player: Card[] = [drawCard(rng), drawCard(rng)];
@@ -83,16 +92,29 @@ export function play(rng: Rng): BaccaratRound {
   }
 
   const winner: Side = pTotal > bTotal ? 'player' : bTotal > pTotal ? 'banker' : 'tie';
-  return { player, banker, playerTotal: pTotal, bankerTotal: bTotal, winner };
+  const playerPair = player.length >= 2 && player[0]!.rank === player[1]!.rank;
+  const bankerPair = banker.length >= 2 && banker[0]!.rank === banker[1]!.rank;
+  return { player, banker, playerTotal: pTotal, bankerTotal: bTotal, winner, playerPair, bankerPair };
 }
 
-export function payoutFor(side: Side, bet: number, winner: Side): number {
-  if (side === winner) {
-    if (side === 'player') return bet * 2;
-    if (side === 'banker') return +(bet * 1.95).toFixed(2); // 5% commission
-    return bet * 9; // tie
+export function payoutFor(kind: BetKind, bet: number, round: BaccaratRound): number {
+  const { winner, playerPair, bankerPair } = round;
+  switch (kind) {
+    case 'player':
+      if (winner === 'player') return bet * 2;
+      if (winner === 'tie') return bet; // push
+      return 0;
+    case 'banker':
+      if (winner === 'banker') return +(bet * 1.95).toFixed(2); // 5% commission
+      if (winner === 'tie') return bet; // push
+      return 0;
+    case 'tie':
+      return winner === 'tie' ? bet * 9 : 0;
+    case 'playerPair':
+      // Real Baccarat pair side bet: 11:1 (pays 12× including stake)
+      // when the first two cards of player match in rank.
+      return playerPair ? bet * 12 : 0;
+    case 'bankerPair':
+      return bankerPair ? bet * 12 : 0;
   }
-  // Tie returns Player and Banker bets (push) — common Punto Banco rule
-  if (winner === 'tie' && side !== 'tie') return bet;
-  return 0;
 }

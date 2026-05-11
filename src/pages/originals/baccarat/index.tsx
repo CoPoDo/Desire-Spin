@@ -8,33 +8,34 @@ import { BetInput } from '../_shared/BetInput';
 import {
   type BaccaratRound,
   type Card,
-  type Side,
   payoutFor,
   play,
   rankLabel,
 } from './engine';
+import type { BetKind } from './engine';
 import { fireConfetti } from '../../../lib/confetti';
 
-type Bets = { player: number; banker: number; tie: number };
+type Bets = { player: number; banker: number; tie: number; playerPair: number; bankerPair: number };
+const BET_KINDS: BetKind[] = ['player', 'banker', 'tie', 'playerPair', 'bankerPair'];
 
 export function BaccaratGame() {
   const { balance, fairness, sound, history, session } = useGame();
   const [bet, setBet] = useState(1);
-  const [bets, setBets] = useState<Bets>({ player: 0, banker: 0, tie: 0 });
+  const [bets, setBets] = useState<Bets>({ player: 0, banker: 0, tie: 0, playerPair: 0, bankerPair: 0 });
   const [round, setRound] = useState<BaccaratRound | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const totalBet = bets.player + bets.banker + bets.tie;
+  const totalBet = bets.player + bets.banker + bets.tie + bets.playerPair + bets.bankerPair;
 
-  const place = useCallback((side: Side) => {
+  const place = useCallback((kind: BetKind) => {
     if (busy) return;
     sound.play('tick');
-    setBets((b) => ({ ...b, [side]: +(b[side] + bet).toFixed(2) }));
+    setBets((b) => ({ ...b, [kind]: +(b[kind] + bet).toFixed(2) }));
   }, [busy, bet, sound]);
 
   const clear = useCallback(() => {
     if (busy) return;
-    setBets({ player: 0, banker: 0, tie: 0 });
+    setBets({ player: 0, banker: 0, tie: 0, playerPair: 0, bankerPair: 0 });
     setRound(null);
   }, [busy]);
 
@@ -48,8 +49,8 @@ export function BaccaratGame() {
     const r = play(rng);
     setRound(r);
     let totalPayout = 0;
-    (['player', 'banker', 'tie'] as Side[]).forEach((s) => {
-      if (bets[s] > 0) totalPayout += payoutFor(s, bets[s], r.winner);
+    BET_KINDS.forEach((k) => {
+      if (bets[k] > 0) totalPayout += payoutFor(k, bets[k], r);
     });
     // Per-card deal SFX matching the staggered CardView entrance
     // (delay = i * 100ms in HandPanel). Both hands deal in parallel,
@@ -122,11 +123,19 @@ export function BaccaratGame() {
           </div>
         )}
 
-        {/* Betting buttons */}
+        {/* Main betting buttons */}
         <div className="grid grid-cols-3 gap-2">
           <BetButton label="Player" mult="2×" tone="cyan" amount={bets.player} onClick={() => place('player')} />
           <BetButton label="Tie" mult="9×" tone="gold" amount={bets.tie} onClick={() => place('tie')} />
           <BetButton label="Banker" mult="1.95×" tone="hot" amount={bets.banker} onClick={() => place('banker')} />
+        </div>
+        {/* Pair side bets — real Baccarat staple. Each pays 11:1 (12×
+            returned) when the first two cards of the named side match
+            in rank. ~7.7% probability per pair, ~92.3% RTP — a high-
+            variance side spice for players who want the lottery shot. */}
+        <div className="grid grid-cols-2 gap-2">
+          <BetButton label="Player Pair" mult="11×" tone="cyan" amount={bets.playerPair} onClick={() => place('playerPair')} compact />
+          <BetButton label="Banker Pair" mult="11×" tone="hot" amount={bets.bankerPair} onClick={() => place('bankerPair')} compact />
         </div>
 
         {/* Bet panel */}
@@ -208,17 +217,19 @@ function BetButton({
   tone,
   amount,
   onClick,
+  compact = false,
 }: {
   label: string;
   mult: string;
   tone: 'cyan' | 'hot' | 'gold';
   amount: number;
   onClick: () => void;
+  compact?: boolean;
 }) {
   return (
     <button
       onClick={onClick}
-      className="relative rounded-xl py-3 transition active:scale-95"
+      className={`relative rounded-xl ${compact ? 'py-2' : 'py-3'} transition active:scale-95`}
       style={{
         background:
           tone === 'cyan' ? 'linear-gradient(180deg, #1a4a6a, #0a2530)' :
@@ -228,7 +239,7 @@ function BetButton({
       }}
     >
       <div
-        className="font-mono font-bold uppercase tracking-wider text-sm"
+        className={`font-mono font-bold uppercase tracking-wider ${compact ? 'text-xs' : 'text-sm'}`}
         style={{
           color: tone === 'cyan' ? '#a8e1ff' : tone === 'gold' ? '#fff5c4' : '#ffd1d6',
         }}
@@ -236,7 +247,7 @@ function BetButton({
         {label}
       </div>
       <div
-        className="font-mono font-semibold text-[10px] mt-0.5"
+        className={`font-mono font-semibold ${compact ? 'text-[9px]' : 'text-[10px]'} mt-0.5`}
         style={{ color: 'rgba(255,255,255,.6)' }}
       >
         {mult}
