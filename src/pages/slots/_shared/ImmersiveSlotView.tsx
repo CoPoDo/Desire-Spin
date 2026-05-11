@@ -128,6 +128,12 @@ const TURBO_MIN_DELAY: Record<string, number> = {
 };
 
 const TURBO_FACTOR = 0.30;
+/** Milder turbo for FREE SPINS — real Pragmatic doesn't let turbo
+ *  blow through the bonus. Players need to actually SEE the board
+ *  between spins or the FS round becomes one long blur. 0.65 cuts
+ *  delays by ~35% (vs 70% in base game) so FS still feels snappier
+ *  than non-turbo but each spin remains readable. */
+const TURBO_FACTOR_FS = 0.65;
 const SKIP_DELAY_FACTOR = 0.05;
 // Big visual moments are never skippable past these floors.
 const SKIP_MIN_DELAY: Record<string, number> = {
@@ -315,8 +321,15 @@ export function ImmersiveSlotView({
           lastFrameKind === 'final' &&
           frame.kind === 'initialDrop'
         ) {
+          // Breather between consecutive free spins. In turbo we used
+          // 240ms which felt too fast — the new board only showed for
+          // a quarter-second before the next spin's drop started, so
+          // players couldn't actually read what they got. Bumped to
+          // 600ms in turbo (~80% of non-turbo) so the board has time
+          // to settle, then the next drop begins. Skip mode still
+          // collapses to 0.
           const breather = turboRef.current
-            ? (skipRef.current ? 0 : 240)
+            ? (skipRef.current ? 0 : 600)
             : 750;
           if (breather > 0) await sleep(breather);
           if (!aliveRef.current) return;
@@ -747,7 +760,15 @@ export function ImmersiveSlotView({
         const baseDelay = FRAME_DELAY[frame.kind] ?? 200;
         let delay = baseDelay;
         if (turboRef.current) {
-          delay = Math.max(baseDelay * TURBO_FACTOR, TURBO_MIN_DELAY[frame.kind] ?? 0);
+          // Free spins use a milder turbo factor so the player can
+          // actually watch each bonus spin land — real Pragmatic
+          // does this too (turbo doesn't fast-forward the bonus).
+          // The min-delay table still applies as a floor.
+          const factor = inFsLocal ? TURBO_FACTOR_FS : TURBO_FACTOR;
+          const minFloor = inFsLocal
+            ? Math.max(TURBO_MIN_DELAY[frame.kind] ?? 0, baseDelay * 0.55)
+            : (TURBO_MIN_DELAY[frame.kind] ?? 0);
+          delay = Math.max(baseDelay * factor, minFloor);
         }
         if (skipRef.current) {
           delay = Math.max(baseDelay * SKIP_DELAY_FACTOR, SKIP_MIN_DELAY[frame.kind] ?? 0);
