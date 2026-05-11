@@ -32,8 +32,15 @@ export function BigBassGame() {
   const [freeSpinsRemaining, setFreeSpinsRemaining] = useState(0);
   const [freeSpinsWon, setFreeSpinsWon] = useState(0);
   const [showFsBanner, setShowFsBanner] = useState<{ count: number } | null>(null);
+  const [showBuyConfirm, setShowBuyConfirm] = useState(false);
   const stateRef = useRef({ bet });
   stateRef.current = { bet };
+
+  /** Buy-bonus cost — matches the typical 100× bet that real Pragmatic
+   *  Big Bass Bonanza charges to skip directly into free spins with
+   *  the medium (3-scatter / 10-spin) entry tier. */
+  const BUY_BONUS_MULT = 100;
+  const buyBonusCost = +(bet * BUY_BONUS_MULT).toFixed(2);
 
   /** Run one regular spin. Returns net delta. */
   const playOnce = useCallback(async (): Promise<number> => {
@@ -86,6 +93,40 @@ export function BigBassGame() {
     setBusy(false);
     return r.payout - b;
   }, [balance, fairness, history, session, sound]);
+
+  /** Buy directly into a 10-spin free-spins round (matches the medium
+   *  scatter entry tier in the real game). Costs 100× bet, no main spin. */
+  const buyFreeSpins = useCallback(async () => {
+    const b = stateRef.current.bet;
+    const cost = +(b * BUY_BONUS_MULT).toFixed(2);
+    if (busy || balance.balance < cost) return;
+    setShowBuyConfirm(false);
+    setBusy(true);
+    sound.play('click');
+    balance.debit(cost);
+    history.record({
+      game: 'Big Bass · Buy FS',
+      bet: cost,
+      payout: 0, // recorded again per-FS-spin below
+      multiplier: 0,
+      serverSeedHash: fairness.hash,
+      clientSeed: '',
+      nonce: 0,
+    });
+    session.recordSpin(cost, 0, false);
+    // Show the trigger banner before launching FS
+    setShowFsBanner({ count: 10 });
+    sound.play('free-spins-trigger');
+    await new Promise<void>((res) => setTimeout(res, 2000));
+    setShowFsBanner(null);
+    await runFreeSpins(10, b);
+    setBusy(false);
+  }, [busy, balance, sound, history, fairness, session]);
+  // runFreeSpins is hoisted via useCallback below; mutual-ref needs to be
+  // declared before this function in the file. (Order matters with
+  // TypeScript strict mode — see Blackjack.) The runFreeSpins ref is set
+  // by useEffect below to allow buyFreeSpins to call it without circular
+  // declaration issues.
 
   /** Animate revealing 5 reels left-to-right with a stagger. */
   const revealReels = useCallback(async (r: BassResult) => {
@@ -185,6 +226,96 @@ export function BigBassGame() {
   return (
     <OriginalPageLayout title="Big Bass">
       <div className="flex flex-col p-4 gap-4 max-w-md mx-auto w-full">
+        {/* Buy Free Spins confirmation dialog */}
+        <AnimatePresence>
+          {showBuyConfirm && (
+            <>
+              <motion.button
+                aria-label="Cancel buy bonus"
+                onClick={() => setShowBuyConfirm(false)}
+                className="fixed inset-0 z-[140] bg-black/75 backdrop-blur-sm"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              />
+              <motion.div
+                role="dialog"
+                aria-modal="true"
+                className="fixed inset-x-4 top-1/2 -translate-y-1/2 z-[145] max-w-sm mx-auto rounded-3xl max-h-[calc(100dvh-1.5rem)] overflow-y-auto p-5"
+                style={{
+                  background:
+                    'radial-gradient(ellipse at 50% 0%, rgba(95,184,255,.4), rgba(15,40,70,.96) 70%), linear-gradient(180deg, rgba(95,184,255,.2) 0%, rgba(8,20,40,.95) 60%, rgba(4,12,24,1) 100%)',
+                  border: '2px solid #ffd166',
+                  boxShadow: 'inset 0 1px 0 rgba(255,209,102,.55), 0 0 60px rgba(95,184,255,.4), 0 24px 80px rgba(0,0,0,.7)',
+                }}
+                initial={{ opacity: 0, scale: 0.7, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.85 }}
+                transition={{ type: 'spring', stiffness: 260, damping: 22 }}
+              >
+                <div
+                  className="font-serif italic font-bold text-center mb-1"
+                  style={{
+                    fontSize: 'clamp(22px, 6vw, 32px)',
+                    background: 'linear-gradient(180deg, #ffffff 0%, #fff5dc 30%, #ffd166 65%, rgba(0,0,0,.55) 100%)',
+                    WebkitBackgroundClip: 'text',
+                    backgroundClip: 'text',
+                    color: 'transparent',
+                    filter: 'drop-shadow(0 0 18px rgba(255,209,102,.7)) drop-shadow(0 4px 6px rgba(0,0,0,.6))',
+                  }}
+                >
+                  Buy Free Spins
+                </div>
+                <div className="text-[10px] uppercase tracking-[0.3em] text-center mb-4" style={{ color: '#fff5dc' }}>
+                  Skip the wait. Enter the bonus.
+                </div>
+                <div className="rounded-xl bg-black/40 border border-[#ffd166]/40 p-4 mb-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-ink-dim uppercase tracking-wider">You Get</span>
+                    <span className="font-serif italic font-bold text-2xl text-[#ffd166]" style={{ textShadow: '0 0 12px rgba(255,209,102,.7)' }}>
+                      10 Free Spins
+                    </span>
+                  </div>
+                  <div className="border-t border-[#ffd166]/20" />
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-ink-dim uppercase tracking-wider">Cost</span>
+                    <span className="font-mono font-bold text-2xl text-ink">{fmtCurrency(buyBonusCost)}</span>
+                  </div>
+                  <div className="text-[10px] text-ink-mute">
+                    {BUY_BONUS_MULT}× your current bet ({fmtCurrency(bet)})
+                  </div>
+                </div>
+                <p className="text-[11px] text-ink-mute mb-4 leading-relaxed">
+                  Free spins feature money symbols collected by the fisherman 🦞.
+                  Big variance — average return ≈ {fmtCurrency(buyBonusCost * 0.95)}.
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setShowBuyConfirm(false)}
+                    className="flex-1 py-3 rounded-xl bg-bg-hover border border-edge text-ink-dim font-semibold transition active:scale-95"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    disabled={balance.balance < buyBonusCost}
+                    onClick={() => void buyFreeSpins()}
+                    className="flex-1 py-3 rounded-xl font-bold disabled:opacity-50"
+                    style={{
+                      background: 'linear-gradient(180deg, #ffd166 0%, #c89832 60%, #6a4410 100%)',
+                      color: '#0a1018',
+                      border: '1.5px solid #fff5c4',
+                      boxShadow: '0 0 14px rgba(255,209,102,.5), inset 0 1px 0 rgba(255,255,255,.25)',
+                      textShadow: '0 1px 0 rgba(255,255,255,.4)',
+                    }}
+                  >
+                    Confirm
+                  </button>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+
         {/* Free-spins banner (overlay during trigger / retrigger) */}
         <AnimatePresence>
           {showFsBanner && (
@@ -427,13 +558,32 @@ export function BigBassGame() {
             </>
           )}
           {mode === 'manual' ? (
-            <button
-              onClick={() => void playOnce()}
-              disabled={busy || inFs || balance.balance < bet || bet <= 0}
-              className="w-full py-3.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
-            >
-              {inFs ? 'Free spins running…' : busy ? 'Reeling…' : `Cast · ${fmtCurrency(bet)}`}
-            </button>
+            <>
+              <button
+                onClick={() => void playOnce()}
+                disabled={busy || inFs || balance.balance < bet || bet <= 0}
+                className="w-full py-3.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
+              >
+                {inFs ? 'Free spins running…' : busy ? 'Reeling…' : `Cast · ${fmtCurrency(bet)}`}
+              </button>
+              {/* Buy Free Spins — pay 100× bet to skip directly into the
+                  10-FS round. Real Pragmatic Big Bass Bonanza ships this
+                  shortcut. Confirmation modal to prevent accidental
+                  hundred-stake fat-finger taps. */}
+              <button
+                onClick={() => setShowBuyConfirm(true)}
+                disabled={busy || inFs || balance.balance < buyBonusCost}
+                className="w-full py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
+                style={{
+                  background: 'linear-gradient(180deg, #ffd166 0%, #c89832 60%, #6a4410 100%)',
+                  color: '#0a1018',
+                  border: '1px solid #fff5c4',
+                  boxShadow: '0 0 14px rgba(255,209,102,.4)',
+                }}
+              >
+                Buy Free Spins · {fmtCurrency(buyBonusCost)}
+              </button>
+            </>
           ) : (
             <button
               onClick={() => setAutoActive((a) => !a)}
