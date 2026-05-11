@@ -106,8 +106,8 @@ export function RaceGame() {
           {phase === 'idle' && (
             <div className="text-[10px] uppercase tracking-widest text-ink-mute">
               {picked === null
-                ? 'Pick a horse'
-                : `Horse ${picked + 1} (${HORSE_NAMES[picked]}) · ${mult}× payout`}
+                ? 'Pick a horse · 8 runners'
+                : `${HORSE_NAMES[picked]} · ${mult}× payout`}
             </div>
           )}
           {phase === 'racing' && (
@@ -119,7 +119,7 @@ export function RaceGame() {
                 winner === picked ? 'text-accent' : 'text-accent-hot'
               }`}
             >
-              Horse {winner + 1} wins
+              {HORSE_NAMES[winner]} wins
               {winner === picked
                 ? ` · +${fmtCurrency(profitOnWin)}`
                 : ` · -${fmtCurrency(bet)}`}
@@ -127,8 +127,8 @@ export function RaceGame() {
           )}
         </div>
 
-        {/* Track */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-3 space-y-2">
+        {/* Track — 8 lanes, named after creative horse names */}
+        <div className="rounded-2xl bg-bg-card border border-edge p-2.5 space-y-1.5">
           {Array.from({ length: HORSE_COUNT }).map((_, i) => {
             const isPicked = picked === i;
             const isWinner = winner === i;
@@ -136,7 +136,7 @@ export function RaceGame() {
             return (
               <div
                 key={i}
-                className="relative h-10 rounded-lg overflow-hidden"
+                className="relative h-9 rounded-lg overflow-hidden"
                 style={{
                   background: 'linear-gradient(180deg, #15191f, #0e1218)',
                   border: isPicked ? `1px solid ${HORSE_COLORS[i]}` : '1px solid #2a3142',
@@ -145,9 +145,8 @@ export function RaceGame() {
                     : 'inset 0 1px 0 rgba(255,255,255,.04)',
                 }}
               >
-                {/* Finish line — proper b/w checkerboard pattern instead
-                 *  of a thin grey bar, matching how real horse-race
-                 *  finish lines are painted. */}
+                {/* Finish line — proper b/w checkerboard pattern matching
+                 *  how real horse-race finish lines are painted. */}
                 <div
                   className="absolute right-1 top-0 bottom-0 w-1.5"
                   style={{
@@ -158,15 +157,22 @@ export function RaceGame() {
                     backgroundRepeat: 'no-repeat',
                   }}
                 />
-                {/* Lane label */}
-                <div className="absolute left-2 top-1/2 -translate-y-1/2 font-mono font-bold text-xs text-ink-dim tabular-nums z-0">
+                {/* Lane label — colour-coded number */}
+                <div
+                  className="absolute left-1.5 top-1/2 -translate-y-1/2 font-mono font-bold text-[10px] tabular-nums z-0 w-5 h-5 rounded-full flex items-center justify-center"
+                  style={{
+                    background: `${HORSE_COLORS[i]}22`,
+                    color: HORSE_COLORS[i],
+                    border: `1px solid ${HORSE_COLORS[i]}55`,
+                  }}
+                >
                   {i + 1}
                 </div>
                 {/* Horse */}
                 <motion.div
-                  className="absolute top-1/2 -translate-y-1/2 text-2xl"
+                  className="absolute top-1/2 -translate-y-1/2 text-xl"
                   initial={{ left: '8%' }}
-                  animate={{ left: `calc(${final}% - 18px)` }}
+                  animate={{ left: `calc(${final}% - 16px)` }}
                   transition={{
                     duration: phase === 'racing' || phase === 'done' ? horseDuration(i) : 0,
                     ease: 'easeInOut',
@@ -191,16 +197,20 @@ export function RaceGame() {
           <div className="rounded-2xl bg-bg-card border border-edge p-4 space-y-3">
             <div>
               <div className="text-[10px] uppercase tracking-widest text-ink-mute mb-1.5">Pick a Horse</div>
+              {/* 4-col × 2-row grid for 8 horses. Name + multiplier +
+                  win chance shown on each card so the player sees the
+                  risk profile at a glance. */}
               <div className="grid grid-cols-4 gap-1.5">
                 {Array.from({ length: HORSE_COUNT }).map((_, i) => {
                   const horseMult = multiplierForHorse(i);
                   const odds = HORSE_WEIGHTS[i]!;
+                  const name = HORSE_NAMES[i]!;
                   return (
                     <button
                       key={i}
                       onClick={() => setPicked(i)}
                       disabled={busy}
-                      className="py-2 rounded-lg font-mono font-bold transition disabled:opacity-50 flex flex-col items-center justify-center"
+                      className="py-1.5 px-1 rounded-lg font-mono font-bold transition disabled:opacity-50 flex flex-col items-center justify-center min-h-[54px]"
                       style={{
                         background: picked === i ? HORSE_COLORS[i] : 'rgba(42,49,66,.4)',
                         color: picked === i ? '#0f1419' : '#9aa3b2',
@@ -208,9 +218,9 @@ export function RaceGame() {
                         boxShadow: picked === i ? `0 0 10px ${HORSE_COLORS[i]}77` : undefined,
                       }}
                     >
-                      <span className="text-sm leading-none">{i + 1}</span>
+                      <span className="text-[10px] leading-tight text-center">{name}</span>
                       <span
-                        className="text-[9px] tabular-nums opacity-90"
+                        className="text-[8.5px] tabular-nums opacity-90 leading-tight"
                         style={{ color: picked === i ? 'rgba(15,20,25,.85)' : '#9aa3b2' }}
                       >
                         {horseMult}× · {odds}%

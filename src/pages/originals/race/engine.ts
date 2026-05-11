@@ -1,28 +1,51 @@
 import type { Rng } from '../../../lib/fairness';
 
-/** Race — pick 1 of 4 horses, watch the race, win if your horse crosses first.
+/** Race — pick 1 of 8 horses, watch the race, win if your horse crosses
+ *  first. Every horse pays 99% RTP at its individual win probability.
  *
- *  Horses have different win probabilities (favourite → long shot) so each
- *  pick has its own risk/reward profile. Every horse pays 99% RTP at its
- *  individual win probability:
+ *  Real Stake-style horse race has 8+ runners with named jockeys and
+ *  visible odds. We expanded from 4 → 8 to better match that feel.
  *
- *    Horse 1 — Favourite : P=40%   →  2.475×
- *    Horse 2 — Strong    : P=27%   →  3.667×
- *    Horse 3 — Decent    : P=20%   →  4.95×
- *    Horse 4 — Long shot : P=13%   →  7.615×
- *
- *  Animation: race plays for ~3.4s before reveal. The winner is pre-decided
- *  by the fair RNG so the outcome is deterministic from the seeds. */
+ *  Per-horse win weights (sum to 100):
+ *    Thunderbolt   : 30% →  3.30×    favourite
+ *    Midnight Star : 20% →  4.95×
+ *    Lightning Bolt: 14% →  7.071×
+ *    Wild Wind     : 10% →  9.90×
+ *    Iron Hoof     :  8% → 12.375×
+ *    Dust Devil    :  7% → 14.143×
+ *    Solar Flare   :  6% → 16.50×
+ *    Long Shot     :  5% → 19.80×    biggest payout, hardest to land
+ */
 
-export const HORSE_COUNT = 4;
+export const HORSE_COUNT = 8;
 const HOUSE_EDGE = 0.01;
 
-export const HORSE_LABELS = ['🟥 1', '🟦 2', '🟩 3', '🟨 4'] as const;
-export const HORSE_COLORS = ['#ff5560', '#22d3ee', '#1fff7a', '#ffc62a'] as const;
-export const HORSE_NAMES = ['Favourite', 'Strong', 'Decent', 'Long shot'] as const;
+export const HORSE_NAMES = [
+  'Thunderbolt',
+  'Midnight Star',
+  'Lightning Bolt',
+  'Wild Wind',
+  'Iron Hoof',
+  'Dust Devil',
+  'Solar Flare',
+  'Long Shot',
+] as const;
+
+export const HORSE_LABELS = HORSE_NAMES;
+
+export const HORSE_COLORS = [
+  '#ff5560', // red — favourite
+  '#22d3ee', // cyan
+  '#1fff7a', // green
+  '#ffc62a', // gold
+  '#a78bfa', // violet
+  '#ff8a40', // orange
+  '#5fb8ff', // sky blue
+  '#ff7ad9', // pink — long shot
+] as const;
 
 /** Per-horse win weights (sum to 100). */
-export const HORSE_WEIGHTS = [40, 27, 20, 13] as const;
+export const HORSE_WEIGHTS = [30, 20, 14, 10, 8, 7, 6, 5] as const;
 const TOTAL_WEIGHT = 100;
 
 export function multiplierForHorse(idx: number): number {
