@@ -1,10 +1,18 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
 import { useGame } from '../../../game-context';
 import { createRng } from '../../../lib/fairness';
 import { fmtCurrency, fmtMultiplier } from '../../../lib/format';
 import { BetInput } from '../_shared/BetInput';
+import {
+  AutoConfigFields,
+  AutoProgressDisplay,
+  ManualAutoTabs,
+  type AutoConfig,
+  type Mode,
+  useAutoBetRunner,
+} from '../_shared/AutoBetController';
 import {
   GRID_SIZE,
   type MinesRoundState,
@@ -16,7 +24,9 @@ import {
 import { fireConfetti } from '../../../lib/confetti';
 
 /** Stake-style Mines: 5×5 grid, choose mine count, reveal safe gems one at
- *  a time, cash out before hitting a mine. */
+ *  a time, cash out before hitting a mine. Auto mode randomly picks N
+ *  tiles per round (player pre-selects how many) and cashes out — mirrors
+ *  real Stake Mines' Auto mode. */
 export function MinesGame() {
   const { balance, fairness, sound, history, session } = useGame();
   const [bet, setBet] = useState(1);
@@ -24,11 +34,32 @@ export function MinesGame() {
   const [round, setRound] = useState<MinesRoundState | null>(null);
   const [busyClick, setBusyClick] = useState(false);
 
+  // Auto mode
+  const [mode, setMode] = useState<Mode>('manual');
+  const [tilesToReveal, setTilesToReveal] = useState(3);
+  const [autoConfig, setAutoConfig] = useState<AutoConfig>({ count: 10, stopOnProfit: 0, stopOnLoss: 0 });
+  const [autoActive, setAutoActive] = useState(false);
+  /** When auto-bet is running we stage the displayed grid through
+   *  setRound and need to highlight reveals briefly between rounds.
+   *  Refs let the playOnce closure read latest values without
+   *  re-creating it on every state change. */
+  const stateRef = useRef({ bet, mineCount, tilesToReveal });
+  stateRef.current = { bet, mineCount, tilesToReveal };
+
   const inGame = round !== null && !round.done;
   const picks = round?.revealed.size ?? 0;
   const currentMult = useMemo(() => multiplierFor(picks, mineCount), [picks, mineCount]);
   const nextMult = useMemo(() => multiplierFor(picks + 1, mineCount), [picks, mineCount]);
   const cashoutAmount = round ? +(round.bet * currentMult).toFixed(2) : 0;
+
+  // Max possible tiles to pick before all safe spots are gone.
+  const maxTiles = GRID_SIZE - mineCount;
+  // Clamp tilesToReveal whenever mineCount changes.
+  if (tilesToReveal > maxTiles) {
+    // Defer the state update to next tick — calling setState during render
+    // would trigger a warning. Use a ref to track if we've already queued.
+    Promise.resolve().then(() => setTilesToReveal(maxTiles));
+  }
 
   const start = useCallback(() => {
     if (round && !round.done) return;
@@ -41,7 +72,7 @@ export function MinesGame() {
   }, [balance, bet, mineCount, round, fairness, sound]);
 
   const onTile = useCallback((idx: number) => {
-    if (busyClick) return;
+    if (busyClick || autoActive) return;
 
     // Click-to-start: if no round is active (or the previous round
     // finished), start a fresh round AND reveal the clicked tile in one
@@ -110,7 +141,7 @@ export function MinesGame() {
       sound.play('win');
     }
     setTimeout(() => setBusyClick(false), 100);
-  }, [round, busyClick, balance, bet, mineCount, sound, history, fairness, session]);
+  }, [round, busyClick, autoActive, balance, bet, mineCount, sound, history, fairness, session]);
 
   const doCashOut = useCallback(() => {
     if (!round || round.done || round.revealed.size === 0) return;
@@ -155,6 +186,75 @@ export function MinesGame() {
     onTile(idx);
   }, [round, onTile]);
 
+  /** One auto round — open the round, pick N random tiles, cash out if
+   *  none hit a mine. Resolves to net delta (positive = profit). */
+  const playOneAutoRound = useCallback(async (): Promise<number> => {
+    const { bet: b, mineCount: m, tilesToReveal: k } = stateRef.current;
+    if (balance.balance < b || b <= 0) return 0;
+    const cappedK = Math.min(k, GRID_SIZE - m);
+    if (cappedK < 1) return 0;
+    balance.debit(b);
+    sound.play('click');
+    const seeds = fairness.consumeNonce();
+    const rng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
+    let r = startRound(rng, b, m);
+    // Build a randomized order of all 25 tiles for this round
+    const order: number[] = Array.from({ length: GRID_SIZE }, (_, i) => i);
+    for (let i = order.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [order[i], order[j]] = [order[j]!, order[i]!];
+    }
+    let bust = false;
+    // Reveal cappedK tiles. Each reveal updates the displayed grid so
+    // the player visibly sees the auto-round play out.
+    for (let n = 0; n < cappedK; n++) {
+      r = reveal(r, order[n]!);
+      setRound(r);
+      sound.play(r.hitMine ? 'drop' : 'tick');
+      if (r.hitMine) {
+        bust = true;
+        break;
+      }
+      // Pacing between reveals — short enough to feel snappy, long
+      // enough to read.
+      await new Promise<void>((res) => setTimeout(res, 90));
+    }
+    let delta = -b;
+    if (!bust) {
+      // Cash out the surviving multiplier
+      const cashed = cashOut(r);
+      setRound(cashed);
+      balance.credit(cashed.payout);
+      delta = cashed.payout - b;
+      const mult = multiplierFor(cappedK, m);
+      sound.play(mult >= 10 ? 'mega-win' : mult >= 2 ? 'big-win' : 'win');
+    } else {
+      sound.play('drop');
+    }
+    history.record({
+      game: 'Mines',
+      bet: b,
+      payout: bust ? 0 : b + delta,
+      multiplier: bust ? 0 : multiplierFor(cappedK, m),
+      serverSeedHash: fairness.hash,
+      clientSeed: seeds.clientSeed,
+      nonce: seeds.nonce,
+    });
+    session.recordSpin(b, bust ? 0 : b + delta, false);
+    // Brief settle pause so the bust/win frame is visible before the
+    // next round resets the grid.
+    await new Promise<void>((res) => setTimeout(res, bust ? 500 : 300));
+    return delta;
+  }, [balance, sound, fairness, history, session]);
+
+  const progress = useAutoBetRunner({
+    active: autoActive,
+    config: autoConfig,
+    intervalMs: 0,
+    runOnce: playOneAutoRound,
+    onStop: () => setAutoActive(false),
+  });
+
   return (
     <OriginalPageLayout title="Mines">
       <div className="flex flex-col p-4 gap-4 max-w-md mx-auto w-full">
@@ -166,7 +266,7 @@ export function MinesGame() {
                 <div className="text-[10px] uppercase tracking-widest text-ink-mute">
                   {round?.hitMine ? 'Boom — tap a tile to play again'
                     : round?.done ? 'Cashed out — tap a tile for next round'
-                    : 'Tap any tile to start'}
+                    : autoActive ? 'Auto-bet running' : 'Tap any tile to start'}
                 </div>
                 {round?.done && (
                   <div className={`font-mono font-bold text-2xl mt-1 tabular-nums ${
@@ -212,12 +312,12 @@ export function MinesGame() {
                   // Tiles are interactive any time there's no in-progress
                   // round (so a click on an idle tile starts the round)
                   // OR the round is in-progress and the tile hasn't been
-                  // revealed yet. The only case we hard-disable is no
-                  // balance to start a new round.
+                  // revealed yet. Auto-bet locks tiles to prevent the
+                  // player from mid-fight clicking through the random
+                  // picks.
                   disabled={
-                    inGame
-                      ? isRevealed
-                      : balance.balance < bet || bet <= 0
+                    autoActive ? true :
+                    inGame ? isRevealed : balance.balance < bet || bet <= 0
                   }
                   className="relative rounded-lg flex items-center justify-center text-2xl font-bold transition-all duration-150 active:scale-95"
                   style={{
@@ -269,70 +369,112 @@ export function MinesGame() {
         </div>
 
         {/* Controls */}
-        {!inGame ? (
-          <div className="rounded-2xl bg-bg-card border border-edge p-4 space-y-3">
-            <BetInput bet={bet} onBetChange={setBet} />
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-[10px] uppercase tracking-widest text-ink-mute">Mines</span>
-                <span className="font-mono font-semibold text-sm text-ink tabular-nums">{mineCount}</span>
-              </div>
-              <input
-                type="range"
-                min={1}
-                max={24}
-                value={mineCount}
-                onChange={(e) => setMineCount(parseInt(e.target.value))}
-                className="w-full accent-accent"
-              />
-              <div className="flex flex-wrap gap-1 mt-2">
-                {[1, 3, 5, 10, 24].map((n) => (
-                  <button
-                    key={n}
-                    onClick={() => setMineCount(n)}
-                    className={`px-2 py-1 rounded-lg text-xs font-semibold ${
-                      mineCount === n ? 'bg-accent text-bg' : 'bg-bg-elev border border-edge text-ink-dim'
-                    }`}
-                  >
-                    {n}
-                  </button>
-                ))}
-              </div>
+        <div className="rounded-2xl bg-bg-card border border-edge p-4 space-y-3">
+          <ManualAutoTabs mode={mode} onChange={setMode} disabled={autoActive || inGame} />
+          <BetInput bet={bet} onBetChange={setBet} disabled={autoActive || inGame} />
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[10px] uppercase tracking-widest text-ink-mute">Mines</span>
+              <span className="font-mono font-semibold text-sm text-ink tabular-nums">{mineCount}</span>
             </div>
-            <button
-              onClick={round?.done ? reset : start}
-              disabled={!round?.done && (balance.balance < bet || bet <= 0)}
-              className="w-full py-3.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
-            >
-              {round?.done ? 'Reset Grid' : `Bet ${fmtCurrency(bet)} · or tap a tile`}
-            </button>
-          </div>
-        ) : (
-          <div className="rounded-2xl bg-bg-card border border-edge p-4 space-y-3">
-            <div className="grid grid-cols-3 gap-2">
-              <Stat label="Mines" value={`${mineCount}`} />
-              <Stat label="Total Profit" value={fmtCurrency(cashoutAmount - round!.bet)} highlight />
-              <Stat label="Next Pick" value={picks + 1 <= GRID_SIZE - mineCount ? fmtMultiplier(nextMult) : '—'} />
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={pickRandom}
-                disabled={busyClick}
-                className="flex-shrink-0 px-4 py-3.5 rounded-xl bg-bg-elev border border-edge text-ink hover:bg-bg-hover font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.97]"
-                title="Pick a random unrevealed tile"
-              >
-                Pick Random
-              </button>
-              <button
-                onClick={doCashOut}
-                disabled={picks === 0}
-                className="flex-1 py-3.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
-              >
-                {picks === 0 ? 'Pick a tile to start' : `Cash Out ${fmtCurrency(cashoutAmount)}`}
-              </button>
+            <input
+              type="range"
+              min={1}
+              max={24}
+              value={mineCount}
+              disabled={autoActive || inGame}
+              onChange={(e) => setMineCount(parseInt(e.target.value))}
+              className="w-full accent-accent disabled:opacity-50"
+            />
+            <div className="flex flex-wrap gap-1 mt-2">
+              {[1, 3, 5, 10, 24].map((n) => (
+                <button
+                  key={n}
+                  onClick={() => setMineCount(n)}
+                  disabled={autoActive || inGame}
+                  className={`px-2 py-1 rounded-lg text-xs font-semibold disabled:opacity-50 ${
+                    mineCount === n ? 'bg-accent text-bg' : 'bg-bg-elev border border-edge text-ink-dim'
+                  }`}
+                >
+                  {n}
+                </button>
+              ))}
             </div>
           </div>
-        )}
+
+          {mode === 'auto' && (
+            <>
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[10px] uppercase tracking-widest text-ink-mute">Tiles to Reveal per Round</span>
+                  <span className="font-mono font-semibold text-sm text-ink tabular-nums">{Math.min(tilesToReveal, maxTiles)}</span>
+                </div>
+                <input
+                  type="range"
+                  min={1}
+                  max={Math.max(1, maxTiles)}
+                  value={Math.min(tilesToReveal, maxTiles)}
+                  disabled={autoActive}
+                  onChange={(e) => setTilesToReveal(parseInt(e.target.value))}
+                  className="w-full accent-accent disabled:opacity-50"
+                />
+                <div className="text-[10px] text-ink-mute mt-1.5">
+                  Each round picks {Math.min(tilesToReveal, maxTiles)} random tile{tilesToReveal === 1 ? '' : 's'}. If any hits a mine, you bust. Otherwise cashes out at {fmtMultiplier(multiplierFor(Math.min(tilesToReveal, maxTiles), mineCount))}.
+                </div>
+              </div>
+              <AutoConfigFields config={autoConfig} onChange={setAutoConfig} disabled={autoActive} />
+              {autoActive && <AutoProgressDisplay progress={progress} config={autoConfig} />}
+              <button
+                onClick={() => setAutoActive((a) => !a)}
+                disabled={!autoActive && (balance.balance < bet || bet <= 0 || inGame)}
+                className={`w-full py-3.5 rounded-xl font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99] ${
+                  autoActive ? 'bg-accent-hot text-white' : 'bg-accent text-bg'
+                }`}
+              >
+                {autoActive ? 'Stop Autobet' : `Start Autobet${inGame ? ' (finish current round first)' : ''}`}
+              </button>
+            </>
+          )}
+
+          {mode === 'manual' && (
+            <>
+              {!inGame ? (
+                <button
+                  onClick={round?.done ? reset : start}
+                  disabled={!round?.done && (balance.balance < bet || bet <= 0)}
+                  className="w-full py-3.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
+                >
+                  {round?.done ? 'Reset Grid' : `Bet ${fmtCurrency(bet)} · or tap a tile`}
+                </button>
+              ) : (
+                <>
+                  <div className="grid grid-cols-3 gap-2">
+                    <Stat label="Mines" value={`${mineCount}`} />
+                    <Stat label="Total Profit" value={fmtCurrency(cashoutAmount - round!.bet)} highlight />
+                    <Stat label="Next Pick" value={picks + 1 <= GRID_SIZE - mineCount ? fmtMultiplier(nextMult) : '—'} />
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={pickRandom}
+                      disabled={busyClick}
+                      className="flex-shrink-0 px-4 py-3.5 rounded-xl bg-bg-elev border border-edge text-ink hover:bg-bg-hover font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.97]"
+                      title="Pick a random unrevealed tile"
+                    >
+                      Pick Random
+                    </button>
+                    <button
+                      onClick={doCashOut}
+                      disabled={picks === 0}
+                      className="flex-1 py-3.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
+                    >
+                      {picks === 0 ? 'Pick a tile to start' : `Cash Out ${fmtCurrency(cashoutAmount)}`}
+                    </button>
+                  </div>
+                </>
+              )}
+            </>
+          )}
+        </div>
       </div>
     </OriginalPageLayout>
   );
