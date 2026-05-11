@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
 import { useGame } from '../../../game-context';
+import { useHotkey } from '../../../hooks/useHotkey';
 import { createRng } from '../../../lib/fairness';
 import { fmtCurrency } from '../../../lib/format';
 import { BetInput } from '../_shared/BetInput';
@@ -248,6 +249,17 @@ export function AviatorGame() {
   const inGame = phase === 'flying';
   const someoneWon = phase === 'done' && (slotA.status === 'cashed' || slotB.status === 'cashed');
   const lost = phase === 'done' && slotA.status === 'busted' && (!slotB.active || slotB.status === 'busted');
+
+  // Space-to-launch / Space-to-cashout hotkey.
+  useHotkey(' ', () => {
+    if (autoActive) return;
+    if (phase === 'flying') {
+      if (slotA.status === 'live') cashOutSlot('a');
+    } else {
+      if (phase === 'done') reset();
+      start();
+    }
+  }, mode === 'manual');
 
   // Plane trajectory
   const altitudePct = Math.min(0.85, Math.log(currentMult) / Math.log(50));

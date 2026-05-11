@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
 import { useGame } from '../../../game-context';
+import { useHotkey } from '../../../hooks/useHotkey';
 import { createRng } from '../../../lib/fairness';
 import { fmtCurrency } from '../../../lib/format';
 import { BetInput } from '../_shared/BetInput';
@@ -282,6 +283,18 @@ export function CrashGame() {
   const inGame = phase === 'running';
   const lost = phase === 'done' && bust !== null && slotA.status === 'busted' && (!slotB.active || slotB.status === 'busted');
   const someoneCashed = phase === 'done' && (slotA.status === 'cashed' || slotB.status === 'cashed');
+
+  // Space-to-bet / Space-to-cashout hotkey. Real Stake Crash: tap
+  // Space once to bet, Space again mid-flight to cash out slot A.
+  useHotkey(' ', () => {
+    if (autoActive) return;
+    if (phase === 'running') {
+      if (slotA.status === 'live') cashOutSlot('a');
+    } else {
+      if (phase === 'done') reset();
+      start();
+    }
+  }, mode === 'manual');
 
   // Curve point — just for visual feedback, drawn as a rising line.
   const curveProgress = Math.min(timeForMultiplier(currentMult) / 60, 1);

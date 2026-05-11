@@ -2,6 +2,7 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
 import { useGame } from '../../../game-context';
+import { useHotkey } from '../../../hooks/useHotkey';
 import { createRng } from '../../../lib/fairness';
 import { fmtCurrency, fmtMultiplier } from '../../../lib/format';
 import { BetInput } from '../_shared/BetInput';
@@ -101,6 +102,10 @@ export function DiceGame() {
     if (busy || balance.balance < bet || bet <= 0) return;
     void playOnce();
   }, [busy, balance, bet, playOnce]);
+
+  // Space-to-bet hotkey — real Stake parity. Disabled during auto-bet
+  // so it doesn't conflict with the autobet loop's own clicks.
+  useHotkey(' ', manualRoll, !autoActive);
 
   return (
     <OriginalPageLayout title="Dice">

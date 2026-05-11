@@ -2,6 +2,7 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
 import { useGame } from '../../../game-context';
+import { useHotkey } from '../../../hooks/useHotkey';
 import { createRng } from '../../../lib/fairness';
 import { fmtCurrency } from '../../../lib/format';
 import { BetInput } from '../_shared/BetInput';
@@ -116,6 +117,10 @@ export function PlinkoGame() {
     runOnce: drop,
     onStop: () => setAutoActive(false),
   });
+
+  // Space-to-drop hotkey — real Stake parity. Rapid-fire works
+  // because drop() doesn't block; multiple balls can be in flight.
+  useHotkey(' ', () => { void drop(); }, !autoActive);
 
   return (
     <OriginalPageLayout title="Plinko">
