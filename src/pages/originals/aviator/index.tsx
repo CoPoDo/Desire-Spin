@@ -373,6 +373,43 @@ export function AviatorGame() {
           >
             {lost ? '💥' : '✈️'}
           </motion.div>
+          {/* Bust shrapnel — debris fans out from the plane's last
+              position when it explodes. Real Aviator-style mobile games
+              add this particle beat over the bust transition. */}
+          <AnimatePresence>
+            {lost && (
+              <>
+                {Array.from({ length: 12 }).map((_, i) => {
+                  const angle = (i / 12) * Math.PI * 2 + (i % 2 ? 0.18 : -0.14);
+                  const dist = 80 + (i % 4) * 24;
+                  const dx = Math.cos(angle) * dist;
+                  const dy = Math.sin(angle) * dist;
+                  const sz = 5 + (i % 3) * 2;
+                  return (
+                    <motion.span
+                      key={`av-debris-${i}`}
+                      className="absolute pointer-events-none rounded-full"
+                      style={{
+                        left: `${5 + distancePct * 90}%`,
+                        top: `${95 - altitudePct * 90}%`,
+                        width: sz,
+                        height: sz,
+                        background:
+                          i % 3 === 0 ? '#ff3d8b' : i % 3 === 1 ? '#ffd166' : '#ffffff',
+                        boxShadow: '0 0 8px rgba(255,61,139,.7)',
+                        zIndex: 6,
+                        transform: 'translate(-50%, -50%)',
+                      }}
+                      initial={{ x: 0, y: 0, opacity: 1, scale: 1 }}
+                      animate={{ x: dx, y: dy, opacity: 0, scale: 0.3, rotate: 260 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.7, ease: [0.22, 0.5, 0.4, 0.96] }}
+                    />
+                  );
+                })}
+              </>
+            )}
+          </AnimatePresence>
           <div className="relative z-10 flex flex-col items-center justify-center min-h-[260px]">
             <AnimatePresence mode="wait">
               <motion.div
