@@ -1,4 +1,6 @@
+import { useMemo, useState, type ReactNode } from 'react';
 import { GameCard } from '../components/layout/GameCard';
+import { useGame } from '../game-context';
 import { BonanzaArt } from './slots/sweet-bonanza/Art';
 import { OlympusArt } from './slots/gates-of-olympus/Art';
 import { SugarRushArt } from './slots/sugar-rush/Art';
@@ -8,303 +10,206 @@ import { PharaohGoldArt } from './slots/pharaoh-gold/Art';
 import { WolfGoldArt } from './slots/wolf-gold/Art';
 import { BigJuanArt } from './slots/big-juan/Art';
 
+type Game = {
+  to: string;
+  title: string;
+  subtitle: string;
+  badge?: string;
+  bg?: string;
+  art: ReactNode;
+  category: 'slot' | 'original';
+  /** Lowercase tokens for search matching. Title is auto-added. */
+  searchTags?: string[];
+};
+
+const GAMES: Game[] = [
+  // --- Slots ---
+  { to: '/slots/sweet-bonanza',    title: 'Sweet Bonanza',          subtitle: 'Tumble · 21,100× max',           badge: 'HOT', bg: 'linear-gradient(180deg, #2a1148 0%, #160628 100%)', art: <BonanzaArt />,    category: 'slot', searchTags: ['fruit', 'candy', 'pragmatic', 'tumble', 'pink'] },
+  { to: '/slots/gates-of-olympus', title: 'Gates of Olympus',       subtitle: 'Tumble · 5,000× max',            badge: 'NEW', bg: 'linear-gradient(180deg, #0a1530 0%, #070d20 100%)', art: <OlympusArt />,    category: 'slot', searchTags: ['zeus', 'greek', 'pragmatic', 'tumble', 'gold', 'olympus'] },
+  { to: '/slots/juan-cantina',     title: "Juan's Cantina",         subtitle: 'Tumble · Mexican fiesta',        badge: 'NEW', bg: 'linear-gradient(180deg, #ff8a40 0%, #6a142e 100%)', art: <JuanCantinaArt />, category: 'slot', searchTags: ['mexican', 'pinata', 'cantina', 'fiesta', 'tumble'] },
+  { to: '/slots/sugar-rush',       title: 'Sugar Rush',             subtitle: 'Tumble · Sweet & sticky',        badge: 'NEW', bg: 'linear-gradient(180deg, #ff7ad9 0%, #5a1c70 100%)', art: <SugarRushArt />,  category: 'slot', searchTags: ['candy', 'sweet', 'sugar', 'cluster', 'pragmatic'] },
+  { to: '/slots/wanted-wild',      title: 'Wanted Dead or a Wild',  subtitle: 'Tumble · Western shoot-out',     badge: 'NEW', bg: 'linear-gradient(180deg, #d8442a 0%, #2a0810 100%)', art: <WantedWildArt />, category: 'slot', searchTags: ['western', 'hacksaw', 'wanted', 'wild west'] },
+  { to: '/slots/pharaoh-gold',     title: "Pharaoh's Gold",         subtitle: 'Tumble · Egyptian gold',         badge: 'NEW', bg: 'linear-gradient(180deg, #ffd166 0%, #14051a 100%)', art: <PharaohGoldArt />,category: 'slot', searchTags: ['egypt', 'pharaoh', 'gold', 'ancient'] },
+  { to: '/slots/wolf-gold',        title: 'Wolf Gold',              subtitle: 'Tumble · Moonlit wilderness',    badge: 'NEW', bg: 'linear-gradient(180deg, #6638c8 0%, #02010a 100%)', art: <WolfGoldArt />,   category: 'slot', searchTags: ['wolf', 'wild', 'animal', 'pragmatic'] },
+  { to: '/slots/big-juan',         title: 'Big Juan',               subtitle: 'Hold-and-spin · Fiesta jackpots',badge: 'HOT', bg: 'radial-gradient(80% 60% at 50% 45%, #ff8a55 0%, #c8102e 35%, #5a0810 70%, #14040a 100%)', art: <BigJuanArt />, category: 'slot', searchTags: ['mexican', 'pinata', 'hold and spin', 'jackpot'] },
+
+  // --- Originals ---
+  { to: '/originals/dice',          title: 'Dice',                  subtitle: '99% RTP',                   badge: 'LIVE', art: <PlaceholderArt label="🎲" tone="#102b3a" />, category: 'original', searchTags: ['stake', 'classic'] },
+  { to: '/originals/limbo',         title: 'Limbo',                 subtitle: '99% RTP',                   badge: 'LIVE', art: <PlaceholderArt label="🚀" tone="#241a3a" />, category: 'original', searchTags: ['stake', 'multiplier'] },
+  { to: '/originals/mines',         title: 'Mines',                 subtitle: 'Pick gems, dodge mines',    badge: 'LIVE', art: <PlaceholderArt label="💣" tone="#3a1010" />, category: 'original', searchTags: ['stake', 'gems', 'bomb'] },
+  { to: '/originals/crash',         title: 'Crash',                 subtitle: 'Cash out before bust',      badge: 'LIVE', art: <PlaceholderArt label="📈" tone="#102b3a" />, category: 'original', searchTags: ['stake', 'rocket', 'multiplier'] },
+  { to: '/originals/plinko',        title: 'Plinko',                subtitle: 'Drop the ball',             badge: 'LIVE', art: <PlaceholderArt label="🟣" tone="#241a3a" />, category: 'original', searchTags: ['stake', 'pegs', 'physics'] },
+  { to: '/originals/wheel',         title: 'Wheel',                 subtitle: 'Spin to win',               badge: 'LIVE', art: <PlaceholderArt label="🎡" tone="#3a2010" />, category: 'original', searchTags: ['stake', 'spin', 'roulette'] },
+  { to: '/originals/hilo',          title: 'Hilo',                  subtitle: 'Higher or lower',           badge: 'LIVE', art: <PlaceholderArt label="🃏" tone="#1a3a30" />, category: 'original', searchTags: ['stake', 'cards', 'higher lower'] },
+  { to: '/originals/tower',         title: 'Tower',                 subtitle: 'Climb the floors',          badge: 'LIVE', art: <PlaceholderArt label="🗼" tone="#3a1010" />, category: 'original', searchTags: ['stake', 'climb'] },
+  { to: '/originals/keno',          title: 'Keno',                  subtitle: 'Pick & match',              badge: 'LIVE', art: <PlaceholderArt label="🔢" tone="#1a3a3a" />, category: 'original', searchTags: ['lottery', 'numbers'] },
+  { to: '/originals/roulette',      title: 'Roulette',              subtitle: 'European, single 0',        badge: 'LIVE', art: <PlaceholderArt label="🟢" tone="#1a3a1a" />, category: 'original', searchTags: ['table', 'classic'] },
+  { to: '/originals/blackjack',     title: 'Blackjack',             subtitle: '3:2 BJ pays',               badge: 'LIVE', art: <PlaceholderArt label="🃏" tone="#102b3a" />, category: 'original', searchTags: ['cards', '21', 'table'] },
+  { to: '/originals/baccarat',      title: 'Baccarat',              subtitle: 'Punto Banco',               badge: 'LIVE', art: <PlaceholderArt label="💎" tone="#3a1a3a" />, category: 'original', searchTags: ['cards', 'punto banco', 'table'] },
+  { to: '/originals/diamonds',      title: 'Diamonds',              subtitle: '5-gem match',               badge: 'LIVE', art: <PlaceholderArt label="💎" tone="#1a3a3a" />, category: 'original', searchTags: ['gems'] },
+  { to: '/originals/video-poker',   title: 'Video Poker',           subtitle: 'Jacks or Better',           badge: 'LIVE', art: <PlaceholderArt label="🃏" tone="#3a1a10" />, category: 'original', searchTags: ['cards', 'poker'] },
+  { to: '/originals/coin-flip',     title: 'Coin Flip',             subtitle: 'Streak the coin',           badge: 'LIVE', art: <PlaceholderArt label="🪙" tone="#3a3010" />, category: 'original', searchTags: ['coin', 'heads tails', 'streak'] },
+  { to: '/originals/pump',          title: 'Pump',                  subtitle: 'Inflate before pop',        badge: 'LIVE', art: <PlaceholderArt label="🎈" tone="#3a1a3a" />, category: 'original', searchTags: ['stake', 'balloon'] },
+  { to: '/originals/cups',          title: '3 Cups',                subtitle: 'Find the ball',             badge: 'LIVE', art: <PlaceholderArt label="🥤" tone="#102b3a" />, category: 'original', searchTags: ['shell', 'guess'] },
+  { to: '/originals/mini-slot',     title: 'Mini Slot',             subtitle: 'Classic 3-reel',            badge: 'LIVE', art: <PlaceholderArt label="🎰" tone="#3a2010" />, category: 'original', searchTags: ['slot', 'classic', 'fruit'] },
+  { to: '/originals/race',          title: 'Race',                  subtitle: 'Pick a horse',              badge: 'LIVE', art: <PlaceholderArt label="🐎" tone="#1a3a10" />, category: 'original', searchTags: ['horse', 'race'] },
+  { to: '/originals/rps',           title: 'Rock Paper Scissors',   subtitle: 'Beat the opponent',         badge: 'LIVE', art: <PlaceholderArt label="✊" tone="#3a1a3a" />, category: 'original', searchTags: ['rps', 'classic'] },
+  { to: '/originals/dragon-tiger',  title: 'Dragon Tiger',          subtitle: 'High card wins',            badge: 'LIVE', art: <PlaceholderArt label="🐉" tone="#3a1010" />, category: 'original', searchTags: ['cards', 'asian', 'table'] },
+  { to: '/originals/cases',         title: 'Cases',                 subtitle: 'Open the crate',            badge: 'LIVE', art: <PlaceholderArt label="📦" tone="#3a2010" />, category: 'original', searchTags: ['crate', 'csgo'] },
+  { to: '/originals/sicbo',         title: 'Sic Bo',                subtitle: 'Three dice',                badge: 'LIVE', art: <PlaceholderArt label="🎲" tone="#1a3a1a" />, category: 'original', searchTags: ['dice', 'asian', 'table'] },
+  { to: '/originals/mini-roulette', title: 'Mini Roulette',         subtitle: '13-pocket wheel',           badge: 'LIVE', art: <PlaceholderArt label="🎯" tone="#3a1a10" />, category: 'original', searchTags: ['table', 'spin'] },
+  { to: '/originals/scratch',       title: 'Scratch Card',          subtitle: 'Match 3 to win',            badge: 'LIVE', art: <PlaceholderArt label="🎟️" tone="#2a3a10" />, category: 'original', searchTags: ['scratch', 'lottery'] },
+  { to: '/originals/penalty',       title: 'Penalty Shootout',      subtitle: 'Beat the keeper',           badge: 'LIVE', art: <PlaceholderArt label="⚽" tone="#10302a" />, category: 'original', searchTags: ['sport', 'football', 'soccer'] },
+  { to: '/originals/treasure',      title: 'Treasure Hunt',         subtitle: 'Variable-mult tiles',       badge: 'LIVE', art: <PlaceholderArt label="💎" tone="#10243a" />, category: 'original', searchTags: ['treasure', 'gems'] },
+  { to: '/originals/big-bass',      title: 'Big Bass',              subtitle: '5-reel fishing slot',       badge: 'LIVE', art: <PlaceholderArt label="🐟" tone="#10303a" />, category: 'original', searchTags: ['fish', 'fishing', 'pragmatic'] },
+  { to: '/originals/slide',         title: 'Slide',                 subtitle: 'Live multiplier slide',     badge: 'LIVE', art: <PlaceholderArt label="📈" tone="#1a3a30" />, category: 'original', searchTags: ['multiplier'] },
+  { to: '/originals/bingo',         title: 'Bingo',                 subtitle: '5×5 lines + draws',         badge: 'LIVE', art: <PlaceholderArt label="🎱" tone="#3a1030" />, category: 'original', searchTags: ['bingo', 'numbers', 'lines'] },
+  { to: '/originals/aviator',       title: 'Aviator',               subtitle: 'Plane crashes when?',       badge: 'LIVE', art: <PlaceholderArt label="✈️" tone="#1a3a5a" />, category: 'original', searchTags: ['plane', 'crash', 'spribe'] },
+];
+
+function matchesQuery(game: Game, q: string): boolean {
+  if (!q) return true;
+  const needle = q.toLowerCase().trim();
+  if (!needle) return true;
+  if (game.title.toLowerCase().includes(needle)) return true;
+  if (game.subtitle.toLowerCase().includes(needle)) return true;
+  if (game.searchTags?.some((t) => t.toLowerCase().includes(needle))) return true;
+  return false;
+}
+
 export function Home() {
+  const { history } = useGame();
+  const [query, setQuery] = useState('');
+
+  // Recently-played: derive from bet history. Map game-name back to
+  // the registry entry. Show up to 5 unique games most recently played.
+  const recent = useMemo(() => {
+    const seen = new Set<string>();
+    const out: Game[] = [];
+    for (const h of history.history) {
+      // Match the history's `game` field against the registry's title.
+      // Allow loose match (history might log "Big Bass FS" — strip
+      // suffixes to find the parent game).
+      const base = h.game.replace(/\s+(FS|Buy FS|·.*)$/i, '').replace(/\s+\(B\)$/, '').trim();
+      if (seen.has(base)) continue;
+      const g = GAMES.find((x) => x.title === base);
+      if (g) {
+        seen.add(base);
+        out.push(g);
+        if (out.length >= 5) break;
+      }
+    }
+    return out;
+  }, [history.history]);
+
+  const slots = useMemo(
+    () => GAMES.filter((g) => g.category === 'slot' && matchesQuery(g, query)),
+    [query],
+  );
+  const originals = useMemo(
+    () => GAMES.filter((g) => g.category === 'original' && matchesQuery(g, query)),
+    [query],
+  );
+
   return (
-    <div className="space-y-10">
+    <div className="space-y-8">
       <Hero />
 
-      <section>
-        <SectionHeader title="Slots" subtitle="High-fidelity tumble slots" />
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
-          <GameCard
-            to="/slots/sweet-bonanza"
-            title="Sweet Bonanza"
-            subtitle="Tumble · 21,100× max"
-            badge="HOT"
-            bg="linear-gradient(180deg, #2a1148 0%, #160628 100%)"
-            art={<BonanzaArt />}
-          />
-          <GameCard
-            to="/slots/gates-of-olympus"
-            title="Gates of Olympus"
-            subtitle="Tumble · 5,000× max"
-            badge="NEW"
-            bg="linear-gradient(180deg, #0a1530 0%, #070d20 100%)"
-            art={<OlympusArt />}
-          />
-          <GameCard
-            to="/slots/juan-cantina"
-            title="Juan's Cantina"
-            subtitle="Tumble · Mexican fiesta"
-            badge="NEW"
-            bg="linear-gradient(180deg, #ff8a40 0%, #6a142e 100%)"
-            art={<JuanCantinaArt />}
-          />
-          <GameCard
-            to="/slots/sugar-rush"
-            title="Sugar Rush"
-            subtitle="Tumble · Sweet & sticky"
-            badge="NEW"
-            bg="linear-gradient(180deg, #ff7ad9 0%, #5a1c70 100%)"
-            art={<SugarRushArt />}
-          />
-          <GameCard
-            to="/slots/wanted-wild"
-            title="Wanted Dead or a Wild"
-            subtitle="Tumble · Western shoot-out"
-            badge="NEW"
-            bg="linear-gradient(180deg, #d8442a 0%, #2a0810 100%)"
-            art={<WantedWildArt />}
-          />
-          <GameCard
-            to="/slots/pharaoh-gold"
-            title="Pharaoh's Gold"
-            subtitle="Tumble · Egyptian gold"
-            badge="NEW"
-            bg="linear-gradient(180deg, #ffd166 0%, #14051a 100%)"
-            art={<PharaohGoldArt />}
-          />
-          <GameCard
-            to="/slots/wolf-gold"
-            title="Wolf Gold"
-            subtitle="Tumble · Moonlit wilderness"
-            badge="NEW"
-            bg="linear-gradient(180deg, #6638c8 0%, #02010a 100%)"
-            art={<WolfGoldArt />}
-          />
-          <GameCard
-            to="/slots/big-juan"
-            title="Big Juan"
-            subtitle="Hold-and-spin · Fiesta jackpots"
-            badge="HOT"
-            bg="radial-gradient(80% 60% at 50% 45%, #ff8a55 0%, #c8102e 35%, #5a0810 70%, #14040a 100%)"
-            art={<BigJuanArt />}
-          />
-        </div>
-      </section>
+      {/* Search bar — single input filters both Slots and Originals.
+          Real Stake lobby has this above the games grid; with 39
+          titles it's the most-used navigation feature. */}
+      <SearchBar value={query} onChange={setQuery} totalCount={GAMES.length} />
 
-      <section>
-        <SectionHeader title="Originals" subtitle="31 Stake-style provably-fair games" />
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
-          <GameCard
-            to="/originals/dice"
-            title="Dice"
-            subtitle="99% RTP"
-            badge="LIVE"
-            art={<PlaceholderArt label="🎲" tone="#102b3a" />}
+      {/* Recently played — visible only when the player has spin
+          history. Mirrors Stake's "Last Played" rail. Hidden when
+          searching to keep results focused. */}
+      {!query && recent.length > 0 && (
+        <section>
+          <SectionHeader title="Recently Played" subtitle={`${recent.length} game${recent.length === 1 ? '' : 's'} in your history`} />
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
+            {recent.map((g) => (
+              <GameCard key={g.to} {...g} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {slots.length > 0 && (
+        <section>
+          <SectionHeader
+            title="Slots"
+            subtitle={query ? `${slots.length} match${slots.length === 1 ? '' : 'es'}` : 'High-fidelity tumble slots'}
           />
-          <GameCard
-            to="/originals/limbo"
-            title="Limbo"
-            subtitle="99% RTP"
-            badge="LIVE"
-            art={<PlaceholderArt label="🚀" tone="#241a3a" />}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
+            {slots.map((g) => (
+              <GameCard key={g.to} {...g} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {originals.length > 0 && (
+        <section>
+          <SectionHeader
+            title="Originals"
+            subtitle={query ? `${originals.length} match${originals.length === 1 ? '' : 'es'}` : '31 Stake-style provably-fair games'}
           />
-          <GameCard
-            to="/originals/mines"
-            title="Mines"
-            subtitle="Pick gems, dodge mines"
-            badge="LIVE"
-            art={<PlaceholderArt label="💣" tone="#3a1010" />}
-          />
-          <GameCard
-            to="/originals/crash"
-            title="Crash"
-            subtitle="Cash out before bust"
-            badge="LIVE"
-            art={<PlaceholderArt label="📈" tone="#102b3a" />}
-          />
-          <GameCard
-            to="/originals/plinko"
-            title="Plinko"
-            subtitle="Drop the ball"
-            badge="LIVE"
-            art={<PlaceholderArt label="🟣" tone="#241a3a" />}
-          />
-          <GameCard
-            to="/originals/wheel"
-            title="Wheel"
-            subtitle="Spin to win"
-            badge="LIVE"
-            art={<PlaceholderArt label="🎡" tone="#3a2010" />}
-          />
-          <GameCard
-            to="/originals/hilo"
-            title="Hilo"
-            subtitle="Higher or lower"
-            badge="LIVE"
-            art={<PlaceholderArt label="🃏" tone="#1a3a30" />}
-          />
-          <GameCard
-            to="/originals/tower"
-            title="Tower"
-            subtitle="Climb the floors"
-            badge="LIVE"
-            art={<PlaceholderArt label="🗼" tone="#3a1010" />}
-          />
-          <GameCard
-            to="/originals/keno"
-            title="Keno"
-            subtitle="Pick & match"
-            badge="LIVE"
-            art={<PlaceholderArt label="🔢" tone="#1a3a3a" />}
-          />
-          <GameCard
-            to="/originals/roulette"
-            title="Roulette"
-            subtitle="European, single 0"
-            badge="LIVE"
-            art={<PlaceholderArt label="🟢" tone="#1a3a1a" />}
-          />
-          <GameCard
-            to="/originals/blackjack"
-            title="Blackjack"
-            subtitle="3:2 BJ pays"
-            badge="LIVE"
-            art={<PlaceholderArt label="🃏" tone="#102b3a" />}
-          />
-          <GameCard
-            to="/originals/baccarat"
-            title="Baccarat"
-            subtitle="Punto Banco"
-            badge="LIVE"
-            art={<PlaceholderArt label="💎" tone="#3a1a3a" />}
-          />
-          <GameCard
-            to="/originals/diamonds"
-            title="Diamonds"
-            subtitle="5-gem match"
-            badge="LIVE"
-            art={<PlaceholderArt label="💎" tone="#1a3a3a" />}
-          />
-          <GameCard
-            to="/originals/video-poker"
-            title="Video Poker"
-            subtitle="Jacks or Better"
-            badge="LIVE"
-            art={<PlaceholderArt label="🃏" tone="#3a1a10" />}
-          />
-          <GameCard
-            to="/originals/coin-flip"
-            title="Coin Flip"
-            subtitle="Streak the coin"
-            badge="LIVE"
-            art={<PlaceholderArt label="🪙" tone="#3a3010" />}
-          />
-          <GameCard
-            to="/originals/pump"
-            title="Pump"
-            subtitle="Inflate before pop"
-            badge="LIVE"
-            art={<PlaceholderArt label="🎈" tone="#3a1a3a" />}
-          />
-          <GameCard
-            to="/originals/cups"
-            title="3 Cups"
-            subtitle="Find the ball"
-            badge="LIVE"
-            art={<PlaceholderArt label="🥤" tone="#102b3a" />}
-          />
-          <GameCard
-            to="/originals/mini-slot"
-            title="Mini Slot"
-            subtitle="Classic 3-reel"
-            badge="LIVE"
-            art={<PlaceholderArt label="🎰" tone="#3a2010" />}
-          />
-          <GameCard
-            to="/originals/race"
-            title="Race"
-            subtitle="Pick a horse"
-            badge="LIVE"
-            art={<PlaceholderArt label="🐎" tone="#1a3a10" />}
-          />
-          <GameCard
-            to="/originals/rps"
-            title="Rock Paper Scissors"
-            subtitle="Beat the opponent"
-            badge="LIVE"
-            art={<PlaceholderArt label="✊" tone="#3a1a3a" />}
-          />
-          <GameCard
-            to="/originals/dragon-tiger"
-            title="Dragon Tiger"
-            subtitle="High card wins"
-            badge="LIVE"
-            art={<PlaceholderArt label="🐉" tone="#3a1010" />}
-          />
-          <GameCard
-            to="/originals/cases"
-            title="Cases"
-            subtitle="Open the crate"
-            badge="LIVE"
-            art={<PlaceholderArt label="📦" tone="#3a2010" />}
-          />
-          <GameCard
-            to="/originals/sicbo"
-            title="Sic Bo"
-            subtitle="Three dice"
-            badge="LIVE"
-            art={<PlaceholderArt label="🎲" tone="#1a3a1a" />}
-          />
-          <GameCard
-            to="/originals/mini-roulette"
-            title="Mini Roulette"
-            subtitle="13-pocket wheel"
-            badge="LIVE"
-            art={<PlaceholderArt label="🎯" tone="#3a1a10" />}
-          />
-          <GameCard
-            to="/originals/scratch"
-            title="Scratch Card"
-            subtitle="Match 3 to win"
-            badge="LIVE"
-            art={<PlaceholderArt label="🎟️" tone="#2a3a10" />}
-          />
-          <GameCard
-            to="/originals/penalty"
-            title="Penalty Shootout"
-            subtitle="Beat the keeper"
-            badge="LIVE"
-            art={<PlaceholderArt label="⚽" tone="#10302a" />}
-          />
-          <GameCard
-            to="/originals/treasure"
-            title="Treasure Hunt"
-            subtitle="Variable-mult tiles"
-            badge="LIVE"
-            art={<PlaceholderArt label="💎" tone="#10243a" />}
-          />
-          <GameCard
-            to="/originals/big-bass"
-            title="Big Bass"
-            subtitle="5-reel fishing slot"
-            badge="LIVE"
-            art={<PlaceholderArt label="🐟" tone="#10303a" />}
-          />
-          <GameCard
-            to="/originals/slide"
-            title="Slide"
-            subtitle="Live multiplier slide"
-            badge="LIVE"
-            art={<PlaceholderArt label="📈" tone="#1a3a30" />}
-          />
-          <GameCard
-            to="/originals/bingo"
-            title="Bingo"
-            subtitle="5×5 lines + draws"
-            badge="LIVE"
-            art={<PlaceholderArt label="🎱" tone="#3a1030" />}
-          />
-          <GameCard
-            to="/originals/aviator"
-            title="Aviator"
-            subtitle="Plane crashes when?"
-            badge="LIVE"
-            art={<PlaceholderArt label="✈️" tone="#1a3a5a" />}
-          />
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
+            {originals.map((g) => (
+              <GameCard key={g.to} {...g} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {query && slots.length === 0 && originals.length === 0 && (
+        <div className="rounded-2xl border border-edge bg-bg-card p-10 text-center">
+          <div className="text-5xl mb-3 opacity-50">🔍</div>
+          <div className="font-display font-bold text-lg mb-1">No games match "{query}"</div>
+          <div className="text-ink-dim text-sm">Try a category like "dice", "slot", or a name.</div>
+          <button
+            onClick={() => setQuery('')}
+            className="mt-4 px-4 py-2 rounded-xl bg-accent text-bg font-bold text-xs uppercase tracking-wider"
+          >
+            Clear search
+          </button>
         </div>
-      </section>
+      )}
+    </div>
+  );
+}
+
+function SearchBar({
+  value,
+  onChange,
+  totalCount,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  totalCount: number;
+}) {
+  return (
+    <div className="relative">
+      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-mute pointer-events-none text-base">
+        🔍
+      </div>
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={`Search ${totalCount} games…`}
+        className="w-full pl-11 pr-12 py-3 rounded-2xl bg-bg-card border border-edge text-ink text-sm font-medium outline-none focus:border-accent/60 focus:bg-bg-elev transition-colors"
+        aria-label="Search games"
+      />
+      {value && (
+        <button
+          onClick={() => onChange('')}
+          className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-bg-elev border border-edge text-ink-dim hover:text-ink text-xs font-bold flex items-center justify-center transition active:scale-90"
+          aria-label="Clear search"
+        >
+          ✕
+        </button>
+      )}
     </div>
   );
 }
@@ -313,10 +218,6 @@ function SectionHeader({ title, subtitle }: { title: string; subtitle?: string }
   return (
     <div className="flex items-end justify-between mb-3">
       <div className="flex items-center gap-3">
-        {/* Vertical accent rail to the left of the title — same colour
-         *  as the lobby's primary accent so each section header reads
-         *  as a "label" with a nice visual hook (Stake's lobby uses
-         *  a similar treatment on its category headers). */}
         <span
           className="block w-[3px] h-7 rounded-full bg-accent"
           style={{ boxShadow: '0 0 10px rgba(255,198,42,.55)' }}
@@ -332,11 +233,6 @@ function SectionHeader({ title, subtitle }: { title: string; subtitle?: string }
 }
 
 function PlaceholderArt({ label, tone }: { label: string; tone: string }) {
-  // Two soft offset radial-gradient orbs in the tone behind the emoji
-  // — gives every Originals tile a subtle dimensional backdrop instead
-  // of the previous flat top-to-bottom gradient, so the lobby's 22+
-  // emoji-based tiles feel less identical at a glance. The emoji sits
-  // on top with a small drop-shadow so it lifts off the background.
   return (
     <div
       className="w-full h-full flex items-center justify-center text-6xl relative overflow-hidden"
@@ -390,10 +286,6 @@ function Hero() {
           Zero real money, zero stakes.
         </p>
       </div>
-      {/* Ambient blob lighting — slow opacity-pulse on offset cycles so
-       *  the hero card has gentle "breathing" colour wash instead of a
-       *  static glow. Real Stake's lobby hero uses similar ambient
-       *  motion. */}
       <div
         className="absolute -right-16 -bottom-16 w-[420px] h-[420px] rounded-full bg-accent/15 blur-3xl pointer-events-none"
         style={{ animation: 'heroBlobBreathe 7s ease-in-out infinite' }}
