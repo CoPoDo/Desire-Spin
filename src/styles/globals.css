@@ -2035,14 +2035,18 @@
  * ─────────────────────────────────────────────────────────────────── */
 
 .bj-reel-bank {
-  --bj-cell-h: 72px;
+  --bj-cell-h: 60px;
   --bj-cell-gap: 6px;
 }
 
 .spin-reel {
   position: relative;
   width: 100%;
-  height: calc(var(--bj-cell-h) * 4 + var(--bj-cell-gap) * 3);
+  /* Fills its grid column. The cell-h CSS variable still drives the
+   * size of each individual cell inside, but the viewport itself
+   * stretches to the available vertical space — so the reels never
+   * overflow the frame on narrow screens. */
+  height: 100%;
   overflow: hidden;
   border-radius: 8px;
   background: rgba(0, 0, 0, 0.28);

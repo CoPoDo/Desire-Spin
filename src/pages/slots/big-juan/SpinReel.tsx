@@ -66,6 +66,9 @@ export const SpinReel = forwardRef<SpinReelHandle, {
   const spin = useCallback(async (final: ReelSymbolId[], opts: SpinOptions) => {
     const strip = stripRef.current;
     if (!strip) return;
+    // Show the strip on top of the rest view. The strip is always
+    // present in the DOM (no display toggle) so transitions on
+    // transform fire reliably.
     setSpinning(true);
     try {
       if (opts.anticipation) {
@@ -74,8 +77,8 @@ export const SpinReel = forwardRef<SpinReelHandle, {
         await runStandardSpin(strip, symbols, final, fillerPool, opts);
       }
     } finally {
-      // Hand off to the React rest-view. Reset the strip transform so
-      // the next spin starts from a clean baseline.
+      // Clear the strip and hand back to the React rest-view. Strip
+      // transform is reset so the next spin starts from a clean baseline.
       strip.style.transition = 'none';
       strip.style.transform = 'translateY(0px)';
       strip.innerHTML = '';
@@ -87,10 +90,11 @@ export const SpinReel = forwardRef<SpinReelHandle, {
 
   return (
     <div className="spin-reel" data-reel={reelIndex}>
-      {/* REST VIEW — React-managed. Hidden during spin. */}
+      {/* REST VIEW — React-managed. Sits behind the strip; only visible
+       *  when the strip is empty (between spins). */}
       <div
         className="bj-rest-cells"
-        style={{ display: spinning ? 'none' : 'flex' }}
+        style={{ visibility: spinning ? 'hidden' : 'visible' }}
       >
         {symbols.map((sym, row) => {
           const isWinning = winningRows.has(row);
@@ -108,12 +112,11 @@ export const SpinReel = forwardRef<SpinReelHandle, {
         })}
       </div>
 
-      {/* SPIN VIEW — imperative strip painted by spin(). Hidden at rest. */}
-      <div
-        className="spin-reel-strip"
-        ref={stripRef}
-        style={{ display: spinning ? 'flex' : 'none' }}
-      />
+      {/* SPIN VIEW — imperative strip painted by spin(). ALWAYS laid out
+       *  in the DOM (no display:none toggle) so transitions on transform
+       *  fire reliably. When not spinning the strip's innerHTML is empty
+       *  so it doesn't visually cover the rest view. */}
+      <div className="spin-reel-strip" ref={stripRef} />
 
       {showAnticipationGlow && <div className="bj-anticipation-glow" />}
     </div>

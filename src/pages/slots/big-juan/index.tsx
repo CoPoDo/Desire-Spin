@@ -111,31 +111,35 @@ export function BigJuan() {
   const reelRefs = useRef<(SpinReelHandle | null)[]>([null, null, null, null, null]);
 
   /** Measured cell pixel dimensions. The CSS sets --bj-cell-h /
-   *  --bj-cell-gap on the reel-bank from these values, and the SpinReel
-   *  receives them per-spin so the strip's final translateY matches the
-   *  actual rendered cell stride. ResizeObserver keeps them in sync on
-   *  viewport resize. Default values match the mobile layout out of the
-   *  box; the effect below refines on mount. */
+   *  --bj-cell-gap on the reel-bank from these values, and SpinReel
+   *  receives them per-spin so the strip's final translateY math
+   *  matches the actually-rendered cell stride.
+   *
+   *  We derive cell height from the spin-reel viewport's *measured*
+   *  height (which comes from the parent's aspect-ratio'd height), not
+   *  from cell width. This way the reels always fit inside the frame
+   *  on every screen size — even narrow phones — so the footer
+   *  buttons never get pushed off-screen. */
   const reelBankRef = useRef<HTMLDivElement>(null);
-  const [cellPx, setCellPx] = useState({ height: 72, gap: 6 });
+  const [cellPx, setCellPx] = useState({ height: 60, gap: 6 });
   useEffect(() => {
     const el = reelBankRef.current;
     if (!el) return;
     const recompute = () => {
-      // Reel-bank padding inside the wood-frame is 12px (p-3); horizontal
-      // gap between reels is 6px (gap-1.5). 5 reels, 4 gaps.
-      const padding = 24; // 12 each side
+      // Look at the first spin-reel viewport to find the height
+      // available for 4 cells + 3 gaps.
+      const firstReel = el.querySelector('.spin-reel') as HTMLElement | null;
+      const viewportH = firstReel?.clientHeight ?? el.clientHeight;
       const gap = 6;
-      const width = el.clientWidth;
-      if (width <= 0) return;
-      const cellW = Math.floor((width - padding - gap * 4) / 5);
-      // Square cells — height = width.
-      const next = { height: Math.max(40, cellW), gap };
-      setCellPx((prev) => (prev.height === next.height && prev.gap === next.gap ? prev : next));
-      el.style.setProperty('--bj-cell-h', `${next.height}px`);
-      el.style.setProperty('--bj-cell-gap', `${next.gap}px`);
+      if (viewportH <= 0) return;
+      const cellH = Math.max(36, Math.floor((viewportH - gap * 3) / 4));
+      el.style.setProperty('--bj-cell-h', `${cellH}px`);
+      el.style.setProperty('--bj-cell-gap', `${gap}px`);
+      setCellPx((prev) => (prev.height === cellH && prev.gap === gap ? prev : { height: cellH, gap }));
     };
-    recompute();
+    // Wait one frame so the layout has settled (the spin-reel's
+    // height comes from its parent's aspect-ratio'd height).
+    requestAnimationFrame(recompute);
     const ro = new ResizeObserver(recompute);
     ro.observe(el);
     return () => ro.disconnect();
@@ -547,9 +551,15 @@ export function BigJuan() {
         })}
       </div>
 
-      {/* Reels stage */}
-      <main className="flex-1 min-h-0 flex items-center justify-center pt-14 pb-2 px-3 relative">
-        <div className="relative w-full max-w-md" style={{ aspectRatio: '5 / 4.5' }}>
+      {/* Reels stage. The frame container has aspect-ratio so its height
+       *  is derived from its width — for 5 columns × 4 rows of roughly-
+       *  square cells with 12px frame padding + 6px gaps, the natural
+       *  ratio works out to ~1.18:1. We sit slightly wider (1.22) so
+       *  the footer always has room below on narrow phones.
+       *  pt-12 keeps the jackpot ribbon clear; main is flex-1 so it
+       *  absorbs slack on tall phones without pushing the footer down. */}
+      <main className="flex-1 min-h-0 flex items-center justify-center pt-[88px] pb-2 px-3 relative">
+        <div className="relative w-full max-w-md" style={{ aspectRatio: '1.22 / 1' }}>
           <div
             className="absolute inset-0 rounded-2xl p-3 overflow-hidden"
             style={{
@@ -702,8 +712,10 @@ export function BigJuan() {
         </AnimatePresence>
       </main>
 
-      {/* Bottom bar — bet | buy | info | SPIN | turbo | auto */}
-      <footer className="relative z-30 flex items-center justify-center gap-1.5 px-3 pb-[max(env(safe-area-inset-bottom),8px)] pt-2">
+      {/* Bottom bar — bet | buy | info | SPIN | turbo | auto.
+       *  flex-shrink-0 + min-height guarantee the footer stays on screen
+       *  even when the reel stage tries to claim the full main area. */}
+      <footer className="relative z-30 flex-shrink-0 flex items-center justify-center gap-1.5 px-3 pb-[max(env(safe-area-inset-bottom),8px)] pt-2 min-h-[80px]">
         <button
           onClick={() => setBetSheetOpen(true)}
           disabled={busy}
