@@ -3097,13 +3097,22 @@ function scatterPositionsInGrid(grid: TGrid, scatterId: string): { col: number; 
  *  Real game uses an escalating set: BIG → HUGE → MEGA → EPIC →
  *  SENSATIONAL → INCREDIBLE / COLOSSAL for the rarest tier. */
 type WinTier = { label: string; intensity: number; sound: 'big-win' | 'mega-win' };
+/** Real Pragmatic tier thresholds (verified against published values):
+ *    BIG WIN     ≥ 20×    (was 10× — felt too eager, real game waits)
+ *    HUGE WIN    ≥ 40×
+ *    MEGA WIN    ≥ 100×
+ *    EPIC WIN    ≥ 250×
+ *    SENSATIONAL ≥ 500×
+ *    COLOSSAL    ≥ 1000×
+ *  Players were getting the "BIG WIN" celebration on minor 10× hits,
+ *  which devalued the moment when a real 50×+ landed. */
 function winTierFor(payout: number, bet: number): WinTier | null {
   const ratio = payout / Math.max(bet, 0.01);
-  if (ratio >= 500) return { label: 'COLOSSAL WIN',     intensity: 4.0, sound: 'mega-win' };
-  if (ratio >= 200) return { label: 'SENSATIONAL WIN',  intensity: 3.2, sound: 'mega-win' };
-  if (ratio >= 100) return { label: 'EPIC WIN',         intensity: 2.4, sound: 'mega-win' };
-  if (ratio >= 50)  return { label: 'MEGA WIN',         intensity: 1.7, sound: 'mega-win' };
-  if (ratio >= 25)  return { label: 'HUGE WIN',         intensity: 1.2, sound: 'big-win' };
-  if (ratio >= 10)  return { label: 'BIG WIN',          intensity: 0.8, sound: 'big-win' };
+  if (ratio >= 1000) return { label: 'COLOSSAL WIN',     intensity: 4.0, sound: 'mega-win' };
+  if (ratio >= 500)  return { label: 'SENSATIONAL WIN',  intensity: 3.2, sound: 'mega-win' };
+  if (ratio >= 250)  return { label: 'EPIC WIN',         intensity: 2.4, sound: 'mega-win' };
+  if (ratio >= 100)  return { label: 'MEGA WIN',         intensity: 1.7, sound: 'mega-win' };
+  if (ratio >= 40)   return { label: 'HUGE WIN',         intensity: 1.2, sound: 'big-win' };
+  if (ratio >= 20)   return { label: 'BIG WIN',          intensity: 0.8, sound: 'big-win' };
   return null;
 }
