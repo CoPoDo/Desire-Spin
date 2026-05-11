@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
 import { useGame } from '../../../game-context';
+import { useHotkey } from '../../../hooks/useHotkey';
 import { createRng } from '../../../lib/fairness';
 import { fmtCurrency, fmtMultiplier } from '../../../lib/format';
 import { BetInput } from '../_shared/BetInput';
@@ -149,6 +150,29 @@ export function HiloGame() {
     setAccumMult(1);
     setCardHistory([]);
   }, []);
+
+  // Keyboard shortcuts — real Stake binds:
+  //   ArrowUp / H → Higher
+  //   ArrowDown / L → Lower
+  //   S → Skip card
+  //   Space → Cash Out (or Bet if idle)
+  useHotkey('h', () => { if (phase === 'playing' && !busy) guess('higher'); }, true);
+  useHotkey('H', () => { if (phase === 'playing' && !busy) guess('higher'); }, true);
+  useHotkey('ArrowUp', () => { if (phase === 'playing' && !busy) guess('higher'); }, true);
+  useHotkey('l', () => { if (phase === 'playing' && !busy) guess('lower'); }, true);
+  useHotkey('L', () => { if (phase === 'playing' && !busy) guess('lower'); }, true);
+  useHotkey('ArrowDown', () => { if (phase === 'playing' && !busy) guess('lower'); }, true);
+  useHotkey('s', () => { if (phase === 'playing' && !busy) skip(); }, true);
+  useHotkey('S', () => { if (phase === 'playing' && !busy) skip(); }, true);
+  useHotkey(' ', () => {
+    if (busy) return;
+    if (phase === 'idle' || phase === 'lost') {
+      if (phase === 'lost') reset();
+      start();
+    } else if (phase === 'playing' && picks > 0) {
+      cashOut();
+    }
+  }, true);
 
   const hMult = current ? higherMult(current.rank) : 0;
   const lMult = current ? lowerMult(current.rank) : 0;
