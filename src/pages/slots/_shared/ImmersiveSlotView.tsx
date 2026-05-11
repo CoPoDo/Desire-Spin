@@ -189,6 +189,12 @@ export function ImmersiveSlotView({
    *  rumbles the camera on big orbs landing. */
   const [orbRumble, setOrbRumble] = useState<'sm' | 'md' | 'lg' | null>(null);
   const [clusterPopups, setClusterPopups] = useState<{ id: string; col: number; row: number; payout: number }[]>([]);
+  /** Particle bursts spawned at each winning cell as it tumbles away.
+   *  Real Pragmatic slots have a satisfying "pop" — winning fruits
+   *  explode into juice/sparkle particles before clearing. We capture
+   *  the winning cell coords just before they exit and render a brief
+   *  radial burst per cell, colored by slot theme accent. */
+  const [winBursts, setWinBursts] = useState<{ id: string; col: number; row: number }[]>([]);
   const [prespin, setPrespin] = useState<boolean>(false);
   // Tier-scaled lightning bolts that strike across the painted scene
   // during big-win celebrations on Olympus. Each entry is a unique key
@@ -604,6 +610,22 @@ export function ImmersiveSlotView({
             setNewKeys(fresh);
             setFloatingMults([]);
             setClusterPopups([]); // popups disappear when winners tumble away
+            // Snapshot the winning cell coords right before they tumble
+            // away → spawn a particle burst at each. Real Pragmatic
+            // tumbles end with a "POP" beat on each winner; this lays
+            // that over the standard exit fade.
+            if (winning.size > 0) {
+              const bursts: { id: string; col: number; row: number }[] = [];
+              for (const key of winning) {
+                const [cStr, rStr] = key.split(':');
+                const c = Number(cStr), r = Number(rStr);
+                if (Number.isFinite(c) && Number.isFinite(r)) {
+                  bursts.push({ id: `burst-${Date.now()}-${c}-${r}-${bursts.length}`, col: c, row: r });
+                }
+              }
+              setWinBursts(bursts);
+              scheduleSpin(() => setWinBursts([]), 700);
+            }
             setGrid(frame.grid);
             setWinning(new Set());
             lastGrid = frame.grid;
@@ -1702,6 +1724,55 @@ export function ImmersiveSlotView({
                 </div>
               </motion.div>
             )}
+          </AnimatePresence>
+
+          {/* Per-cell winning-symbol burst — 6 particles fly outward
+              from each winning cell as it tumbles away. Spawned in the
+              tumble case right before setWinning(new Set()) wipes the
+              winners. Each particle is theme-accent-colored so Bonanza
+              bursts pink, Olympus bursts gold, etc. Real Pragmatic's
+              "fruit explodes into juice" pop sells the win moment
+              far better than a silent scale-and-fade. */}
+          <AnimatePresence>
+            {winBursts.map((b) => {
+              const cx = liveInsets.left + (b.col + 0.5) * (liveInsets.width / cfg.cols);
+              const cy = liveInsets.top + (b.row + 0.5) * (liveInsets.width / cfg.cols);
+              return (
+                <div
+                  key={b.id}
+                  className="absolute pointer-events-none z-[6]"
+                  style={{ left: `${cx}%`, top: `${cy}%`, transform: 'translate(-50%, -50%)' }}
+                >
+                  {Array.from({ length: 8 }).map((_, i) => {
+                    const angle = (i / 8) * Math.PI * 2 + (i % 2 ? 0.2 : -0.15);
+                    const dist = 22 + (i % 3) * 6;
+                    const dx = Math.cos(angle) * dist;
+                    const dy = Math.sin(angle) * dist;
+                    const sz = 5 + (i % 3);
+                    return (
+                      <motion.span
+                        key={`${b.id}-p-${i}`}
+                        className="absolute rounded-full"
+                        style={{
+                          left: 0,
+                          top: 0,
+                          width: sz,
+                          height: sz,
+                          background: i % 2
+                            ? `radial-gradient(circle, #ffffff 0%, ${cfg.theme.accent} 55%, transparent 100%)`
+                            : `radial-gradient(circle, ${cfg.theme.accent} 0%, ${cfg.theme.accent}66 60%, transparent 100%)`,
+                          boxShadow: `0 0 6px ${cfg.theme.glow}`,
+                          mixBlendMode: 'screen',
+                        }}
+                        initial={{ x: 0, y: 0, opacity: 1, scale: 1 }}
+                        animate={{ x: dx, y: dy, opacity: 0, scale: 0.3, rotate: 240 }}
+                        transition={{ duration: 0.6, ease: [0.22, 0.4, 0.35, 0.95] }}
+                      />
+                    );
+                  })}
+                </div>
+              );
+            })}
           </AnimatePresence>
 
           {/* Lit background around winning cluster centroids — warm gold
