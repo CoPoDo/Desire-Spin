@@ -19,36 +19,56 @@ import { fireConfetti } from '../../../lib/confetti';
 
 type Phase = 'idle' | 'dealing' | 'reveal';
 
+type Chips = { dragon: number; tie: number; tiger: number };
+
 export function DragonTigerGame() {
   const { balance, fairness, sound, history, session } = useGame();
   const [bet, setBet] = useState(1);
-  const [pick, setPick] = useState<BetKind>('dragon');
+  /** Chips placed on each cell. Real Dragon Tiger lets you bet on
+   *  multiple options simultaneously (e.g. Dragon + Tie) — our old
+   *  single-pick radio forced you to choose just one. */
+  const [chips, setChips] = useState<Chips>({ dragon: 0, tie: 0, tiger: 0 });
   const [phase, setPhase] = useState<Phase>('idle');
   const [dragon, setDragon] = useState<Card | null>(null);
   const [tiger, setTiger] = useState<Card | null>(null);
   const [revealedDragon, setRevealedDragon] = useState(false);
   const [revealedTiger, setRevealedTiger] = useState(false);
   const [winner, setWinner] = useState<'dragon' | 'tiger' | 'tie' | null>(null);
-  const [payout, setPayout] = useState<number>(0);
+  const [totalReturn, setTotalReturn] = useState<number>(0);
   const [busy, setBusy] = useState(false);
 
-  const start = useCallback(() => {
+  const totalStake = chips.dragon + chips.tie + chips.tiger;
+
+  const placeChip = useCallback((kind: BetKind) => {
     if (busy) return;
-    if (balance.balance < bet || bet <= 0) return;
+    sound.play('tick');
+    setChips((c) => ({ ...c, [kind]: +(c[kind] + bet).toFixed(2) }));
+  }, [busy, bet, sound]);
+
+  const clearChips = useCallback(() => {
+    if (busy) return;
+    setChips({ dragon: 0, tie: 0, tiger: 0 });
+  }, [busy]);
+
+  const start = useCallback(() => {
+    if (busy || totalStake <= 0 || balance.balance < totalStake) return;
     setBusy(true);
     sound.play('click');
-    balance.debit(bet);
+    balance.debit(totalStake);
     setPhase('dealing');
     setRevealedDragon(false);
     setRevealedTiger(false);
     setWinner(null);
-    setPayout(0);
+    setTotalReturn(0);
     const seeds = fairness.consumeNonce();
     const rng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
-    const r = play(rng, bet, pick);
+    const activeBets: { kind: BetKind; amount: number }[] = [];
+    if (chips.dragon > 0) activeBets.push({ kind: 'dragon', amount: chips.dragon });
+    if (chips.tie > 0) activeBets.push({ kind: 'tie', amount: chips.tie });
+    if (chips.tiger > 0) activeBets.push({ kind: 'tiger', amount: chips.tiger });
+    const r = play(rng, activeBets);
     setDragon(r.dragon);
     setTiger(r.tiger);
-    // Brief deal pause, then flip reveal
     setTimeout(() => {
       setRevealedDragon(true);
       sound.play('drop');
@@ -60,33 +80,37 @@ export function DragonTigerGame() {
     setTimeout(() => {
       setPhase('reveal');
       setWinner(r.winner);
-      setPayout(r.payout);
-      if (r.payout > bet) {
-        balance.credit(r.payout);
-        sound.play(r.multiplier >= TIE_PAYOUT ? 'mega-win' : 'big-win');
+      setTotalReturn(r.totalReturn);
+      const p = r.totalReturn - r.totalStake;
+      if (r.totalReturn > r.totalStake) {
+        balance.credit(r.totalReturn);
+        sound.play(p >= r.totalStake * 5 ? 'mega-win' : 'big-win');
         fireConfetti({
-          count: r.multiplier >= TIE_PAYOUT ? 130 : 70,
+          count: p >= r.totalStake * 5 ? 130 : 70,
           colors: ['#ffd166', '#c8102e', '#1fff7a', '#ffffff'],
         });
-      } else if (r.payout === bet) {
-        balance.credit(r.payout); // push refund
+      } else if (r.totalReturn === r.totalStake) {
+        balance.credit(r.totalReturn);
         sound.play('tick');
+      } else if (r.totalReturn > 0) {
+        balance.credit(r.totalReturn);
+        sound.play('win');
       } else {
         sound.play('drop');
       }
       history.record({
         game: 'Dragon Tiger',
-        bet,
-        payout: r.payout,
-        multiplier: r.multiplier,
+        bet: r.totalStake,
+        payout: r.totalReturn,
+        multiplier: r.totalReturn / Math.max(r.totalStake, 0.01),
         serverSeedHash: fairness.hash,
         clientSeed: seeds.clientSeed,
         nonce: seeds.nonce,
       });
-      session.recordSpin(bet, r.payout, false);
+      session.recordSpin(r.totalStake, r.totalReturn, false);
       setBusy(false);
     }, 1700);
-  }, [busy, bet, pick, balance, fairness, sound, history, session]);
+  }, [busy, balance, chips, totalStake, fairness, sound, history, session]);
 
   const reset = useCallback(() => {
     setPhase('idle');
@@ -95,13 +119,10 @@ export function DragonTigerGame() {
     setRevealedDragon(false);
     setRevealedTiger(false);
     setWinner(null);
-    setPayout(0);
+    setTotalReturn(0);
   }, []);
 
-  const profitOnWin =
-    pick === 'tie'
-      ? +(bet * TIE_PAYOUT - bet).toFixed(2)
-      : +(bet * DRAGON_TIGER_PAYOUT - bet).toFixed(2);
+  const profit = totalReturn - totalStake;
 
   return (
     <OriginalPageLayout title="Dragon Tiger">
@@ -110,7 +131,7 @@ export function DragonTigerGame() {
         <div className="rounded-xl bg-bg-card border border-edge p-3 text-center min-h-[60px] flex flex-col items-center justify-center">
           {phase === 'idle' && (
             <div className="text-[10px] uppercase tracking-widest text-ink-mute">
-              Place your bet · highest card wins
+              Place chips on Dragon / Tie / Tiger
             </div>
           )}
           {phase === 'dealing' && (
@@ -119,11 +140,7 @@ export function DragonTigerGame() {
           {phase === 'reveal' && winner && (
             <div
               className={`font-mono font-bold text-lg ${
-                payout > bet
-                  ? 'text-accent'
-                  : payout === bet
-                    ? 'text-ink-dim'
-                    : 'text-accent-hot'
+                profit > 0 ? 'text-accent' : profit === 0 ? 'text-ink-dim' : 'text-accent-hot'
               }`}
             >
               {winner === 'tie'
@@ -131,14 +148,14 @@ export function DragonTigerGame() {
                 : winner === 'dragon'
                   ? 'Dragon wins'
                   : 'Tiger wins'}
-              {payout > bet && ` · +${fmtCurrency(payout - bet)}`}
-              {payout === bet && winner === 'tie' && pick !== 'tie' && ' · push'}
-              {payout === 0 && ` · -${fmtCurrency(bet)}`}
+              {profit > 0 && ` · +${fmtCurrency(profit)}`}
+              {profit === 0 && totalStake > 0 && ' · push'}
+              {profit < 0 && ` · ${fmtCurrency(profit)}`}
             </div>
           )}
         </div>
 
-        {/* Cards */}
+        {/* Cards + tie badge as chip-betting cells */}
         <div className="rounded-2xl bg-bg-card border border-edge p-4">
           <div className="grid grid-cols-2 gap-3">
             <CardSlot
@@ -148,7 +165,10 @@ export function DragonTigerGame() {
               winning={winner === 'dragon'}
               accent="#ff5560"
               icon="🐉"
-              picked={pick === 'dragon'}
+              chip={chips.dragon}
+              onClick={() => placeChip('dragon')}
+              disabled={busy}
+              payoutLabel={`${DRAGON_TIGER_PAYOUT}×`}
             />
             <CardSlot
               label="Tiger"
@@ -157,71 +177,66 @@ export function DragonTigerGame() {
               winning={winner === 'tiger'}
               accent="#ffc62a"
               icon="🐅"
-              picked={pick === 'tiger'}
+              chip={chips.tiger}
+              onClick={() => placeChip('tiger')}
+              disabled={busy}
+              payoutLabel={`${DRAGON_TIGER_PAYOUT}×`}
             />
           </div>
-          {/* Tie badge between */}
-          <div className="mt-3 text-center">
-            <div
-              className={`inline-block px-3 py-1.5 rounded-lg text-[11px] font-mono font-bold uppercase tracking-wider ${
+          {/* Tie cell — now a chip-bettable button matching the cards */}
+          <div className="mt-3">
+            <button
+              onClick={() => placeChip('tie')}
+              disabled={busy}
+              className={`relative w-full py-2.5 rounded-xl text-[11px] font-mono font-bold uppercase tracking-wider transition disabled:opacity-50 ${
                 winner === 'tie'
                   ? 'bg-accent text-bg'
-                  : pick === 'tie'
+                  : chips.tie > 0
                     ? 'bg-accent-violet/30 border border-accent-violet text-accent-violet'
-                    : 'bg-bg-elev border border-edge text-ink-dim'
+                    : 'bg-bg-elev border border-edge text-ink-dim hover:text-ink'
               }`}
             >
-              {winner === 'tie' ? 'Tie!' : `Tie pays ${TIE_PAYOUT}×`}
-            </div>
+              {winner === 'tie' ? 'Tie!' : `Tie · ${TIE_PAYOUT}×`}
+              {chips.tie > 0 && (
+                <span
+                  className="absolute -top-2 -right-2 min-w-[22px] h-[22px] px-1.5 rounded-full bg-accent-gold text-bg text-[10px] font-mono font-bold flex items-center justify-center"
+                  style={{ boxShadow: '0 0 6px rgba(255,209,102,.7)' }}
+                >
+                  ${chips.tie}
+                </span>
+              )}
+            </button>
           </div>
         </div>
 
-        {/* Pick + bet */}
+        {/* Bet panel */}
         {phase !== 'dealing' ? (
           <div className="rounded-2xl bg-bg-card border border-edge p-4 space-y-3">
             <BetInput bet={bet} onBetChange={setBet} disabled={busy} />
-            <div>
-              <div className="text-[10px] uppercase tracking-widest text-ink-mute mb-1.5">
-                Bet on
-              </div>
-              <div className="grid grid-cols-3 gap-1.5">
-                {(['dragon', 'tie', 'tiger'] as BetKind[]).map((k) => (
-                  <button
-                    key={k}
-                    onClick={() => setPick(k)}
-                    disabled={busy}
-                    className={`py-2.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition disabled:opacity-50 ${
-                      pick === k
-                        ? k === 'dragon'
-                          ? 'bg-[#ff5560] text-white shadow-[0_0_14px_rgba(255,85,96,.5)]'
-                          : k === 'tiger'
-                            ? 'bg-[#ffc62a] text-bg shadow-[0_0_14px_rgba(255,198,42,.5)]'
-                            : 'bg-accent-violet text-white shadow-[0_0_14px_rgba(167,139,250,.5)]'
-                        : 'bg-bg-elev border border-edge text-ink-dim hover:text-ink'
-                    }`}
-                  >
-                    {k === 'dragon'
-                      ? `🐉 ${DRAGON_TIGER_PAYOUT}×`
-                      : k === 'tiger'
-                        ? `🐅 ${DRAGON_TIGER_PAYOUT}×`
-                        : `Tie ${TIE_PAYOUT}×`}
-                  </button>
-                ))}
-              </div>
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-ink-mute uppercase tracking-wider">Total Stake</span>
+              <span className="font-mono font-bold tabular-nums">{fmtCurrency(totalStake)}</span>
             </div>
-            <div className="flex justify-between text-xs">
-              <span className="text-ink-mute">Profit on Win</span>
-              <span className="font-mono font-semibold text-accent tabular-nums">
-                {fmtCurrency(profitOnWin)}
-              </span>
+            <div className="flex gap-2">
+              <button
+                onClick={clearChips}
+                disabled={busy || totalStake === 0}
+                className="flex-1 py-2.5 rounded-xl bg-bg-elev border border-edge text-ink-dim font-bold text-xs uppercase tracking-wider disabled:opacity-50"
+              >
+                Clear
+              </button>
+              <button
+                onClick={phase === 'reveal' ? () => { reset(); start(); } : start}
+                disabled={busy || totalStake === 0 || balance.balance < totalStake}
+                className="flex-[2] py-2.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
+              >
+                {phase === 'reveal'
+                  ? `Deal Again · ${fmtCurrency(totalStake)}`
+                  : totalStake === 0
+                    ? 'Place chips first'
+                    : `Deal · ${fmtCurrency(totalStake)}`}
+              </button>
             </div>
-            <button
-              onClick={phase === 'reveal' ? () => { reset(); start(); } : start}
-              disabled={busy || balance.balance < bet || bet <= 0}
-              className="w-full py-3.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
-            >
-              {phase === 'reveal' ? 'Deal Again' : `Deal · ${fmtCurrency(bet)}`}
-            </button>
           </div>
         ) : (
           <div className="rounded-2xl bg-bg-card border border-edge p-4 text-center text-xs text-ink-dim">
@@ -240,7 +255,10 @@ function CardSlot({
   winning,
   accent,
   icon,
-  picked,
+  chip,
+  onClick,
+  disabled,
+  payoutLabel,
 }: {
   label: string;
   card: Card | null;
@@ -248,13 +266,22 @@ function CardSlot({
   winning: boolean;
   accent: string;
   icon: string;
-  picked: boolean;
+  chip: number;
+  onClick: () => void;
+  disabled: boolean;
+  payoutLabel: string;
 }) {
+  const picked = chip > 0;
   return (
-    <div className="text-center">
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className="text-center w-full transition active:scale-[0.98] disabled:opacity-90 disabled:cursor-default"
+    >
       <div className="text-[10px] uppercase tracking-widest text-ink-mute mb-1 flex items-center justify-center gap-1">
         <span>{icon}</span>
         <span style={{ color: picked ? accent : undefined }}>{label}</span>
+        <span className="text-ink-dim font-mono">· {payoutLabel}</span>
       </div>
       <motion.div
         className="relative aspect-[3/4] rounded-xl overflow-hidden"
@@ -339,7 +366,16 @@ function CardSlot({
             </motion.div>
           )}
         </AnimatePresence>
+        {/* Chip badge overlay — shows the staked amount on this side */}
+        {chip > 0 && (
+          <span
+            className="absolute top-1.5 right-1.5 min-w-[24px] h-[24px] px-1.5 rounded-full bg-accent-gold text-bg text-[10px] font-mono font-bold flex items-center justify-center"
+            style={{ boxShadow: '0 0 8px rgba(255,209,102,.75)' }}
+          >
+            ${chip}
+          </span>
+        )}
       </motion.div>
-    </div>
+    </button>
   );
 }

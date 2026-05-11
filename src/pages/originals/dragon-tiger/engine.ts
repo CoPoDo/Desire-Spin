@@ -64,34 +64,49 @@ export type DragonTigerResult = {
   dragon: Card;
   tiger: Card;
   winner: Side | 'tie';
-  bet: BetKind;
-  amount: number;
-  multiplier: number;
-  payout: number;
+  /** Per-bet outcome: which bet kind, how much was staked, and what
+   *  was returned (multiplier × amount, 0 on lose, amount on push). */
+  perBet: { kind: BetKind; amount: number; multiplier: number; returned: number }[];
+  totalStake: number;
+  totalReturn: number;
 };
 
-export function play(rng: Rng, amount: number, bet: BetKind): DragonTigerResult {
+/** Compute the payout multiplier (including stake) for a single bet
+ *  given the round's winner. */
+export function payoutMultiplier(kind: BetKind, winner: Side | 'tie'): number {
+  if (kind === 'tie') return winner === 'tie' ? TIE_PAYOUT : 0;
+  if (winner === kind) return DRAGON_TIGER_PAYOUT;
+  if (winner === 'tie') return 1; // push for dragon/tiger bets
+  return 0;
+}
+
+/** Roll the round and resolve every active bet. Supports placing on
+ *  multiple kinds simultaneously (e.g., Dragon + Tie). */
+export function play(
+  rng: Rng,
+  bets: { kind: BetKind; amount: number }[],
+): DragonTigerResult {
   const dragon = drawCard(rng);
   const tiger = drawCard(rng, dragon);
   const winner: Side | 'tie' =
     dragon.rank > tiger.rank ? 'dragon' : tiger.rank > dragon.rank ? 'tiger' : 'tie';
 
-  let multiplier = 0;
-  if (bet === 'tie') {
-    multiplier = winner === 'tie' ? TIE_PAYOUT : 0;
-  } else {
-    if (winner === bet) multiplier = DRAGON_TIGER_PAYOUT;
-    else if (winner === 'tie') multiplier = 1; // push
-    else multiplier = 0;
-  }
+  let totalStake = 0;
+  let totalReturn = 0;
+  const perBet = bets.map(({ kind, amount }) => {
+    totalStake += amount;
+    const multiplier = payoutMultiplier(kind, winner);
+    const returned = +(amount * multiplier).toFixed(2);
+    totalReturn += returned;
+    return { kind, amount, multiplier, returned };
+  });
 
   return {
     dragon,
     tiger,
     winner,
-    bet,
-    amount,
-    multiplier,
-    payout: +(amount * multiplier).toFixed(2),
+    perBet,
+    totalStake: +totalStake.toFixed(2),
+    totalReturn: +totalReturn.toFixed(2),
   };
 }
