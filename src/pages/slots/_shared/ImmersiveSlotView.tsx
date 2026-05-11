@@ -940,7 +940,13 @@ export function ImmersiveSlotView({
   // staggered through the coin shower so each visible coin has audio impact.
   useEffect(() => {
     if (!bigWin) return;
-    const totalMs = 2200 + bigWin.tier.intensity * 400;
+    // CountUp duration scales with tier so bigger wins take longer to
+    // tick up — real Pragmatic visibly slows the counter for MEGA/
+    // COLOSSAL so the player has time to register the amount. Then add
+    // ~800ms of "savor" time after the count completes before the
+    // overlay dismisses, so the final number isn't whisked away.
+    const countUpMs = 1400 + bigWin.tier.intensity * 450;
+    const totalMs = countUpMs + 800;
     music.duck(totalMs, 0.2);
     // Spaced coin tink sounds during the shower (more for bigger wins)
     const coinCount = Math.min(20, Math.round(8 + bigWin.tier.intensity * 4));
@@ -2064,7 +2070,7 @@ export function ImmersiveSlotView({
                   </motion.div>
                   <CountUp
                     value={bigWin.payout}
-                    duration={1400}
+                    duration={1400 + bigWin.tier.intensity * 450}
                     format={fmtCurrency}
                     className="block font-serif italic font-extrabold mt-1"
                     style={{
