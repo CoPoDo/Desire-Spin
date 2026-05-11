@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
 import { useGame } from '../../../game-context';
+import { useHotkey } from '../../../hooks/useHotkey';
 import { createRng } from '../../../lib/fairness';
 import { fmtCurrency, fmtMultiplier } from '../../../lib/format';
 import { BetInput } from '../_shared/BetInput';
@@ -127,6 +128,8 @@ export function SlideGame() {
     runOnce: playOnce,
     onStop: () => setAutoActive(false),
   });
+
+  useHotkey(' ', () => { if (mode === 'manual') void playOnce(); }, !autoActive);
 
   const winChance = winChanceFor(target);
   const profitOnWin = +(bet * target - bet).toFixed(2);

@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
 import { useGame } from '../../../game-context';
+import { useHotkey } from '../../../hooks/useHotkey';
 import { createRng } from '../../../lib/fairness';
 import { fmtCurrency } from '../../../lib/format';
 import { BetInput } from '../_shared/BetInput';
@@ -106,6 +107,8 @@ export function MiniSlotGame() {
     runOnce: playOnce,
     onStop: () => setAutoActive(false),
   });
+
+  useHotkey(' ', () => { if (mode === 'manual') void playOnce(); }, !autoActive);
 
   return (
     <OriginalPageLayout title="Mini Slot">
