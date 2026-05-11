@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
 import { useGame } from '../../../game-context';
+import { useHotkey } from '../../../hooks/useHotkey';
 import { createRng } from '../../../lib/fairness';
 import { fmtCurrency } from '../../../lib/format';
 import { BetInput } from '../_shared/BetInput';
@@ -121,6 +122,14 @@ export function DragonTigerGame() {
     setWinner(null);
     setTotalReturn(0);
   }, []);
+
+  // Space-to-deal. After a reveal, Space resets and deals again so
+  // the player can rapid-fire rounds with chips kept in place.
+  useHotkey(' ', () => {
+    if (busy || totalStake <= 0) return;
+    if (phase === 'reveal') reset();
+    start();
+  }, true);
 
   const profit = totalReturn - totalStake;
 
