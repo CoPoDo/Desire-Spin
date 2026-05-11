@@ -51,6 +51,12 @@ export const SYMBOLS: Symbol[] = [
 
 const SCATTER_PAY: Record<number, number> = { 3: 17, 4: 85, 5: 680 };
 
+/** Free-spin awards per scatter count when 3+ fisherman land on a
+ *  base spin. Mirrors real Pragmatic Big Bass Bonanza:
+ *  3 → 10, 4 → 15, 5 → 20. Retriggers (3+ scatters during free spins)
+ *  add the same amount on top. */
+export const FREE_SPIN_AWARDS: Record<number, number> = { 3: 10, 4: 15, 5: 20 };
+
 const TOTAL_WEIGHT = SYMBOLS.reduce((s, x) => s + x.weight, 0);
 
 function pickSymbol(rng: Rng): string {
@@ -81,6 +87,13 @@ export type BassResult = {
   /** Scatter count + pay. 0 if < 3 scatters. */
   scatterCount: number;
   scatterMultiplier: number;
+  /** Money values landed on each cell during a free spin (cell idx →
+   *  multiplier-of-bet). Empty array on base spins. Fisherman lands
+   *  collect all of these into `collectedMultiplier`. */
+  moneyValues: number[];
+  /** Sum of money collected when fisherman triggers a collection
+   *  (FS only, when scatter present). 0 otherwise. */
+  collectedMultiplier: number;
   /** Total pay multiplier and currency payout. */
   multiplier: number;
   payout: number;
@@ -110,8 +123,6 @@ export function spin(rng: Rng, bet: number): BassResult {
       lineMultiplier = m;
     }
   }
-  // Collect the indices of all reels showing the winning symbol so the
-  // UI can highlight exactly those cells.
   const winningPositions: number[] = [];
   if (lineSymbol) {
     for (let i = 0; i < 5; i++) {
@@ -119,7 +130,6 @@ export function spin(rng: Rng, bet: number): BassResult {
     }
   }
 
-  // Scatter count anywhere (independent of payline).
   const scatterCount = reels.filter((r) => r === 'scatter').length;
   const scatterMultiplier = scatterCount >= 3 ? SCATTER_PAY[scatterCount] ?? 0 : 0;
 
@@ -132,6 +142,103 @@ export function spin(rng: Rng, bet: number): BassResult {
     winningPositions,
     scatterCount,
     scatterMultiplier,
+    moneyValues: [],
+    collectedMultiplier: 0,
+    multiplier,
+    payout: +(bet * multiplier).toFixed(2),
+  };
+}
+
+/** Money values that can land on bass symbols during free spins.
+ *  Weighted toward low values matching real Big Bass distribution. */
+const MONEY_VALUES: [number, number][] = [
+  [1, 28], [2, 20], [3, 14], [5, 10], [8, 7], [10, 6],
+  [15, 4], [20, 3], [50, 1.5], [100, 0.6], [250, 0.2], [1000, 0.05],
+];
+const MONEY_TOTAL_WEIGHT = MONEY_VALUES.reduce((s, [, w]) => s + w, 0);
+
+function pickMoneyValue(rng: Rng): number {
+  const r = rng.next() * MONEY_TOTAL_WEIGHT;
+  let acc = 0;
+  for (const [v, w] of MONEY_VALUES) {
+    acc += w;
+    if (r < acc) return v;
+  }
+  return MONEY_VALUES[0]![0];
+}
+
+/** Free-spin variant. Mechanically the same reel spin but:
+ *   1. Bass symbols carry money values (multiplier × bet).
+ *   2. If fisherman scatter lands AND money is on the reels, the
+ *      fisherman COLLECTS all visible money into the round's pot.
+ *   3. Normal line pays still apply on top of the collected money.
+ *
+ *  Scatter count is also tracked so 3+ scatters during FS retrigger
+ *  additional spins. */
+export function spinFreeRound(rng: Rng, bet: number): BassResult {
+  const reels: string[] = [];
+  for (let i = 0; i < 5; i++) reels.push(pickSymbol(rng));
+
+  // Free spins are more generous with money symbols — boost the chance
+  // a bass-tier symbol carries money. Real game uses a different reel
+  // strip; we approximate by tagging existing bass/diamond reels.
+  const moneyValues: number[] = new Array(5).fill(0);
+  for (let i = 0; i < 5; i++) {
+    const id = reels[i]!;
+    if (id === 'bigbass' || id === 'diamond' || id === 'smallfish') {
+      // ~70% chance of money tag during FS
+      if (rng.next() < 0.7) {
+        moneyValues[i] = pickMoneyValue(rng);
+      }
+    }
+  }
+
+  // Standard line + scatter pays still compute.
+  const counts: Record<string, number> = {};
+  for (const r of reels) counts[r] = (counts[r] ?? 0) + 1;
+  let lineSymbol: string | null = null;
+  let lineLength = 0;
+  let lineMultiplier = 0;
+  for (const [id, count] of Object.entries(counts)) {
+    if (id === 'scatter' || count < 3) continue;
+    const sym = symbolById(id);
+    if (!sym?.pay) continue;
+    const m = sym.pay[count as 3 | 4 | 5];
+    if (m > lineMultiplier) {
+      lineSymbol = id;
+      lineLength = count;
+      lineMultiplier = m;
+    }
+  }
+  const winningPositions: number[] = [];
+  if (lineSymbol) {
+    for (let i = 0; i < 5; i++) {
+      if (reels[i] === lineSymbol) winningPositions.push(i);
+    }
+  }
+
+  const scatterCount = reels.filter((r) => r === 'scatter').length;
+  const scatterMultiplier = scatterCount >= 3 ? SCATTER_PAY[scatterCount] ?? 0 : 0;
+
+  // Fisherman collects: if at least one scatter appeared this spin, he
+  // gathers ALL money values currently on the reels. Real game requires
+  // the fisherman to actually appear on a money-bearing reel position,
+  // but for the 5-cell layout we simplify: any scatter → collection.
+  const collectedMultiplier = scatterCount >= 1
+    ? +moneyValues.reduce((s, m) => s + m, 0).toFixed(2)
+    : 0;
+
+  const multiplier = +(lineMultiplier + scatterMultiplier + collectedMultiplier).toFixed(2);
+  return {
+    reels,
+    lineSymbol,
+    lineLength,
+    lineMultiplier,
+    winningPositions,
+    scatterCount,
+    scatterMultiplier,
+    moneyValues,
+    collectedMultiplier,
     multiplier,
     payout: +(bet * multiplier).toFixed(2),
   };
