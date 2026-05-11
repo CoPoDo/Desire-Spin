@@ -37,6 +37,7 @@ import {
   RoyalSvg,
   SenoritaSvg,
 } from './symbols';
+import { BigJuanLogo } from './BigJuanLogo';
 import { BigJuanBonusRound } from './BonusRound';
 import { fireConfetti } from '../../../lib/confetti';
 import { SpinReel, type SpinReelHandle } from './SpinReel';
@@ -634,6 +635,9 @@ export function BigJuan() {
         {/* Animated Big Juan mascot beside the reels. Idle bobbing by
          *  default; transitions to cheer/pistols/dance on game events. */}
         <JuanCharacter mood={juanMood} />
+        <div className="bj-logo-position" aria-hidden>
+          <BigJuanLogo size={140} />
+        </div>
 
         {/* Wild Switch banner */}
         {/* Wild Switch banner — flex-centered wrapper so the animated

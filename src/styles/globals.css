@@ -1767,6 +1767,20 @@
  * a subtle breathing-light effect to draw the eye to the top prize). */
 .bj-jackpot-tier {
   animation: bjJackpotBreathe 2.6s ease-in-out infinite;
+  /* Chevron-notched banner shape via clip-path — matches the real
+   * game's ribbon ends instead of the plain rounded pill. */
+  clip-path: polygon(
+    8% 0%, 92% 0%,
+    100% 50%,
+    92% 100%, 8% 100%,
+    0% 50%
+  );
+  padding: 4px 14px;
+  font-weight: 900;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.35);
 }
 @keyframes bjJackpotBreathe {
   0%, 100% { filter: brightness(1); }
@@ -2037,20 +2051,61 @@
 .bj-reel-bank {
   --bj-cell-h: 60px;
   --bj-cell-gap: 6px;
+  /* Red base with gold border — the frame around the entire reel area. */
+  padding: 6px;
+  background: linear-gradient(180deg, #ff4858, #c8102e 60%, #7a0a1a);
+  border: 4px solid #ffd166;
+  border-radius: 14px;
+  box-shadow:
+    inset 0 0 0 2px #c8102e,
+    0 6px 20px rgba(0, 0, 0, 0.5),
+    0 0 28px rgba(255, 80, 40, 0.25);
+  position: relative;
+}
+
+/* Bright alternating column dividers — green between reels 1/2 and 3/4,
+ * red between reels 2/3 and 4/5. Drawn as a single overlay so it sits
+ * on top of all 5 reel columns without modifying the React tree. */
+.bj-reel-bank::before {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  background:
+    linear-gradient(90deg,
+      transparent 0%, transparent calc(20% - 3px),
+      #1fa84a calc(20% - 3px), #1fa84a calc(20% + 3px),
+      transparent calc(20% + 3px), transparent calc(40% - 3px),
+      #c8102e calc(40% - 3px), #c8102e calc(40% + 3px),
+      transparent calc(40% + 3px), transparent calc(60% - 3px),
+      #1fa84a calc(60% - 3px), #1fa84a calc(60% + 3px),
+      transparent calc(60% + 3px), transparent calc(80% - 3px),
+      #c8102e calc(80% - 3px), #c8102e calc(80% + 3px),
+      transparent calc(80% + 3px), transparent 100%);
+  pointer-events: none;
+  z-index: 2;
+  border-radius: 4px;
 }
 
 .spin-reel {
   position: relative;
   width: 100%;
-  /* Fills its grid column. The cell-h CSS variable still drives the
-   * size of each individual cell inside, but the viewport itself
-   * stretches to the available vertical space — so the reels never
-   * overflow the frame on narrow screens. */
   height: 100%;
   overflow: hidden;
-  border-radius: 8px;
-  background: rgba(0, 0, 0, 0.28);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), inset 0 -4px 12px rgba(0, 0, 0, 0.45);
+  /* Warm cream/tan background with subtle horizontal stripe pattern
+   * — matches the real Big Juan's bright fiesta aesthetic instead of
+   * the dark modern-mobile-slot look. */
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgba(180, 130, 40, 0.04) 0px,
+      rgba(180, 130, 40, 0.04) 2px,
+      transparent 2px,
+      transparent 8px
+    ),
+    linear-gradient(180deg, #faecae 0%, #f5d97a 50%, #ebc55c 100%);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 245, 200, 0.6),
+    inset 0 -3px 8px rgba(160, 100, 20, 0.25);
 }
 
 .spin-reel-strip {
@@ -2097,10 +2152,11 @@
   width: 100%;
   height: var(--bj-cell-h);
   flex-shrink: 0;
-  border-radius: 8px;
-  border: 1.5px solid rgba(255, 255, 255, 0.10);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(0, 0, 0, 0.42));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+  border: none;
+  /* Transparent — the warm reel background shows through, and the SVG
+   * symbol art carries its own gloss/shadow/outline. */
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2109,15 +2165,12 @@
   font-size: clamp(28px, 7vw, 38px);
   user-select: none;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .bj-spin-cell::before {
-  content: '';
-  position: absolute;
-  inset: 0 0 70% 0;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), transparent);
-  pointer-events: none;
+  /* Disabled — cells are transparent now, gloss belongs on the SVG art. */
+  display: none;
 }
 
 .bj-spin-glyph {
@@ -2236,15 +2289,44 @@
 
 .bj-juan-character {
   position: absolute;
-  bottom: 96px;
-  left: 6px;
-  width: clamp(56px, 14vw, 84px);
+  /* Above the reels in the empty space below the banner row — prominent
+   * mascot position, not a corner footnote. */
+  top: 96px;
+  left: 12px;
+  width: clamp(140px, 32vw, 200px);
   aspect-ratio: 3 / 4;
   pointer-events: none;
   z-index: 5;
-  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.6));
+  filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.65));
   transform-origin: 50% 100%;
   animation: bjJuanIdle 3.2s ease-in-out infinite;
+}
+
+@media (max-width: 360px) {
+  .bj-juan-character {
+    width: 110px;
+    top: 84px;
+  }
+}
+
+/* "BIG JUAN" logo position — sits to the right of the Juan character
+ * in the same empty band above the reels. */
+.bj-logo-position {
+  position: absolute;
+  top: 116px;
+  left: clamp(160px, 36vw, 220px);
+  z-index: 5;
+  pointer-events: none;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5));
+}
+
+@media (max-width: 360px) {
+  .bj-logo-position {
+    top: 104px;
+    left: 128px;
+    transform: scale(0.85);
+    transform-origin: top left;
+  }
 }
 
 .bj-juan-character.bj-juan-cheer {
