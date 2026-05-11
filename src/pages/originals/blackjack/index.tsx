@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { motion } from 'framer-motion';
 import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
 import { useGame } from '../../../game-context';
+import { useHotkey } from '../../../hooks/useHotkey';
 import { createRng } from '../../../lib/fairness';
 import { fmtCurrency } from '../../../lib/format';
 import { BetInput } from '../_shared/BetInput';
@@ -205,6 +206,25 @@ export function BlackjackGame() {
     setRound(null);
     setRngState(null);
   }, []);
+
+  // Keyboard shortcuts — desktop blackjack convention:
+  //   H → Hit       S → Stand
+  //   D → Double    P → Split
+  //   Space → Deal / Deal Again
+  useHotkey('h', () => onHit(), true);
+  useHotkey('H', () => onHit(), true);
+  useHotkey('s', () => onStand(), true);
+  useHotkey('S', () => onStand(), true);
+  useHotkey('d', () => onDouble(), true);
+  useHotkey('D', () => onDouble(), true);
+  useHotkey('p', () => onSplit(), true);
+  useHotkey('P', () => onSplit(), true);
+  useHotkey(' ', () => {
+    if (!round || done) {
+      if (done) reset();
+      startHand();
+    }
+  }, true);
 
   // Show only the dealer's first card while player is still acting
   const dealerVisible = round
