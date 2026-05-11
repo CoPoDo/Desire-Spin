@@ -78,18 +78,13 @@ function matchesQuery(game: Game, q: string): boolean {
 }
 
 export function Home() {
-  const { history } = useGame();
+  const { history, favorites } = useGame();
   const [query, setQuery] = useState('');
 
-  // Recently-played: derive from bet history. Map game-name back to
-  // the registry entry. Show up to 5 unique games most recently played.
   const recent = useMemo(() => {
     const seen = new Set<string>();
     const out: Game[] = [];
     for (const h of history.history) {
-      // Match the history's `game` field against the registry's title.
-      // Allow loose match (history might log "Big Bass FS" — strip
-      // suffixes to find the parent game).
       const base = h.game.replace(/\s+(FS|Buy FS|·.*)$/i, '').replace(/\s+\(B\)$/, '').trim();
       if (seen.has(base)) continue;
       const g = GAMES.find((x) => x.title === base);
@@ -101,6 +96,14 @@ export function Home() {
     }
     return out;
   }, [history.history]);
+
+  const favs = useMemo(
+    () =>
+      favorites.list
+        .map((to) => GAMES.find((g) => g.to === to))
+        .filter((g): g is Game => Boolean(g)),
+    [favorites.list],
+  );
 
   const slots = useMemo(
     () => GAMES.filter((g) => g.category === 'slot' && matchesQuery(g, query)),
@@ -120,9 +123,20 @@ export function Home() {
           titles it's the most-used navigation feature. */}
       <SearchBar value={query} onChange={setQuery} totalCount={GAMES.length} />
 
-      {/* Recently played — visible only when the player has spin
-          history. Mirrors Stake's "Last Played" rail. Hidden when
-          searching to keep results focused. */}
+      {!query && favs.length > 0 && (
+        <section>
+          <SectionHeader
+            title="Favorites"
+            subtitle={`${favs.length} starred game${favs.length === 1 ? '' : 's'}`}
+          />
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
+            {favs.map((g) => (
+              <GameCard key={g.to} {...g} />
+            ))}
+          </div>
+        </section>
+      )}
+
       {!query && recent.length > 0 && (
         <section>
           <SectionHeader title="Recently Played" subtitle={`${recent.length} game${recent.length === 1 ? '' : 's'} in your history`} />

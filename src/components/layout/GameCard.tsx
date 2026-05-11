@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ReactNode } from 'react';
+import { useGame } from '../../game-context';
 
 export type GameCardProps = {
   to?: string;
@@ -12,6 +13,8 @@ export type GameCardProps = {
 };
 
 export function GameCard({ to, title, subtitle, badge, art, bg, disabled }: GameCardProps) {
+  const { favorites } = useGame();
+  const fav = to ? favorites.isFavorite(to) : false;
   const content = (
     <article
       className={
@@ -22,9 +25,6 @@ export function GameCard({ to, title, subtitle, badge, art, bg, disabled }: Game
       }
       style={{ aspectRatio: '3 / 4', background: bg ?? '#1a1f29' }}
     >
-      {/* Art container — slight scale-up on hover so the painted scene
-       *  zooms behind the dark text-gradient at the bottom. Real Stake
-       *  lobby cards do the same micro-zoom. */}
       <div className="absolute inset-0 transition-transform duration-300 ease-out group-hover:scale-[1.06]">
         {art}
       </div>
@@ -39,6 +39,26 @@ export function GameCard({ to, title, subtitle, badge, art, bg, disabled }: Game
       </div>
       {disabled && (
         <div className="absolute top-2 right-2 pill bg-black/60 text-white/80">soon</div>
+      )}
+      {!disabled && to && (
+        <button
+          type="button"
+          aria-label={fav ? `Remove ${title} from favorites` : `Add ${title} to favorites`}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            favorites.toggle(to);
+          }}
+          className={
+            'absolute top-2 right-2 w-9 h-9 rounded-full flex items-center justify-center text-base ' +
+            'bg-black/55 backdrop-blur-sm border border-white/15 ' +
+            'transition active:scale-90 ' +
+            (fav ? 'text-accent-gold' : 'text-white/65 hover:text-white opacity-0 group-hover:opacity-100 focus:opacity-100')
+          }
+          style={{ touchAction: 'manipulation' }}
+        >
+          {fav ? '★' : '☆'}
+        </button>
       )}
     </article>
   );

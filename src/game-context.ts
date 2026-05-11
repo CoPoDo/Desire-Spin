@@ -4,6 +4,7 @@ import { useFairness } from './hooks/useFairness';
 import { useBetHistory } from './hooks/useBetHistory';
 import { useSound } from './hooks/useSound';
 import { useSessionStats } from './hooks/useSessionStats';
+import { useFavorites } from './hooks/useFavorites';
 
 export type GameContextValue = {
   balance: ReturnType<typeof useBalance>;
@@ -11,6 +12,7 @@ export type GameContextValue = {
   history: ReturnType<typeof useBetHistory>;
   sound: ReturnType<typeof useSound>;
   session: ReturnType<typeof useSessionStats>;
+  favorites: ReturnType<typeof useFavorites>;
 };
 
 export const GameContext = createContext<GameContextValue | null>(null);

@@ -4,6 +4,7 @@ import { useFairness } from '../../hooks/useFairness';
 import { useBetHistory } from '../../hooks/useBetHistory';
 import { useSound } from '../../hooks/useSound';
 import { useSessionStats } from '../../hooks/useSessionStats';
+import { useFavorites } from '../../hooks/useFavorites';
 import { GameContext } from '../../game-context';
 
 /** Provides game-wide state (balance, fairness, history, sound, sessionStats)
@@ -15,8 +16,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const history = useBetHistory();
   const sound = useSound();
   const session = useSessionStats();
+  const favorites = useFavorites();
   return (
-    <GameContext.Provider value={{ balance, fairness, history, sound, session }}>
+    <GameContext.Provider value={{ balance, fairness, history, sound, session, favorites }}>
       {children}
     </GameContext.Provider>
   );
