@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
 import { useGame } from '../../../game-context';
+import { useHotkey } from '../../../hooks/useHotkey';
 import { createRng } from '../../../lib/fairness';
 import { fmtCurrency, fmtMultiplier } from '../../../lib/format';
 import { BetInput } from '../_shared/BetInput';
@@ -93,6 +94,19 @@ export function PumpGame() {
   }, [round, balance, currentMult, fairness, history, session, sound]);
 
   const reset = useCallback(() => setRound(null), []);
+
+  // Space-to-pump hotkey. If a round is active, Space adds a pump.
+  // If idle, Space starts a fresh round. Bypassed when balloon has
+  // popped or been cashed (player must Reset / Play Again).
+  useHotkey(' ', () => {
+    if (busy) return;
+    if (!round || round.cashed || round.popped) {
+      if (round?.cashed || round?.popped) reset();
+      start();
+      return;
+    }
+    onPump();
+  }, true);
 
   // Balloon size grows with pumps (capped). Pop briefly enlarges it before
   // exit animation handles fade.
