@@ -53,7 +53,9 @@ export function GameCard({ to, title, subtitle, badge, art, bg, disabled }: Game
             'absolute top-2 right-2 w-9 h-9 rounded-full flex items-center justify-center text-base ' +
             'bg-black/55 backdrop-blur-sm border border-white/15 ' +
             'transition active:scale-90 ' +
-            (fav ? 'text-accent-gold' : 'text-white/65 hover:text-white opacity-0 group-hover:opacity-100 focus:opacity-100')
+            (fav
+              ? 'text-accent-gold opacity-100'
+              : 'text-white/70 hover:text-white opacity-90 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100')
           }
           style={{ touchAction: 'manipulation' }}
         >
