@@ -19,7 +19,8 @@ export type BetType =
   | { kind: 'half'; half: 'low' | 'high' }     // 1:1 (1-18 / 19-36)
   | { kind: 'dozen'; dozen: 1 | 2 | 3 }        // 2:1 (1-12 / 13-24 / 25-36)
   | { kind: 'column'; column: 1 | 2 | 3 }      // 2:1
-  | { kind: 'street'; street: number };        // 11:1 — 3 numbers in a column (street 1 = 1,2,3 / 2 = 4,5,6 / ... / 12 = 34,35,36)
+  | { kind: 'street'; street: number }         // 11:1 — 3 numbers in a column
+  | { kind: 'sixline'; sixline: number };      // 5:1 — 6 numbers (two adjacent streets, 1-11)
 
 export type Bet = { type: BetType; amount: number };
 
@@ -69,6 +70,15 @@ export function payoutMultiplier(type: BetType, winningNumber: number): number {
       const lo = type.street * 3 - 2;
       const hi = type.street * 3;
       return n >= lo && n <= hi ? 12 : 0;
+    }
+    case 'sixline': {
+      // Six-line s covers two adjacent streets — e.g., sixline 1 =
+      // {1, 2, 3, 4, 5, 6}; sixline 11 = {31, 32, 33, 34, 35, 36}.
+      // Pays 5:1 (6× including stake) → RTP = 6 × 6/37 ≈ 97.30%.
+      if (n === 0) return 0;
+      const lo = type.sixline * 3 - 2;
+      const hi = type.sixline * 3 + 3;
+      return n >= lo && n <= hi ? 6 : 0;
     }
   }
 }

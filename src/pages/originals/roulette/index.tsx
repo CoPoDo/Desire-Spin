@@ -25,6 +25,7 @@ function keyOf(t: BetType): string {
     case 'dozen':  return `d:${t.dozen}`;
     case 'column': return `col:${t.column}`;
     case 'street': return `s:${t.street}`;
+    case 'sixline': return `sl:${t.sixline}`;
   }
 }
 function typeOf(key: string): BetType {
@@ -35,6 +36,7 @@ function typeOf(key: string): BetType {
   if (kind === 'h') return { kind: 'half', half: val as 'low' | 'high' };
   if (kind === 'd') return { kind: 'dozen', dozen: parseInt(val!) as 1 | 2 | 3 };
   if (kind === 's') return { kind: 'street', street: parseInt(val!) };
+  if (kind === 'sl') return { kind: 'sixline', sixline: parseInt(val!) };
   return { kind: 'column', column: parseInt(val!) as 1 | 2 | 3 };
 }
 
@@ -317,6 +319,39 @@ export function RouletteGame() {
                       style={{ boxShadow: '0 0 5px rgba(255,209,102,.7)' }}
                     >
                       ${chips[keyOf({ kind: 'street', street: s })]}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+            <div className="w-9" />
+          </div>
+          {/* Six-line bets — 11 cells, each covering two adjacent
+              streets (= 6 numbers). Visually sits under the streets
+              and spans the seam between cells. Pays 5:1. */}
+          <div className="flex gap-1">
+            <div className="w-10" />
+            <div className="flex-1 grid grid-cols-11 gap-1">
+              {Array.from({ length: 11 }, (_, i) => i + 1).map((s) => (
+                <button
+                  key={s}
+                  onClick={() => placeChip({ kind: 'sixline', sixline: s })}
+                  className="relative aspect-[2/1] rounded text-[8px] font-mono font-bold flex items-center justify-center transition active:scale-95"
+                  style={{
+                    background: 'linear-gradient(180deg, #2a3142, #1a1f29)',
+                    color: '#fff',
+                    border: '1px solid rgba(255,255,255,.08)',
+                  }}
+                  title={`Six line ${s} — covers ${s * 3 - 2} through ${s * 3 + 3} (5:1)`}
+                >
+                  5×
+                  {chips[keyOf({ kind: 'sixline', sixline: s })] !== undefined &&
+                   chips[keyOf({ kind: 'sixline', sixline: s })]! > 0 && (
+                    <span
+                      className="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 rounded-full bg-accent-gold text-bg text-[7px] font-mono font-bold flex items-center justify-center"
+                      style={{ boxShadow: '0 0 5px rgba(255,209,102,.7)' }}
+                    >
+                      ${chips[keyOf({ kind: 'sixline', sixline: s })]}
                     </span>
                   )}
                 </button>
