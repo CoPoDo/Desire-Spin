@@ -245,6 +245,7 @@ export function BigJuan() {
           anticipation: useAnticipation,
           cellHeight: cellPx.height,
           cellGap: cellPx.gap,
+          reelIndex: i,
         });
         sound.play('drop');
         if (isLast) setAnticipating(false);

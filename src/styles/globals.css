@@ -2065,6 +2065,27 @@
   transform: translateZ(0);
 }
 
+/* Motion blur — vertical-only via SVG filter (definition lives in
+ * index.html). Applied during the spin-up + constant phases to sell
+ * the speed; removed during slow-down so the player can read the
+ * symbols sliding into position. */
+.spin-reel-strip.bj-spinning {
+  filter: url(#bj-motion-blur-vertical);
+}
+.spin-reel-strip.bj-slowing {
+  filter: none;
+  transition: filter 200ms ease-out;
+}
+
+/* Cell-pass tracking — subtle brightness boost as each cell crosses
+ * the viewport centre during slow-down. Brightness only (no scale)
+ * to avoid layout shifts that read as jitter. The eye picks up the
+ * rhythmic ticking subliminally, mimicking a stepper motor's clicks. */
+.bj-spin-cell.bj-passing-center {
+  filter: brightness(1.06);
+  transition: filter 80ms ease-out;
+}
+
 .bj-rest-cells {
   position: absolute;
   inset: 0;

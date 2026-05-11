@@ -90,7 +90,7 @@ export const SYMBOLS: SymbolDef[] = [
   // hit-frequency target is ~1 in 180-230 spins (~0.5%); we tune toward
   // that via per-reel weight, leaving outer reels slightly lighter to
   // create the 4-/5-scatter rarity gradient.
-  { id: 'pinata',    kind: 'scatter', label: 'Piñata',    color: '#ffd166',                    weights: [1.73, 1.82, 1.90, 1.82, 1.73] },
+  { id: 'pinata',    kind: 'scatter', label: 'Piñata',    color: '#ffd166',                    weights: [1.87, 1.97, 2.07, 1.97, 1.87] },
 ];
 
 const SYMBOL_BY_ID = new Map(SYMBOLS.map((s) => [s.id, s]));
@@ -499,23 +499,30 @@ export const JACKPOT_THRESHOLD: Record<JackpotTier, number> = {
   grand: 5,
 };
 
-/** Per-spec §7.4 coin-value distribution. Values are × bet. Weights are
- *  tuned via Monte Carlo (scripts/calibrate-big-juan.ts) against the
- *  published 96.70% RTP target. The largest values are deliberately
- *  rare to keep the distribution heavy-tailed (typical Pragmatic
- *  Hold-and-Win shape). The 250× cap matches spec §7.4's top coin. */
+/** Coin-value distribution. Values are × bet. Per real-game research,
+ *  money symbols range from 0.5× to 250× total bet — the minimum is
+ *  HALF a bet, not one bet. Multiple authoritative sources (Stake.com,
+ *  Pragmatic Play documentation, third-party reviews) consistently
+ *  document the 0.5× floor. Adding it shifts the bonus payout shape
+ *  toward the dry/low end and produces the authentic "many small coins,
+ *  rare big coin" rhythm. The 250× cap matches the documented top coin.
+ *
+ *  Weights tuned via Monte Carlo (scripts/calibrate-big-juan.ts) toward
+ *  the published 96.70% RTP. The 0.5 tier carries the largest weight
+ *  to absorb most of the bonus's coin landings. */
 const COIN_VALUE_TABLE: { value: number; w: number }[] = [
-  { value: 1,   w: 1000 },
-  { value: 2,   w: 1100 },
-  { value: 3,   w: 1200 },
-  { value: 5,   w: 1200 },
-  { value: 10,  w: 950 },
-  { value: 15,  w: 650 },
-  { value: 20,  w: 450 },
-  { value: 25,  w: 280 },
-  { value: 50,  w: 130 },
-  { value: 100, w: 40 },
-  { value: 250, w: 9 },
+  { value: 0.5, w: 1300 }, // real-game minimum (≈25% of coins)
+  { value: 1,   w: 1100 },
+  { value: 2,   w: 1000 },
+  { value: 3,   w: 950 },
+  { value: 5,   w: 900 },
+  { value: 10,  w: 800 },
+  { value: 15,  w: 550 },
+  { value: 20,  w: 400 },
+  { value: 25,  w: 250 },
+  { value: 50,  w: 120 },
+  { value: 100, w: 38 },
+  { value: 250, w: 8 },
 ];
 
 /** Per-cell pool for the 8 OUTER cells of the 3×3 grid. Most rolls are

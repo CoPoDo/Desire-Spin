@@ -21,6 +21,16 @@
     <title>Desire-Spin · play-money casino</title>
   </head>
   <body class="bg-bg text-ink font-sans antialiased">
+    <!-- Global SVG defs: vertical-only motion blur filter referenced by
+         the Big Juan reel strips during fast phases. Width/height 0 so
+         it doesn't take any layout space. -->
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+      <defs>
+        <filter id="bj-motion-blur-vertical">
+          <feGaussianBlur stdDeviation="0 1.8" />
+        </filter>
+      </defs>
+    </svg>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
