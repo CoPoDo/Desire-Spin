@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useHotkey } from '../../../hooks/useHotkey';
 import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
 import { useGame } from '../../../game-context';
 import { createRng } from '../../../lib/fairness';
@@ -98,6 +99,23 @@ export function CoinFlipGame() {
     setLastFlip(null);
     setHistory$([]);
   }, []);
+
+  // Keyboard shortcuts: H for Heads, T for Tails, C/Space for Cash Out.
+  useHotkey('h', () => { if (phase === 'choosing' && !busy) choose('heads'); }, true);
+  useHotkey('H', () => { if (phase === 'choosing' && !busy) choose('heads'); }, true);
+  useHotkey('t', () => { if (phase === 'choosing' && !busy) choose('tails'); }, true);
+  useHotkey('T', () => { if (phase === 'choosing' && !busy) choose('tails'); }, true);
+  useHotkey('c', () => { if (phase === 'choosing' && streak > 0) cashOut(); }, true);
+  useHotkey('C', () => { if (phase === 'choosing' && streak > 0) cashOut(); }, true);
+  useHotkey(' ', () => {
+    if (busy) return;
+    if (phase === 'idle' || phase === 'won' || phase === 'lost') {
+      if (phase !== 'idle') reset();
+      start();
+    } else if (phase === 'choosing' && streak > 0) {
+      cashOut();
+    }
+  }, true);
 
   return (
     <OriginalPageLayout title="Coin Flip">
