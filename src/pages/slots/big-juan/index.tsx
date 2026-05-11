@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGame } from '../../../game-context';
+import { useHotkey } from '../../../hooks/useHotkey';
 import { createRng } from '../../../lib/fairness';
 import { fmtCurrency } from '../../../lib/format';
 import {
@@ -260,6 +261,14 @@ export function BigJuan() {
       setBonus({ scatterCount: 4, seeds });
     }, 1600);
   }, [busy, bonus, balance, buyBonusCost, fairness, sound]);
+
+  // Space-to-spin hotkey — parity with the other slots. Skips while
+  // a bonus round is active so Space doesn't interrupt the FS UI.
+  useHotkey(' ', () => {
+    if (autoplay) { setAutoplay(null); return; }
+    if (busy || bonus || balance.balance < bet) return;
+    void spin();
+  }, !autoplay && !bonus);
 
   return (
     <div className="absolute inset-0 overflow-hidden text-ink flex flex-col big-juan-stage">
