@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
 import { useGame } from '../../../game-context';
+import { useHotkey } from '../../../hooks/useHotkey';
 import { createRng } from '../../../lib/fairness';
 import { fmtCurrency, fmtMultiplier } from '../../../lib/format';
 import { BetInput } from '../_shared/BetInput';
@@ -122,6 +123,25 @@ export function TowerGame() {
     const tile = Math.floor(Math.random() * cfg.tiles);
     onTile(round.step, tile);
   }, [round, cfg.tiles, onTile]);
+
+  // Keyboard shortcuts:
+  //   1-4 → pick that-numbered tile in the current row (if valid)
+  //   R   → pick random
+  //   Space → cash out (or start round if idle)
+  useHotkey('1', () => { if (round && !round.done && 0 < cfg.tiles) onTile(round.step, 0); }, true);
+  useHotkey('2', () => { if (round && !round.done && 1 < cfg.tiles) onTile(round.step, 1); }, true);
+  useHotkey('3', () => { if (round && !round.done && 2 < cfg.tiles) onTile(round.step, 2); }, true);
+  useHotkey('4', () => { if (round && !round.done && 3 < cfg.tiles) onTile(round.step, 3); }, true);
+  useHotkey('r', () => pickRandom(), true);
+  useHotkey('R', () => pickRandom(), true);
+  useHotkey(' ', () => {
+    if (!round || round.done) {
+      if (round?.done) setRound(null);
+      start();
+    } else if (round.step > 0) {
+      doCashOut();
+    }
+  }, true);
 
   return (
     <OriginalPageLayout title="Tower">
