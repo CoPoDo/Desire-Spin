@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
 import { useGame } from '../../../game-context';
 import { createRng } from '../../../lib/fairness';
@@ -20,6 +20,11 @@ export function CasesGame() {
   const [result, setResult] = useState<CaseItem | null>(null);
   const [reel, setReel] = useState<CaseItem[]>([]);
   const [busy, setBusy] = useState(false);
+  /** Rare-reveal flash overlay — fires when the opened item is
+   *  rare / legendary / mythic. Real CS:GO-style cases have a
+   *  dramatic golden beam reveal for high-tier drops; this is the
+   *  emulator equivalent. Auto-clears after ~2.4s. */
+  const [rareFlash, setRareFlash] = useState<CaseItem | null>(null);
   // We keep a counter so each new spin re-mounts the carousel and replays
   // the keyframe animation cleanly.
   const spinKey = useRef(0);
@@ -73,6 +78,13 @@ export function CasesGame() {
     setTimeout(() => {
       setResult(r.item);
       setPhase('reveal');
+      // Rare-tier flash: any item at 'rare' rarity or higher triggers
+      // a dramatic overlay, matching real CS:GO case-opening reveals.
+      // Cleared automatically after 2400ms.
+      if (r.item.rarity === 'rare' || r.item.rarity === 'legendary' || r.item.rarity === 'mythic') {
+        setRareFlash(r.item);
+        window.setTimeout(() => setRareFlash(null), 2400);
+      }
       if (r.payout > bet) {
         balance.credit(r.payout);
         sound.play(r.multiplier >= 50 ? 'mega-win' : r.multiplier >= 3 ? 'big-win' : 'win');
@@ -230,6 +242,89 @@ export function CasesGame() {
           </div>
         )}
       </div>
+      {/* Rare-reveal overlay — fires for rare / legendary / mythic
+          items. Tints the screen in the item's colour with a vertical
+          golden beam behind the item, then dismisses after 2.4s. */}
+      <AnimatePresence>
+        {rareFlash && (
+          <motion.button
+            type="button"
+            onClick={() => setRareFlash(null)}
+            className="fixed inset-0 z-[180] flex flex-col items-center justify-center pointer-events-auto"
+            style={{
+              background: `radial-gradient(ellipse at center, ${rareFlash.glow} 0%, rgba(0,0,0,.9) 70%)`,
+              backdropFilter: 'blur(6px)',
+              WebkitBackdropFilter: 'blur(6px)',
+            }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.28 }}
+          >
+            {/* Vertical light beam — animates expanding from a thin
+                line to a wide glow shaft behind the item. */}
+            <motion.div
+              className="absolute"
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: 280, opacity: [0, 0.9, 0.6] }}
+              transition={{ duration: 0.7, times: [0, 0.4, 1] }}
+              style={{
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                height: '100vh',
+                background: `linear-gradient(180deg, transparent 0%, ${rareFlash.color}cc 40%, ${rareFlash.color}cc 60%, transparent 100%)`,
+                filter: `blur(40px)`,
+              }}
+            />
+            <motion.div
+              className="text-[10px] uppercase tracking-[0.4em] mb-2 z-10"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              style={{ color: rareFlash.color }}
+            >
+              {rareFlash.rarity}
+            </motion.div>
+            <motion.div
+              className="text-8xl z-10"
+              initial={{ scale: 0.3, rotate: -8 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: 'spring', stiffness: 220, damping: 14 }}
+              style={{
+                filter: `drop-shadow(0 0 32px ${rareFlash.color}) drop-shadow(0 0 64px ${rareFlash.glow})`,
+              }}
+            >
+              {rareFlash.emoji}
+            </motion.div>
+            <motion.div
+              className="font-display font-extrabold mt-2 z-10"
+              initial={{ scale: 0.6, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.35, type: 'spring', stiffness: 220, damping: 16 }}
+              style={{
+                fontSize: 'clamp(28px, 8vw, 48px)',
+                color: rareFlash.color,
+                textShadow: `0 0 24px ${rareFlash.glow}, 0 4px 8px rgba(0,0,0,.7)`,
+              }}
+            >
+              {rareFlash.label}
+            </motion.div>
+            <motion.div
+              className="font-mono font-bold text-2xl mt-1 z-10"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.55 }}
+              style={{
+                color: '#fff',
+                textShadow: `0 0 18px ${rareFlash.glow}`,
+              }}
+            >
+              {fmtMultiplier(rareFlash.multiplier)}
+            </motion.div>
+          </motion.button>
+        )}
+      </AnimatePresence>
     </OriginalPageLayout>
   );
 }
