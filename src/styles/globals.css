@@ -2018,3 +2018,389 @@
   0%, 100% { opacity: 0.85; transform: scale(1); }
   50%      { opacity: 1.05; transform: scale(1.06); }
 }
+
+/* ─────────────────────────────────────────────────────────────────────
+ * Big Juan — true strip-scroll reel animation. Implements the bible's
+ * Part 4 viewport+strip pattern: the .spin-reel viewport has
+ * overflow:hidden and a fixed pixel height equal to 4 cells + 3 gaps;
+ * the .spin-reel-strip is a vertical stack of N cells that is taller
+ * than the viewport and translates upward (negative Y) to scroll the
+ * symbols downward through the viewport.
+ *
+ * Cell height and gap come from the --bj-cell-h / --bj-cell-gap CSS
+ * variables set on the reel-bank container based on the responsive
+ * measurement at render time. This keeps the math consistent between
+ * TypeScript (which computes the final Y) and the actual visual sizing
+ * of cells.
+ * ─────────────────────────────────────────────────────────────────── */
+
+.bj-reel-bank {
+  --bj-cell-h: 72px;
+  --bj-cell-gap: 6px;
+}
+
+.spin-reel {
+  position: relative;
+  width: 100%;
+  height: calc(var(--bj-cell-h) * 4 + var(--bj-cell-gap) * 3);
+  overflow: hidden;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.28);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), inset 0 -4px 12px rgba(0, 0, 0, 0.45);
+}
+
+.spin-reel-strip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--bj-cell-gap);
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+.bj-rest-cells {
+  position: absolute;
+  inset: 0;
+  flex-direction: column;
+  gap: var(--bj-cell-gap);
+}
+
+.bj-spin-cell {
+  width: 100%;
+  height: var(--bj-cell-h);
+  flex-shrink: 0;
+  border-radius: 8px;
+  border: 1.5px solid rgba(255, 255, 255, 0.10);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(0, 0, 0, 0.42));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Fraunces', 'Georgia', serif;
+  font-weight: 800;
+  font-size: clamp(28px, 7vw, 38px);
+  user-select: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.bj-spin-cell::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 70% 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), transparent);
+  pointer-events: none;
+}
+
+.bj-spin-glyph {
+  position: relative;
+  z-index: 1;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.55));
+}
+
+.bj-royal {
+  font-family: 'Fraunces', 'Georgia', serif;
+  font-weight: 900;
+  font-size: 1.15em;
+  text-shadow: 0 0 8px currentColor, 0 2px 3px rgba(0, 0, 0, 0.7);
+}
+
+.bj-spin-cell.bj-cell-winning {
+  z-index: 2;
+  animation: bjCellWinPulse 0.55s ease-in-out infinite alternate;
+}
+
+@keyframes bjCellWinPulse {
+  0%   {
+    transform: scale(1);
+    filter: brightness(1);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  }
+  100% {
+    transform: scale(1.07);
+    filter: brightness(1.35);
+    box-shadow: 0 0 18px #ffd700, inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  }
+}
+
+.bj-spin-cell.bj-cell-active-win {
+  z-index: 3;
+  animation: bjCellActiveWin 0.55s ease-in-out infinite alternate;
+}
+
+@keyframes bjCellActiveWin {
+  0%   {
+    transform: scale(1.05);
+    filter: brightness(1.15);
+    box-shadow: 0 0 12px rgba(255, 209, 102, 0.55);
+  }
+  100% {
+    transform: scale(1.18);
+    filter: brightness(1.6);
+    box-shadow: 0 0 28px rgba(255, 209, 102, 0.95), 0 0 48px rgba(255, 138, 64, 0.55);
+  }
+}
+
+.bj-spin-cell.bj-cell-igniting {
+  animation: bjCellIgnite 0.7s ease-out forwards;
+}
+
+@keyframes bjCellIgnite {
+  0% {
+    transform: scale(1) rotate(0deg);
+    filter: brightness(1);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(0, 0, 0, 0.42));
+  }
+  30% {
+    transform: scale(1.25) rotate(8deg);
+    filter: brightness(2) hue-rotate(-12deg);
+    background: radial-gradient(circle at 50% 60%, #fff, #ffd166 30%, #ff8a40 60%, #c8102e 100%);
+    box-shadow: 0 0 28px #ffd166, 0 0 56px #ff8a40;
+  }
+  70% {
+    transform: scale(1.1) rotate(-3deg);
+    filter: brightness(1.4);
+    background: radial-gradient(circle at 50% 60%, #ffeb3b, #ff6f00 60%, #bf360c 100%);
+    box-shadow: 0 0 18px #ff6f00;
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    filter: brightness(1.1);
+    background: radial-gradient(circle at 50% 60%, #ffeb3b, #ff6f00 60%, #bf360c 100%);
+    box-shadow: 0 0 12px #ff6f00;
+  }
+}
+
+.bj-anticipation-glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: 8px;
+  background: radial-gradient(60% 80% at 50% 50%, rgba(255, 209, 102, 0.22), transparent 70%);
+  box-shadow: inset 0 0 32px rgba(255, 209, 102, 0.55), 0 0 32px rgba(255, 209, 102, 0.42);
+  animation: bjAntPulse 0.42s ease-in-out infinite;
+  z-index: 3;
+}
+
+@keyframes bjAntPulse {
+  0%, 100% { opacity: 0.6; }
+  50%      { opacity: 1; }
+}
+
+.bj-winline {
+  fill: none;
+  stroke: #ffd700;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 6px #ffd700);
+  animation: bjWinlineDraw 0.42s ease-out;
+}
+
+@keyframes bjWinlineDraw {
+  0%   { stroke-dasharray: 0 1000; opacity: 0; }
+  20%  { opacity: 1; }
+  100% { stroke-dasharray: 1000 0; opacity: 0.95; }
+}
+
+/* Big Juan character — animated mascot beside the reels with a small
+ * library of reaction states triggered by class toggles. */
+
+.bj-juan-character {
+  position: absolute;
+  bottom: 96px;
+  left: 6px;
+  width: clamp(56px, 14vw, 84px);
+  aspect-ratio: 3 / 4;
+  pointer-events: none;
+  z-index: 5;
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.6));
+  transform-origin: 50% 100%;
+  animation: bjJuanIdle 3.2s ease-in-out infinite;
+}
+
+.bj-juan-character.bj-juan-cheer {
+  animation: bjJuanCheer 1.5s ease-out forwards;
+}
+
+.bj-juan-character.bj-juan-pistols {
+  animation: bjJuanPistols 1.8s ease-out forwards;
+}
+
+.bj-juan-character.bj-juan-dance {
+  animation: bjJuanDance 2.4s ease-in-out infinite;
+}
+
+.bj-juan-character.bj-juan-bored {
+  animation: bjJuanBored 4s ease-in-out infinite;
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.6)) saturate(0.6);
+}
+
+@keyframes bjJuanIdle {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50%      { transform: translateY(-2px) rotate(0.6deg); }
+}
+
+@keyframes bjJuanCheer {
+  0%   { transform: scale(1) rotate(0deg); }
+  20%  { transform: scale(1.18) rotate(-6deg); }
+  40%  { transform: scale(1.05) rotate(6deg); }
+  60%  { transform: scale(1.18) rotate(-4deg); }
+  80%  { transform: scale(1.05) rotate(4deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+@keyframes bjJuanPistols {
+  0%   { transform: scale(1) translateY(0) rotate(0deg); }
+  18%  { transform: scale(1.12) translateY(-8px) rotate(-3deg); }
+  36%  { transform: scale(1.06) translateY(-3px) rotate(2deg); }
+  54%  { transform: scale(1.14) translateY(-10px) rotate(-2deg); }
+  78%  { transform: scale(1.05) translateY(-2px) rotate(1deg); }
+  100% { transform: scale(1) translateY(0) rotate(0deg); }
+}
+
+@keyframes bjJuanDance {
+  0%, 100% { transform: rotate(-4deg) translateX(-2px); }
+  25%      { transform: rotate(2deg) translateX(0) translateY(-3px); }
+  50%      { transform: rotate(4deg) translateX(2px); }
+  75%      { transform: rotate(-2deg) translateX(0) translateY(-3px); }
+}
+
+@keyframes bjJuanBored {
+  0%, 100% { transform: rotate(0deg); }
+  50%      { transform: rotate(-1deg) translateY(1px); }
+}
+
+.bj-juan-muzzle {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff5c4 0%, #ffd166 30%, #ff8a40 60%, transparent 100%);
+  opacity: 0;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  filter: blur(0.6px);
+}
+
+.bj-juan-character.bj-juan-pistols .bj-juan-muzzle-l {
+  animation: bjMuzzleFlash 0.18s ease-out 2;
+  animation-delay: 0.12s, 0.6s;
+}
+.bj-juan-character.bj-juan-pistols .bj-juan-muzzle-r {
+  animation: bjMuzzleFlash 0.18s ease-out 2;
+  animation-delay: 0.22s, 0.7s;
+}
+
+@keyframes bjMuzzleFlash {
+  0%   { opacity: 0; transform: scale(0.4); }
+  30%  { opacity: 1; transform: scale(1.4); }
+  100% { opacity: 0; transform: scale(2); }
+}
+
+/* Flying coin — created imperatively by the bonus round to fly a coin
+ * from its grid cell to the WIN tally (Win) or the money bag (Boost). */
+.bj-flying-coin {
+  position: fixed;
+  z-index: 220;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-family: ui-monospace, monospace;
+  font-weight: 800;
+  pointer-events: none;
+  transition: transform 0.6s cubic-bezier(0.5, 0, 0.75, 0), opacity 0.6s ease-out;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
+}
+
+.bj-flying-coin .bj-flying-coin-glyph {
+  font-size: 26px;
+  line-height: 1;
+}
+
+.bj-flying-coin .bj-flying-coin-value {
+  font-size: 11px;
+  color: #fff5c4;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.7), 0 0 4px rgba(255, 209, 102, 0.85);
+  margin-top: 2px;
+}
+
+/* Big-win banner per-tier styling per bible Part 9. Tiers SUPER+, HUGE+
+ * add screen-shake; EPIC and MAX add rainbow shimmer. The text
+ * letter-size scales with tier. */
+.bj-bigwin-banner {
+  font-family: 'Fraunces', 'Georgia', serif;
+  font-weight: 900;
+  letter-spacing: 4px;
+  text-align: center;
+  text-shadow: 0 0 20px currentColor, 0 4px 8px rgba(0, 0, 0, 0.7);
+}
+
+.bj-bigwin-tier-nice {
+  color: #ffd166;
+  font-size: clamp(28px, 7vw, 40px);
+}
+.bj-bigwin-tier-big {
+  color: #ffd166;
+  font-size: clamp(32px, 8vw, 46px);
+  animation: bjBigwinPulse 0.6s ease-in-out infinite alternate;
+}
+.bj-bigwin-tier-mega {
+  background: linear-gradient(135deg, #ffd700, #ff6b35);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-size: clamp(38px, 9vw, 56px);
+  animation: bjBigwinPulse 0.5s ease-in-out infinite alternate;
+  text-shadow: none;
+  filter: drop-shadow(0 0 18px #ffd700);
+}
+.bj-bigwin-tier-super,
+.bj-bigwin-tier-huge {
+  background: linear-gradient(135deg, #ffd700, #ff6b35, #d62828);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-size: clamp(44px, 11vw, 64px);
+  animation:
+    bjBigwinPulse 0.4s ease-in-out infinite alternate,
+    bjBigwinShake 0.10s ease-in-out infinite;
+  filter: drop-shadow(0 0 22px #ff6b35);
+}
+.bj-bigwin-tier-epic,
+.bj-bigwin-tier-max {
+  background: linear-gradient(135deg, #ffd700, #ff6b35, #d62828, #ffd700);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-size: clamp(50px, 12vw, 72px);
+  animation:
+    bjBigwinPulse 0.32s ease-in-out infinite alternate,
+    bjBigwinShake 0.08s ease-in-out infinite,
+    bjBigwinRainbow 1.2s linear infinite;
+  filter: drop-shadow(0 0 28px #ff6b35) drop-shadow(0 0 56px #d62828);
+}
+
+@keyframes bjBigwinPulse {
+  0%   { transform: scale(1); }
+  100% { transform: scale(1.12); }
+}
+
+@keyframes bjBigwinShake {
+  0%   { translate: 0 0; }
+  25%  { translate: -2px 0; }
+  50%  { translate: 0 1px; }
+  75%  { translate: 2px 0; }
+  100% { translate: 0 0; }
+}
+
+@keyframes bjBigwinRainbow {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+

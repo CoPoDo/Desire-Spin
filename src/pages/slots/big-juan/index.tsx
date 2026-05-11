@@ -39,6 +39,9 @@ import {
 } from './symbols';
 import { BigJuanBonusRound } from './BonusRound';
 import { fireConfetti } from '../../../lib/confetti';
+import { SpinReel, type SpinReelHandle } from './SpinReel';
+import { JuanCharacter, type JuanMood } from './JuanCharacter';
+import { animateCountUp } from './winCounter';
 
 /** Big Juan — full Pragmatic Play clone per the public spec.
  *
@@ -71,16 +74,14 @@ export function BigJuan() {
   // ── Round + UI state ──────────────────────────────────────────────
   const [busy, setBusy] = useState(false);
   const [grid, setGrid] = useState<TGrid>(() => makeBlankGrid());
-  const [revealedReels, setRevealedReels] = useState(0); // 0..5
-  /** Last result. The UI uses it for the win-cycle, the last-win pill,
+  /** Last result. The UI uses it for the win-cycle, last-win pill,
    *  and the scatter status badge. */
   const [lastResult, setLastResult] = useState<SpinResult | null>(null);
   const [winningCells, setWinningCells] = useState<Set<string>>(new Set());
   const [activeWin, setActiveWin] = useState<WinLine | null>(null);
-  /** Reels currently in the "spinning blur" state (during reveal). */
-  const [spinningReels, setSpinningReels] = useState<Set<number>>(new Set());
-  /** Reel-5 anticipation flag — when 2+ piñatas visible on reels 1-4
-   *  and reel 5 still spinning. Triggers slow-spin animation. */
+  /** Reel-5 anticipation glow flag — managed at the parent level so the
+   *  glow can fade in/out independently of the SpinReel's internal
+   *  animation. */
   const [anticipating, setAnticipating] = useState(false);
   /** FS trigger banner. Number is scatter count (3/4/5). */
   const [showFsTrigger, setShowFsTrigger] = useState<number | null>(null);
@@ -88,6 +89,50 @@ export function BigJuan() {
   /** Wild-switch positions in flame mid-transition (for the burst-into-flames
    *  visual). When set, those cells animate; cleared once the new grid lands. */
   const [igniteCells, setIgniteCells] = useState<Set<string>>(new Set());
+  /** Animated Big Juan mascot reaction state. Driven by spin outcomes:
+   *  bonus trigger → pistols, big win → cheer, dry spin → bored. */
+  const [juanMood, setJuanMood] = useState<JuanMood>('idle');
+  /** Visible win display. Animated by animateCountUp; reset to 0 on
+   *  each spin start. */
+  const [winDisplay, setWinDisplay] = useState(0);
+  const winDisplayElRef = useRef<HTMLSpanElement>(null);
+  const winValueRef = useRef(0);
+  useEffect(() => { winValueRef.current = winDisplay; }, [winDisplay]);
+
+  /** Refs to each of the 5 SpinReels — used by spin() to call into the
+   *  imperative strip animation on each reel with the right options. */
+  const reelRefs = useRef<(SpinReelHandle | null)[]>([null, null, null, null, null]);
+
+  /** Measured cell pixel dimensions. The CSS sets --bj-cell-h /
+   *  --bj-cell-gap on the reel-bank from these values, and the SpinReel
+   *  receives them per-spin so the strip's final translateY matches the
+   *  actual rendered cell stride. ResizeObserver keeps them in sync on
+   *  viewport resize. Default values match the mobile layout out of the
+   *  box; the effect below refines on mount. */
+  const reelBankRef = useRef<HTMLDivElement>(null);
+  const [cellPx, setCellPx] = useState({ height: 72, gap: 6 });
+  useEffect(() => {
+    const el = reelBankRef.current;
+    if (!el) return;
+    const recompute = () => {
+      // Reel-bank padding inside the wood-frame is 12px (p-3); horizontal
+      // gap between reels is 6px (gap-1.5). 5 reels, 4 gaps.
+      const padding = 24; // 12 each side
+      const gap = 6;
+      const width = el.clientWidth;
+      if (width <= 0) return;
+      const cellW = Math.floor((width - padding - gap * 4) / 5);
+      // Square cells — height = width.
+      const next = { height: Math.max(40, cellW), gap };
+      setCellPx((prev) => (prev.height === next.height && prev.gap === next.gap ? prev : next));
+      el.style.setProperty('--bj-cell-h', `${next.height}px`);
+      el.style.setProperty('--bj-cell-gap', `${next.gap}px`);
+    };
+    recompute();
+    const ro = new ResizeObserver(recompute);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   // ── Sheets / overlays ─────────────────────────────────────────────
   const [betSheetOpen, setBetSheetOpen] = useState(false);
@@ -146,6 +191,11 @@ export function BigJuan() {
     setShowFsTrigger(null);
     setShowWildSwitch(false);
     setIgniteCells(new Set());
+    setJuanMood('idle');
+    // Reset the visible win display to zero at the start of every spin.
+    setWinDisplay(0);
+    winValueRef.current = 0;
+    if (winDisplayElRef.current) winDisplayElRef.current.textContent = fmtCurrency(0);
     sound.play('click');
     balance.debit(bet);
 
@@ -153,45 +203,52 @@ export function BigJuan() {
     const rng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
     const r = play(rng);
 
-    // ── Reveal pre-switch grid left → right ────────────────────────
-    // Spec §10b.1 — reel-to-reel stagger ~100ms (Quick Spin 50ms,
-    // Turbo 20ms). We use 220ms / 70ms — slightly slower than real
-    // because the player has no haptic feedback to compensate.
-    const reelStagger = turbo ? 80 : 200;
-    const settleMs = turbo ? 90 : 220;
-    setSpinningReels(new Set([0, 1, 2, 3, 4]));
-    setRevealedReels(0);
+    // ── Drive each SpinReel imperatively per the bible Part 4 spec.
+    //    Reel-to-reel stagger + each reel spins longer than the last;
+    //    reel 5 gets two-phase anticipation when 2+ piñatas already
+    //    visible on reels 1-4 (spec §10b.2). ───────────────────────
+    const reelStaggerMs = turbo ? 60 : 130;
+    const baseDurationMs = turbo ? 360 : 900;
+    const perReelIncrementMs = turbo ? 50 : 110;
 
-    for (let reel = 0; reel < 5; reel++) {
-      // Reel-5 anticipation: if scatters_on_first_four >= 2 AND final
-      // scatter count would be 3+, slow reel 5 dramatically. Spec §10b.2
-      // says ~1.5-2.2s of slow spin; we cap it tighter for tempo here.
-      if (reel === 4 && r.anticipation) {
-        setAnticipating(true);
-        // Tense pause before reel 5 lands.
-        await new Promise<void>((res) => setTimeout(res, turbo ? 700 : 1400));
-        sound.play('big-win'); // anticipation horn sting
-      } else {
-        await new Promise<void>((res) => setTimeout(res, reelStagger));
-      }
-      setGrid((prev) => {
-        const next = [...prev];
-        // Reveal the INITIAL grid (pre-switch); Wild Switch fires later.
-        next[reel] = r.initialGrid[reel]!;
-        return next;
-      });
-      setRevealedReels(reel + 1);
-      setSpinningReels((prev) => {
-        const next = new Set(prev);
-        next.delete(reel);
-        return next;
-      });
-      sound.play('drop');
-      await new Promise<void>((res) => setTimeout(res, settleMs));
+    // Bible Part 4.4: build all final symbol arrays, then start each reel
+    // with a stagger. We use Promise.all so the staggered starts run
+    // concurrently but spin() awaits them all.
+    const reelPromises: Promise<void>[] = [];
+    for (let i = 0; i < 5; i++) {
+      const isLast = i === 4;
+      const useAnticipation = isLast && r.anticipation;
+      // Reel duration grows with each reel — the bible's reel-5 always
+      // lands last for tension. Anticipation adds a slow tail.
+      let duration = baseDurationMs + i * perReelIncrementMs;
+      if (useAnticipation) duration += turbo ? 600 : 1200;
+
+      const p = (async () => {
+        await new Promise<void>((res) => setTimeout(res, i * reelStaggerMs));
+        if (useAnticipation) {
+          setAnticipating(true);
+          sound.play('big-win'); // anticipation horn sting
+        }
+        await reelRefs.current[i]?.spin(r.initialGrid[i]!, {
+          durationMs: duration,
+          anticipation: useAnticipation,
+          cellHeight: cellPx.height,
+          cellGap: cellPx.gap,
+        });
+        sound.play('drop');
+        if (isLast) setAnticipating(false);
+      })();
+      reelPromises.push(p);
     }
-    setAnticipating(false);
+    await Promise.all(reelPromises);
+
+    // Promote the React rest-view to the pre-switch grid. (SpinReel
+    // hands off cleanly: its imperative strip is now empty + hidden,
+    // and the React grid takes over the display.)
+    setGrid(r.initialGrid);
 
     // ── Pay pre-switch line wins (spec §5: paid first, BEFORE switch) ──
+    let runningCredit = 0;
     if (r.preSwitchWins.length > 0) {
       const winSet = new Set<string>();
       for (const w of r.preSwitchWins) for (const [reel, row] of w.positions) winSet.add(`${reel}:${row}`);
@@ -202,33 +259,38 @@ export function BigJuan() {
         if (prePayout > 0) {
           balance.credit(prePayout);
           sound.play(preMult >= 50 ? 'mega-win' : preMult >= 10 ? 'big-win' : 'win');
+          // Animate the count-up on the visible WIN display.
+          runningCredit += prePayout;
+          if (winDisplayElRef.current) {
+            await animateCountUp(
+              winDisplayElRef.current,
+              winValueRef.current,
+              runningCredit,
+              (n) => fmtCurrency(n),
+              { bet, durationMs: turbo ? 600 : 1500 },
+            );
+            winValueRef.current = runningCredit;
+            setWinDisplay(runningCredit);
+          }
         }
       }
       // Brief pause to let the player see the line wins before switch.
-      await new Promise<void>((res) => setTimeout(res, turbo ? 380 : 800));
+      await new Promise<void>((res) => setTimeout(res, turbo ? 200 : 400));
     }
 
     // ── Wild Switch (if triggered) — spec §6 + §10b.4 ──────────────
     if (r.wildSwitch.switched) {
-      // Burst-into-flames: mark the triggering cells, brief flame anim,
-      // then transform them to wilds + re-evaluate.
       const positions = r.wildSwitch.positions;
       const igniteSet = new Set(positions.map(([reel, row]) => `${reel}:${row}`));
       setIgniteCells(igniteSet);
       setShowWildSwitch(true);
       sound.play('mega-win');
-
       // Flame burst beat (~600-900ms).
       await new Promise<void>((res) => setTimeout(res, turbo ? 500 : 900));
-
-      // Transform cells: switch their symbol id to 'chili' so they
-      // render as wilds.
-      setGrid(r.grid); // post-switch grid
-
-      // Hold ignite glow briefly so the wild reveal pops, then clear.
+      // Transform cells: swap to the post-switch grid.
+      setGrid(r.grid);
       await new Promise<void>((res) => setTimeout(res, turbo ? 250 : 500));
       setIgniteCells(new Set());
-
       // Pay post-switch line wins.
       if (r.postSwitchWins.length > 0) {
         const winSet = new Set<string>();
@@ -240,11 +302,23 @@ export function BigJuan() {
           if (postPayout > 0) {
             balance.credit(postPayout);
             sound.play(postMult >= 50 ? 'mega-win' : 'big-win');
+            runningCredit += postPayout;
+            if (winDisplayElRef.current) {
+              await animateCountUp(
+                winDisplayElRef.current,
+                winValueRef.current,
+                runningCredit,
+                (n) => fmtCurrency(n),
+                { bet, durationMs: turbo ? 600 : 1500 },
+              );
+              winValueRef.current = runningCredit;
+              setWinDisplay(runningCredit);
+            }
           }
         }
       }
       setTimeout(() => setShowWildSwitch(false), 1400);
-      await new Promise<void>((res) => setTimeout(res, turbo ? 300 : 600));
+      await new Promise<void>((res) => setTimeout(res, turbo ? 200 : 400));
     }
 
     // ── Headline result + big-win banner ────────────────────────────
@@ -256,13 +330,13 @@ export function BigJuan() {
     const baseMult = r.baseMultiplier;
     const basePayout = +(bet * baseMult).toFixed(2);
 
-    // Big-win tier banner — spec §10b.10 thresholds.
+    // Big-win tier banner — spec §10b.10 thresholds. Juan reacts.
     const tier = bigWinTierFor(baseMult);
     if (tier) {
       setBigWin({ payout: basePayout, tier });
+      setJuanMood(tier.name === 'max' || tier.name === 'epic' ? 'pistols' : 'cheer');
       const dismissMs = turbo ? Math.max(2200, tier.durationMs * 0.6) : tier.durationMs;
       setTimeout(() => setBigWin(null), dismissMs);
-      // Confetti for bigger tiers.
       const confettiCount =
         tier.name === 'max' ? 280
         : tier.name === 'epic' ? 220
@@ -279,9 +353,9 @@ export function BigJuan() {
 
     // ── Bonus trigger (3+ scatters) — spec §10b.5 ───────────────────
     if (r.triggersBonus) {
+      setJuanMood('pistols');
       setShowFsTrigger(r.scatterCount);
       sound.play('free-spins-trigger');
-      // Generous beat so the player sees "BONUS!" before the bonus mounts.
       const triggerMs = turbo ? 1400 : 2200;
       setTimeout(() => {
         if (!aliveRef.current) return;
@@ -452,129 +526,59 @@ export function BigJuan() {
                 '0 0 0 1px rgba(255,209,102,.3), inset 0 1px 0 rgba(255,209,102,.4), inset 0 -8px 18px rgba(0,0,0,.55), 0 12px 30px rgba(0,0,0,.6)',
             }}
           >
-            <div className="absolute inset-3 grid grid-cols-5 gap-1.5">
-              {grid.map((reel, reelIdx) => {
-                const isLastReelAnticipating = reelIdx === 4 && anticipating && spinningReels.has(4);
+            {/* Bible Part 4: viewport-and-strip pattern. Each reel is a
+             *  fixed-size viewport (.spin-reel) with overflow:hidden.
+             *  During the spin the SpinReel paints an imperative strip
+             *  of symbols and animates translateY; at rest the React
+             *  cells with hero SVG art and class-driven highlights
+             *  take over (.bj-rest-cells). The bank wraps all five
+             *  reels so the --bj-cell-h / --bj-cell-gap CSS variables
+             *  apply consistently. */}
+            <div
+              ref={reelBankRef}
+              className="bj-reel-bank absolute inset-3 grid grid-cols-5 gap-1.5"
+            >
+              {grid.map((reelSymbols, reelIdx) => {
+                const winningRows = new Set<number>();
+                for (const w of lastResult?.wins ?? []) {
+                  for (const [r2, row] of w.positions) {
+                    if (r2 === reelIdx) winningRows.add(row);
+                  }
+                }
+                // Recompute from current winningCells too (the active
+                // post-Wild-Switch set, which may differ from lastResult).
+                for (const key of winningCells) {
+                  const [r2, row] = key.split(':').map(Number);
+                  if (r2 === reelIdx) winningRows.add(row!);
+                }
+                const activeWinRow = activeWin ? (activeWin.positions.find(([r2]) => r2 === reelIdx)?.[1] ?? null) : null;
+                const igniteRows = new Set<number>();
+                for (const key of igniteCells) {
+                  const [r2, row] = key.split(':').map(Number);
+                  if (r2 === reelIdx) igniteRows.add(row!);
+                }
                 return (
-                  <div key={reelIdx} className="grid grid-rows-4 gap-1.5 relative">
-                    {/* Reel-5 anticipation overlay — pulsing glow when 2+ piñatas on 1-4 */}
-                    {isLastReelAnticipating && (
-                      <motion.div
-                        className="absolute inset-0 pointer-events-none rounded-lg"
-                        style={{
-                          boxShadow: 'inset 0 0 24px rgba(255,209,102,.65), 0 0 24px rgba(255,209,102,.55)',
-                          background: 'radial-gradient(60% 80% at 50% 50%, rgba(255,209,102,.18), transparent 70%)',
-                        }}
-                        animate={{ opacity: [0.6, 1, 0.6] }}
-                        transition={{ duration: 0.45, repeat: Infinity }}
-                      />
-                    )}
-                    {reel.map((symId, rowIdx) => {
-                      const cellKey = `${reelIdx}:${rowIdx}`;
-                      const isWinning = winningCells.has(cellKey);
-                      const isActiveWin = activeWin?.positions.some(
-                        ([r, ro]) => r === reelIdx && ro === rowIdx,
-                      ) ?? false;
-                      const isIgniting = igniteCells.has(cellKey);
-                      const sym = symbolById(symId);
-                      const justRevealed = revealedReels > reelIdx;
-                      const cellDelay = justRevealed && busy ? rowIdx * (turbo ? 0.025 : 0.06) : 0;
-                      return (
-                        <motion.div
-                          key={`${cellKey}-${symId}-${isIgniting ? 'ignite' : 'norm'}`}
-                          className="relative rounded-lg flex items-center justify-center select-none aspect-square overflow-hidden"
-                          initial={
-                            justRevealed && busy
-                              ? { y: -56, opacity: 0, scale: 0.82 }
-                              : false
-                          }
-                          animate={
-                            isIgniting
-                              ? {
-                                  scale: [1, 1.12, 0.9, 1],
-                                  opacity: 1,
-                                  filter: [
-                                    'brightness(1)',
-                                    'brightness(1.6) hue-rotate(-12deg)',
-                                    'brightness(2.2) saturate(1.8)',
-                                    'brightness(1.3)',
-                                  ],
-                                }
-                              : isActiveWin
-                                ? { scale: [1, 1.12, 1], y: 0, opacity: 1 }
-                                : isWinning
-                                  ? { scale: 1, y: 0, opacity: 1 }
-                                  : { y: 0, opacity: 1, scale: 1 }
-                          }
-                          transition={
-                            isIgniting
-                              ? { duration: 0.75, ease: 'easeOut' }
-                              : isActiveWin
-                                ? { duration: 0.6, repeat: Infinity, ease: 'easeInOut' }
-                                : justRevealed && busy
-                                  ? { duration: turbo ? 0.18 : 0.34, ease: [0.34, 1.2, 0.5, 1], delay: cellDelay }
-                                  : { duration: 0.3, ease: 'easeOut' }
-                          }
-                          style={{
-                            background: isIgniting
-                              ? 'radial-gradient(circle at 50% 60%, #ffd166 0%, #ff8a40 35%, #c8102e 75%, #5a0810 100%)'
-                              : isActiveWin
-                                ? `linear-gradient(180deg, ${sym?.color}40, rgba(0,0,0,.35))`
-                                : isWinning
-                                  ? `linear-gradient(180deg, ${sym?.color}25, rgba(0,0,0,.45))`
-                                  : 'linear-gradient(180deg, rgba(255,255,255,.04), rgba(0,0,0,.45))',
-                            border: isIgniting
-                              ? '2px solid #ffd166'
-                              : isActiveWin
-                                ? `2px solid ${sym?.color}`
-                                : isWinning
-                                  ? `1.5px solid ${sym?.color}88`
-                                  : '1px solid rgba(200,147,46,.2)',
-                            boxShadow: isIgniting
-                              ? '0 0 24px rgba(255,138,64,.95), inset 0 0 18px rgba(255,209,102,.65)'
-                              : isActiveWin
-                                ? `0 0 18px ${sym?.color}aa, inset 0 1px 0 rgba(255,255,255,.2)`
-                                : isWinning
-                                  ? `0 0 8px ${sym?.color}55`
-                                  : 'inset 0 1px 0 rgba(255,255,255,.04)',
-                          }}
-                        >
-                          {/* Flame layer that pops over the symbol mid-ignite */}
-                          {isIgniting && (
-                            <motion.div
-                              className="absolute inset-0 pointer-events-none"
-                              initial={{ opacity: 0, scale: 0.7 }}
-                              animate={{ opacity: [0, 1, 0.7, 0], scale: [0.6, 1.3, 1.5, 1.7] }}
-                              transition={{ duration: 0.7, ease: 'easeOut' }}
-                              style={{
-                                background:
-                                  'radial-gradient(circle at 50% 60%, rgba(255,255,255,.95) 0%, rgba(255,209,102,.85) 18%, rgba(255,138,64,.7) 40%, rgba(200,16,46,.5) 65%, transparent 85%)',
-                                mixBlendMode: 'screen',
-                              }}
-                            />
-                          )}
-                          <span
-                            className="block w-[78%] h-[78%] sm:w-[82%] sm:h-[82%] relative"
-                            style={{
-                              filter: isIgniting
-                                ? 'drop-shadow(0 0 14px #ffd166) drop-shadow(0 0 22px #ff8a40)'
-                                : isActiveWin
-                                  ? `drop-shadow(0 0 12px ${sym?.color})`
-                                  : 'drop-shadow(0 2px 4px rgba(0,0,0,.6))',
-                            }}
-                          >
-                            {renderBigJuanSymbol(symId)}
-                          </span>
-                        </motion.div>
-                      );
-                    })}
-                  </div>
+                  <SpinReel
+                    key={reelIdx}
+                    reelIndex={reelIdx}
+                    ref={(h) => { reelRefs.current[reelIdx] = h; }}
+                    symbols={reelSymbols}
+                    winningRows={winningRows}
+                    activeWinRow={activeWinRow}
+                    igniteRows={igniteRows}
+                    renderCell={renderBigJuanSymbol}
+                    fillerPool={REEL_FILLER_POOL}
+                    showAnticipationGlow={reelIdx === 4 && anticipating}
+                  />
                 );
               })}
             </div>
           </div>
 
-          {/* Active payline overlay */}
+          {/* Active payline overlay — drawn polyline animates across the
+           *  cells of the active win. SVG overlay sits over the wood
+           *  frame so it stays anchored to the reels even during win
+           *  cycling. */}
           {activeWin && (
             <PaylineOverlay
               line={PAYLINES[activeWin.lineIndex]!}
@@ -582,6 +586,10 @@ export function BigJuan() {
             />
           )}
         </div>
+
+        {/* Animated Big Juan mascot beside the reels. Idle bobbing by
+         *  default; transitions to cheer/pistols/dance on game events. */}
+        <JuanCharacter mood={juanMood} />
 
         {/* Wild Switch banner */}
         <AnimatePresence>
@@ -1110,6 +1118,16 @@ function makeBlankGrid(): TGrid {
   }
   return grid;
 }
+
+/** Symbol pool used by SpinReel to populate the random filler cells
+ *  during the spin animation. Skip the scatter (we don't want piñatas
+ *  flashing past during the spin since they hint at the bonus) and
+ *  weight lows heavier than highs to match the reel distribution. */
+const REEL_FILLER_POOL: string[] = [
+  'A', 'A', 'K', 'K', 'Q', 'Q', 'J', 'J', '10', '10',
+  'vihuela', 'hot_sauce', 'chihuahua', 'senorita', 'juan',
+  'chili',
+];
 
 // =============================================================================
 // Payline overlay
