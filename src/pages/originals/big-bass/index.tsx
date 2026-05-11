@@ -16,6 +16,7 @@ import {
 } from '../_shared/AutoBetController';
 import { FREE_SPIN_AWARDS, SYMBOLS, type BassResult, spin, spinFreeRound, symbolById } from './engine';
 import { fireConfetti } from '../../../lib/confetti';
+import { CountUp } from '../../../components/ui/CountUp';
 
 export function BigBassGame() {
   const { balance, fairness, sound, history, session } = useGame();
@@ -34,6 +35,10 @@ export function BigBassGame() {
   const [freeSpinsWon, setFreeSpinsWon] = useState(0);
   const [showFsBanner, setShowFsBanner] = useState<{ count: number } | null>(null);
   const [showBuyConfirm, setShowBuyConfirm] = useState(false);
+  /** End-of-FS "TOTAL WIN" reveal overlay. Shown after the last FS
+   *  spin resolves. Real Pragmatic Big Bass uses this beat to anchor
+   *  the bonus result before returning to the base game. */
+  const [fsTotalReveal, setFsTotalReveal] = useState<{ amount: number; bet: number } | null>(null);
   const stateRef = useRef({ bet });
   stateRef.current = { bet };
 
@@ -202,13 +207,23 @@ export function BigBassGame() {
       });
       session.recordSpin(0, r.payout, true);
     }
-    // FS complete — outro celebration if won big
-    if (totalWin > b * 20) {
-      fireConfetti({
-        count: 200,
-        colors: ['#5fb8ff', '#ffd166', '#22d3ee', '#1fff7a', '#ffffff'],
-      });
-      sound.play('mega-win');
+    // FS complete — real Pragmatic Big Bass shows a "TOTAL WIN"
+    // overlay with a tier-scaled count-up. Fires whenever any wins
+    // landed during FS, not just big ones (the count-up still feels
+    // dramatic even for moderate totals because it's the bonus
+    // reveal moment).
+    if (totalWin > 0) {
+      setFsTotalReveal({ amount: totalWin, bet: b });
+      sound.play(totalWin >= b * 50 ? 'mega-win' : totalWin >= b * 10 ? 'big-win' : 'win');
+      if (totalWin >= b * 20) {
+        fireConfetti({
+          count: 200,
+          colors: ['#5fb8ff', '#ffd166', '#22d3ee', '#1fff7a', '#ffffff'],
+        });
+      }
+      // Pause on the reveal so the player reads the total.
+      await new Promise<void>((res) => setTimeout(res, 3800));
+      setFsTotalReveal(null);
     }
     setFreeSpinsRemaining(0);
     return totalWin;
@@ -606,6 +621,73 @@ export function BigBassGame() {
           )}
         </div>
       </div>
+      {/* Free spins outro — "TOTAL WIN" reveal with tier-scaled
+          count-up. Matches real Pragmatic Big Bass's bonus outro. */}
+      <AnimatePresence>
+        {fsTotalReveal && (
+          <motion.div
+            className="fixed inset-0 z-[180] flex flex-col items-center justify-center pointer-events-none"
+            style={{
+              background: 'radial-gradient(ellipse at center, rgba(95,184,255,.45), rgba(0,0,0,.92) 70%)',
+              backdropFilter: 'blur(6px)',
+              WebkitBackdropFilter: 'blur(6px)',
+            }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.32 }}
+          >
+            <motion.div
+              className="text-[11px] uppercase tracking-[0.4em] mb-2"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              style={{ color: '#fff5dc' }}
+            >
+              Free Spins · 🦞 Complete
+            </motion.div>
+            <motion.div
+              className="font-display font-extrabold uppercase tracking-[0.3em] mb-3"
+              initial={{ scale: 0.4, y: 30, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              transition={{ type: 'spring', stiffness: 240, damping: 18 }}
+              style={{
+                fontSize: 'clamp(28px, 9vw, 48px)',
+                color: '#ffd166',
+                textShadow: '0 0 24px rgba(255,209,102,.9), 0 0 56px rgba(95,184,255,.5)',
+              }}
+            >
+              Total Win
+            </motion.div>
+            <motion.div
+              className="font-mono font-extrabold tabular-nums"
+              initial={{ scale: 0.6, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.15, type: 'spring', stiffness: 240, damping: 16 }}
+              style={{
+                fontSize: 'clamp(48px, 16vw, 96px)',
+                color: '#ffffff',
+                textShadow: '0 0 32px rgba(255,209,102,.95), 0 0 60px rgba(95,184,255,.6)',
+              }}
+            >
+              <CountUp
+                value={fsTotalReveal.amount}
+                duration={1800 + Math.min(2000, fsTotalReveal.amount / fsTotalReveal.bet * 25)}
+                format={(n) => fmtCurrency(n)}
+              />
+            </motion.div>
+            <motion.div
+              className="text-xs uppercase tracking-[0.4em] mt-4 opacity-70"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.7 }}
+              transition={{ delay: 0.6 }}
+              style={{ color: '#ffd166' }}
+            >
+              {(fsTotalReveal.amount / Math.max(fsTotalReveal.bet, 0.01)).toFixed(2)}× your bet
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </OriginalPageLayout>
   );
 }
