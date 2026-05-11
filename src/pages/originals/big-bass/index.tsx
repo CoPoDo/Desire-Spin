@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
 import { useGame } from '../../../game-context';
+import { useHotkey } from '../../../hooks/useHotkey';
 import { createRng } from '../../../lib/fairness';
 import { fmtCurrency, fmtMultiplier } from '../../../lib/format';
 import { BetInput } from '../_shared/BetInput';
@@ -220,6 +221,14 @@ export function BigBassGame() {
     runOnce: playOnce,
     onStop: () => setAutoActive(false),
   });
+
+  // Space-to-cast hotkey. Skips while busy or while a free-spins
+  // round is running (FS auto-advances; user shouldn't interrupt).
+  useHotkey(' ', () => {
+    if (mode !== 'manual') return;
+    if (busy || freeSpinsRemaining > 0 || balance.balance < bet) return;
+    void playOnce();
+  }, mode === 'manual');
 
   const inFs = freeSpinsRemaining > 0;
 
