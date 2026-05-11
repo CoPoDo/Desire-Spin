@@ -7,12 +7,16 @@ import { fmtCurrency } from '../../../lib/format';
 import { BetInput } from '../_shared/BetInput';
 import {
   type Card,
+  type Hand,
   type RoundState,
+  canSplit,
   dealRound,
   double,
   handValue,
   hit,
   rankLabel,
+  split,
+  splitCost,
   stand,
 } from './engine';
 import { fireConfetti } from '../../../lib/confetti';
@@ -62,30 +66,34 @@ export function BlackjackGame() {
     return createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
   }, [fairness]);
 
+  /** When the player commits an action that ends the round (stand,
+   *  double, split-then-resolve), schedule the dealer card reveal +
+   *  outcome chime to match the staggered CardView entrance. */
   const finalizeRound = useCallback(
     (r: RoundState) => {
       if (r.phase !== 'done') return;
       if (r.payout > 0) balance.credit(r.payout);
-      const profit = r.payout - r.bet;
-      if (r.outcome === 'player-blackjack' || profit > r.bet) {
+      const totalBet = r.hands.reduce((s, h) => s + h.bet, 0);
+      const profit = r.payout - totalBet;
+      if (r.outcome === 'player-blackjack' || profit > totalBet) {
         fireConfetti({ count: r.outcome === 'player-blackjack' ? 130 : 70 });
       }
       sound.play(
-        r.outcome === 'player-blackjack' || profit > r.bet ? 'big-win' :
+        r.outcome === 'player-blackjack' || profit > totalBet ? 'big-win' :
         profit > 0 ? 'win' :
         profit === 0 ? 'click' :
         'drop',
       );
       history.record({
         game: 'Blackjack',
-        bet: r.bet,
+        bet: totalBet,
         payout: r.payout,
-        multiplier: r.payout / Math.max(r.bet, 0.01),
+        multiplier: r.payout / Math.max(totalBet, 0.01),
         serverSeedHash: fairness.hash,
         clientSeed: '',
         nonce: 0,
       });
-      session.recordSpin(r.bet, r.payout, false);
+      session.recordSpin(totalBet, r.payout, false);
     },
     [balance, sound, history, fairness, session],
   );
@@ -98,9 +106,20 @@ export function BlackjackGame() {
     setRound(r);
     sound.play('click');
     if (r.phase === 'done') {
-      finalizeRound(r);
+      // Stagger the outcome chime so it lands after the staggered
+      // dealer reveals (each new dealer card is 450ms apart).
+      const newDealerCards = r.dealer.length - 1;
+      for (let i = 0; i < newDealerCards; i++) {
+        window.setTimeout(() => sound.play('drop'), 50 + i * 450);
+      }
+      const settleAt = 200 + newDealerCards * 450;
+      window.setTimeout(() => {
+        finalizeRound(r);
+        setBusy(false);
+      }, settleAt);
+    } else {
+      setTimeout(() => setBusy(false), 220);
     }
-    setTimeout(() => setBusy(false), 220);
   }, [round, busy, nextRng, sound, finalizeRound]);
 
   const onStand = useCallback(() => {
@@ -109,44 +128,77 @@ export function BlackjackGame() {
     const rng = nextRng();
     const r = stand(rng, round);
     setRound(r);
-    // Schedule a 'drop' SFX for each new dealer card revealed during
-    // the deal-out animation. The entry animation delays each card
-    // by index*450ms so we mirror that with audible deals.
-    const newDealerCards = r.dealer.length - 1; // hole card flip + each new draw
-    for (let i = 0; i < newDealerCards; i++) {
-      window.setTimeout(() => sound.play('drop'), 50 + i * 450);
+    // Dealer phase only resolves if this stand finished the LAST hand.
+    // Otherwise we just advance to the next hand and the player keeps
+    // playing — no dealer reveal yet.
+    if (r.phase === 'done') {
+      const newDealerCards = r.dealer.length - 1;
+      for (let i = 0; i < newDealerCards; i++) {
+        window.setTimeout(() => sound.play('drop'), 50 + i * 450);
+      }
+      const settleAt = 200 + newDealerCards * 450;
+      window.setTimeout(() => {
+        finalizeRound(r);
+        setBusy(false);
+      }, settleAt);
+    } else {
+      sound.play('click');
+      setTimeout(() => setBusy(false), 220);
     }
-    // Finalize after the deal-out completes so the outcome chime lands
-    // *after* the dealer's final card flips into place (was firing
-    // simultaneously with the first card, drowning out the reveal).
-    const settleAt = 200 + newDealerCards * 450;
-    window.setTimeout(() => {
-      finalizeRound(r);
-      setBusy(false);
-    }, settleAt);
   }, [round, busy, nextRng, finalizeRound, sound]);
 
   const onDouble = useCallback(() => {
-    if (!round || round.phase !== 'player' || busy || round.player.length !== 2) return;
-    if (balance.balance < round.initialBet) return;
+    if (!round || round.phase !== 'player' || busy) return;
+    const h = round.hands[round.activeIdx];
+    if (!h || h.cards.length !== 2 || h.done) return;
+    if (balance.balance < h.bet) return;
     setBusy(true);
     sound.play('click');
-    balance.debit(round.initialBet);
+    balance.debit(h.bet);
     const rng = nextRng();
     const r = double(rng, round);
     setRound(r);
-    // Same staggered reveal as Stand — double draws one player card
-    // (counted via the new dealer-card count) plus the dealer's full
-    // hand. SFX per card; finalize after the last one lands.
-    const newDealerCards = r.dealer.length - 1;
-    for (let i = 0; i < newDealerCards; i++) {
-      window.setTimeout(() => sound.play('drop'), 50 + i * 450);
+    if (r.phase === 'done') {
+      const newDealerCards = r.dealer.length - 1;
+      for (let i = 0; i < newDealerCards; i++) {
+        window.setTimeout(() => sound.play('drop'), 50 + i * 450);
+      }
+      const settleAt = 200 + newDealerCards * 450;
+      window.setTimeout(() => {
+        finalizeRound(r);
+        setBusy(false);
+      }, settleAt);
+    } else {
+      // Doubled, but still have other split hands to play
+      setTimeout(() => setBusy(false), 220);
     }
-    const settleAt = 200 + newDealerCards * 450;
-    window.setTimeout(() => {
-      finalizeRound(r);
-      setBusy(false);
-    }, settleAt);
+  }, [round, busy, balance, sound, nextRng, finalizeRound]);
+
+  const onSplit = useCallback(() => {
+    if (!round || round.phase !== 'player' || busy) return;
+    if (!canSplit(round)) return;
+    const cost = splitCost(round);
+    if (balance.balance < cost) return;
+    setBusy(true);
+    sound.play('click');
+    balance.debit(cost);
+    const rng = nextRng();
+    const r = split(rng, round);
+    setRound(r);
+    if (r.phase === 'done') {
+      // Split-Aces auto-stand → dealer resolves immediately
+      const newDealerCards = r.dealer.length - 1;
+      for (let i = 0; i < newDealerCards; i++) {
+        window.setTimeout(() => sound.play('drop'), 50 + i * 450);
+      }
+      const settleAt = 200 + newDealerCards * 450;
+      window.setTimeout(() => {
+        finalizeRound(r);
+        setBusy(false);
+      }, settleAt);
+    } else {
+      setTimeout(() => setBusy(false), 220);
+    }
   }, [round, busy, balance, sound, nextRng, finalizeRound]);
 
   const reset = useCallback(() => {
@@ -154,7 +206,6 @@ export function BlackjackGame() {
     setRngState(null);
   }, []);
 
-  const playerVal = round ? handValue(round.player) : null;
   // Show only the dealer's first card while player is still acting
   const dealerVisible = round
     ? round.phase === 'player'
@@ -162,6 +213,13 @@ export function BlackjackGame() {
       : round.dealer
     : [];
   const dealerVal = round && round.phase !== 'player' ? handValue(round.dealer) : null;
+
+  // Convenience accessors for the active hand
+  const activeHand = round?.hands[round.activeIdx];
+  const splitAvailable = round ? canSplit(round) && balance.balance >= splitCost(round) : false;
+  const doubleAvailable = round && round.phase === 'player' && activeHand && activeHand.cards.length === 2 && !activeHand.done && balance.balance >= activeHand.bet;
+  const totalBet = round ? round.hands.reduce((s, h) => s + h.bet, 0) : 0;
+  const totalProfit = round?.phase === 'done' ? round.payout - totalBet : 0;
 
   return (
     <OriginalPageLayout title="Blackjack">
@@ -177,11 +235,6 @@ export function BlackjackGame() {
             )}
           </div>
           <div className="flex gap-2 justify-center min-h-[100px]">
-            {/* Dealer cards: during the player phase only the first card
-                shows + a face-down placeholder. After stand, each new
-                dealer card eases in 450ms apart (was 100ms) so the
-                player can read each rank as it lands. The first card
-                stays mounted (delay=0) and only NEW cards animate. */}
             {dealerVisible.map((c, i) => (
               <CardView key={i} card={c} delay={i === 0 ? 0 : (i - 1) * 450 + 50} />
             ))}
@@ -194,40 +247,47 @@ export function BlackjackGame() {
           </div>
         </div>
 
-        {/* Player */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] uppercase tracking-widest text-ink-mute">You</span>
-            {playerVal && (
-              <span className="font-mono font-bold text-base tabular-nums text-ink">
-                {playerVal.value}{playerVal.soft ? ' (soft)' : ''}{playerVal.bust ? ' bust' : ''}
-                {playerVal.blackjack ? ' · BLACKJACK' : ''}
-              </span>
-            )}
+        {/* Player hands — one panel per hand (1 normally, 2-4 when split).
+            Active hand gets a glowing border so the player knows where
+            their next action applies. */}
+        {round && (
+          <div className={`grid gap-2 ${round.hands.length === 1 ? 'grid-cols-1' : round.hands.length === 2 ? 'grid-cols-2' : 'grid-cols-2'}`}>
+            {round.hands.map((h, i) => (
+              <PlayerHandPanel
+                key={i}
+                hand={h}
+                isActive={round.phase === 'player' && round.activeIdx === i}
+                isMultiHand={round.hands.length > 1}
+                handIdx={i + 1}
+                doneSummary={round.phase === 'done' ? h.outcome : null}
+              />
+            ))}
           </div>
-          <div className="flex gap-2 justify-center min-h-[100px]">
-            {round?.player.map((c, i) => <CardView key={i} card={c} delay={i * 100} />)}
-          </div>
-        </div>
+        )}
 
         {/* Outcome */}
-        {done && round?.outcome && (
+        {done && round && (
           <div className="rounded-xl bg-bg-card border border-edge p-3 text-center">
             <div
               className={`font-mono font-bold text-lg ${
-                round.outcome === 'player-blackjack' || round.outcome === 'player-win'
-                  ? 'text-accent'
-                  : round.outcome === 'push'
-                    ? 'text-ink-dim'
-                    : 'text-accent-hot'
+                totalProfit > 0 ? 'text-accent' : totalProfit === 0 ? 'text-ink-dim' : 'text-accent-hot'
               }`}
             >
-              {round.outcome === 'player-blackjack' ? `BLACKJACK · +${fmtCurrency(round.payout - round.bet)}` :
-               round.outcome === 'player-win' ? `Win · +${fmtCurrency(round.payout - round.bet)}` :
-               round.outcome === 'push' ? `Push · ${fmtCurrency(round.bet)} returned` :
-               round.outcome === 'player-bust' ? `Bust · -${fmtCurrency(round.bet)}` :
-               `Dealer wins · -${fmtCurrency(round.bet)}`}
+              {round.outcome === 'player-blackjack'
+                ? `BLACKJACK · +${fmtCurrency(totalProfit)}`
+                : totalProfit > 0
+                  ? `Win · +${fmtCurrency(totalProfit)}`
+                  : totalProfit === 0
+                    ? `Push · ${fmtCurrency(totalBet)} returned`
+                    : `Loss · ${fmtCurrency(totalProfit)}`}
             </div>
+            {round.hands.length > 1 && (
+              <div className="text-[10px] text-ink-mute mt-1">
+                {round.hands.map((h, i) =>
+                  `Hand ${i + 1}: ${outcomeText(h.outcome)}`
+                ).join(' · ')}
+              </div>
+            )}
           </div>
         )}
 
@@ -244,7 +304,7 @@ export function BlackjackGame() {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-4 gap-2">
             <button
               onClick={onHit}
               disabled={busy}
@@ -261,10 +321,19 @@ export function BlackjackGame() {
             </button>
             <button
               onClick={onDouble}
-              disabled={busy || round.player.length !== 2 || balance.balance < round.initialBet}
+              disabled={busy || !doubleAvailable}
               className="py-3.5 rounded-xl bg-accent-gold text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 active:scale-[0.99]"
+              title={doubleAvailable ? `Double bet to ${fmtCurrency(activeHand!.bet * 2)} and draw one card` : 'Double unavailable on this hand'}
             >
               Double
+            </button>
+            <button
+              onClick={onSplit}
+              disabled={busy || !splitAvailable}
+              className="py-3.5 rounded-xl bg-accent-violet text-white font-bold text-sm uppercase tracking-wider disabled:opacity-50 active:scale-[0.99]"
+              title={splitAvailable ? `Split pair into 2 hands (costs ${fmtCurrency(round?.initialBet ?? bet)})` : 'Split unavailable — needs a matching-rank pair on the current hand'}
+            >
+              Split
             </button>
           </div>
         )}
@@ -275,14 +344,88 @@ export function BlackjackGame() {
   );
 }
 
-function CardView({ card, hidden, delay = 0 }: { card?: Card; hidden?: boolean; delay?: number }) {
+function outcomeText(outcome: Hand['outcome']): string {
+  switch (outcome) {
+    case 'player-blackjack': return 'Blackjack';
+    case 'player-win': return 'Win';
+    case 'push': return 'Push';
+    case 'player-bust': return 'Bust';
+    case 'dealer-win': return 'Loss';
+    default: return '—';
+  }
+}
+
+function PlayerHandPanel({
+  hand,
+  isActive,
+  isMultiHand,
+  handIdx,
+  doneSummary,
+}: {
+  hand: Hand;
+  isActive: boolean;
+  isMultiHand: boolean;
+  handIdx: number;
+  doneSummary: Hand['outcome'] | null;
+}) {
+  const v = handValue(hand.cards);
+  const outcomeColor = doneSummary === 'player-blackjack' || doneSummary === 'player-win'
+    ? '#1fff7a'
+    : doneSummary === 'push'
+      ? '#9aa3b2'
+      : doneSummary
+        ? '#ff5560'
+        : '#9aa3b2';
+  return (
+    <motion.div
+      animate={isActive ? { scale: 1.0 } : { scale: 0.97 }}
+      transition={{ duration: 0.18 }}
+      className="rounded-2xl bg-bg-card border p-3 transition-colors"
+      style={{
+        borderColor: isActive
+          ? 'rgba(31,255,122,.65)'
+          : doneSummary
+            ? `${outcomeColor}55`
+            : '#2a3142',
+        boxShadow: isActive
+          ? '0 0 14px rgba(31,255,122,.35)'
+          : doneSummary
+            ? `0 0 10px ${outcomeColor}33`
+            : 'inset 0 1px 0 rgba(255,255,255,.04)',
+      }}
+    >
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-[10px] uppercase tracking-widest text-ink-mute">
+          {isMultiHand ? `Hand ${handIdx}` : 'You'}
+          {hand.doubled && ' · 2×'}
+          {hand.fromSplit && ' · split'}
+        </span>
+        <span className="font-mono font-bold text-base tabular-nums" style={{ color: doneSummary ? outcomeColor : '#e5e9f0' }}>
+          {v.value}{v.soft ? ' (s)' : ''}{v.bust ? ' bust' : ''}
+          {v.blackjack && !hand.fromSplit ? ' · BJ' : ''}
+        </span>
+      </div>
+      <div className={`flex gap-1.5 justify-center ${isMultiHand ? 'min-h-[70px]' : 'min-h-[100px]'}`}>
+        {hand.cards.map((c, i) => (
+          <CardView key={i} card={c} delay={i * 100} compact={isMultiHand} />
+        ))}
+      </div>
+    </motion.div>
+  );
+}
+
+function CardView({ card, hidden, delay = 0, compact = false }: { card?: Card; hidden?: boolean; delay?: number; compact?: boolean }) {
+  const wCls = compact ? 'w-12 h-16' : 'w-16 h-24';
+  const cornerTxt = compact ? 'text-[8px]' : 'text-[10px]';
+  const centreRank = compact ? 'text-xl' : 'text-2xl';
+  const centreSuit = compact ? 'text-base' : 'text-xl';
   if (hidden) {
     return (
       <motion.div
         initial={{ y: -20, opacity: 0, rotateY: 90 }}
         animate={{ y: 0, opacity: 1, rotateY: 0 }}
         transition={{ delay: delay / 1000, type: 'spring', stiffness: 240, damping: 20 }}
-        className="relative w-16 h-24 rounded-xl flex items-center justify-center"
+        className={`relative rounded-xl flex items-center justify-center ${wCls}`}
         style={{
           background:
             'repeating-linear-gradient(45deg, #2a3142, #2a3142 4px, #1a1f29 4px, #1a1f29 8px)',
@@ -290,8 +433,6 @@ function CardView({ card, hidden, delay = 0 }: { card?: Card; hidden?: boolean; 
           boxShadow: '0 8px 18px rgba(0,0,0,.5)',
         }}
       >
-        {/* Gold diamond ornament — proper card-back filigree instead
-         *  of a ⚡ emoji placeholder. */}
         <div
           className="rotate-45"
           style={{
@@ -312,7 +453,7 @@ function CardView({ card, hidden, delay = 0 }: { card?: Card; hidden?: boolean; 
       initial={{ y: -30, opacity: 0, rotateY: 180 }}
       animate={{ y: 0, opacity: 1, rotateY: 0 }}
       transition={{ delay: delay / 1000, type: 'spring', stiffness: 240, damping: 20 }}
-      className="relative w-16 h-24 rounded-xl select-none font-bold"
+      className={`relative rounded-xl select-none font-bold ${wCls}`}
       style={{
         background: 'linear-gradient(180deg, #f5f0e4, #e8dfc9)',
         border: '2px solid #c8932e',
@@ -320,20 +461,17 @@ function CardView({ card, hidden, delay = 0 }: { card?: Card; hidden?: boolean; 
         color: red ? '#c8102e' : '#1a0f00',
       }}
     >
-      {/* Top-left corner pip */}
-      <div className="absolute top-1 left-1 leading-none flex flex-col items-center text-[10px]">
+      <div className={`absolute top-1 left-1 leading-none flex flex-col items-center ${cornerTxt}`}>
         <span>{rankLabel(card.rank)}</span>
         <span>{card.suit}</span>
       </div>
-      {/* Bottom-right corner pip (rotated) */}
-      <div className="absolute bottom-1 right-1 leading-none flex flex-col items-center rotate-180 text-[10px]">
+      <div className={`absolute bottom-1 right-1 leading-none flex flex-col items-center rotate-180 ${cornerTxt}`}>
         <span>{rankLabel(card.rank)}</span>
         <span>{card.suit}</span>
       </div>
-      {/* Centre rank + suit */}
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <div className="text-2xl leading-none">{rankLabel(card.rank)}</div>
-        <div className="text-xl mt-0.5">{card.suit}</div>
+        <div className={`${centreRank} leading-none`}>{rankLabel(card.rank)}</div>
+        <div className={`${centreSuit} mt-0.5`}>{card.suit}</div>
       </div>
     </motion.div>
   );
