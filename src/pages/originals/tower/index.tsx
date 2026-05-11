@@ -115,6 +115,14 @@ export function TowerGame() {
 
   const reset = useCallback(() => setRound(null), []);
 
+  /** Pick a random tile on the current row — matches Mines's "?"
+   *  button. Useful for autopilot-style play or when you can't decide. */
+  const pickRandom = useCallback(() => {
+    if (!round || round.done) return;
+    const tile = Math.floor(Math.random() * cfg.tiles);
+    onTile(round.step, tile);
+  }, [round, cfg.tiles, onTile]);
+
   return (
     <OriginalPageLayout title="Tower">
       <div className="flex flex-col p-4 gap-4 max-w-md mx-auto w-full">
@@ -272,13 +280,22 @@ export function TowerGame() {
                 <div className="font-mono font-bold text-base text-ink mt-0.5 tabular-nums">{cfg.deaths}</div>
               </div>
             </div>
-            <button
-              onClick={doCashOut}
-              disabled={round.step === 0}
-              className="w-full py-3.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
-            >
-              {round.step === 0 ? 'Pick a tile to start climbing' : `Cash Out · ${fmtCurrency(cashoutAmount)}`}
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={pickRandom}
+                className="flex-shrink-0 px-4 py-3 rounded-xl bg-bg-elev border border-edge text-ink hover:bg-bg-hover font-bold text-sm uppercase tracking-wider transition active:scale-[0.97]"
+                title="Pick a random tile in the current row"
+              >
+                Pick Random
+              </button>
+              <button
+                onClick={doCashOut}
+                disabled={round.step === 0}
+                className="flex-1 py-3 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
+              >
+                {round.step === 0 ? 'Pick a tile to start climbing' : `Cash Out · ${fmtCurrency(cashoutAmount)}`}
+              </button>
+            </div>
           </div>
         )}
       </div>
