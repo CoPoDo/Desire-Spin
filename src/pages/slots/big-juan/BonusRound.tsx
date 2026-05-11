@@ -581,9 +581,15 @@ function BonusGrid({
               />
             );
           }
-          // Map: 0,1,2 → outer[0,1,2]; 3 → outer[3]; 5 → outer[4];
-          // 6,7,8 → outer[5,6,7].
-          const outerIdx = gridIdx < 4 ? gridIdx : gridIdx === 5 ? 4 : gridIdx - 2;
+          // Map 9 grid positions (0..8) onto the 8-element `outer` array
+          // (skipping index 4, which is the centre money bag).
+          //   grid 0,1,2,3       → outer 0,1,2,3
+          //   grid 4              → BAG (handled above)
+          //   grid 5,6,7,8       → outer 4,5,6,7
+          // The previous formula had an off-by-one bug for grid 6/7/8 —
+          // it subtracted 2 instead of 1, so the bottom row showed the
+          // same symbols as the middle/right and outer[7] never rendered.
+          const outerIdx = gridIdx < 4 ? gridIdx : gridIdx - 1;
           const sym = outer[outerIdx]!;
           return (
             <OuterCell
