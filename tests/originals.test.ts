@@ -13,6 +13,12 @@ import * as Mines from '../src/pages/originals/mines/engine';
 import * as Tower from '../src/pages/originals/tower/engine';
 import * as Cups from '../src/pages/originals/cups/engine';
 import * as Plinko from '../src/pages/originals/plinko/engine';
+import * as Dice from '../src/pages/originals/dice/engine';
+import * as Limbo from '../src/pages/originals/limbo/engine';
+import * as Crash from '../src/pages/originals/crash/engine';
+import * as Race from '../src/pages/originals/race/engine';
+import * as CoinFlip from '../src/pages/originals/coin-flip/engine';
+import * as DragonTiger from '../src/pages/originals/dragon-tiger/engine';
 
 /** Regression tests for the RTP audit landed earlier in this branch.
  *  Each game's expected RTP target is specified inline; the test asserts
@@ -225,5 +231,85 @@ describe('Originals RTP — regression', () => {
     const rtp = total / N;
     expect(rtp).toBeGreaterThan(0.7);
     expect(rtp).toBeLessThan(1.3);
+  });
+
+  it('Dice: multiplier × winChance = 0.99 for every threshold (analytical)', () => {
+    for (let target = 2; target <= 98; target += 4) {
+      for (const dir of ['over', 'under'] as const) {
+        const chance = Dice.winChanceFor(dir, target);
+        const mult = Dice.multiplierFor(dir, target);
+        expect(mult * chance / 100).toBeCloseTo(0.99, 3);
+      }
+    }
+  });
+
+  it('Limbo: target × winChance = 0.99 for every target (analytical)', () => {
+    for (const t of [1.1, 1.5, 2, 3, 5, 10, 50, 100, 1000]) {
+      const chance = Limbo.winChanceFor(t);
+      expect((t * chance) / 100).toBeCloseTo(0.99, 5);
+    }
+  });
+
+  it('Crash: bust distribution matches 0.99/T at fixed cashout (Monte Carlo)', () => {
+    // Cash out at 2.00× every round → expected RTP = 2 × P(bust >= 2) = 2 × 0.99/2 = 0.99.
+    const TARGET = 2.0;
+    let total = 0;
+    for (let i = 0; i < N; i++) {
+      const rng = createRng('crash-rtp', 'c', i);
+      const bust = Crash.rollBust(rng);
+      total += bust >= TARGET ? TARGET : 0;
+    }
+    const rtp = total / N;
+    expect(rtp).toBeGreaterThan(0.93);
+    expect(rtp).toBeLessThan(1.05);
+  });
+
+  it('Race: per-horse hit rate matches HORSE_WEIGHTS (Monte Carlo)', () => {
+    const counts = new Array(Race.HORSE_COUNT).fill(0);
+    for (let i = 0; i < N; i++) {
+      const rng = createRng('race-dist', 'c', i);
+      counts[Race.pickWinner(rng)]++;
+    }
+    for (let i = 0; i < Race.HORSE_COUNT; i++) {
+      const observed = counts[i] / N;
+      const expected = Race.HORSE_WEIGHTS[i]! / 100;
+      // Allow ±0.025 — well outside binomial noise at N=8000 even for the
+      // smallest 5% weight (stddev ≈ 0.0024).
+      expect(Math.abs(observed - expected)).toBeLessThan(0.025);
+    }
+  });
+
+  it('Race: every-horse multiplier × weight = 0.99 (analytical)', () => {
+    for (let i = 0; i < Race.HORSE_COUNT; i++) {
+      const m = Race.multiplierForHorse(i);
+      const p = Race.HORSE_WEIGHTS[i]! / 100;
+      expect(m * p).toBeCloseTo(0.99, 2);
+    }
+  });
+
+  it('Coin Flip: single-flip RTP ≈ 0.99 (Monte Carlo)', () => {
+    // Bet 1 unit, always call heads, always cash out after 1 flip.
+    // Expected RTP = 0.5 × 1.98 = 0.99.
+    let total = 0;
+    for (let i = 0; i < N; i++) {
+      const rng = createRng('coin-rtp', 'c', i);
+      const result = CoinFlip.flip(rng);
+      if (result === 'heads') total += CoinFlip.multiplierAfter(1);
+    }
+    const rtp = total / N;
+    expect(rtp).toBeGreaterThan(0.94);
+    expect(rtp).toBeLessThan(1.04);
+  });
+
+  it('Dragon Tiger: Dragon-side RTP ≈ 0.99 (Monte Carlo)', () => {
+    let total = 0;
+    for (let i = 0; i < N; i++) {
+      const rng = createRng('dt-rtp', 'c', i);
+      const r = DragonTiger.play(rng, [{ kind: 'dragon', amount: 1 }]);
+      total += r.totalReturn;
+    }
+    const rtp = total / N;
+    expect(rtp).toBeGreaterThan(0.93);
+    expect(rtp).toBeLessThan(1.05);
   });
 });
