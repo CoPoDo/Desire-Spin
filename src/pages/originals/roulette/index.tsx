@@ -24,6 +24,7 @@ function keyOf(t: BetType): string {
     case 'half':   return `h:${t.half}`;
     case 'dozen':  return `d:${t.dozen}`;
     case 'column': return `col:${t.column}`;
+    case 'street': return `s:${t.street}`;
   }
 }
 function typeOf(key: string): BetType {
@@ -33,6 +34,7 @@ function typeOf(key: string): BetType {
   if (kind === 'p') return { kind: 'parity', parity: val as 'even' | 'odd' };
   if (kind === 'h') return { kind: 'half', half: val as 'low' | 'high' };
   if (kind === 'd') return { kind: 'dozen', dozen: parseInt(val!) as 1 | 2 | 3 };
+  if (kind === 's') return { kind: 'street', street: parseInt(val!) };
   return { kind: 'column', column: parseInt(val!) as 1 | 2 | 3 };
 }
 
@@ -287,6 +289,40 @@ export function RouletteGame() {
                 />
               ))}
             </div>
+          </div>
+          {/* Street bets — 12 cells under each column, each covering
+              the 3 numbers in that column (1,2,3 / 4,5,6 / ... /
+              34,35,36). Pays 11:1. Real Stake roulette places these
+              along the bottom edge of the number grid. */}
+          <div className="flex gap-1">
+            <div className="w-10" />
+            <div className="flex-1 grid grid-cols-12 gap-1">
+              {Array.from({ length: 12 }, (_, i) => i + 1).map((s) => (
+                <button
+                  key={s}
+                  onClick={() => placeChip({ kind: 'street', street: s })}
+                  className="relative aspect-[2/1] rounded text-[8px] font-mono font-bold flex items-center justify-center transition active:scale-95"
+                  style={{
+                    background: 'linear-gradient(180deg, #1f2530, #15191f)',
+                    color: '#fff',
+                    border: '1px solid rgba(255,255,255,.12)',
+                  }}
+                  title={`Street ${s} — covers ${s * 3 - 2}, ${s * 3 - 1}, ${s * 3} (11:1)`}
+                >
+                  11×
+                  {chips[keyOf({ kind: 'street', street: s })] !== undefined &&
+                   chips[keyOf({ kind: 'street', street: s })]! > 0 && (
+                    <span
+                      className="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 rounded-full bg-accent-gold text-bg text-[7px] font-mono font-bold flex items-center justify-center"
+                      style={{ boxShadow: '0 0 5px rgba(255,209,102,.7)' }}
+                    >
+                      ${chips[keyOf({ kind: 'street', street: s })]}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+            <div className="w-9" />
           </div>
           {/* Dozens */}
           <div className="flex gap-1">
