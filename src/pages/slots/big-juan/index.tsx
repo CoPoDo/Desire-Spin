@@ -85,6 +85,13 @@ export function BigJuan() {
   const [anticipating, setAnticipating] = useState(false);
   /** FS trigger banner. Number is scatter count (3/4/5). */
   const [showFsTrigger, setShowFsTrigger] = useState<number | null>(null);
+  /** Multi-phase trigger animation per bible Part 8.1:
+   *    'pulse'  → piñatas pulse + Juan reacts (1.4-1.8s)
+   *    'banner' → BONUS! + respin-count banner (2.2-2.5s)
+   *    null     → idle / mount the bonus
+   *  Tracked alongside showFsTrigger so the rendered banner content
+   *  can match the current phase. */
+  const [triggerPhase, setTriggerPhase] = useState<'pulse' | 'banner' | null>(null);
   const [showWildSwitch, setShowWildSwitch] = useState(false);
   /** Wild-switch positions in flame mid-transition (for the burst-into-flames
    *  visual). When set, those cells animate; cleared once the new grid lands. */
@@ -351,18 +358,36 @@ export function BigJuan() {
       });
     }
 
-    // ── Bonus trigger (3+ scatters) — spec §10b.5 ───────────────────
+    // ── Bonus trigger (3+ scatters) — spec §10b.5 / bible Part 8.1 ──
+    //
+    //  Multi-phase trigger sequence:
+    //    Phase 1 "pulse"  — scatter cells throb + Juan fires pistols
+    //                       (1.4-1.8s).
+    //    Phase 2 "banner" — BONUS! + N FREE RESPINS banner sweeps in
+    //                       (2.2-2.5s).
+    //    Phase 3 — mount the bonus overlay (3x3 grid slides in).
+    //
+    //  Turbo compresses the durations by ~40% but does not skip any
+    //  phase — bible Part 10b.14 says celebrations are LOCKED. */
     if (r.triggersBonus) {
       setJuanMood('pistols');
       setShowFsTrigger(r.scatterCount);
+      setTriggerPhase('pulse');
       sound.play('free-spins-trigger');
-      const triggerMs = turbo ? 1400 : 2200;
+      const pulseMs = turbo ? 850 : 1500;
+      const bannerMs = turbo ? 1400 : 2200;
+      setTimeout(() => {
+        if (!aliveRef.current) return;
+        setTriggerPhase('banner');
+        sound.play('big-win');
+      }, pulseMs);
       setTimeout(() => {
         if (!aliveRef.current) return;
         setShowFsTrigger(null);
+        setTriggerPhase(null);
         const bonusSeeds = fairness.consumeNonce();
         setBonus({ scatterCount: r.scatterCount, seeds: bonusSeeds });
-      }, triggerMs);
+      }, pulseMs + bannerMs);
     }
 
     // ── History + session ──────────────────────────────────────────
@@ -444,19 +469,27 @@ export function BigJuan() {
     const entry = rollBonusBuyEntry(entryRng);
 
     setShowFsTrigger(entry.scatters);
+    setTriggerPhase('pulse');
     sound.play('free-spins-trigger');
+    setJuanMood('pistols');
+    const pulseMs = turbo ? 700 : 1300;
+    const bannerMs = turbo ? 1300 : 1800;
+    setTimeout(() => {
+      if (!aliveRef.current) return;
+      setTriggerPhase('banner');
+      sound.play('big-win');
+    }, pulseMs);
     setTimeout(() => {
       if (!aliveRef.current) return;
       setShowFsTrigger(null);
-      // Consume a second nonce for the bonus's RNG stream so the entry
-      // roll doesn't bleed into the respin RNG.
+      setTriggerPhase(null);
       const bonusSeeds = fairness.consumeNonce();
       setBonus({
         scatterCount: entry.scatters,
         initialRespinsOverride: entry.respinsAwarded,
         seeds: bonusSeeds,
       });
-    }, turbo ? 1300 : 1800);
+    }, pulseMs + bannerMs);
   }, [busy, bonus, balance, buyBonusCost, fairness, sound, turbo]);
 
   // ── Hotkeys ──────────────────────────────────────────────────────
@@ -617,10 +650,28 @@ export function BigJuan() {
           )}
         </AnimatePresence>
 
-        {/* FS trigger banner */}
+        {/* FS trigger banner — multi-phase per bible Part 8.1.
+         *    Phase 'pulse' shows just the piñata icon throbbing (the
+         *    moment the player realises 3+ scatters landed).
+         *    Phase 'banner' brings in the BONUS! + respins-count text. */}
         <AnimatePresence>
-          {showFsTrigger !== null && (
+          {showFsTrigger !== null && triggerPhase === 'pulse' && (
             <motion.div
+              key="trigger-pulse"
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 pointer-events-none"
+              initial={{ scale: 0.6, opacity: 0 }}
+              animate={{ scale: [1, 1.18, 1], opacity: 1 }}
+              exit={{ scale: 1.2, opacity: 0 }}
+              transition={{ duration: 0.55, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              <span className="inline-block" style={{ width: 88, height: 88, filter: 'drop-shadow(0 0 30px rgba(255,209,102,.95))' }}>
+                <PinataSvg />
+              </span>
+            </motion.div>
+          )}
+          {showFsTrigger !== null && triggerPhase === 'banner' && (
+            <motion.div
+              key="trigger-banner"
               className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 pointer-events-none"
               initial={{ scale: 0.5, opacity: 0, rotate: -8 }}
               animate={{ scale: 1, opacity: 1, rotate: 0 }}
@@ -640,10 +691,10 @@ export function BigJuan() {
                   <span className="inline-block" style={{ width: 36, height: 36 }}>
                     <PinataSvg />
                   </span>
-                  ¡FIESTA!
+                  ¡BONUS!
                 </div>
                 <div className="text-base mt-1">
-                  {showFsTrigger}× PIÑATA · {showFsTrigger === 3 ? 10 : showFsTrigger === 4 ? 12 : 15} RESPINS
+                  {showFsTrigger}× PIÑATA · {showFsTrigger === 3 ? 10 : showFsTrigger === 4 ? 12 : 15} FREE RESPINS
                 </div>
               </div>
             </motion.div>
@@ -870,7 +921,10 @@ export function BigJuan() {
         )}
       </AnimatePresence>
 
-      {/* Big-win banner — uses BIG_WIN_TIERS for label + duration */}
+      {/* Big-win banner — per-tier typography in CSS (bj-bigwin-tier-*)
+       *  with screen-shake on Super+ and rainbow shimmer on Epic+ per
+       *  bible Part 9. Tap-anywhere dismisses the banner after the
+       *  minimum display time. */}
       <AnimatePresence>
         {bigWin && (
           <motion.div
@@ -893,31 +947,11 @@ export function BigJuan() {
             }}
           >
             <motion.div
-              className="font-display font-extrabold mb-2 text-center"
+              className={`bj-bigwin-banner bj-bigwin-tier-${bigWin.tier.name} mb-3`}
               initial={{ scale: 0.4, opacity: 0, rotate: -8 }}
               animate={{ scale: 1, opacity: 1, rotate: 0 }}
               exit={{ scale: 1.15, opacity: 0 }}
               transition={{ type: 'spring', stiffness: 260, damping: 14 }}
-              style={{
-                fontSize:
-                  bigWin.tier.name === 'max' ? 'clamp(40px, 13vw, 78px)'
-                  : bigWin.tier.name === 'epic' ? 'clamp(36px, 11vw, 64px)'
-                  : bigWin.tier.name === 'huge' || bigWin.tier.name === 'super' ? 'clamp(34px, 10vw, 60px)'
-                  : bigWin.tier.name === 'mega' ? 'clamp(32px, 9vw, 56px)'
-                  : 'clamp(28px, 8vw, 48px)',
-                background: bigWin.tier.name === 'max' || bigWin.tier.name === 'epic'
-                  ? 'linear-gradient(180deg, #fff5c4 0%, #ffd166 30%, #ff5560 65%, #c8102e 100%)'
-                  : 'linear-gradient(180deg, #fff5c4 0%, #ffd166 50%, #c8932e 100%)',
-                WebkitBackgroundClip: 'text',
-                backgroundClip: 'text',
-                color: 'transparent',
-                filter:
-                  bigWin.tier.name === 'max'
-                    ? 'drop-shadow(0 0 36px rgba(255,209,102,.95)) drop-shadow(0 0 64px rgba(255,85,96,.85)) drop-shadow(0 4px 8px rgba(0,0,0,.6))'
-                    : bigWin.tier.name === 'epic'
-                      ? 'drop-shadow(0 0 28px rgba(255,209,102,.95)) drop-shadow(0 0 48px rgba(255,85,96,.7)) drop-shadow(0 4px 8px rgba(0,0,0,.6))'
-                      : 'drop-shadow(0 0 24px rgba(255,209,102,.9)) drop-shadow(0 4px 8px rgba(0,0,0,.6))',
-              }}
             >
               {bigWin.tier.label}
             </motion.div>
@@ -1134,11 +1168,16 @@ const REEL_FILLER_POOL: string[] = [
 // =============================================================================
 
 function PaylineOverlay({ line, color }: { line: number[]; color: string }) {
+  // Bible Part 6.4: animated polyline draw across the cells of the
+  // winning payline. The .bj-winline CSS class drives the stroke-
+  // dasharray draw-in animation. The key on the polyline forces a
+  // re-mount when the active win cycles to the next line so the
+  // animation plays again.
   const points = line.map((row, reel) => {
     const x = reel * 20 + 10;
     const y = row * 20 + 10;
     return `${x},${y}`;
-  });
+  }).join(' ');
   return (
     <svg
       className="absolute inset-3 pointer-events-none z-20"
@@ -1147,13 +1186,10 @@ function PaylineOverlay({ line, color }: { line: number[]; color: string }) {
       style={{ filter: `drop-shadow(0 0 8px ${color})` }}
     >
       <polyline
-        points={points.join(' ')}
-        fill="none"
-        stroke={color}
-        strokeWidth="1.4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        opacity="0.85"
+        key={points}
+        className="bj-winline"
+        points={points}
+        style={{ stroke: color, filter: `drop-shadow(0 0 6px ${color})` }}
       />
     </svg>
   );

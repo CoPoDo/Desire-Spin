@@ -14,6 +14,9 @@ import {
 } from './engine';
 import { fireConfetti } from '../../../lib/confetti';
 import { PinataSvg } from './symbols';
+import { flyCoin } from './coinFly';
+
+const sleep = (ms: number) => new Promise<void>((res) => setTimeout(res, ms));
 
 /** Big Juan Respins feature — full clone of the spec §7 mechanics.
  *
@@ -159,47 +162,118 @@ export function BigJuanBonusRound({
         if (sample.fourth === 'win') sound.play('big-win');
         else if (sample.fourth === 'boost') sound.play('coin');
         else sound.play('drop');
-        // Resolve after a short settle.
-        setTimeout(() => resolve(sample), 480);
+        // Resolve after a short settle. resolve() is async — fire-and-
+        // forget since the phase state machine handles the next respin.
+        setTimeout(() => { void resolve(sample); }, 480);
       }, 1200);
     }, 80 * 9);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sound]);
 
   // ── Resolve the respin against current state ─────────────────────────
-  const resolve = useCallback((sample: { outer: RespinSymbol[]; fourth: FourthReelOutcome }) => {
+  //
+  //  Bible Part 8.9 describes the resolution beats in detail. We mirror
+  //  them here:
+  //
+  //    WIN  → each coin element flies one-by-one to the WIN tally with
+  //           a small stagger; the money bag also fires its value to
+  //           the tally. Jackpot symbols pop to their meters.
+  //    BOOST→ each coin streams into the centre money bag, then the
+  //           bag pulses and its displayed value counts up.
+  //    BLANK→ cells just fade out — no flying coins, no SFX besides
+  //           the disappointment sting.
+  //
+  //  The resolve function became async to await the staggered fly
+  //  animations. State updates that affect React layout still happen
+  //  immediately after the animation phase so the next respin can
+  //  start from a clean slate. */
+  const resolve = useCallback(async (sample: { outer: RespinSymbol[]; fourth: FourthReelOutcome }) => {
     setPhase('resolving');
     const res = resolveRespin(sample, { bagValue, meters, cumulativeMult });
     setLastRespinKind(res.kind);
-    // Mark which outer cells contained value-yielding symbols for animation.
     const animSet = new Set<number>();
     sample.outer.forEach((s, i) => {
       if (s.kind !== 'blank') animSet.add(i);
     });
     setCoinsLanded(animSet);
 
-    // Apply state changes — wait briefly so the player sees the
-    // collect/boost animation play first.
-    const applyDelay = res.kind === 'blank' ? 350 : res.jackpotHits.length > 0 ? 1100 : 800;
+    // ── WIN: fly coins to tally, jackpot symbols to meters ───────────
+    if (res.kind === 'win') {
+      const tallyEl = document.querySelector('[data-bj-tally]') as HTMLElement | null;
+      const bagEl = document.querySelector('[data-bj-money-bag]') as HTMLElement | null;
+      // Each coin element flies → tally with a small stagger.
+      for (let i = 0; i < sample.outer.length; i++) {
+        const s = sample.outer[i]!;
+        const cellEl = document.querySelector(`[data-bj-outer-cell="${i}"]`) as HTMLElement | null;
+        if (!cellEl || !tallyEl) continue;
+        if (s.kind === 'coin') {
+          flyCoin(cellEl, tallyEl, { glyph: '🪙', value: s.value, durationMs: 580 });
+          sound.play('coin');
+          await sleep(140);
+        }
+      }
+      // Money bag fires its value to the tally.
+      if (bagEl && tallyEl && res.bagPaid > 0) {
+        flyCoin(bagEl, tallyEl, { glyph: '💰', value: res.bagPaid, durationMs: 600 });
+        sound.play('coin');
+        await sleep(280);
+      }
+      // Jackpot symbols pop to their meters with particles.
+      for (let i = 0; i < sample.outer.length; i++) {
+        const s = sample.outer[i]!;
+        if (s.kind !== 'mini' && s.kind !== 'minor' && s.kind !== 'major' && s.kind !== 'grand') continue;
+        const cellEl = document.querySelector(`[data-bj-outer-cell="${i}"]`) as HTMLElement | null;
+        const meterEl = document.querySelector(`[data-bj-meter="${s.kind}"]`) as HTMLElement | null;
+        if (cellEl && meterEl) {
+          flyCoin(cellEl, meterEl, {
+            glyph: s.kind === 'grand' ? '💎' : s.kind === 'major' ? '🔴' : s.kind === 'minor' ? '🟡' : '🔵',
+            value: 0,
+            durationMs: 480,
+            endScale: 0.6,
+            endRotate: 360,
+          });
+          sound.play('drop');
+          await sleep(100);
+        }
+      }
+    }
+
+    // ── BOOST: stream coins into the money bag ───────────────────────
+    if (res.kind === 'boost') {
+      const bagEl = document.querySelector('[data-bj-money-bag]') as HTMLElement | null;
+      for (let i = 0; i < sample.outer.length; i++) {
+        const s = sample.outer[i]!;
+        if (s.kind !== 'coin') continue;
+        const cellEl = document.querySelector(`[data-bj-outer-cell="${i}"]`) as HTMLElement | null;
+        if (cellEl && bagEl) {
+          flyCoin(cellEl, bagEl, {
+            glyph: '🪙',
+            value: s.value,
+            durationMs: 520,
+            endScale: 0.3,
+            endRotate: 180,
+          });
+          sound.play('coin');
+          await sleep(120);
+        }
+      }
+    }
+
+    // Apply state changes after the fly animations have played.
+    const applyDelay = res.kind === 'blank' ? 350 : res.jackpotHits.length > 0 ? 600 : 350;
     setTimeout(() => {
       setBagValue(res.newBagValue);
       setMeters(res.newMeters);
       setCumulativeMult((prev) => +(prev + res.paid).toFixed(4));
-      // Apply respin counter: decrement by 1, then add extra spins from
-      // win-side collects.
       setRespinsLeft((prev) => Math.max(0, prev - 1 + res.extraSpins));
 
-      if (res.cappedAtMax) {
-        setCappedAtMax(true);
-      }
+      if (res.cappedAtMax) setCappedAtMax(true);
 
-      // Jackpot fanfare — fire one banner per jackpot hit, sequential.
       if (res.jackpotHits.length > 0) {
         setPhase('jackpot');
         let i = 0;
         const playNext = () => {
           if (i >= res.jackpotHits.length) {
-            // After all jackpots, clear outer + back to idle.
             setOuter((prev) => prev.map(() => ({ kind: 'blank' })));
             setPhase('idle');
             return;
@@ -216,10 +290,6 @@ export function BigJuanBonusRound({
         };
         setTimeout(playNext, 250);
       } else {
-        // Clear the outer cells for the next respin (per spec §7.5: coins
-        // and jackpot/extra symbols disappear at end of spin unless the
-        // 4th reel was BOOST — in which case they get absorbed into the
-        // bag; either way the cells reset to blank for the next respin).
         setTimeout(() => {
           setOuter((prev) => prev.map(() => ({ kind: 'blank' })));
           setPhase('idle');
@@ -293,7 +363,7 @@ export function BigJuanBonusRound({
       {/* Stats bar — respins / total win / bag value */}
       <div className="flex items-center justify-center gap-2 w-full max-w-md mt-3 mb-1 px-3">
         <StatTile label="Respins" value={String(respinsLeft)} accent="#ffd166" />
-        <StatTile label="Total Win" value={fmtCurrency(totalPayout)} accent="#1fff7a" wide />
+        <StatTile label="Total Win" value={fmtCurrency(totalPayout)} accent="#1fff7a" wide tallyTarget />
         <StatTile label="Money Bag" value={`${bagValue.toFixed(2)}×`} accent="#ff8a40" />
       </div>
 
@@ -413,11 +483,14 @@ export function BigJuanBonusRound({
 // SUB-COMPONENTS
 // =============================================================================
 
-function StatTile({ label, value, accent, wide }: { label: string; value: string; accent: string; wide?: boolean }) {
+function StatTile({ label, value, accent, wide, tallyTarget }: { label: string; value: string; accent: string; wide?: boolean; tallyTarget?: boolean }) {
   return (
     <div
       className={`flex flex-col items-center px-3 py-1.5 rounded-xl bg-black/55 border ${wide ? 'flex-1' : ''}`}
       style={{ borderColor: `${accent}55` }}
+      // Marker for the flying-coin destination during Win resolution.
+      // The coinFly helper queries [data-bj-tally] to find this element.
+      data-bj-tally={tallyTarget ? 'true' : undefined}
     >
       <span className="text-[8px] uppercase tracking-widest text-[#FFE0A8]/65">{label}</span>
       <span className="font-mono font-bold text-base tabular-nums" style={{ color: accent }}>
@@ -443,6 +516,7 @@ function JackpotMeter({
   const segments = Array.from({ length: threshold }, (_, i) => i < filled);
   return (
     <div
+      data-bj-meter={tier}
       className="rounded-lg px-1.5 py-1 border"
       style={{
         background: `linear-gradient(180deg, ${color}25, rgba(0,0,0,.55))`,
@@ -514,6 +588,7 @@ function BonusGrid({
           return (
             <OuterCell
               key={gridIdx}
+              outerIdx={outerIdx}
               symbol={sym}
               spinning={phase === 'spinning' && sym.kind === 'blank'}
               landed={coinsLanded.has(outerIdx)}
@@ -531,6 +606,7 @@ function BonusGrid({
 function MoneyBagCell({ value, pulse }: { value: number; pulse: boolean }) {
   return (
     <motion.div
+      data-bj-money-bag="true"
       className="relative aspect-square rounded-lg flex flex-col items-center justify-center"
       style={{
         background: 'radial-gradient(circle at 35% 30%, #ffd166 0%, #c8932e 40%, #5a3a04 90%)',
@@ -555,8 +631,9 @@ function MoneyBagCell({ value, pulse }: { value: number; pulse: boolean }) {
 }
 
 function OuterCell({
-  symbol, spinning, landed, fadingOut, collectingForWin, streamingToBag,
+  outerIdx, symbol, spinning, landed, fadingOut, collectingForWin, streamingToBag,
 }: {
+  outerIdx: number;
   symbol: RespinSymbol;
   spinning: boolean;
   landed: boolean;
@@ -570,6 +647,7 @@ function OuterCell({
   };
   return (
     <motion.div
+      data-bj-outer-cell={outerIdx}
       className="aspect-square rounded-lg flex items-center justify-center relative overflow-hidden"
       style={baseStyle}
       initial={landed ? { scale: 0.5, opacity: 0 } : false}
