@@ -27,6 +27,9 @@ export function BingoGame() {
   const [drawnSoFar, setDrawnSoFar] = useState<number[]>([]);
   const [marked, setMarked] = useState<Set<number>>(new Set([12])); // FREE
   const [completedLines, setCompletedLines] = useState<number[]>([]);
+  /** Brief "+N LINE!" callout that fires when a draw completes a new
+   *  line. Auto-clears after ~1.1s. */
+  const [lineCallout, setLineCallout] = useState<{ id: number; count: number } | null>(null);
 
   const start = useCallback(() => {
     if (busy) return;
@@ -99,9 +102,20 @@ export function BingoGame() {
         setMarked((prev) => {
           const next = new Set(prev);
           next.add(cardIdx);
-          // Recompute lines after this mark
+          // Recompute lines after this mark. If line count just
+          // INCREASED, fire a "+1 LINE!" floating callout so the
+          // player gets a clear "BINGO!" moment when each new line
+          // completes — matches real live-bingo callouts where the
+          // caller announces each line.
           const lines = computeLineMatches(r.card, next);
-          setCompletedLines(lines);
+          setCompletedLines((prevLines) => {
+            if (lines.length > prevLines.length) {
+              setLineCallout({ id: Date.now() + Math.random(), count: lines.length });
+              sound.play(lines.length >= 3 ? 'mega-win' : 'big-win');
+              window.setTimeout(() => setLineCallout(null), 1100);
+            }
+            return lines;
+          });
           return next;
         });
       }
@@ -241,6 +255,39 @@ export function BingoGame() {
           </div>
         )}
       </div>
+      {/* Per-line callout — pops in when a new line completes during
+          the draw. Real bingo callers announce each line completion;
+          this is the visible equivalent. */}
+      <AnimatePresence>
+        {lineCallout && (
+          <motion.div
+            key={lineCallout.id}
+            className="fixed inset-0 z-[170] flex items-center justify-center pointer-events-none"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
+          >
+            <motion.div
+              initial={{ scale: 0.4, y: 30, rotate: -6 }}
+              animate={{ scale: 1, y: 0, rotate: 0 }}
+              exit={{ scale: 1.2, y: -20, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 280, damping: 14 }}
+              className="font-display font-extrabold uppercase tracking-widest px-6 py-3 rounded-2xl"
+              style={{
+                fontSize: 'clamp(28px, 8vw, 44px)',
+                background: 'radial-gradient(ellipse at 50% 30%, rgba(255,209,102,.95), rgba(200,16,46,.4))',
+                color: '#0f1419',
+                border: '2px solid #ffd166',
+                boxShadow: '0 0 32px rgba(255,209,102,.85), 0 12px 24px rgba(0,0,0,.6)',
+                textShadow: '0 2px 0 rgba(255,255,255,.45)',
+              }}
+            >
+              {lineCallout.count >= 3 ? `${lineCallout.count} LINES!` : lineCallout.count === 2 ? 'TWO LINES!' : 'BINGO!'}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </OriginalPageLayout>
   );
 }
