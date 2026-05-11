@@ -855,6 +855,16 @@ export function ImmersiveSlotView({
     runRound('spin');
   }, !autoplay);
 
+  // Esc closes any open sheets / modals on the slot. Stops autoplay
+  // first if running, then dismisses bet/autoplay/buy/paytable sheets.
+  useHotkey('Escape', () => {
+    if (autoplay) { setAutoplay(null); return; }
+    if (buyBonusOpen) { setBuyBonusOpen(false); return; }
+    if (paytableOpen) { setPaytableOpen(false); return; }
+    if (autoplaySheetOpen) { setAutoplaySheetOpen(false); return; }
+    if (betSheetOpen) { setBetSheetOpen(false); return; }
+  }, true);
+
   // Ambient lightning — every 12-30s a faint distant lightning flash flickers
   // across the painted scene's sky area. Pure atmosphere, independent of
   // any game event. Real Pragmatic Olympus has stormy ambient effects too.
