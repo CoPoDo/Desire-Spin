@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
 import { useGame } from '../../../game-context';
 import { useHotkey } from '../../../hooks/useHotkey';
+import { usePersistedBet } from '../../../hooks/usePersistedBet';
 import { createRng } from '../../../lib/fairness';
 import { fmtCurrency } from '../../../lib/format';
 import { BetInput } from '../_shared/BetInput';
@@ -24,7 +25,7 @@ import { fireConfetti } from '../../../lib/confetti';
 
 export function BlackjackGame() {
   const { balance, fairness, sound, history, session } = useGame();
-  const [bet, setBet] = useState(1);
+  const [bet, setBet] = usePersistedBet('blackjack', 1);
   const [round, setRound] = useState<RoundState | null>(null);
   // We keep one RNG per round so subsequent hits draw from the same stream
   const [rngState, setRngState] = useState<{ serverSeed: string; clientSeed: string; nonce: number; pos: number } | null>(null);

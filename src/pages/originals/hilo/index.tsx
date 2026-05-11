@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
 import { useGame } from '../../../game-context';
 import { useHotkey } from '../../../hooks/useHotkey';
+import { usePersistedBet } from '../../../hooks/usePersistedBet';
 import { createRng } from '../../../lib/fairness';
 import { fmtCurrency, fmtMultiplier } from '../../../lib/format';
 import { BetInput } from '../_shared/BetInput';
@@ -21,7 +22,7 @@ type Phase = 'idle' | 'playing' | 'lost';
 
 export function HiloGame() {
   const { balance, fairness, sound, history, session } = useGame();
-  const [bet, setBet] = useState(1);
+  const [bet, setBet] = usePersistedBet('hilo', 1);
   const [phase, setPhase] = useState<Phase>('idle');
   const [current, setCurrent] = useState<Card | null>(null);
   const [previous, setPrevious] = useState<Card | null>(null);

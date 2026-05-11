@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useGame } from '../../../game-context';
 import { useHotkey } from '../../../hooks/useHotkey';
 import { useMusic } from '../../../hooks/useMusic';
+import { usePersistedBet } from '../../../hooks/usePersistedBet';
 import { createRng } from '../../../lib/fairness';
 import { fireConfetti } from '../../../lib/confetti';
 import { speakZeus, zeusLineFor, primeZeus } from '../../../lib/zeusVoice';
@@ -165,7 +166,7 @@ export function ImmersiveSlotView({
   // can still override via the prop (legacy slots use this).
   const maxWinDisplay = maxWinLabel ?? `${(cfg.maxWinMultiplier ?? 5000).toLocaleString()}×`;
   const music = useMusic({ soundEnabled: sound.enabled });
-  const [bet, setBet] = useState(1);
+  const [bet, setBet] = usePersistedBet(`slot:${cfg.id}`, 1);
   const [ante, setAnte] = useState(false);
   const [busy, setBusy] = useState(false);
   const [grid, setGrid] = useState<TGrid>(() => makeBlank(cfg));

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
 import { useGame } from '../../../game-context';
 import { useHotkey } from '../../../hooks/useHotkey';
+import { usePersistedBet } from '../../../hooks/usePersistedBet';
 import { createRng } from '../../../lib/fairness';
 import { fmtCurrency, fmtMultiplier } from '../../../lib/format';
 import { BetInput } from '../_shared/BetInput';
@@ -30,7 +31,7 @@ import { fireConfetti } from '../../../lib/confetti';
  *  real Stake Mines' Auto mode. */
 export function MinesGame() {
   const { balance, fairness, sound, history, session } = useGame();
-  const [bet, setBet] = useState(1);
+  const [bet, setBet] = usePersistedBet('mines', 1);
   const [mineCount, setMineCount] = useState(3);
   const [round, setRound] = useState<MinesRoundState | null>(null);
   const [busyClick, setBusyClick] = useState(false);

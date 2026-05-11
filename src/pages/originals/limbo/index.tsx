@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
 import { useGame } from '../../../game-context';
 import { useHotkey } from '../../../hooks/useHotkey';
+import { usePersistedBet } from '../../../hooks/usePersistedBet';
 import { createRng } from '../../../lib/fairness';
 import { fmtCurrency, fmtMultiplier } from '../../../lib/format';
 import { BetInput } from '../_shared/BetInput';
@@ -20,7 +21,7 @@ import { fireConfetti } from '../../../lib/confetti';
 
 export function LimboGame() {
   const { balance, fairness, sound, history, session } = useGame();
-  const [bet, setBet] = useState(1);
+  const [bet, setBet] = usePersistedBet('limbo', 1);
   const [target, setTarget] = useState(2.0);
   const [mode, setMode] = useState<Mode>('manual');
   const [autoConfig, setAutoConfig] = useState<AutoConfig>({ count: 10, stopOnProfit: 0, stopOnLoss: 0 });

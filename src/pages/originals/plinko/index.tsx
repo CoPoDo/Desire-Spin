@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
 import { useGame } from '../../../game-context';
 import { useHotkey } from '../../../hooks/useHotkey';
+import { usePersistedBet } from '../../../hooks/usePersistedBet';
 import { createRng } from '../../../lib/fairness';
 import { fmtCurrency } from '../../../lib/format';
 import { BetInput } from '../_shared/BetInput';
@@ -33,7 +34,7 @@ type ActiveBall = {
  *  HTML `left`/`top` percentages (which trigger layout + paint each frame). */
 export function PlinkoGame() {
   const { balance, fairness, sound, history, session } = useGame();
-  const [bet, setBet] = useState(1);
+  const [bet, setBet] = usePersistedBet('plinko', 1);
   const [rows, setRows] = useState(12);
   const [risk, setRisk] = useState<Risk>('medium');
   const [mode, setMode] = useState<Mode>('manual');

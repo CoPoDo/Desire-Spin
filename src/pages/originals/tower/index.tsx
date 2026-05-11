@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
 import { useGame } from '../../../game-context';
 import { useHotkey } from '../../../hooks/useHotkey';
+import { usePersistedBet } from '../../../hooks/usePersistedBet';
 import { createRng } from '../../../lib/fairness';
 import { fmtCurrency, fmtMultiplier } from '../../../lib/format';
 import { BetInput } from '../_shared/BetInput';
@@ -22,7 +23,7 @@ const DIFFICULTIES: Difficulty[] = ['easy', 'medium', 'hard', 'expert', 'master'
 
 export function TowerGame() {
   const { balance, fairness, sound, history, session } = useGame();
-  const [bet, setBet] = useState(1);
+  const [bet, setBet] = usePersistedBet('tower', 1);
   const [difficulty, setDifficulty] = useState<Difficulty>('medium');
   const [round, setRound] = useState<TowerRound | null>(null);
 
