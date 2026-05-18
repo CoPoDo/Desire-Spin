@@ -19,6 +19,7 @@ import type {
 } from './types';
 import { Grid } from './Grid';
 import type { CellRenderer } from './Grid';
+import { SpinReel } from './SpinReel';
 import { Paytable } from './Paytable';
 import { buyBonusRound, playRound } from './engine';
 import { CountUp } from '../../../components/ui/CountUp';
@@ -88,8 +89,11 @@ export type ImmersiveSlotViewProps = {
 // dropping, so highlights painted on top of still-falling symbols.
 // The FS frames stay long for dramatic pacing (audited in earlier pass).
 const FRAME_DELAY: Record<string, number> = {
-  initialDrop: 850,         // matches col-staggered drop completion
-                            //   (5*80ms stagger + 420ms drop = ~820ms)
+  initialDrop: 200,         // the SpinReel inside the initialDrop case
+                            //   already blocks for the full per-column
+                            //   reel duration (~1.6s for col 5) before
+                            //   the cells slot in — this is just a
+                            //   post-settle buffer before the next frame.
   lightningStrike: 400,     // post-stagger settle. Handler awaits
                             // per-orb landing internally (~300ms each
                             // + 380ms inhale) so this is just settle.
@@ -204,6 +208,12 @@ export function ImmersiveSlotView({
    *  radial burst per cell, colored by slot theme accent. */
   const [winBursts, setWinBursts] = useState<{ id: string; col: number; row: number }[]>([]);
   const [prespin, setPrespin] = useState<boolean>(false);
+  /** When non-null, a Vegas-style vertical reel spin is in progress;
+   *  the SpinReel component renders in place of the Grid until each
+   *  reel has decelerated to its stop. `pendingFinalGrid` carries the
+   *  symbols the reels lock onto when the spin ends. */
+  const [reelSpinTarget, setReelSpinTarget] = useState<TGrid | null>(null);
+  const reelSpinResolveRef = useRef<(() => void) | null>(null);
   // Tier-scaled lightning bolts that strike across the painted scene
   // during big-win celebrations on Olympus. Each entry is a unique key
   // + a randomised zigzag path; the SVG renders them with a fade-in /
@@ -292,6 +302,12 @@ export function ImmersiveSlotView({
       aliveRef.current = false;
       music.stop(); // stop music when leaving the slot page
       clearSpinTimers();
+      // Unblock any reel-spin promise that's still awaiting — otherwise
+      // playFrames would hang in its `await new Promise(...)` forever
+      // (the SpinReel's fallback timer fires would-be onComplete only
+      // while it's mounted, and we just unmounted it).
+      reelSpinResolveRef.current?.();
+      reelSpinResolveRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -337,14 +353,28 @@ export function ImmersiveSlotView({
         }
         switch (frame.kind) {
           case 'initialDrop': {
-            const keys = new Set<string>();
-            for (const col of frame.grid) for (const c of col) keys.add(c.key);
-            setNewKeys(keys);
-            setGrid(frame.grid);
             setWinning(new Set());
-            setPrespin(false); // clear blur — fresh reels are dropping
-            lastGrid = frame.grid;
+            setPrespin(false); // clear prespin — reels are about to spin
             sound.play('drop');
+            // Vegas-style vertical reel spin: hand the final grid off
+            // to the SpinReel overlay and await each column decelerating
+            // to its stop. Skip/turbo collapse it to keep power users
+            // moving. When the spin resolves, the cells slot into the
+            // regular Grid with no drop-in animation (isNew=false for
+            // all keys) so the player just sees the reels settle.
+            const skipReel = skipRef.current || turboRef.current;
+            if (!skipReel) {
+              await new Promise<void>((resolve) => {
+                reelSpinResolveRef.current = resolve;
+                setReelSpinTarget(frame.grid);
+              });
+              if (!aliveRef.current) return;
+              setReelSpinTarget(null);
+              reelSpinResolveRef.current = null;
+            }
+            setNewKeys(new Set()); // no per-cell drop-in animation
+            setGrid(frame.grid);
+            lastGrid = frame.grid;
             // Detect scatter cells; play scatter-land sound + lightning flash
             // over each one staggered. >=3 triggers anticipation effect.
             const scatterPositions = scatterPositionsInGrid(frame.grid, cfg.scatterId);
@@ -1492,7 +1522,18 @@ export function ImmersiveSlotView({
               }
             })()}
           >
-            <Grid grid={grid} cfg={cfg} winning={winning} newKeys={newKeys} renderCell={renderCell} bare />
+            {reelSpinTarget ? (
+              <SpinReel
+                cfg={cfg}
+                renderCell={renderCell}
+                finalGrid={reelSpinTarget}
+                durationMs={900}
+                staggerMs={140}
+                onComplete={() => reelSpinResolveRef.current?.()}
+              />
+            ) : (
+              <Grid grid={grid} cfg={cfg} winning={winning} newKeys={newKeys} renderCell={renderCell} bare />
+            )}
           </div>
 
           {/* Scatter columns pulse with subtle gold light when 3+ scatters
