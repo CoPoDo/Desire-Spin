@@ -88,8 +88,11 @@ export type ImmersiveSlotViewProps = {
 // dropping, so highlights painted on top of still-falling symbols.
 // The FS frames stay long for dramatic pacing (audited in earlier pass).
 const FRAME_DELAY: Record<string, number> = {
-  initialDrop: 850,         // matches col-staggered drop completion
-                            //   (5*80ms stagger + 420ms drop = ~820ms)
+  initialDrop: 120,         // the reel-spin cycling loop inside the
+                            //   initialDrop case already blocks for the
+                            //   full col-staggered drop window (~820ms),
+                            //   so this is just a small post-settle
+                            //   buffer before the next frame fires.
   lightningStrike: 400,     // post-stagger settle. Handler awaits
                             // per-orb landing internally (~300ms each
                             // + 380ms inhale) so this is just settle.
@@ -340,11 +343,52 @@ export function ImmersiveSlotView({
             const keys = new Set<string>();
             for (const col of frame.grid) for (const c of col) keys.add(c.key);
             setNewKeys(keys);
-            setGrid(frame.grid);
             setWinning(new Set());
             setPrespin(false); // clear blur — fresh reels are dropping
-            lastGrid = frame.grid;
             sound.play('drop');
+            // Real-slot reel feel: while the cells are dropping in, each
+            // column "spins through" random symbols and locks in only when
+            // that column's reel stops. Column stops are staggered left
+            // → right matching the existing drop-in column delay, so the
+            // tension builds column-by-column ("maybe it hits good") and
+            // the final reveal aligns with the cells finishing their
+            // landing animation. Cell keys come from frame.grid so no
+            // mount / unmount per tick — only the displayed symbolId
+            // cycles. Multiplier and scatter symbols are excluded from
+            // the cycling pool (they are special tokens that should only
+            // appear on the final-locked reel position).
+            const COLUMN_DELAY_MS = 80;
+            const DROP_DURATION_MS = 420;
+            const TICK_MS = 60;
+            const stopAtMs = (col: number) => col * COLUMN_DELAY_MS + DROP_DURATION_MS;
+            const totalSpinMs = stopAtMs(cfg.cols - 1);
+            const symbolPool = cfg.symbols.filter(
+              (s) => s.tier !== 'multiplier' && s.id !== cfg.scatterId,
+            );
+            const buildCyclingGrid = (elapsed: number): TGrid =>
+              frame.grid.map((col, c) => {
+                const stopped = elapsed >= stopAtMs(c);
+                return col.map((cell) => {
+                  if (stopped) return cell;
+                  const sym = symbolPool[Math.floor(Math.random() * symbolPool.length)]!;
+                  return { ...cell, symbolId: sym.id, multiplier: undefined };
+                });
+              });
+            // Skip/turbo collapse the spin so power-users aren't held up.
+            const skipCycle = skipRef.current || turboRef.current;
+            if (!skipCycle) {
+              let elapsed = 0;
+              setGrid(buildCyclingGrid(elapsed));
+              while (elapsed < totalSpinMs) {
+                await sleep(TICK_MS);
+                if (!aliveRef.current) return;
+                if (skipRef.current) break; // tap-to-skip jumps straight to final
+                elapsed += TICK_MS;
+                setGrid(buildCyclingGrid(elapsed));
+              }
+            }
+            setGrid(frame.grid);
+            lastGrid = frame.grid;
             // Detect scatter cells; play scatter-land sound + lightning flash
             // over each one staggered. >=3 triggers anticipation effect.
             const scatterPositions = scatterPositionsInGrid(frame.grid, cfg.scatterId);
