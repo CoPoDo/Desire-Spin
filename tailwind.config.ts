@@ -6,12 +6,12 @@ export default {
     extend: {
       colors: {
         bg: {
-          DEFAULT: '#0f1419',
-          elev: '#15191f',
-          card: '#1a1f29',
-          hover: '#222837',
+          DEFAULT: '#0f212e',
+          elev: '#182d3a',
+          card: '#1a2c38',
+          hover: '#243e4c',
         },
-        edge: '#2a3142',
+        edge: '#2f4553',
         ink: {
           DEFAULT: '#e5e9f0',
           dim: '#9aa3b2',
