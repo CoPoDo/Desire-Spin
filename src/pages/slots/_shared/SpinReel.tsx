@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { SlotConfig } from './types';
 import type { CellRenderer } from './Grid';
 
@@ -48,7 +48,7 @@ export function SpinReel({
   // waiting on the reel. Fires onComplete exactly once.
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
-  useEffect(() => {
+  useLayoutEffect(() => {
     const longest = durationMs + (cfg.cols - 1) * staggerMs;
     let done = false;
     const t = window.setTimeout(() => {
@@ -60,7 +60,15 @@ export function SpinReel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
+  // Measure SYNCHRONOUSLY before the first paint (useLayoutEffect, no rAF).
+  // The previous requestAnimationFrame measurement guaranteed one painted
+  // frame at cellHeight=0 — during which each column's strip sat at
+  // translateY(0) showing its FINAL symbols. That flash of the final board
+  // (before the spin even started) was the first of the "board changes
+  // twice" states the spin looked broken with. Measuring pre-paint means
+  // children render with a real cellHeight and arm their start (filler)
+  // position before anything is shown.
+  useLayoutEffect(() => {
     const el = bankRef.current;
     if (!el) return;
     const recompute = () => {
@@ -70,8 +78,7 @@ export function SpinReel({
       const cellH = Math.max(20, (viewportH - (cfg.rows - 1) * GAP_PX) / cfg.rows);
       setCellHeight(cellH);
     };
-    // One frame for the grid's aspect-ratio'd height to settle.
-    requestAnimationFrame(recompute);
+    recompute();
     const ro = new ResizeObserver(recompute);
     ro.observe(el);
     return () => ro.disconnect();
@@ -165,7 +172,12 @@ function SpinReelColumn({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
+  // useLayoutEffect so the start (filler) transform is committed BEFORE
+  // the browser paints — the strip is never shown at translateY(0) (which
+  // would flash the final symbols). Combined with the parent's synchronous
+  // measurement, the very first painted frame is already the spinning
+  // filler scrolling toward the result.
+  useLayoutEffect(() => {
     const strip = stripRef.current;
     // Wait for a real measured cell height, then start the spin EXACTLY
     // once. `startedRef` guards against the effect re-running (e.g. a
@@ -223,6 +235,10 @@ function SpinReelColumn({
           flexDirection: 'column',
           gap: `${GAP_PX}px`,
           willChange: 'transform',
+          // Hidden until cellHeight is known and the start transform is
+          // armed (in the layout effect). Prevents any pre-measurement
+          // paint from flashing the final symbols at translateY(0).
+          visibility: cellHeight > 0 ? 'visible' : 'hidden',
         }}
       >
         {stripSymbols.map((symbolId, i) => (
