@@ -266,20 +266,20 @@ export function MinesGame() {
 
   return (
     <OriginalPageLayout title="Mines">
-      <div className="flex flex-col p-4 gap-4 max-w-md mx-auto w-full">
+      <div className="flex flex-col p-3 gap-3 max-w-md mx-auto w-full">
         {/* Status */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-4 text-center">
+        <div className="rounded-lg bg-stake-card border border-stake-border p-4 text-center">
           <AnimatePresence mode="wait">
             {!round || round.done ? (
               <motion.div key="idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                <div className="text-[10px] uppercase tracking-widest text-ink-mute">
+                <div className="text-xs text-stake-muted">
                   {round?.hitMine ? 'Boom — tap a tile to play again'
                     : round?.done ? 'Cashed out — tap a tile for next round'
                     : autoActive ? 'Auto-bet running' : 'Tap any tile to start'}
                 </div>
                 {round?.done && (
                   <div className={`font-mono font-bold text-2xl mt-1 tabular-nums ${
-                    round.hitMine ? 'text-accent-hot' : 'text-accent'
+                    round.hitMine ? 'text-stake-red' : 'text-stake-green'
                   }`}>
                     {round.hitMine ? `-${fmtCurrency(round.bet)}` : `+${fmtCurrency(round.payout - round.bet)}`}
                   </div>
@@ -287,25 +287,22 @@ export function MinesGame() {
               </motion.div>
             ) : (
               <motion.div key="ingame" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-                <div className="text-[10px] uppercase tracking-widest text-ink-mute">Current Multiplier</div>
-                <div className="font-mono font-bold text-3xl text-accent tabular-nums leading-none mt-1"
-                     style={{ textShadow: '0 0 18px rgba(31,255,122,.6)' }}>
+                <div className="text-xs text-stake-muted">Current Multiplier</div>
+                <div className="font-mono font-bold text-3xl text-stake-green tabular-nums leading-none mt-1"
+                     style={{ textShadow: '0 0 18px rgba(0,231,1,.55)' }}>
                   {fmtMultiplier(currentMult)}
                 </div>
-                <div className="text-[10px] text-ink-dim mt-1">
-                  {picks} safe · cash out for <span className="text-accent">{fmtCurrency(cashoutAmount)}</span>
+                <div className="text-[11px] text-stake-muted mt-1">
+                  {picks} safe · cash out for <span className="text-stake-green">{fmtCurrency(cashoutAmount)}</span>
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
 
-        {/* Grid — shakes briefly when the player hits a mine. The
-         *  shake-medium class fires a single 0.55s wobble cycle; React
-         *  swaps it off when the round resets so it can re-trigger on
-         *  the next loss. */}
+        {/* Grid — shakes briefly when the player hits a mine. */}
         <div
-          className={`rounded-2xl bg-bg-card border border-edge p-3 ${round?.done && round.hitMine ? 'shake-medium' : ''}`}
+          className={`rounded-lg bg-stake-card border border-stake-border p-3 ${round?.done && round.hitMine ? 'shake-medium' : ''}`}
         >
           <div className="grid grid-cols-5 gap-1.5 aspect-square">
             {Array.from({ length: GRID_SIZE }).map((_, i) => {
@@ -331,22 +328,22 @@ export function MinesGame() {
                   className="relative rounded-lg flex items-center justify-center text-2xl font-bold transition-all duration-150 active:scale-95"
                   style={{
                     background: safeRevealed
-                      ? 'linear-gradient(180deg, rgba(31,255,122,.2), rgba(31,255,122,.05))'
+                      ? 'linear-gradient(180deg, rgba(0,231,1,.2), rgba(0,231,1,.05))'
                       : showMine
                         ? lostHit
-                          ? 'linear-gradient(180deg, rgba(255,61,139,.45), rgba(255,61,139,.15))'
-                          : 'linear-gradient(180deg, rgba(255,61,139,.18), rgba(255,61,139,.05))'
-                        : 'linear-gradient(180deg, #1a1f29, #15191f)',
+                          ? 'linear-gradient(180deg, rgba(237,65,99,.45), rgba(237,65,99,.15))'
+                          : 'linear-gradient(180deg, rgba(237,65,99,.18), rgba(237,65,99,.05))'
+                        : 'linear-gradient(180deg, #2f4553, #213743)',
                     border: safeRevealed
-                      ? '1px solid rgba(31,255,122,.5)'
+                      ? '1px solid rgba(0,231,1,.5)'
                       : showMine
-                        ? '1px solid rgba(255,61,139,.5)'
-                        : '1px solid #2a3142',
+                        ? '1px solid rgba(237,65,99,.5)'
+                        : '1px solid #3d5564',
                     boxShadow: safeRevealed
-                      ? '0 0 12px rgba(31,255,122,.3), inset 0 1px 0 rgba(31,255,122,.4)'
+                      ? '0 0 12px rgba(0,231,1,.3), inset 0 1px 0 rgba(0,231,1,.35)'
                       : lostHit
-                        ? '0 0 18px rgba(255,61,139,.7), inset 0 1px 0 rgba(255,61,139,.5)'
-                        : 'inset 0 1px 0 rgba(255,255,255,.04), 0 2px 6px rgba(0,0,0,.3)',
+                        ? '0 0 18px rgba(237,65,99,.7), inset 0 1px 0 rgba(237,65,99,.5)'
+                        : 'inset 0 1px 0 rgba(255,255,255,.06), 0 2px 6px rgba(0,0,0,.3)',
                   }}
                 >
                   <AnimatePresence>
@@ -355,7 +352,7 @@ export function MinesGame() {
                         initial={{ scale: 0, rotate: -90 }}
                         animate={{ scale: 1, rotate: 0 }}
                         transition={{ type: 'spring', stiffness: 300, damping: 14 }}
-                        style={{ filter: 'drop-shadow(0 0 8px rgba(31,255,122,.7))' }}
+                        style={{ filter: 'drop-shadow(0 0 8px rgba(0,231,1,.7))' }}
                       >
                         💎
                       </motion.span>
@@ -365,7 +362,7 @@ export function MinesGame() {
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
                         transition={{ type: 'spring', stiffness: 320, damping: 14, delay: lostHit ? 0 : Math.random() * 0.3 }}
-                        style={{ filter: lostHit ? 'drop-shadow(0 0 12px rgba(255,61,139,.95))' : undefined }}
+                        style={{ filter: lostHit ? 'drop-shadow(0 0 12px rgba(237,65,99,.95))' : undefined }}
                       >
                         💣
                       </motion.span>
@@ -378,13 +375,13 @@ export function MinesGame() {
         </div>
 
         {/* Controls */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-4 space-y-3">
+        <div className="rounded-lg bg-stake-panel border border-stake-border p-3 space-y-3">
           <ManualAutoTabs mode={mode} onChange={setMode} disabled={autoActive || inGame} />
           <BetInput bet={bet} onBetChange={setBet} disabled={autoActive || inGame} />
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-[10px] uppercase tracking-widest text-ink-mute">Mines</span>
-              <span className="font-mono font-semibold text-sm text-ink tabular-nums">{mineCount}</span>
+              <span className="text-xs text-stake-muted">Mines</span>
+              <span className="font-mono font-semibold text-sm text-stake-text tabular-nums">{mineCount}</span>
             </div>
             <input
               type="range"
@@ -393,7 +390,7 @@ export function MinesGame() {
               value={mineCount}
               disabled={autoActive || inGame}
               onChange={(e) => setMineCount(parseInt(e.target.value))}
-              className="w-full accent-accent disabled:opacity-50"
+              className="dice-slider w-full appearance-none bg-stake-bg rounded-full h-2 cursor-pointer disabled:opacity-50"
             />
             <div className="flex flex-wrap gap-1 mt-2">
               {[1, 3, 5, 10, 24].map((n) => (
@@ -401,8 +398,8 @@ export function MinesGame() {
                   key={n}
                   onClick={() => setMineCount(n)}
                   disabled={autoActive || inGame}
-                  className={`px-2 py-1 rounded-lg text-xs font-semibold disabled:opacity-50 ${
-                    mineCount === n ? 'bg-accent text-bg' : 'bg-bg-elev border border-edge text-ink-dim'
+                  className={`px-2.5 py-1 rounded text-xs font-semibold disabled:opacity-50 ${
+                    mineCount === n ? 'bg-stake-green text-stake-bg' : 'bg-stake-input border border-stake-border text-stake-muted hover:text-stake-text'
                   }`}
                 >
                   {n}
@@ -415,8 +412,8 @@ export function MinesGame() {
             <>
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[10px] uppercase tracking-widest text-ink-mute">Tiles to Reveal per Round</span>
-                  <span className="font-mono font-semibold text-sm text-ink tabular-nums">{Math.min(tilesToReveal, maxTiles)}</span>
+                  <span className="text-xs text-stake-muted">Tiles to Reveal per Round</span>
+                  <span className="font-mono font-semibold text-sm text-stake-text tabular-nums">{Math.min(tilesToReveal, maxTiles)}</span>
                 </div>
                 <input
                   type="range"
@@ -425,9 +422,9 @@ export function MinesGame() {
                   value={Math.min(tilesToReveal, maxTiles)}
                   disabled={autoActive}
                   onChange={(e) => setTilesToReveal(parseInt(e.target.value))}
-                  className="w-full accent-accent disabled:opacity-50"
+                  className="dice-slider w-full appearance-none bg-stake-bg rounded-full h-2 cursor-pointer disabled:opacity-50"
                 />
-                <div className="text-[10px] text-ink-mute mt-1.5">
+                <div className="text-[11px] text-stake-dim mt-1.5">
                   Each round picks {Math.min(tilesToReveal, maxTiles)} random tile{tilesToReveal === 1 ? '' : 's'}. If any hits a mine, you bust. Otherwise cashes out at {fmtMultiplier(multiplierFor(Math.min(tilesToReveal, maxTiles), mineCount))}.
                 </div>
               </div>
@@ -436,8 +433,8 @@ export function MinesGame() {
               <button
                 onClick={() => setAutoActive((a) => !a)}
                 disabled={!autoActive && (balance.balance < bet || bet <= 0 || inGame)}
-                className={`w-full py-3.5 rounded-xl font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99] ${
-                  autoActive ? 'bg-accent-hot text-white' : 'bg-accent text-bg'
+                className={`w-full py-3.5 rounded font-bold text-sm disabled:opacity-50 transition active:scale-[0.99] ${
+                  autoActive ? 'bg-stake-red text-white' : 'bg-stake-green text-stake-bg hover:bg-stake-green-hi'
                 }`}
               >
                 {autoActive ? 'Stop Autobet' : `Start Autobet${inGame ? ' (finish current round first)' : ''}`}
@@ -451,7 +448,7 @@ export function MinesGame() {
                 <button
                   onClick={round?.done ? reset : start}
                   disabled={!round?.done && (balance.balance < bet || bet <= 0)}
-                  className="w-full py-3.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
+                  className="w-full py-3.5 rounded bg-stake-green text-stake-bg font-bold text-sm disabled:opacity-50 transition active:scale-[0.99] hover:bg-stake-green-hi"
                 >
                   {round?.done ? 'Reset Grid' : `Bet ${fmtCurrency(bet)} · or tap a tile`}
                 </button>
@@ -466,7 +463,7 @@ export function MinesGame() {
                     <button
                       onClick={pickRandom}
                       disabled={busyClick}
-                      className="flex-shrink-0 px-4 py-3.5 rounded-xl bg-bg-elev border border-edge text-ink hover:bg-bg-hover font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.97]"
+                      className="flex-shrink-0 px-4 py-3.5 rounded bg-stake-input border border-stake-border text-stake-text hover:border-stake-dim font-bold text-sm disabled:opacity-50 transition active:scale-[0.97]"
                       title="Pick a random unrevealed tile"
                     >
                       Pick Random
@@ -474,7 +471,7 @@ export function MinesGame() {
                     <button
                       onClick={doCashOut}
                       disabled={picks === 0}
-                      className="flex-1 py-3.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
+                      className="flex-1 py-3.5 rounded bg-stake-green text-stake-bg font-bold text-sm disabled:opacity-50 transition active:scale-[0.99] hover:bg-stake-green-hi"
                     >
                       {picks === 0 ? 'Pick a tile to start' : `Cash Out ${fmtCurrency(cashoutAmount)}`}
                     </button>
@@ -491,13 +488,13 @@ export function MinesGame() {
 
 function Stat({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
   return (
-    <div className="rounded-xl bg-bg-elev border border-edge p-2.5 text-center">
-      <div className="text-[10px] uppercase tracking-widest text-ink-mute">{label}</div>
+    <div className="rounded bg-stake-input border border-stake-border p-2.5 text-center">
+      <div className="text-xs text-stake-muted">{label}</div>
       <div
         className={`font-mono font-bold text-sm mt-0.5 tabular-nums ${
-          highlight ? 'text-accent' : 'text-ink'
+          highlight ? 'text-stake-green' : 'text-stake-text'
         }`}
-        style={highlight ? { textShadow: '0 0 8px rgba(31,255,122,.45)' } : undefined}
+        style={highlight ? { textShadow: '0 0 8px rgba(0,231,1,.4)' } : undefined}
       >
         {value}
       </div>

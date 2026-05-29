@@ -130,8 +130,8 @@ export function PlinkoGame() {
 
   return (
     <OriginalPageLayout title="Plinko">
-      <div className="flex flex-col p-4 gap-4 max-w-md mx-auto w-full">
-        <div className="rounded-2xl bg-bg-card border border-edge p-2 sm:p-3 overflow-hidden">
+      <div className="flex flex-col p-3 gap-3 max-w-md mx-auto w-full">
+        <div className="rounded-lg bg-stake-card border border-stake-border p-2 sm:p-3 overflow-hidden">
           <Board
             rows={rows}
             mults={mults}
@@ -140,47 +140,44 @@ export function PlinkoGame() {
           />
         </div>
 
-        <div className="flex items-center gap-1.5 overflow-x-auto py-1 min-h-[30px]">
-          <span className="text-[10px] uppercase tracking-widest text-ink-mute mr-1 flex-shrink-0">
-            Recent
-          </span>
+        <div className="flex items-center justify-end gap-1.5 overflow-x-auto py-0.5 min-h-[28px]">
           {recentResults.length > 0 ? (
             recentResults.map((r) => (
               <span
                 key={r.id}
-                className={`font-mono font-semibold text-xs tabular-nums px-2 py-1 rounded-lg flex-shrink-0 ${
+                className={`font-mono font-semibold text-xs tabular-nums px-2.5 py-1 rounded-full flex-shrink-0 border ${
                   r.multiplier >= 10
-                    ? 'bg-accent-hot/20 text-accent-hot'
+                    ? 'bg-stake-red/20 text-stake-red border-stake-red/30'
                     : r.multiplier >= 2
-                      ? 'bg-accent-gold/20 text-accent-gold'
+                      ? 'bg-accent-gold/20 text-accent-gold border-accent-gold/30'
                       : r.multiplier >= 1
-                        ? 'bg-accent/15 text-accent'
-                        : 'bg-bg-elev text-ink-mute'
+                        ? 'bg-stake-green/15 text-stake-green border-stake-green/30'
+                        : 'bg-stake-card text-stake-muted border-stake-border'
                 }`}
               >
                 {r.multiplier.toFixed(2)}×
               </span>
             ))
           ) : (
-            <span className="text-[10px] text-ink-mute italic">no drops yet</span>
+            <span className="text-[11px] text-stake-dim italic">no drops yet</span>
           )}
         </div>
 
-        <div className="rounded-2xl bg-bg-card border border-edge p-4 space-y-3">
+        <div className="rounded-lg bg-stake-panel border border-stake-border p-3 space-y-3">
           <ManualAutoTabs mode={mode} onChange={setMode} disabled={autoActive} />
           <BetInput bet={bet} onBetChange={setBet} disabled={autoActive} />
           <div>
-            <div className="text-[10px] uppercase tracking-widest text-ink-mute mb-1.5">Risk</div>
+            <div className="text-xs text-stake-muted mb-1.5">Risk</div>
             <div className="flex gap-1.5">
               {(['low', 'medium', 'high'] as Risk[]).map((r) => (
                 <button
                   key={r}
                   onClick={() => setRisk(r)}
                   disabled={autoActive}
-                  className={`flex-1 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition disabled:opacity-50 ${
+                  className={`flex-1 py-2 rounded text-xs font-semibold capitalize transition disabled:opacity-50 ${
                     risk === r
-                      ? 'bg-accent text-bg'
-                      : 'bg-bg-elev border border-edge text-ink-dim hover:text-ink'
+                      ? 'bg-stake-green text-stake-bg'
+                      : 'bg-stake-input border border-stake-border text-stake-muted hover:text-stake-text'
                   }`}
                 >
                   {r}
@@ -190,8 +187,8 @@ export function PlinkoGame() {
           </div>
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-[10px] uppercase tracking-widest text-ink-mute">Rows</span>
-              <span className="font-mono font-semibold text-sm text-ink tabular-nums">{rows}</span>
+              <span className="text-xs text-stake-muted">Rows</span>
+              <span className="font-mono font-semibold text-sm text-stake-text tabular-nums">{rows}</span>
             </div>
             <input
               type="range"
@@ -201,7 +198,7 @@ export function PlinkoGame() {
               value={rows}
               disabled={autoActive}
               onChange={(e) => setRows(parseInt(e.target.value))}
-              className="w-full accent-accent"
+              className="dice-slider w-full appearance-none bg-stake-bg rounded-full h-2 cursor-pointer disabled:opacity-50"
             />
           </div>
           {mode === 'auto' && (
@@ -212,19 +209,18 @@ export function PlinkoGame() {
           )}
           {mode === 'manual' ? (
             <>
-              {/* Bulk-drop selector — one click queues N balls with
-                  small stagger so they fall in a cascade. Real Stake
-                  Plinko has this for rapid play. */}
+              {/* Bulk-drop selector — one click queues N balls in a
+                  staggered cascade. */}
               <div className="flex gap-1.5">
                 {([1, 5, 10, 25] as const).map((n) => (
                   <button
                     key={n}
                     onClick={() => setBulkCount(n)}
                     disabled={autoActive}
-                    className={`flex-1 py-1.5 rounded-lg text-[11px] font-mono font-bold tabular-nums transition disabled:opacity-50 ${
+                    className={`flex-1 py-1.5 rounded text-[11px] font-mono font-bold tabular-nums transition disabled:opacity-50 ${
                       bulkCount === n
-                        ? 'bg-accent-gold text-bg shadow-[0_0_10px_rgba(255,209,102,.45)]'
-                        : 'bg-bg-elev border border-edge text-ink-dim hover:text-ink'
+                        ? 'bg-accent-gold text-stake-bg'
+                        : 'bg-stake-input border border-stake-border text-stake-muted hover:text-stake-text'
                     }`}
                   >
                     ×{n}
@@ -233,25 +229,23 @@ export function PlinkoGame() {
               </div>
               <button
                 onClick={() => {
-                  // Stagger drops 80ms apart so the balls fall in a
-                  // visible cascade rather than overlapping perfectly.
                   for (let i = 0; i < bulkCount; i++) {
                     window.setTimeout(() => { void drop(); }, i * 80);
                   }
                 }}
                 disabled={balance.balance < bet * bulkCount || bet <= 0}
                 style={{ touchAction: 'manipulation' }}
-                className="w-full py-3.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
+                className="w-full py-3.5 rounded bg-stake-green text-stake-bg font-bold text-sm disabled:opacity-50 transition active:scale-[0.99] hover:bg-stake-green-hi"
               >
-                Drop {bulkCount > 1 ? `×${bulkCount}` : ''} · {fmtCurrency(bet * bulkCount)}
+                Bet {bulkCount > 1 ? `×${bulkCount}` : ''} · {fmtCurrency(bet * bulkCount)}
               </button>
             </>
           ) : (
             <button
               onClick={() => setAutoActive((a) => !a)}
               disabled={!autoActive && (balance.balance < bet || bet <= 0)}
-              className={`w-full py-3.5 rounded-xl font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99] ${
-                autoActive ? 'bg-accent-hot text-white' : 'bg-accent text-bg'
+              className={`w-full py-3.5 rounded font-bold text-sm disabled:opacity-50 transition active:scale-[0.99] ${
+                autoActive ? 'bg-stake-red text-white' : 'bg-stake-green text-stake-bg hover:bg-stake-green-hi'
               }`}
             >
               {autoActive ? 'Stop Autobet' : 'Start Autobet'}
