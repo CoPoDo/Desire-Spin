@@ -121,7 +121,7 @@ export function VideoPokerGame() {
                   className={`flex items-center justify-between px-2 py-1 rounded ${
                     isCurrent ? 'bg-stake-green/15 border border-stake-green/40' : ''
                   }`}
-                  style={isCurrent ? { boxShadow: '0 0 10px rgba(31,255,122,.35)' } : undefined}
+                  style={isCurrent ? { boxShadow: '0 0 10px rgba(0,231,1,.35)' } : undefined}
                 >
                   <span className={isCurrent ? 'text-stake-green font-semibold' : 'text-stake-muted'}>
                     {rankLabel2(r)}
@@ -252,9 +252,9 @@ function CardView({
         className="relative w-14 h-20 sm:w-16 sm:h-24 rounded-xl font-bold"
         style={{
           background: 'linear-gradient(180deg, #f5f0e4, #e8dfc9)',
-          border: held ? '2px solid #1fff7a' : '2px solid #c8932e',
+          border: held ? '2px solid #00e701' : '2px solid #c8932e',
           boxShadow: held
-            ? '0 0 14px rgba(31,255,122,.55), inset 0 1px 0 rgba(255,255,255,.6)'
+            ? '0 0 14px rgba(0,231,1,.55), inset 0 1px 0 rgba(255,255,255,.6)'
             : '0 6px 14px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.6)',
           color: red ? '#c8102e' : '#1a0f00',
         }}
@@ -277,7 +277,7 @@ function CardView({
       {held && (
         <div
           className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded text-[8px] font-mono font-bold uppercase"
-          style={{ background: '#1fff7a', color: '#0a3a14', boxShadow: '0 0 8px rgba(31,255,122,.55)' }}
+          style={{ background: '#00e701', color: '#0a3a14', boxShadow: '0 0 8px rgba(0,231,1,.55)' }}
         >
           Hold
         </div>

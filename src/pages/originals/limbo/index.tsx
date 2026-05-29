@@ -69,7 +69,7 @@ export function LimboGame() {
           window.setTimeout(() => {
             fireConfetti({
               count: t >= 50 ? 130 : t >= 10 ? 80 : 50,
-              colors: ['#1fff7a', '#22d3ee', '#ffd166', '#ffffff'],
+              colors: ['#00e701', '#22d3ee', '#ffd166', '#ffffff'],
             });
           }, 720);
         }

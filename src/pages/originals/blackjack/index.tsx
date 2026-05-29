@@ -391,7 +391,7 @@ function PlayerHandPanel({
 }) {
   const v = handValue(hand.cards);
   const outcomeColor = doneSummary === 'player-blackjack' || doneSummary === 'player-win'
-    ? '#1fff7a'
+    ? '#00e701'
     : doneSummary === 'push'
       ? '#9aa3b2'
       : doneSummary
@@ -404,12 +404,12 @@ function PlayerHandPanel({
       className="rounded-lg bg-stake-card border p-3 transition-colors"
       style={{
         borderColor: isActive
-          ? 'rgba(31,255,122,.65)'
+          ? 'rgba(0,231,1,.65)'
           : doneSummary
             ? `${outcomeColor}55`
             : '#2a3142',
         boxShadow: isActive
-          ? '0 0 14px rgba(31,255,122,.35)'
+          ? '0 0 14px rgba(0,231,1,.35)'
           : doneSummary
             ? `0 0 10px ${outcomeColor}33`
             : 'inset 0 1px 0 rgba(255,255,255,.04)',

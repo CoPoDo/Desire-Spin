@@ -159,7 +159,7 @@ export function MinesGame() {
     if (currentMult >= 1.5) {
       fireConfetti({
         count: currentMult >= 20 ? 130 : currentMult >= 5 ? 80 : 50,
-        colors: ['#1fff7a', '#ffd166', '#22d3ee', '#ffffff'],
+        colors: ['#00e701', '#ffd166', '#22d3ee', '#ffffff'],
       });
     }
     history.record({

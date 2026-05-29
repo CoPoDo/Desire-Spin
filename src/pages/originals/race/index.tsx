@@ -60,7 +60,7 @@ export function RaceGame() {
         sound.play(result.multiplier >= 10 ? 'mega-win' : result.multiplier >= 4 ? 'big-win' : 'win');
         fireConfetti({
           count: result.multiplier >= 5 ? 130 : 80,
-          colors: ['#1fff7a', '#ffd166', '#ffffff'],
+          colors: ['#00e701', '#ffd166', '#ffffff'],
         });
       } else {
         sound.play('drop');

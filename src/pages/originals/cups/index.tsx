@@ -217,9 +217,9 @@ export function CupsGame() {
                     style={{
                       filter:
                         isReveal && isPicked && !result?.win
-                          ? 'drop-shadow(0 0 14px rgba(255,61,139,.7)) hue-rotate(-30deg)'
+                          ? 'drop-shadow(0 0 14px rgba(237,65,99,.7)) hue-rotate(-30deg)'
                           : isReveal && isBall
-                            ? 'drop-shadow(0 0 14px rgba(31,255,122,.85))'
+                            ? 'drop-shadow(0 0 14px rgba(0,231,1,.85))'
                             : isBallReveal && isBall
                               ? 'drop-shadow(0 0 14px rgba(34,211,238,.75))'
                               : 'drop-shadow(0 6px 12px rgba(0,0,0,.55))',

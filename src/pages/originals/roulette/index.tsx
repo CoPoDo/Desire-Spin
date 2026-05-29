@@ -97,7 +97,7 @@ export function RouletteGame() {
         if (r.totalReturn >= totalStake * 2) {
           fireConfetti({
             count: r.totalReturn >= totalStake * 10 ? 130 : 70,
-            colors: ['#1fff7a', '#c8102e', '#ffffff', '#15191f', '#ffd166'],
+            colors: ['#00e701', '#c8102e', '#ffffff', '#15191f', '#ffd166'],
           });
         }
       } else {

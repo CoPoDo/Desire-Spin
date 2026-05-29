@@ -333,8 +333,8 @@ export function AviatorGame() {
           <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
             <defs>
               <linearGradient id="aviator-trail" x1="0" y1="1" x2="1" y2="0">
-                <stop offset="0%" stopColor={lost ? '#ff3d8b' : '#ffd166'} stopOpacity="0.0" />
-                <stop offset="65%" stopColor={lost ? '#ff3d8b' : '#ffd166'} stopOpacity="0.45" />
+                <stop offset="0%" stopColor={lost ? '#ed4163' : '#ffd166'} stopOpacity="0.0" />
+                <stop offset="65%" stopColor={lost ? '#ed4163' : '#ffd166'} stopOpacity="0.45" />
                 <stop offset="100%" stopColor={lost ? '#ff8aa3' : '#ffe9a8'} stopOpacity="0.95" />
               </linearGradient>
               <filter id="aviator-trail-glow" x="-20%" y="-20%" width="140%" height="140%">
@@ -407,7 +407,7 @@ export function AviatorGame() {
               transform: 'translate(-50%, -50%)',
               fontSize: 'clamp(28px, 7vw, 44px)',
               filter: lost
-                ? 'drop-shadow(0 0 12px rgba(255,61,139,.95))'
+                ? 'drop-shadow(0 0 12px rgba(237,65,99,.95))'
                 : 'drop-shadow(0 4px 8px rgba(0,0,0,.5))',
             }}
           >
@@ -435,8 +435,8 @@ export function AviatorGame() {
                         width: sz,
                         height: sz,
                         background:
-                          i % 3 === 0 ? '#ff3d8b' : i % 3 === 1 ? '#ffd166' : '#ffffff',
-                        boxShadow: '0 0 8px rgba(255,61,139,.7)',
+                          i % 3 === 0 ? '#ed4163' : i % 3 === 1 ? '#ffd166' : '#ffffff',
+                        boxShadow: '0 0 8px rgba(237,65,99,.7)',
                         zIndex: 6,
                         transform: 'translate(-50%, -50%)',
                       }}
@@ -464,9 +464,9 @@ export function AviatorGame() {
                 style={{
                   fontSize: 'clamp(48px, 14vw, 88px)',
                   textShadow: lost
-                    ? '0 0 28px rgba(255,61,139,.85)'
+                    ? '0 0 28px rgba(237,65,99,.85)'
                     : someoneWon
-                      ? '0 0 28px rgba(31,255,122,.85)'
+                      ? '0 0 28px rgba(0,231,1,.85)'
                       : '0 0 18px rgba(0,0,0,.5), 0 0 12px rgba(255,255,255,.25)',
                 }}
               >
@@ -500,7 +500,7 @@ export function AviatorGame() {
                       style={{
                         height: `${Math.max(8, heightPct)}%`,
                         background:
-                          tier === 'epic' ? '#ffc62a' : tier === 'good' ? '#1fff7a' : '#ff3d8b',
+                          tier === 'epic' ? '#ffc62a' : tier === 'good' ? '#00e701' : '#ed4163',
                         boxShadow: tier !== 'low' ? `0 0 6px currentColor` : undefined,
                       }}
                     />

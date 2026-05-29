@@ -177,7 +177,7 @@ export function TowerGame() {
               <div className="text-[10px] uppercase tracking-widest text-stake-muted">Multiplier</div>
               <div
                 className="font-mono font-bold text-3xl text-stake-green tabular-nums leading-none mt-1"
-                style={{ textShadow: '0 0 18px rgba(31,255,122,.6)' }}
+                style={{ textShadow: '0 0 18px rgba(0,231,1,.6)' }}
               >
                 {fmtMultiplier(currentMult)}
               </div>
@@ -220,21 +220,21 @@ export function TowerGame() {
                         className="flex-1 aspect-[2/1] rounded-lg flex items-center justify-center text-lg font-bold transition-all active:scale-95"
                         style={{
                           background: isLost && isPicked
-                            ? 'linear-gradient(180deg, rgba(255,61,139,.5), rgba(255,61,139,.18))'
+                            ? 'linear-gradient(180deg, rgba(237,65,99,.5), rgba(237,65,99,.18))'
                             : showSkull
-                              ? 'linear-gradient(180deg, rgba(255,61,139,.18), rgba(255,61,139,.05))'
+                              ? 'linear-gradient(180deg, rgba(237,65,99,.18), rgba(237,65,99,.05))'
                               : showSafe
-                                ? 'linear-gradient(180deg, rgba(31,255,122,.2), rgba(31,255,122,.05))'
+                                ? 'linear-gradient(180deg, rgba(0,231,1,.2), rgba(0,231,1,.05))'
                                 : isActive
                                   ? 'linear-gradient(180deg, #2a3142, #1f2530)'
                                   : isFuture
                                     ? 'linear-gradient(180deg, #15191f, #0e1218)'
                                     : 'linear-gradient(180deg, #1a1f29, #15191f)',
-                          border: isActive ? '1px solid rgba(31,255,122,.4)' : showSkull ? '1px solid rgba(255,61,139,.5)' : showSafe ? '1px solid rgba(31,255,122,.5)' : '1px solid #2a3142',
+                          border: isActive ? '1px solid rgba(0,231,1,.4)' : showSkull ? '1px solid rgba(237,65,99,.5)' : showSafe ? '1px solid rgba(0,231,1,.5)' : '1px solid #2a3142',
                           boxShadow:
-                            isActive ? '0 0 12px rgba(31,255,122,.25), inset 0 1px 0 rgba(31,255,122,.2)' :
-                            isLost && isPicked ? '0 0 18px rgba(255,61,139,.7)' :
-                            showSafe ? '0 0 8px rgba(31,255,122,.25)' :
+                            isActive ? '0 0 12px rgba(0,231,1,.25), inset 0 1px 0 rgba(0,231,1,.2)' :
+                            isLost && isPicked ? '0 0 18px rgba(237,65,99,.7)' :
+                            showSafe ? '0 0 8px rgba(0,231,1,.25)' :
                             'inset 0 1px 0 rgba(255,255,255,.04)',
                           opacity: isFuture ? 0.5 : 1,
                         }}

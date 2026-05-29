@@ -99,7 +99,7 @@ export function MiniRouletteGame() {
         if (r.totalReturn >= totalStake * 2) {
           fireConfetti({
             count: r.totalReturn >= totalStake * 10 ? 130 : 70,
-            colors: ['#1fff7a', '#c8102e', '#ffd166', '#ffffff'],
+            colors: ['#00e701', '#c8102e', '#ffd166', '#ffffff'],
           });
         }
       } else {

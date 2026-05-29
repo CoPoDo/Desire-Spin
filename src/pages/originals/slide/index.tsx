@@ -89,7 +89,7 @@ export function SlideGame() {
             if (r.payout >= b * 5) {
               fireConfetti({
                 count: r.payout >= b * 50 ? 130 : 70,
-                colors: ['#1fff7a', '#ffd166', '#ffffff'],
+                colors: ['#00e701', '#ffd166', '#ffffff'],
               });
             }
           } else {
@@ -193,11 +193,11 @@ export function SlideGame() {
                 background:
                   win === false && phase === 'reveal'
                     ? 'linear-gradient(90deg, #c8102e, #ff5560)'
-                    : 'linear-gradient(90deg, #1fff7a, #ffd166)',
+                    : 'linear-gradient(90deg, #00e701, #ffd166)',
                 boxShadow:
                   win === false && phase === 'reveal'
                     ? '0 0 18px rgba(255,85,96,.7)'
-                    : '0 0 16px rgba(31,255,122,.55)',
+                    : '0 0 16px rgba(0,231,1,.55)',
               }}
               transition={{ duration: 0.06 }}
             />
@@ -211,7 +211,7 @@ export function SlideGame() {
                   width: 12,
                   height: 12,
                   background: 'radial-gradient(circle, #ffffff 30%, #ffd166 70%, transparent 100%)',
-                  boxShadow: '0 0 8px rgba(255,209,102,.95), 0 0 16px rgba(31,255,122,.6)',
+                  boxShadow: '0 0 8px rgba(255,209,102,.95), 0 0 16px rgba(0,231,1,.6)',
                   transition: 'left 60ms linear',
                 }}
               />

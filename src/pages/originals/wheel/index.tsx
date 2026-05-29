@@ -69,7 +69,7 @@ export function WheelGame() {
           if (r.multiplier >= 2) {
             fireConfetti({
               count: r.multiplier >= 30 ? 130 : r.multiplier >= 10 ? 80 : 50,
-              colors: ['#ffc62a', '#1fff7a', '#22d3ee', '#ffffff'],
+              colors: ['#ffc62a', '#00e701', '#22d3ee', '#ffffff'],
             });
           }
         } else {
@@ -148,7 +148,7 @@ export function WheelGame() {
                 const tier = m >= 10 ? 'epic' : m >= 2 ? 'mid' : m >= 1 ? 'one' : 'zero';
                 const fill =
                   tier === 'epic' ? '#ffc62a' :
-                  tier === 'mid'  ? '#1fff7a' :
+                  tier === 'mid'  ? '#00e701' :
                   tier === 'one'  ? '#22d3ee' :
                                     '#3a4258';
                 // Label position

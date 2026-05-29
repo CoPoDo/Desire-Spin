@@ -92,7 +92,7 @@ export function PlinkoGame() {
         if (result.multiplier >= 5) {
           fireConfetti({
             count: result.multiplier >= 100 ? 130 : result.multiplier >= 20 ? 80 : 50,
-            colors: ['#ff5560', '#ffd166', '#22d3ee', '#1fff7a', '#ffffff'],
+            colors: ['#ff5560', '#ffd166', '#22d3ee', '#00e701', '#ffffff'],
           });
         }
         setFlashingBucket(result.bucket);
@@ -372,7 +372,7 @@ function Board({
           const stroke =
             tier === 'high' ? '#ff5560'
             : tier === 'mid' ? '#ffc62a'
-            : tier === 'one' ? '#1fff7a'
+            : tier === 'one' ? '#00e701'
             : '#2a3142';
           const textColor =
             tier === 'high' ? '#fff'

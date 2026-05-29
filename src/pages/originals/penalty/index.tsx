@@ -69,7 +69,7 @@ export function PenaltyGame() {
         sound.play(r.multiplier >= 10 ? 'mega-win' : r.multiplier >= 4 ? 'big-win' : 'win');
         fireConfetti({
           count: r.multiplier >= 6 ? 130 : 80,
-          colors: ['#1fff7a', '#ffffff', '#ffd166'],
+          colors: ['#00e701', '#ffffff', '#ffd166'],
         });
       } else {
         sound.play('drop');
@@ -217,13 +217,13 @@ export function PenaltyGame() {
                       width: '20%',
                       aspectRatio: '1 / 1',
                       background: isPicked
-                        ? 'rgba(31, 255, 122, 0.25)'
+                        ? 'rgba(0,231,1, 0.25)'
                         : 'rgba(255, 255, 255, 0.05)',
                       border: isPicked
-                        ? '2px solid rgba(31, 255, 122, .9)'
+                        ? '2px solid rgba(0,231,1, .9)'
                         : '1.5px solid rgba(255,255,255,.18)',
                       boxShadow: isPicked
-                        ? '0 0 18px rgba(31,255,122,.55)'
+                        ? '0 0 18px rgba(0,231,1,.55)'
                         : 'none',
                       pointerEvents: phase === 'idle' ? 'auto' : 'none',
                     }}
@@ -235,7 +235,7 @@ export function PenaltyGame() {
                     </span>
                     <span
                       className="text-[10px] font-mono font-bold tabular-nums"
-                      style={{ color: isPicked ? '#1fff7a' : '#ffe9a8' }}
+                      style={{ color: isPicked ? '#00e701' : '#ffe9a8' }}
                     >
                       {mult}×
                     </span>

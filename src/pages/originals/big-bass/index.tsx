@@ -66,7 +66,7 @@ export function BigBassGame() {
       if (r.multiplier >= 10) {
         fireConfetti({
           count: r.multiplier >= 100 ? 130 : 70,
-          colors: ['#5fb8ff', '#22d3ee', '#1fff7a', '#ffd166', '#ffffff'],
+          colors: ['#5fb8ff', '#22d3ee', '#00e701', '#ffd166', '#ffffff'],
         });
       }
     } else {
@@ -218,7 +218,7 @@ export function BigBassGame() {
       if (totalWin >= b * 20) {
         fireConfetti({
           count: 200,
-          colors: ['#5fb8ff', '#ffd166', '#22d3ee', '#1fff7a', '#ffffff'],
+          colors: ['#5fb8ff', '#ffd166', '#22d3ee', '#00e701', '#ffffff'],
         });
       }
       // Pause on the reveal so the player reads the total.

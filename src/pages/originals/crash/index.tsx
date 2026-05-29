@@ -97,7 +97,7 @@ export function CrashGame() {
           if (cashedAt >= 2) {
             fireConfetti({
               count: cashedAt >= 20 ? 130 : cashedAt >= 5 ? 80 : 50,
-              colors: ['#1fff7a', '#22d3ee', '#ffd166', '#ffffff'],
+              colors: ['#00e701', '#22d3ee', '#ffd166', '#ffffff'],
             });
           }
         } else {
@@ -388,7 +388,7 @@ export function CrashGame() {
                 transition={{ duration: 0.4, times: [0, 0.18, 1] }}
                 style={{
                   background:
-                    'radial-gradient(ellipse at center, rgba(255,61,139,.55) 0%, rgba(255,61,139,.18) 40%, transparent 75%)',
+                    'radial-gradient(ellipse at center, rgba(237,65,99,.55) 0%, rgba(237,65,99,.18) 40%, transparent 75%)',
                   mixBlendMode: 'screen',
                 }}
               />
@@ -414,8 +414,8 @@ export function CrashGame() {
                         width: sz,
                         height: sz,
                         background:
-                          i % 3 === 0 ? '#ff3d8b' : i % 3 === 1 ? '#ffd166' : '#ffffff',
-                        boxShadow: '0 0 8px rgba(255,61,139,.7)',
+                          i % 3 === 0 ? '#ed4163' : i % 3 === 1 ? '#ffd166' : '#ffffff',
+                        boxShadow: '0 0 8px rgba(237,65,99,.7)',
                         zIndex: 5,
                       }}
                       initial={{ x: 0, y: 0, opacity: 1, scale: 1 }}

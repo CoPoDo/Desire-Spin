@@ -147,16 +147,16 @@ export function KenoGame() {
                   className={`aspect-square rounded-md flex items-center justify-center font-mono font-bold text-xs sm:text-sm transition-all active:scale-95 relative ${drawn ? 'keno-cell-pop' : ''}`}
                   style={{
                     background: isHit
-                      ? 'linear-gradient(180deg, #1fff7a, #0a7a3a)'
+                      ? 'linear-gradient(180deg, #00e701, #0a7a3a)'
                       : isMiss
                         ? 'linear-gradient(180deg, #2a3142, #15191f)'
                         : picked
                           ? 'linear-gradient(180deg, #ffc62a, #c8932e)'
                           : 'linear-gradient(180deg, #1a1f29, #15191f)',
                     color: isHit ? '#0a3a14' : isMiss ? '#9aa3b2' : picked ? '#1a0f00' : '#e5e9f0',
-                    border: isHit ? '1px solid rgba(31,255,122,.6)' : picked ? '1px solid rgba(255,233,168,.6)' : '1px solid #2a3142',
+                    border: isHit ? '1px solid rgba(0,231,1,.6)' : picked ? '1px solid rgba(255,233,168,.6)' : '1px solid #2a3142',
                     boxShadow:
-                      isHit ? '0 0 8px rgba(31,255,122,.55)' :
+                      isHit ? '0 0 8px rgba(0,231,1,.55)' :
                       picked ? 'inset 0 1px 0 rgba(255,255,255,.4), 0 0 6px rgba(255,198,42,.4)' :
                       'inset 0 1px 0 rgba(255,255,255,.04)',
                   }}
@@ -199,11 +199,11 @@ export function KenoGame() {
                     className="flex flex-col items-center justify-center text-[8px] sm:text-[10px] font-mono py-1 rounded"
                     style={{
                       background: isCurrent
-                        ? m > 0 ? 'rgba(31,255,122,.18)' : 'rgba(255,61,139,.15)'
+                        ? m > 0 ? 'rgba(0,231,1,.18)' : 'rgba(237,65,99,.15)'
                         : 'rgba(42,49,66,.4)',
-                      color: m >= 50 ? '#ffc62a' : m >= 5 ? '#1fff7a' : m > 0 ? '#22d3ee' : '#9aa3b2',
+                      color: m >= 50 ? '#ffc62a' : m >= 5 ? '#00e701' : m > 0 ? '#22d3ee' : '#9aa3b2',
                       border: isCurrent
-                        ? m > 0 ? '1px solid rgba(31,255,122,.5)' : '1px solid rgba(255,61,139,.4)'
+                        ? m > 0 ? '1px solid rgba(0,231,1,.5)' : '1px solid rgba(237,65,99,.4)'
                         : '1px solid transparent',
                     }}
                   >

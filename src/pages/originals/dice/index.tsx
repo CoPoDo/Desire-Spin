@@ -69,7 +69,7 @@ export function DiceGame() {
         if (result.multiplier >= 4) {
           fireConfetti({
             count: result.multiplier >= 40 ? 130 : result.multiplier >= 10 ? 80 : 50,
-            colors: ['#1fff7a', '#22d3ee', '#ffd166', '#ffffff'],
+            colors: ['#00e701', '#22d3ee', '#ffd166', '#ffffff'],
           });
         }
       } else {

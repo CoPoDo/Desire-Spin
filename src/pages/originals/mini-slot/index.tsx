@@ -137,13 +137,13 @@ export function MiniSlotGame() {
                   }}
                   style={{
                     background: isWin
-                      ? 'linear-gradient(180deg, rgba(31,255,122,.25), rgba(31,255,122,.05))'
+                      ? 'linear-gradient(180deg, rgba(0,231,1,.25), rgba(0,231,1,.05))'
                       : 'linear-gradient(180deg, #1a1f29, #0e1218)',
                     border: isWin
-                      ? '2px solid rgba(31,255,122,.6)'
+                      ? '2px solid rgba(0,231,1,.6)'
                       : '1px solid #2a3142',
                     boxShadow: isWin
-                      ? '0 0 18px rgba(31,255,122,.4), inset 0 1px 0 rgba(31,255,122,.3)'
+                      ? '0 0 18px rgba(0,231,1,.4), inset 0 1px 0 rgba(0,231,1,.3)'
                       : 'inset 0 1px 0 rgba(255,255,255,.06)',
                   }}
                 >

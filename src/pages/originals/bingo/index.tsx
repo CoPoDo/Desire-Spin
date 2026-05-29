@@ -62,7 +62,7 @@ export function BingoGame() {
           if (r.lineCount >= 2) {
             fireConfetti({
               count: r.lineCount >= 4 ? 130 : 70,
-              colors: ['#ffd166', '#ff5560', '#22d3ee', '#1fff7a', '#ffffff'],
+              colors: ['#ffd166', '#ff5560', '#22d3ee', '#00e701', '#ffffff'],
             });
           }
         } else {
@@ -325,17 +325,17 @@ function BingoCard({
             }}
             style={{
               background: isWinning
-                ? 'linear-gradient(180deg, rgba(31,255,122,.25), rgba(0,0,0,.4))'
+                ? 'linear-gradient(180deg, rgba(0,231,1,.25), rgba(0,0,0,.4))'
                 : isMarked
                   ? 'linear-gradient(180deg, rgba(167,139,250,.22), rgba(0,0,0,.45))'
                   : 'linear-gradient(180deg, #1a1f29, #0e1218)',
               border: isWinning
-                ? '2px solid rgba(31,255,122,.85)'
+                ? '2px solid rgba(0,231,1,.85)'
                 : isMarked
                   ? '1.5px solid rgba(167,139,250,.55)'
                   : '1px solid #2a3142',
               boxShadow: isWinning
-                ? '0 0 14px rgba(31,255,122,.5)'
+                ? '0 0 14px rgba(0,231,1,.5)'
                 : isMarked
                   ? '0 0 10px rgba(167,139,250,.35), inset 0 1px 0 rgba(255,255,255,.05)'
                   : 'inset 0 1px 0 rgba(255,255,255,.04)',

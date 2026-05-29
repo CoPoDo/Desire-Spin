@@ -68,7 +68,7 @@ export function RpsGame() {
           // game's win-state palette (green) plus accent gold + white.
           fireConfetti({
             count: 60,
-            colors: ['#1fff7a', '#ffd166', '#ffffff'],
+            colors: ['#00e701', '#ffd166', '#ffffff'],
           });
         } else if (r.outcome === 'tie') {
           balance.credit(r.payout); // refund
@@ -175,7 +175,7 @@ export function RpsGame() {
                   style={{
                     filter:
                       outcome === 'loss'
-                        ? 'drop-shadow(0 0 16px rgba(255,61,139,.7))'
+                        ? 'drop-shadow(0 0 16px rgba(237,65,99,.7))'
                         : outcome === 'win'
                           ? 'drop-shadow(0 0 12px rgba(255,255,255,.3)) grayscale(.4)'
                           : 'drop-shadow(0 4px 8px rgba(0,0,0,.5))',
@@ -198,24 +198,24 @@ export function RpsGame() {
               style={{
                 background:
                   outcome === 'win'
-                    ? 'radial-gradient(circle, rgba(31,255,122,.25), transparent 75%)'
+                    ? 'radial-gradient(circle, rgba(0,231,1,.25), transparent 75%)'
                     : outcome === 'loss'
-                      ? 'radial-gradient(circle, rgba(255,61,139,.25), transparent 75%)'
+                      ? 'radial-gradient(circle, rgba(237,65,99,.25), transparent 75%)'
                       : outcome === 'tie'
                         ? 'radial-gradient(circle, rgba(255,209,102,.18), transparent 75%)'
                         : 'transparent',
                 border: outcome === 'win'
-                  ? '1px solid rgba(31,255,122,.55)'
+                  ? '1px solid rgba(0,231,1,.55)'
                   : outcome === 'loss'
-                    ? '1px solid rgba(255,61,139,.55)'
+                    ? '1px solid rgba(237,65,99,.55)'
                     : outcome === 'tie'
                       ? '1px solid rgba(255,209,102,.45)'
                       : '1px solid rgba(255,255,255,.08)',
                 color:
                   outcome === 'win'
-                    ? '#1fff7a'
+                    ? '#00e701'
                     : outcome === 'loss'
-                      ? '#ff3d8b'
+                      ? '#ed4163'
                       : outcome === 'tie'
                         ? '#ffd166'
                         : '#9aa3b2',
@@ -238,7 +238,7 @@ export function RpsGame() {
                 style={{
                   filter:
                     outcome === 'win'
-                      ? 'drop-shadow(0 0 16px rgba(31,255,122,.85))'
+                      ? 'drop-shadow(0 0 16px rgba(0,231,1,.85))'
                       : outcome === 'loss'
                         ? 'drop-shadow(0 0 8px rgba(255,255,255,.2)) grayscale(.4)'
                         : 'drop-shadow(0 4px 8px rgba(0,0,0,.5))',

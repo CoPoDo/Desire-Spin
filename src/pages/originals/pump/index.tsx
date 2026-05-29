@@ -144,7 +144,7 @@ export function PumpGame() {
               <div className="text-[10px] uppercase tracking-widest text-stake-muted">Multiplier</div>
               <div
                 className="font-mono font-bold text-3xl text-stake-green tabular-nums leading-none mt-1"
-                style={{ textShadow: '0 0 18px rgba(31,255,122,.6)' }}
+                style={{ textShadow: '0 0 18px rgba(0,231,1,.6)' }}
               >
                 {fmtMultiplier(currentMult)}
               </div>
@@ -183,11 +183,11 @@ export function PumpGame() {
                         height: 8 + (i % 3) * 2,
                         background:
                           i % 3 === 0
-                            ? '#ff3d8b'
+                            ? '#ed4163'
                             : i % 3 === 1
                               ? '#ff7aa3'
                               : '#ffd166',
-                        boxShadow: '0 0 8px rgba(255,61,139,.6)',
+                        boxShadow: '0 0 8px rgba(237,65,99,.6)',
                       }}
                       initial={{ x: 0, y: 0, opacity: 1, scale: 1 }}
                       animate={{ x: dx, y: dy, opacity: 0, scale: 0.4, rotate: 240 }}
@@ -207,7 +207,7 @@ export function PumpGame() {
                 animate={{ scale: [1.2, 2.2, 0], opacity: [1, 1, 0] }}
                 transition={{ duration: 0.6 }}
                 className="text-7xl relative z-10"
-                style={{ filter: 'drop-shadow(0 0 18px rgba(255,61,139,.85))' }}
+                style={{ filter: 'drop-shadow(0 0 18px rgba(237,65,99,.85))' }}
               >
                 💥
               </motion.div>
@@ -227,7 +227,7 @@ export function PumpGame() {
                 style={{
                   filter:
                     round?.cashed
-                      ? 'drop-shadow(0 0 22px rgba(31,255,122,.8))'
+                      ? 'drop-shadow(0 0 22px rgba(0,231,1,.8))'
                       : 'drop-shadow(0 8px 18px rgba(0,0,0,.55))',
                 }}
               >

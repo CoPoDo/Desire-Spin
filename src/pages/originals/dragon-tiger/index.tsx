@@ -88,7 +88,7 @@ export function DragonTigerGame() {
         sound.play(p >= r.totalStake * 5 ? 'mega-win' : 'big-win');
         fireConfetti({
           count: p >= r.totalStake * 5 ? 130 : 70,
-          colors: ['#ffd166', '#c8102e', '#1fff7a', '#ffffff'],
+          colors: ['#ffd166', '#c8102e', '#00e701', '#ffffff'],
         });
       } else if (r.totalReturn === r.totalStake) {
         balance.credit(r.totalReturn);

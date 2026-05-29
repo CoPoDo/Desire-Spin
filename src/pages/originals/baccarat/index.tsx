@@ -190,9 +190,9 @@ function HandPanel({
     <div
       className="rounded-lg bg-stake-card border p-3 transition"
       style={{
-        borderColor: highlight ? (tone === 'cyan' ? '#22d3ee' : '#ff3d8b') : '#2a3142',
+        borderColor: highlight ? (tone === 'cyan' ? '#22d3ee' : '#ed4163') : '#2a3142',
         boxShadow: highlight
-          ? `0 0 18px ${tone === 'cyan' ? 'rgba(34,211,238,.4)' : 'rgba(255,61,139,.4)'}`
+          ? `0 0 18px ${tone === 'cyan' ? 'rgba(34,211,238,.4)' : 'rgba(237,65,99,.4)'}`
           : undefined,
       }}
     >

@@ -388,7 +388,7 @@ export function SicBoGame() {
 
 const TONE: Record<string, { bg: string; border: string; chipBg: string }> = {
   cyan: { bg: '#0e3a4a', border: '#22d3ee', chipBg: 'rgba(34,211,238,.15)' },
-  hot: { bg: '#3a0e1a', border: '#ff3d8b', chipBg: 'rgba(255,61,139,.15)' },
+  hot: { bg: '#3a0e1a', border: '#ed4163', chipBg: 'rgba(237,65,99,.15)' },
   violet: { bg: '#1f1640', border: '#a78bfa', chipBg: 'rgba(167,139,250,.15)' },
   gold: { bg: '#3a2a10', border: '#ffd166', chipBg: 'rgba(255,209,102,.15)' },
 };

@@ -185,11 +185,11 @@ export function TreasureGame() {
                       ? '1px solid #3a4258'
                       : isTrap
                         ? `2px solid ${justRevealed ? '#ff5560' : 'rgba(200,16,46,.5)'}`
-                        : `1.5px solid rgba(31,255,122,.5)`,
+                        : `1.5px solid rgba(0,231,1,.5)`,
                     boxShadow: justRevealed && isTrap
                       ? '0 0 22px rgba(255,85,96,.7)'
                       : justRevealed && !isTrap
-                        ? '0 0 12px rgba(31,255,122,.45)'
+                        ? '0 0 12px rgba(0,231,1,.45)'
                         : 'inset 0 1px 0 rgba(255,255,255,.05)',
                   }}
                 >
@@ -213,7 +213,7 @@ export function TreasureGame() {
                         <span className="text-2xl">💎</span>
                         <span
                           className="font-mono font-bold text-[11px] tabular-nums leading-none"
-                          style={{ color: tile.multiplier >= 10 ? '#ffd166' : tile.multiplier >= 1 ? '#1fff7a' : '#9aa3b2' }}
+                          style={{ color: tile.multiplier >= 10 ? '#ffd166' : tile.multiplier >= 1 ? '#00e701' : '#9aa3b2' }}
                         >
                           {fmtMultiplier(tile.multiplier)}
                         </span>
@@ -243,9 +243,9 @@ export function TreasureGame() {
                 style={{
                   background:
                     m >= 10 ? 'rgba(255,209,102,.15)' :
-                    m >= 1 ? 'rgba(31,255,122,.15)' :
+                    m >= 1 ? 'rgba(0,231,1,.15)' :
                     'rgba(154,163,178,.15)',
-                  color: m >= 10 ? '#ffd166' : m >= 1 ? '#1fff7a' : '#9aa3b2',
+                  color: m >= 10 ? '#ffd166' : m >= 1 ? '#00e701' : '#9aa3b2',
                   border: '1px solid rgba(255,255,255,.05)',
                 }}
               >
