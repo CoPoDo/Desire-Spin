@@ -107,7 +107,7 @@ export function WheelGame() {
     <OriginalPageLayout title="Wheel">
       <div className="flex flex-col p-4 gap-4 max-w-md mx-auto w-full">
         {/* Wheel */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-4 flex items-center justify-center">
+        <div className="rounded-lg bg-stake-card border border-stake-border p-4 flex items-center justify-center">
           <div className="relative w-full aspect-square max-w-[300px]">
             {/* Pointer at top */}
             <div
@@ -194,33 +194,33 @@ export function WheelGame() {
         </div>
 
         {/* Result */}
-        <div className="rounded-xl bg-bg-card border border-edge p-3 text-center">
+        <div className="rounded-xl bg-stake-card border border-stake-border p-3 text-center">
           {lastResult ? (
             <>
-              <div className="text-[10px] uppercase tracking-widest text-ink-mute">Last Spin</div>
+              <div className="text-[10px] uppercase tracking-widest text-stake-muted">Last Spin</div>
               <div
                 className={`font-mono font-bold text-2xl tabular-nums mt-0.5 ${
                   lastResult.multiplier >= 10
                     ? 'text-accent-gold'
                     : lastResult.multiplier >= 2
-                      ? 'text-accent'
+                      ? 'text-stake-green'
                       : lastResult.multiplier >= 1
                         ? 'text-accent-cyan'
-                        : 'text-accent-hot'
+                        : 'text-stake-red'
                 }`}
               >
                 {lastResult.multiplier === 0 ? '0×' : `${lastResult.multiplier}×`}
               </div>
             </>
           ) : (
-            <div className="text-[10px] uppercase tracking-widest text-ink-mute">Spin the wheel</div>
+            <div className="text-[10px] uppercase tracking-widest text-stake-muted">Spin the wheel</div>
           )}
         </div>
 
         {/* Recent results */}
         {recent.length > 0 && (
           <div className="flex items-center gap-1.5 overflow-x-auto py-1">
-            <span className="text-[10px] uppercase tracking-widest text-ink-mute mr-1 flex-shrink-0">Recent</span>
+            <span className="text-[10px] uppercase tracking-widest text-stake-muted mr-1 flex-shrink-0">Recent</span>
             <AnimatePresence initial={false}>
               {recent.map((r) => (
                 <motion.span
@@ -234,10 +234,10 @@ export function WheelGame() {
                     r.m >= 10
                       ? 'bg-accent-gold/20 text-accent-gold'
                       : r.m >= 2
-                        ? 'bg-accent/15 text-accent'
+                        ? 'bg-stake-green/15 text-stake-green'
                         : r.m >= 1
                           ? 'bg-accent-cyan/15 text-accent-cyan'
-                          : 'bg-accent-hot/15 text-accent-hot'
+                          : 'bg-stake-red/15 text-stake-red'
                   }`}
                 >
                   {r.m}×
@@ -248,11 +248,11 @@ export function WheelGame() {
         )}
 
         {/* Controls */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-4 space-y-3">
+        <div className="rounded-lg bg-stake-card border border-stake-border p-4 space-y-3">
           <ManualAutoTabs mode={mode} onChange={setMode} disabled={autoActive || busy} />
           <BetInput bet={bet} onBetChange={setBet} disabled={autoActive || busy} />
           <div>
-            <div className="text-[10px] uppercase tracking-widest text-ink-mute mb-1.5">Risk</div>
+            <div className="text-[10px] uppercase tracking-widest text-stake-muted mb-1.5">Risk</div>
             <div className="flex gap-1.5">
               {(['low', 'medium', 'high'] as Risk[]).map((r) => (
                 <button
@@ -261,8 +261,8 @@ export function WheelGame() {
                   disabled={autoActive || busy}
                   className={`flex-1 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition disabled:opacity-50 ${
                     risk === r
-                      ? 'bg-accent text-bg'
-                      : 'bg-bg-elev border border-edge text-ink-dim hover:text-ink'
+                      ? 'bg-stake-green text-stake-bg'
+                      : 'bg-stake-input border border-stake-border text-stake-muted hover:text-stake-text'
                   }`}
                 >
                   {r}
@@ -271,7 +271,7 @@ export function WheelGame() {
             </div>
           </div>
           <div>
-            <div className="text-[10px] uppercase tracking-widest text-ink-mute mb-1.5">Segments</div>
+            <div className="text-[10px] uppercase tracking-widest text-stake-muted mb-1.5">Segments</div>
             <div className="flex gap-1.5">
               {SEG_OPTIONS.map((s) => (
                 <button
@@ -280,8 +280,8 @@ export function WheelGame() {
                   disabled={autoActive || busy}
                   className={`flex-1 py-1.5 rounded-lg text-xs font-bold tabular-nums transition disabled:opacity-50 ${
                     segments === s
-                      ? 'bg-accent-cyan text-bg'
-                      : 'bg-bg-elev border border-edge text-ink-dim hover:text-ink'
+                      ? 'bg-accent-cyan text-stake-bg'
+                      : 'bg-stake-input border border-stake-border text-stake-muted hover:text-stake-text'
                   }`}
                 >
                   {s}
@@ -299,7 +299,7 @@ export function WheelGame() {
             <button
               onClick={() => void playOnce()}
               disabled={busy || balance.balance < bet || bet <= 0}
-              className="w-full py-3.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
+              className="w-full py-3.5 rounded-xl bg-stake-green text-stake-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
             >
               {busy ? 'Spinning…' : `Spin · ${fmtCurrency(bet)}`}
             </button>
@@ -308,7 +308,7 @@ export function WheelGame() {
               onClick={() => setAutoActive((a) => !a)}
               disabled={!autoActive && (balance.balance < bet || bet <= 0)}
               className={`w-full py-3.5 rounded-xl font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99] ${
-                autoActive ? 'bg-accent-hot text-white' : 'bg-accent text-bg'
+                autoActive ? 'bg-stake-red text-white' : 'bg-stake-green text-stake-bg'
               }`}
             >
               {autoActive ? 'Stop Autobet' : 'Start Autobet'}

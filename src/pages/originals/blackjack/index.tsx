@@ -246,11 +246,11 @@ export function BlackjackGame() {
     <OriginalPageLayout title="Blackjack">
       <div className="flex flex-col p-4 gap-3 max-w-md mx-auto w-full">
         {/* Dealer */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-4">
+        <div className="rounded-lg bg-stake-card border border-stake-border p-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] uppercase tracking-widest text-ink-mute">Dealer</span>
+            <span className="text-[10px] uppercase tracking-widest text-stake-muted">Dealer</span>
             {dealerVal && (
-              <span className="font-mono font-bold text-base tabular-nums text-ink">
+              <span className="font-mono font-bold text-base tabular-nums text-stake-text">
                 {dealerVal.value}{dealerVal.soft ? ' (soft)' : ''}{dealerVal.bust ? ' bust' : ''}
               </span>
             )}
@@ -263,7 +263,7 @@ export function BlackjackGame() {
               <CardView hidden delay={100} />
             )}
             {!round && (
-              <div className="text-[11px] text-ink-mute self-center">Place a bet to deal</div>
+              <div className="text-[11px] text-stake-muted self-center">Place a bet to deal</div>
             )}
           </div>
         </div>
@@ -288,10 +288,10 @@ export function BlackjackGame() {
 
         {/* Outcome */}
         {done && round && (
-          <div className="rounded-xl bg-bg-card border border-edge p-3 text-center">
+          <div className="rounded-xl bg-stake-card border border-stake-border p-3 text-center">
             <div
               className={`font-mono font-bold text-lg ${
-                totalProfit > 0 ? 'text-accent' : totalProfit === 0 ? 'text-ink-dim' : 'text-accent-hot'
+                totalProfit > 0 ? 'text-stake-green' : totalProfit === 0 ? 'text-stake-muted' : 'text-stake-red'
               }`}
             >
               {round.outcome === 'player-blackjack'
@@ -303,7 +303,7 @@ export function BlackjackGame() {
                     : `Loss · ${fmtCurrency(totalProfit)}`}
             </div>
             {round.hands.length > 1 && (
-              <div className="text-[10px] text-ink-mute mt-1">
+              <div className="text-[10px] text-stake-muted mt-1">
                 {round.hands.map((h, i) =>
                   `Hand ${i + 1}: ${outcomeText(h.outcome)}`
                 ).join(' · ')}
@@ -314,12 +314,12 @@ export function BlackjackGame() {
 
         {/* Controls */}
         {!round || done ? (
-          <div className="rounded-2xl bg-bg-card border border-edge p-4 space-y-3">
+          <div className="rounded-lg bg-stake-card border border-stake-border p-4 space-y-3">
             <BetInput bet={bet} onBetChange={setBet} disabled={busy} />
             <button
               onClick={done ? () => { reset(); startHand(); } : startHand}
               disabled={busy || balance.balance < bet || bet <= 0}
-              className="w-full py-3.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
+              className="w-full py-3.5 rounded-xl bg-stake-green text-stake-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
             >
               {done ? 'Deal Again' : `Deal · ${fmtCurrency(bet)}`}
             </button>
@@ -329,21 +329,21 @@ export function BlackjackGame() {
             <button
               onClick={onHit}
               disabled={busy}
-              className="py-3.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 active:scale-[0.99]"
+              className="py-3.5 rounded-xl bg-stake-green text-stake-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 active:scale-[0.99]"
             >
               Hit
             </button>
             <button
               onClick={onStand}
               disabled={busy}
-              className="py-3.5 rounded-xl bg-accent-hot text-white font-bold text-sm uppercase tracking-wider disabled:opacity-50 active:scale-[0.99]"
+              className="py-3.5 rounded-xl bg-stake-red text-white font-bold text-sm uppercase tracking-wider disabled:opacity-50 active:scale-[0.99]"
             >
               Stand
             </button>
             <button
               onClick={onDouble}
               disabled={busy || !doubleAvailable}
-              className="py-3.5 rounded-xl bg-accent-gold text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 active:scale-[0.99]"
+              className="py-3.5 rounded-xl bg-accent-gold text-stake-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 active:scale-[0.99]"
               title={doubleAvailable ? `Double bet to ${fmtCurrency(activeHand!.bet * 2)} and draw one card` : 'Double unavailable on this hand'}
             >
               Double
@@ -401,7 +401,7 @@ function PlayerHandPanel({
     <motion.div
       animate={isActive ? { scale: 1.0 } : { scale: 0.97 }}
       transition={{ duration: 0.18 }}
-      className="rounded-2xl bg-bg-card border p-3 transition-colors"
+      className="rounded-lg bg-stake-card border p-3 transition-colors"
       style={{
         borderColor: isActive
           ? 'rgba(31,255,122,.65)'
@@ -416,7 +416,7 @@ function PlayerHandPanel({
       }}
     >
       <div className="flex items-center justify-between mb-2">
-        <span className="text-[10px] uppercase tracking-widest text-ink-mute">
+        <span className="text-[10px] uppercase tracking-widest text-stake-muted">
           {isMultiHand ? `Hand ${handIdx}` : 'You'}
           {hand.doubled && ' · 2×'}
           {hand.fromSplit && ' · split'}

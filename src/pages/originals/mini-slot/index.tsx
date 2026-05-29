@@ -114,7 +114,7 @@ export function MiniSlotGame() {
     <OriginalPageLayout title="Mini Slot">
       <div className="flex flex-col p-4 gap-4 max-w-md mx-auto w-full">
         {/* Reels */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-4">
+        <div className="rounded-lg bg-stake-card border border-stake-border p-4">
           <div className="flex items-center justify-center gap-2 sm:gap-3">
             {reels.map((s, i) => {
               const meta = symbolMeta(s);
@@ -155,43 +155,43 @@ export function MiniSlotGame() {
         </div>
 
         {/* Outcome */}
-        <div className="rounded-xl bg-bg-card border border-edge p-3 text-center min-h-[60px] flex flex-col items-center justify-center">
+        <div className="rounded-xl bg-stake-card border border-stake-border p-3 text-center min-h-[60px] flex flex-col items-center justify-center">
           {lastOutcome ? (
             <>
-              <div className="text-[10px] uppercase tracking-widest text-ink-mute">
+              <div className="text-[10px] uppercase tracking-widest text-stake-muted">
                 {lastOutcome.outcome}
               </div>
               <div className={`font-mono font-bold text-lg mt-0.5 tabular-nums ${
                 lastOutcome.mult >= 100 ? 'text-accent-gold' :
-                lastOutcome.mult >= 10 ? 'text-accent' :
-                lastOutcome.mult > 0 ? 'text-accent-cyan' : 'text-ink-mute'
+                lastOutcome.mult >= 10 ? 'text-stake-green' :
+                lastOutcome.mult > 0 ? 'text-accent-cyan' : 'text-stake-muted'
               }`}>
                 {lastOutcome.mult > 0 ? `${lastOutcome.mult}× = ${fmtCurrency(lastOutcome.payout)}` : '— no win —'}
               </div>
             </>
           ) : (
-            <div className="text-[10px] uppercase tracking-widest text-ink-mute">Spin to play</div>
+            <div className="text-[10px] uppercase tracking-widest text-stake-muted">Spin to play</div>
           )}
         </div>
 
         {/* Paytable */}
-        <div className="rounded-xl bg-bg-card border border-edge p-3">
-          <div className="text-[10px] uppercase tracking-widest text-ink-mute mb-1.5 px-1">3-of-a-kind pays</div>
+        <div className="rounded-xl bg-stake-card border border-stake-border p-3">
+          <div className="text-[10px] uppercase tracking-widest text-stake-muted mb-1.5 px-1">3-of-a-kind pays</div>
           <div className="grid grid-cols-5 gap-1">
             {SYMBOLS.map((s) => (
               <div key={s.id} className="text-center">
                 <div className="text-2xl">{s.emoji}</div>
-                <div className="text-[10px] font-mono font-bold tabular-nums text-ink-dim">
+                <div className="text-[10px] font-mono font-bold tabular-nums text-stake-muted">
                   {s.mult}×
                 </div>
               </div>
             ))}
           </div>
-          <div className="mt-1.5 text-[10px] text-ink-mute text-center">+ any 2× 🍒 pays 2×</div>
+          <div className="mt-1.5 text-[10px] text-stake-muted text-center">+ any 2× 🍒 pays 2×</div>
         </div>
 
         {/* Controls */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-4 space-y-3">
+        <div className="rounded-lg bg-stake-card border border-stake-border p-4 space-y-3">
           <ManualAutoTabs mode={mode} onChange={setMode} disabled={autoActive || busy} />
           <BetInput bet={bet} onBetChange={setBet} disabled={autoActive || busy} />
           {mode === 'auto' && (
@@ -204,7 +204,7 @@ export function MiniSlotGame() {
             <button
               onClick={() => void playOnce()}
               disabled={busy || balance.balance < bet || bet <= 0}
-              className="w-full py-3.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
+              className="w-full py-3.5 rounded-xl bg-stake-green text-stake-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
             >
               {busy ? 'Spinning…' : `Spin · ${fmtCurrency(bet)}`}
             </button>
@@ -213,7 +213,7 @@ export function MiniSlotGame() {
               onClick={() => setAutoActive((a) => !a)}
               disabled={!autoActive && (balance.balance < bet || bet <= 0)}
               className={`w-full py-3.5 rounded-xl font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99] ${
-                autoActive ? 'bg-accent-hot text-white' : 'bg-accent text-bg'
+                autoActive ? 'bg-stake-red text-white' : 'bg-stake-green text-stake-bg'
               }`}
             >
               {autoActive ? 'Stop Autobet' : 'Start Autobet'}

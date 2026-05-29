@@ -137,7 +137,7 @@ export function MiniRouletteGame() {
     <OriginalPageLayout title="Mini Roulette">
       <div className="flex flex-col p-3 gap-3 max-w-md mx-auto w-full">
         {/* Wheel + result */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-4 flex items-center justify-center min-h-[220px]">
+        <div className="rounded-lg bg-stake-card border border-stake-border p-4 flex items-center justify-center min-h-[220px]">
           <div className="relative w-full max-w-[260px] aspect-square">
             <Wheel spinTo={spinTo} winning={winning} busy={busy} />
             {/* Result number overlay (only after stop) */}
@@ -174,12 +174,12 @@ export function MiniRouletteGame() {
 
         {/* Result delta */}
         {result && !busy && (
-          <div className="rounded-xl bg-bg-card border border-edge p-2 text-center">
+          <div className="rounded-xl bg-stake-card border border-stake-border p-2 text-center">
             <span
               className={`font-mono font-bold text-base tabular-nums ${
                 result.totalReturn > result.totalStake
-                  ? 'text-accent'
-                  : 'text-accent-hot'
+                  ? 'text-stake-green'
+                  : 'text-stake-red'
               }`}
             >
               {result.totalReturn > 0
@@ -192,7 +192,7 @@ export function MiniRouletteGame() {
         {/* Recent results */}
         {recent.length > 0 && (
           <div className="flex items-center gap-1 overflow-x-auto py-1">
-            <span className="text-[10px] uppercase tracking-widest text-ink-mute mr-1 flex-shrink-0">
+            <span className="text-[10px] uppercase tracking-widest text-stake-muted mr-1 flex-shrink-0">
               Recent
             </span>
             <AnimatePresence initial={false}>
@@ -224,7 +224,7 @@ export function MiniRouletteGame() {
         )}
 
         {/* Number grid: 0 + 1–12 */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-2 space-y-1.5">
+        <div className="rounded-lg bg-stake-card border border-stake-border p-2 space-y-1.5">
           <div className="flex gap-1">
             <NumberCell
               n={0}
@@ -305,8 +305,8 @@ export function MiniRouletteGame() {
         </div>
 
         {/* Chip selector */}
-        <div className="rounded-xl bg-bg-card border border-edge p-2">
-          <div className="text-[10px] uppercase tracking-widest text-ink-mute mb-1.5 px-1">
+        <div className="rounded-xl bg-stake-card border border-stake-border p-2">
+          <div className="text-[10px] uppercase tracking-widest text-stake-muted mb-1.5 px-1">
             Chip Value
           </div>
           <div className="flex gap-1.5">
@@ -317,8 +317,8 @@ export function MiniRouletteGame() {
                 disabled={busy}
                 className={`flex-1 py-2 rounded-lg text-xs font-mono font-bold tabular-nums transition disabled:opacity-50 ${
                   chip === c
-                    ? 'bg-accent-gold text-bg shadow-[0_0_14px_rgba(255,209,102,.55)]'
-                    : 'bg-bg-elev border border-edge text-ink-dim hover:text-ink'
+                    ? 'bg-accent-gold text-stake-bg shadow-[0_0_14px_rgba(255,209,102,.55)]'
+                    : 'bg-stake-input border border-stake-border text-stake-muted hover:text-stake-text'
                 }`}
               >
                 ${c}
@@ -328,12 +328,12 @@ export function MiniRouletteGame() {
         </div>
 
         {/* Total + actions */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-3 space-y-2">
+        <div className="rounded-lg bg-stake-card border border-stake-border p-3 space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] uppercase tracking-widest text-ink-mute">
+            <span className="text-[10px] uppercase tracking-widest text-stake-muted">
               Total Stake
             </span>
-            <span className="font-mono font-bold text-lg text-ink tabular-nums">
+            <span className="font-mono font-bold text-lg text-stake-text tabular-nums">
               {fmtCurrency(totalStake)}
             </span>
           </div>
@@ -341,14 +341,14 @@ export function MiniRouletteGame() {
             <button
               onClick={clearBets}
               disabled={busy || totalStake === 0}
-              className="flex-1 py-2.5 rounded-xl bg-bg-elev border border-edge text-ink-dim font-bold text-xs uppercase tracking-wider disabled:opacity-50"
+              className="flex-1 py-2.5 rounded-xl bg-stake-input border border-stake-border text-stake-muted font-bold text-xs uppercase tracking-wider disabled:opacity-50"
             >
               Clear
             </button>
             <button
               onClick={spin}
               disabled={busy || totalStake === 0 || balance.balance < totalStake}
-              className="flex-[2] py-2.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
+              className="flex-[2] py-2.5 rounded-xl bg-stake-green text-stake-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
             >
               {busy
                 ? 'Spinning…'
@@ -503,7 +503,7 @@ function NumberCell({
       </span>
       {chip !== undefined && chip > 0 && (
         <span
-          className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-accent-gold text-bg text-[8px] font-mono font-bold flex items-center justify-center"
+          className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-accent-gold text-stake-bg text-[8px] font-mono font-bold flex items-center justify-center"
           style={{ boxShadow: '0 0 6px rgba(255,209,102,.7)' }}
         >
           ${chip}
@@ -541,7 +541,7 @@ function BetCell({
       <span className="text-[8px] opacity-70">{payout.toFixed(2)}×</span>
       {chip !== undefined && chip > 0 && (
         <span
-          className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-accent-gold text-bg text-[8px] font-mono font-bold flex items-center justify-center"
+          className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-accent-gold text-stake-bg text-[8px] font-mono font-bold flex items-center justify-center"
           style={{ boxShadow: '0 0 6px rgba(255,209,102,.7)' }}
         >
           ${chip}

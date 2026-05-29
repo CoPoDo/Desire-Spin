@@ -110,8 +110,8 @@ export function VideoPokerGame() {
     <OriginalPageLayout title="Video Poker">
       <div className="flex flex-col p-4 gap-4 max-w-md mx-auto w-full">
         {/* Paytable */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-3">
-          <div className="text-[10px] uppercase tracking-widest text-ink-mute mb-1.5 px-1">Pays per 1× bet</div>
+        <div className="rounded-lg bg-stake-card border border-stake-border p-3">
+          <div className="text-[10px] uppercase tracking-widest text-stake-muted mb-1.5 px-1">Pays per 1× bet</div>
           <div className="space-y-0.5 text-[11px]">
             {RANKS_ORDER.map((r) => {
               const isCurrent = result?.rank === r;
@@ -119,15 +119,15 @@ export function VideoPokerGame() {
                 <div
                   key={r}
                   className={`flex items-center justify-between px-2 py-1 rounded ${
-                    isCurrent ? 'bg-accent/15 border border-accent/40' : ''
+                    isCurrent ? 'bg-stake-green/15 border border-stake-green/40' : ''
                   }`}
                   style={isCurrent ? { boxShadow: '0 0 10px rgba(31,255,122,.35)' } : undefined}
                 >
-                  <span className={isCurrent ? 'text-accent font-semibold' : 'text-ink-dim'}>
+                  <span className={isCurrent ? 'text-stake-green font-semibold' : 'text-stake-muted'}>
                     {rankLabel2(r)}
                   </span>
                   <span className={`font-mono font-bold tabular-nums ${
-                    isCurrent ? 'text-accent' : 'text-ink-dim'
+                    isCurrent ? 'text-stake-green' : 'text-stake-muted'
                   }`}>
                     {payForRank(r)}×
                   </span>
@@ -138,9 +138,9 @@ export function VideoPokerGame() {
         </div>
 
         {/* Hand */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-3 min-h-[160px]">
+        <div className="rounded-lg bg-stake-card border border-stake-border p-3 min-h-[160px]">
           {hand.length === 0 ? (
-            <div className="flex items-center justify-center min-h-[140px] text-[11px] text-ink-mute uppercase tracking-widest">
+            <div className="flex items-center justify-center min-h-[140px] text-[11px] text-stake-muted uppercase tracking-widest">
               Place a bet to deal
             </div>
           ) : (
@@ -167,12 +167,12 @@ export function VideoPokerGame() {
 
         {/* Outcome */}
         {result && (
-          <div className="rounded-xl bg-bg-card border border-edge p-3 text-center">
-            <div className="text-[10px] uppercase tracking-widest text-ink-mute">Result</div>
+          <div className="rounded-xl bg-stake-card border border-stake-border p-3 text-center">
+            <div className="text-[10px] uppercase tracking-widest text-stake-muted">Result</div>
             <div className={`font-mono font-bold text-base mt-0.5 ${
               result.multiplier >= 50 ? 'text-accent-gold' :
-              result.multiplier >= 4 ? 'text-accent' :
-              result.multiplier > 0 ? 'text-accent-cyan' : 'text-accent-hot'
+              result.multiplier >= 4 ? 'text-stake-green' :
+              result.multiplier > 0 ? 'text-accent-cyan' : 'text-stake-red'
             }`}>
               {rankLabel2(result.rank)}{result.multiplier > 0 ? ` · ${fmtCurrency(result.payout)}` : ''}
             </div>
@@ -180,7 +180,7 @@ export function VideoPokerGame() {
         )}
 
         {/* Controls */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-4 space-y-3">
+        <div className="rounded-lg bg-stake-card border border-stake-border p-4 space-y-3">
           {phase !== 'hold' && (
             <BetInput bet={bet} onBetChange={setBet} disabled={busy} />
           )}
@@ -188,20 +188,20 @@ export function VideoPokerGame() {
             <button
               onClick={deal}
               disabled={busy || balance.balance < bet || bet <= 0}
-              className="w-full py-3.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
+              className="w-full py-3.5 rounded-xl bg-stake-green text-stake-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
             >
               Deal · {fmtCurrency(bet)}
             </button>
           )}
           {phase === 'hold' && (
             <>
-              <p className="text-[10px] text-ink-mute text-center">
+              <p className="text-[10px] text-stake-muted text-center">
                 Tap cards to toggle HOLD, then draw
               </p>
               <button
                 onClick={drawCards}
                 disabled={busy}
-                className="w-full py-3.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
+                className="w-full py-3.5 rounded-xl bg-stake-green text-stake-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
               >
                 Draw
               </button>
@@ -211,7 +211,7 @@ export function VideoPokerGame() {
             <button
               onClick={() => { setPhase('idle'); setHand([]); setResult(null); }}
               disabled={busy}
-              className="w-full py-3.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
+              className="w-full py-3.5 rounded-xl bg-stake-green text-stake-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
             >
               Play Again
             </button>

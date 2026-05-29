@@ -121,7 +121,7 @@ export function CoinFlipGame() {
     <OriginalPageLayout title="Coin Flip">
       <div className="flex flex-col p-4 gap-4 max-w-md mx-auto w-full">
         {/* Status */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-4 text-center min-h-[200px] flex flex-col items-center justify-center gap-3">
+        <div className="rounded-lg bg-stake-card border border-stake-border p-4 text-center min-h-[200px] flex flex-col items-center justify-center gap-3">
           <AnimatePresence mode="wait">
             <motion.div
               key={phase + '-' + streak}
@@ -129,7 +129,7 @@ export function CoinFlipGame() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
               transition={{ duration: 0.18 }}
-              className="text-[10px] uppercase tracking-widest text-ink-mute"
+              className="text-[10px] uppercase tracking-widest text-stake-muted"
             >
               {phase === 'idle' && 'Place your bet'}
               {phase === 'choosing' && (streak === 0 ? 'Heads or Tails?' : `Streak ${streak} · ${fmtMultiplier(accumMult)}`)}
@@ -141,10 +141,10 @@ export function CoinFlipGame() {
           {/* Coin */}
           <Coin phase={phase} lastFlip={lastFlip} />
           {phase === 'choosing' && streak > 0 && (
-            <div className="text-xs text-ink-dim">
-              Cash out for <span className="font-mono font-bold text-accent">{fmtCurrency(cashoutAmount)}</span>
+            <div className="text-xs text-stake-muted">
+              Cash out for <span className="font-mono font-bold text-stake-green">{fmtCurrency(cashoutAmount)}</span>
               {' · '}
-              next flip <span className="font-mono text-accent">{fmtMultiplier(nextMult)}</span>
+              next flip <span className="font-mono text-stake-green">{fmtMultiplier(nextMult)}</span>
             </div>
           )}
         </div>
@@ -152,7 +152,7 @@ export function CoinFlipGame() {
         {/* History */}
         {history$.length > 0 && (
           <div className="flex items-center gap-1 overflow-x-auto py-1">
-            <span className="text-[10px] uppercase tracking-widest text-ink-mute mr-1 flex-shrink-0">Last flips</span>
+            <span className="text-[10px] uppercase tracking-widest text-stake-muted mr-1 flex-shrink-0">Last flips</span>
             {history$.map((h, i) => (
               <span
                 key={i}
@@ -171,12 +171,12 @@ export function CoinFlipGame() {
 
         {/* Action panel */}
         {phase === 'idle' || phase === 'won' || phase === 'lost' ? (
-          <div className="rounded-2xl bg-bg-card border border-edge p-4 space-y-3">
+          <div className="rounded-lg bg-stake-card border border-stake-border p-4 space-y-3">
             <BetInput bet={bet} onBetChange={setBet} disabled={busy} />
             <button
               onClick={phase === 'idle' ? start : () => { reset(); start(); }}
               disabled={busy || balance.balance < bet || bet <= 0}
-              className="w-full py-3.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
+              className="w-full py-3.5 rounded-xl bg-stake-green text-stake-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
             >
               {phase === 'idle' ? `Bet · ${fmtCurrency(bet)}` : 'Play Again'}
             </button>
@@ -214,7 +214,7 @@ export function CoinFlipGame() {
             <button
               onClick={cashOut}
               disabled={busy || streak === 0}
-              className="w-full py-3 rounded-xl bg-accent-gold text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99] shadow-[0_0_16px_rgba(255,209,102,.45)]"
+              className="w-full py-3 rounded-xl bg-accent-gold text-stake-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99] shadow-[0_0_16px_rgba(255,209,102,.45)]"
             >
               {streak === 0 ? 'Pick a side first' : `Cash Out · ${fmtCurrency(cashoutAmount)}`}
             </button>

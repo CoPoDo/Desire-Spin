@@ -137,19 +137,19 @@ export function DragonTigerGame() {
     <OriginalPageLayout title="Dragon Tiger">
       <div className="flex flex-col p-4 gap-4 max-w-md mx-auto w-full">
         {/* Status */}
-        <div className="rounded-xl bg-bg-card border border-edge p-3 text-center min-h-[60px] flex flex-col items-center justify-center">
+        <div className="rounded-xl bg-stake-card border border-stake-border p-3 text-center min-h-[60px] flex flex-col items-center justify-center">
           {phase === 'idle' && (
-            <div className="text-[10px] uppercase tracking-widest text-ink-mute">
+            <div className="text-[10px] uppercase tracking-widest text-stake-muted">
               Place chips on Dragon / Tie / Tiger
             </div>
           )}
           {phase === 'dealing' && (
-            <div className="text-[10px] uppercase tracking-widest text-ink-dim">Dealing…</div>
+            <div className="text-[10px] uppercase tracking-widest text-stake-muted">Dealing…</div>
           )}
           {phase === 'reveal' && winner && (
             <div
               className={`font-mono font-bold text-lg ${
-                profit > 0 ? 'text-accent' : profit === 0 ? 'text-ink-dim' : 'text-accent-hot'
+                profit > 0 ? 'text-stake-green' : profit === 0 ? 'text-stake-muted' : 'text-stake-red'
               }`}
             >
               {winner === 'tie'
@@ -165,7 +165,7 @@ export function DragonTigerGame() {
         </div>
 
         {/* Cards + tie badge as chip-betting cells */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-4">
+        <div className="rounded-lg bg-stake-card border border-stake-border p-4">
           <div className="grid grid-cols-2 gap-3">
             <CardSlot
               label="Dragon"
@@ -199,16 +199,16 @@ export function DragonTigerGame() {
               disabled={busy}
               className={`relative w-full py-2.5 rounded-xl text-[11px] font-mono font-bold uppercase tracking-wider transition disabled:opacity-50 ${
                 winner === 'tie'
-                  ? 'bg-accent text-bg'
+                  ? 'bg-stake-green text-stake-bg'
                   : chips.tie > 0
                     ? 'bg-accent-violet/30 border border-accent-violet text-accent-violet'
-                    : 'bg-bg-elev border border-edge text-ink-dim hover:text-ink'
+                    : 'bg-stake-input border border-stake-border text-stake-muted hover:text-stake-text'
               }`}
             >
               {winner === 'tie' ? 'Tie!' : `Tie · ${TIE_PAYOUT}×`}
               {chips.tie > 0 && (
                 <span
-                  className="absolute -top-2 -right-2 min-w-[22px] h-[22px] px-1.5 rounded-full bg-accent-gold text-bg text-[10px] font-mono font-bold flex items-center justify-center"
+                  className="absolute -top-2 -right-2 min-w-[22px] h-[22px] px-1.5 rounded-full bg-accent-gold text-stake-bg text-[10px] font-mono font-bold flex items-center justify-center"
                   style={{ boxShadow: '0 0 6px rgba(255,209,102,.7)' }}
                 >
                   ${chips.tie}
@@ -220,24 +220,24 @@ export function DragonTigerGame() {
 
         {/* Bet panel */}
         {phase !== 'dealing' ? (
-          <div className="rounded-2xl bg-bg-card border border-edge p-4 space-y-3">
+          <div className="rounded-lg bg-stake-card border border-stake-border p-4 space-y-3">
             <BetInput bet={bet} onBetChange={setBet} disabled={busy} />
             <div className="flex items-center justify-between text-xs">
-              <span className="text-ink-mute uppercase tracking-wider">Total Stake</span>
+              <span className="text-stake-muted uppercase tracking-wider">Total Stake</span>
               <span className="font-mono font-bold tabular-nums">{fmtCurrency(totalStake)}</span>
             </div>
             <div className="flex gap-2">
               <button
                 onClick={clearChips}
                 disabled={busy || totalStake === 0}
-                className="flex-1 py-2.5 rounded-xl bg-bg-elev border border-edge text-ink-dim font-bold text-xs uppercase tracking-wider disabled:opacity-50"
+                className="flex-1 py-2.5 rounded-xl bg-stake-input border border-stake-border text-stake-muted font-bold text-xs uppercase tracking-wider disabled:opacity-50"
               >
                 Clear
               </button>
               <button
                 onClick={phase === 'reveal' ? () => { reset(); start(); } : start}
                 disabled={busy || totalStake === 0 || balance.balance < totalStake}
-                className="flex-[2] py-2.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
+                className="flex-[2] py-2.5 rounded-xl bg-stake-green text-stake-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
               >
                 {phase === 'reveal'
                   ? `Deal Again · ${fmtCurrency(totalStake)}`
@@ -248,7 +248,7 @@ export function DragonTigerGame() {
             </div>
           </div>
         ) : (
-          <div className="rounded-2xl bg-bg-card border border-edge p-4 text-center text-xs text-ink-dim">
+          <div className="rounded-lg bg-stake-card border border-stake-border p-4 text-center text-xs text-stake-muted">
             Dealing the cards…
           </div>
         )}
@@ -287,10 +287,10 @@ function CardSlot({
       disabled={disabled}
       className="text-center w-full transition active:scale-[0.98] disabled:opacity-90 disabled:cursor-default"
     >
-      <div className="text-[10px] uppercase tracking-widest text-ink-mute mb-1 flex items-center justify-center gap-1">
+      <div className="text-[10px] uppercase tracking-widest text-stake-muted mb-1 flex items-center justify-center gap-1">
         <span>{icon}</span>
         <span style={{ color: picked ? accent : undefined }}>{label}</span>
-        <span className="text-ink-dim font-mono">· {payoutLabel}</span>
+        <span className="text-stake-muted font-mono">· {payoutLabel}</span>
       </div>
       <motion.div
         className="relative aspect-[3/4] rounded-xl overflow-hidden"
@@ -378,7 +378,7 @@ function CardSlot({
         {/* Chip badge overlay — shows the staked amount on this side */}
         {chip > 0 && (
           <span
-            className="absolute top-1.5 right-1.5 min-w-[24px] h-[24px] px-1.5 rounded-full bg-accent-gold text-bg text-[10px] font-mono font-bold flex items-center justify-center"
+            className="absolute top-1.5 right-1.5 min-w-[24px] h-[24px] px-1.5 rounded-full bg-accent-gold text-stake-bg text-[10px] font-mono font-bold flex items-center justify-center"
             style={{ boxShadow: '0 0 8px rgba(255,209,102,.75)' }}
           >
             ${chip}

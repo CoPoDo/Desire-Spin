@@ -141,18 +141,18 @@ export function BingoGame() {
     <OriginalPageLayout title="Bingo">
       <div className="flex flex-col p-4 gap-4 max-w-md mx-auto w-full">
         {/* Status */}
-        <div className="rounded-xl bg-bg-card border border-edge p-3 text-center min-h-[60px] flex flex-col items-center justify-center">
+        <div className="rounded-xl bg-stake-card border border-stake-border p-3 text-center min-h-[60px] flex flex-col items-center justify-center">
           {phase === 'idle' && (
-            <div className="text-[10px] uppercase tracking-widest text-ink-mute">
+            <div className="text-[10px] uppercase tracking-widest text-stake-muted">
               {DRAW_COUNT} draws · 1+ line wins
             </div>
           )}
           {phase === 'drawing' && (
             <div className="flex items-center gap-2">
-              <div className="text-[10px] uppercase tracking-widest text-ink-dim">
+              <div className="text-[10px] uppercase tracking-widest text-stake-muted">
                 Drawing · {drawnSoFar.length}/{DRAW_COUNT}
               </div>
-              <div className="font-mono font-bold text-base text-ink tabular-nums">
+              <div className="font-mono font-bold text-base text-stake-text tabular-nums">
                 · {completedLines.length} {completedLines.length === 1 ? 'line' : 'lines'}
               </div>
             </div>
@@ -161,8 +161,8 @@ export function BingoGame() {
             <div
               className={`font-mono font-bold text-lg ${
                 result.payout > bet
-                  ? 'text-accent'
-                  : 'text-accent-hot'
+                  ? 'text-stake-green'
+                  : 'text-stake-red'
               }`}
             >
               {result.lineCount} {result.lineCount === 1 ? 'line' : 'lines'} · {fmtMultiplier(result.multiplier)}
@@ -174,7 +174,7 @@ export function BingoGame() {
         </div>
 
         {/* Card */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-3">
+        <div className="rounded-lg bg-stake-card border border-stake-border p-3">
           {/* B-I-N-G-O header */}
           <div className="grid grid-cols-5 gap-1.5 mb-2">
             {COLUMN_LETTERS.map((letter) => (
@@ -195,8 +195,8 @@ export function BingoGame() {
         </div>
 
         {/* Drawn numbers */}
-        <div className="rounded-xl bg-bg-card border border-edge p-2">
-          <div className="text-[10px] uppercase tracking-widest text-ink-mute mb-1.5 px-1">
+        <div className="rounded-xl bg-stake-card border border-stake-border p-2">
+          <div className="text-[10px] uppercase tracking-widest text-stake-muted mb-1.5 px-1">
             Drawn ({drawnSoFar.length}/{DRAW_COUNT})
           </div>
           <div className="flex flex-wrap gap-1 min-h-[28px]">
@@ -217,20 +217,20 @@ export function BingoGame() {
         </div>
 
         {/* Pay table */}
-        <div className="rounded-xl bg-bg-card border border-edge p-2">
-          <div className="text-[10px] uppercase tracking-widest text-ink-mute mb-1.5 px-1">Pay table</div>
+        <div className="rounded-xl bg-stake-card border border-stake-border p-2">
+          <div className="text-[10px] uppercase tracking-widest text-stake-muted mb-1.5 px-1">Pay table</div>
           <div className="grid grid-cols-5 gap-1">
             {[1, 2, 3, 4].map((tier) => (
               <div key={tier} className="text-center">
-                <div className="text-[10px] text-ink-dim">{tier}{tier === 4 ? '+' : ''} line{tier > 1 ? 's' : ''}</div>
-                <div className="font-mono font-bold text-sm text-accent tabular-nums">
+                <div className="text-[10px] text-stake-muted">{tier}{tier === 4 ? '+' : ''} line{tier > 1 ? 's' : ''}</div>
+                <div className="font-mono font-bold text-sm text-stake-green tabular-nums">
                   {PAY_TABLE[tier]}×
                 </div>
               </div>
             ))}
             <div className="text-center">
-              <div className="text-[10px] text-ink-dim">Lines</div>
-              <div className="font-mono font-bold text-sm text-ink-mute tabular-nums">
+              <div className="text-[10px] text-stake-muted">Lines</div>
+              <div className="font-mono font-bold text-sm text-stake-muted tabular-nums">
                 {LINES.length}
               </div>
             </div>
@@ -239,18 +239,18 @@ export function BingoGame() {
 
         {/* Bet + actions */}
         {phase !== 'drawing' ? (
-          <div className="rounded-2xl bg-bg-card border border-edge p-4 space-y-3">
+          <div className="rounded-lg bg-stake-card border border-stake-border p-4 space-y-3">
             <BetInput bet={bet} onBetChange={setBet} disabled={busy} />
             <button
               onClick={phase === 'reveal' ? () => { reset(); start(); } : start}
               disabled={busy || balance.balance < bet || bet <= 0}
-              className="w-full py-3.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
+              className="w-full py-3.5 rounded-xl bg-stake-green text-stake-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
             >
               {phase === 'reveal' ? 'Play Again' : `Buy Card · ${fmtCurrency(bet)}`}
             </button>
           </div>
         ) : (
-          <div className="rounded-2xl bg-bg-card border border-edge p-4 text-center text-xs text-ink-dim">
+          <div className="rounded-lg bg-stake-card border border-stake-border p-4 text-center text-xs text-stake-muted">
             Drawing balls…
           </div>
         )}
@@ -273,7 +273,7 @@ export function BingoGame() {
               animate={{ scale: 1, y: 0, rotate: 0 }}
               exit={{ scale: 1.2, y: -20, opacity: 0 }}
               transition={{ type: 'spring', stiffness: 280, damping: 14 }}
-              className="font-display font-extrabold uppercase tracking-widest px-6 py-3 rounded-2xl"
+              className="font-display font-extrabold uppercase tracking-widest px-6 py-3 rounded-lg"
               style={{
                 fontSize: 'clamp(28px, 8vw, 44px)',
                 background: 'radial-gradient(ellipse at 50% 30%, rgba(255,209,102,.95), rgba(200,16,46,.4))',

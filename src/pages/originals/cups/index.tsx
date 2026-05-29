@@ -144,9 +144,9 @@ export function CupsGame() {
     <OriginalPageLayout title="3 Cups">
       <div className="flex flex-col p-4 gap-4 max-w-md mx-auto w-full">
         {/* Status */}
-        <div className="rounded-xl bg-bg-card border border-edge p-3 text-center">
+        <div className="rounded-xl bg-stake-card border border-stake-border p-3 text-center">
           {phase === 'idle' && (
-            <div className="text-[10px] uppercase tracking-widest text-ink-mute">
+            <div className="text-[10px] uppercase tracking-widest text-stake-muted">
               Find the ball · {fmtMultiplier(mult)} payout
             </div>
           )}
@@ -154,15 +154,15 @@ export function CupsGame() {
             <div className="text-[10px] uppercase tracking-widest text-accent-cyan">Watch the ball…</div>
           )}
           {phase === 'shuffling' && (
-            <div className="text-[10px] uppercase tracking-widest text-ink-dim">Shuffling…</div>
+            <div className="text-[10px] uppercase tracking-widest text-stake-muted">Shuffling…</div>
           )}
           {phase === 'pick' && (
-            <div className="text-[10px] uppercase tracking-widest text-accent">Pick a cup</div>
+            <div className="text-[10px] uppercase tracking-widest text-stake-green">Pick a cup</div>
           )}
           {phase === 'reveal' && result && (
             <div
               className={`font-mono font-bold text-xl ${
-                result.win ? 'text-accent' : 'text-accent-hot'
+                result.win ? 'text-stake-green' : 'text-stake-red'
               }`}
             >
               {result.win
@@ -173,7 +173,7 @@ export function CupsGame() {
         </div>
 
         {/* Cups arena */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-6 min-h-[220px] flex items-center justify-center overflow-hidden">
+        <div className="rounded-lg bg-stake-card border border-stake-border p-6 min-h-[220px] flex items-center justify-center overflow-hidden">
           <div className="flex gap-3 relative">
             {cupOrder.map((cupId, visualPos) => {
               const isBall = cupId === ballCupId;
@@ -249,10 +249,10 @@ export function CupsGame() {
 
         {/* Controls */}
         {phase === 'idle' || phase === 'reveal' ? (
-          <div className="rounded-2xl bg-bg-card border border-edge p-4 space-y-3">
+          <div className="rounded-lg bg-stake-card border border-stake-border p-4 space-y-3">
             <BetInput bet={bet} onBetChange={setBet} disabled={busy} />
             <div>
-              <div className="text-[10px] uppercase tracking-widest text-ink-mute mb-1.5">Cups</div>
+              <div className="text-[10px] uppercase tracking-widest text-stake-muted mb-1.5">Cups</div>
               <div className="grid grid-cols-3 gap-1.5">
                 {DIFFICULTIES.map((d) => (
                   <button
@@ -261,8 +261,8 @@ export function CupsGame() {
                     disabled={busy}
                     className={`py-2 rounded-lg text-[11px] font-bold uppercase tracking-wider transition disabled:opacity-50 ${
                       difficulty === d
-                        ? 'bg-accent text-bg'
-                        : 'bg-bg-elev border border-edge text-ink-dim hover:text-ink'
+                        ? 'bg-stake-green text-stake-bg'
+                        : 'bg-stake-input border border-stake-border text-stake-muted hover:text-stake-text'
                     }`}
                   >
                     {cupCountFor(d)} · {fmtMultiplier(multiplierFor(d))}
@@ -273,13 +273,13 @@ export function CupsGame() {
             <button
               onClick={phase === 'reveal' ? () => { reset(); start(); } : start}
               disabled={busy || balance.balance < bet || bet <= 0}
-              className="w-full py-3.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
+              className="w-full py-3.5 rounded-xl bg-stake-green text-stake-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
             >
               {phase === 'reveal' ? 'Play Again' : `Bet ${fmtCurrency(bet)}`}
             </button>
           </div>
         ) : (
-          <div className="rounded-2xl bg-bg-card border border-edge p-4 text-center text-xs text-ink-dim">
+          <div className="rounded-lg bg-stake-card border border-stake-border p-4 text-center text-xs text-stake-muted">
             {phase === 'reveal-ball' ? 'Memorise the cup…' :
              phase === 'shuffling' ? 'Cups are shuffling…' :
              'Tap a cup to find the ball'}

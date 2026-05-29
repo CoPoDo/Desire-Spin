@@ -110,12 +110,12 @@ export function BaccaratGame() {
 
         {/* Outcome */}
         {round && (
-          <div className="rounded-xl bg-bg-card border border-edge p-2.5 text-center">
-            <div className="text-[10px] uppercase tracking-widest text-ink-mute">Result</div>
+          <div className="rounded-xl bg-stake-card border border-stake-border p-2.5 text-center">
+            <div className="text-[10px] uppercase tracking-widest text-stake-muted">Result</div>
             <div
               className={`font-mono font-bold text-base mt-0.5 ${
                 round.winner === 'tie' ? 'text-accent-gold' :
-                round.winner === 'player' ? 'text-accent-cyan' : 'text-accent-hot'
+                round.winner === 'player' ? 'text-accent-cyan' : 'text-stake-red'
               }`}
             >
               {round.winner === 'tie' ? 'Tie' : `${round.winner === 'player' ? 'Player' : 'Banker'} wins · ${round.playerTotal}-${round.bankerTotal}`}
@@ -139,24 +139,24 @@ export function BaccaratGame() {
         </div>
 
         {/* Bet panel */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-4 space-y-3">
+        <div className="rounded-lg bg-stake-card border border-stake-border p-4 space-y-3">
           <BetInput bet={bet} onBetChange={setBet} disabled={busy} />
           <div className="flex items-center justify-between text-xs">
-            <span className="text-ink-mute uppercase tracking-wider">Total Stake</span>
+            <span className="text-stake-muted uppercase tracking-wider">Total Stake</span>
             <span className="font-mono font-bold tabular-nums">{fmtCurrency(totalBet)}</span>
           </div>
           <div className="flex gap-2">
             <button
               onClick={clear}
               disabled={busy || totalBet === 0}
-              className="flex-1 py-2.5 rounded-xl bg-bg-elev border border-edge text-ink-dim font-bold text-xs uppercase tracking-wider disabled:opacity-50"
+              className="flex-1 py-2.5 rounded-xl bg-stake-input border border-stake-border text-stake-muted font-bold text-xs uppercase tracking-wider disabled:opacity-50"
             >
               Clear
             </button>
             <button
               onClick={deal}
               disabled={busy || totalBet === 0 || balance.balance < totalBet}
-              className="flex-[2] py-2.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
+              className="flex-[2] py-2.5 rounded-xl bg-stake-green text-stake-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
             >
               {busy
                 ? 'Dealing…'
@@ -188,7 +188,7 @@ function HandPanel({
 }) {
   return (
     <div
-      className="rounded-2xl bg-bg-card border p-3 transition"
+      className="rounded-lg bg-stake-card border p-3 transition"
       style={{
         borderColor: highlight ? (tone === 'cyan' ? '#22d3ee' : '#ff3d8b') : '#2a3142',
         boxShadow: highlight
@@ -197,9 +197,9 @@ function HandPanel({
       }}
     >
       <div className="flex items-center justify-between mb-2">
-        <span className="text-[10px] uppercase tracking-widest text-ink-mute">{title}</span>
+        <span className="text-[10px] uppercase tracking-widest text-stake-muted">{title}</span>
         {total !== undefined && (
-          <span className="font-mono font-bold text-sm text-ink tabular-nums">{total}</span>
+          <span className="font-mono font-bold text-sm text-stake-text tabular-nums">{total}</span>
         )}
       </div>
       <div className="flex gap-1 justify-center min-h-[80px]">
@@ -254,7 +254,7 @@ function BetButton({
       </div>
       {amount > 0 && (
         <span
-          className="absolute -top-1 -right-1 min-w-[20px] h-[20px] px-1.5 rounded-full bg-accent-gold text-bg text-[9px] font-mono font-bold flex items-center justify-center"
+          className="absolute -top-1 -right-1 min-w-[20px] h-[20px] px-1.5 rounded-full bg-accent-gold text-stake-bg text-[9px] font-mono font-bold flex items-center justify-center"
           style={{ boxShadow: '0 0 6px rgba(255,209,102,.7)' }}
         >
           ${amount}

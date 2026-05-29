@@ -89,10 +89,10 @@ export function DiamondsGame() {
     <OriginalPageLayout title="Diamonds">
       <div className="flex flex-col p-4 gap-4 max-w-md mx-auto w-full">
         {/* Result */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-4 text-center min-h-[80px]">
+        <div className="rounded-lg bg-stake-card border border-stake-border p-4 text-center min-h-[80px]">
           {result ? (
             <>
-              <div className="text-[10px] uppercase tracking-widest text-ink-mute">
+              <div className="text-[10px] uppercase tracking-widest text-stake-muted">
                 {result.bestCount >= 3
                   ? `${result.bestCount} of a kind · ${gemMeta(result.bestGem).name}`
                   : 'No match'}
@@ -100,22 +100,22 @@ export function DiamondsGame() {
               <div
                 className={`font-mono font-bold text-2xl mt-0.5 tabular-nums ${
                   result.multiplier >= 50 ? 'text-accent-gold' :
-                  result.multiplier >= 5 ? 'text-accent' :
-                  result.multiplier > 0 ? 'text-accent-cyan' : 'text-accent-hot'
+                  result.multiplier >= 5 ? 'text-stake-green' :
+                  result.multiplier > 0 ? 'text-accent-cyan' : 'text-stake-red'
                 }`}
               >
                 {result.multiplier > 0 ? `${result.multiplier}× = ${fmtCurrency(result.payout)}` : '— no win —'}
               </div>
             </>
           ) : (
-            <div className="text-[10px] uppercase tracking-widest text-ink-mute">
+            <div className="text-[10px] uppercase tracking-widest text-stake-muted">
               {busy ? 'Drawing…' : 'Place your bet'}
             </div>
           )}
         </div>
 
         {/* Gems row */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-4">
+        <div className="rounded-lg bg-stake-card border border-stake-border p-4">
           <div className="flex items-center justify-center gap-2">
             {Array.from({ length: 5 }).map((_, i) => {
               const revealed = i < revealing;
@@ -171,7 +171,7 @@ export function DiamondsGame() {
         </div>
 
         {/* Bet panel */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-4 space-y-3">
+        <div className="rounded-lg bg-stake-card border border-stake-border p-4 space-y-3">
           <ManualAutoTabs mode={mode} onChange={setMode} disabled={autoActive || busy} />
           <BetInput bet={bet} onBetChange={setBet} disabled={autoActive || busy} />
           {mode === 'auto' && (
@@ -184,7 +184,7 @@ export function DiamondsGame() {
             <button
               onClick={() => void playOnce()}
               disabled={busy || balance.balance < bet || bet <= 0}
-              className="w-full py-3.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
+              className="w-full py-3.5 rounded-xl bg-stake-green text-stake-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
             >
               {busy ? 'Drawing…' : `Bet · ${fmtCurrency(bet)}`}
             </button>
@@ -193,7 +193,7 @@ export function DiamondsGame() {
               onClick={() => setAutoActive((a) => !a)}
               disabled={!autoActive && (balance.balance < bet || bet <= 0)}
               className={`w-full py-3.5 rounded-xl font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99] ${
-                autoActive ? 'bg-accent-hot text-white' : 'bg-accent text-bg'
+                autoActive ? 'bg-stake-red text-white' : 'bg-stake-green text-stake-bg'
               }`}
             >
               {autoActive ? 'Stop Autobet' : 'Start Autobet'}
@@ -202,8 +202,8 @@ export function DiamondsGame() {
         </div>
 
         {/* Pay table preview */}
-        <div className="rounded-xl bg-bg-card border border-edge p-2.5">
-          <div className="text-[10px] uppercase tracking-widest text-ink-mute mb-1.5 px-1">5 of a kind pays</div>
+        <div className="rounded-xl bg-stake-card border border-stake-border p-2.5">
+          <div className="text-[10px] uppercase tracking-widest text-stake-muted mb-1.5 px-1">5 of a kind pays</div>
           <div className="grid grid-cols-7 gap-1">
             {[
               { id: 'red', mult: 35 },

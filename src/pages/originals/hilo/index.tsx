@@ -192,7 +192,7 @@ export function HiloGame() {
     <OriginalPageLayout title="Hilo">
       <div className="flex flex-col p-4 gap-4 max-w-md mx-auto w-full">
         {/* Card area */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-4 min-h-[260px] flex flex-col items-center justify-center gap-3">
+        <div className="rounded-lg bg-stake-card border border-stake-border p-4 min-h-[260px] flex flex-col items-center justify-center gap-3">
           {/* Header streak/multiplier display — scale-pops on each correct
            *  guess so the chain build-up reads as progress (rather than a
            *  silently incrementing number). Real Stake Hilo's win chain
@@ -205,8 +205,8 @@ export function HiloGame() {
               exit={{ opacity: 0 }}
               transition={{ type: 'spring', stiffness: 480, damping: 22 }}
               className={`text-[10px] uppercase tracking-widest ${
-                phase === 'playing' && picks > 0 ? 'text-accent font-bold' :
-                phase === 'lost' ? 'text-accent-hot' : 'text-ink-mute'
+                phase === 'playing' && picks > 0 ? 'text-stake-green font-bold' :
+                phase === 'lost' ? 'text-stake-red' : 'text-stake-muted'
               }`}
             >
               {!current ? 'Place bet to deal' :
@@ -237,8 +237,8 @@ export function HiloGame() {
             Hilo shows this strip so players can track which way the
             deck has been going. Most recent first; cleared on reset. */}
         {cardHistory.length > 1 && (
-          <div className="rounded-xl bg-bg-card border border-edge p-2.5">
-            <div className="text-[10px] uppercase tracking-widest text-ink-mute mb-1.5 px-1">
+          <div className="rounded-xl bg-stake-card border border-stake-border p-2.5">
+            <div className="text-[10px] uppercase tracking-widest text-stake-muted mb-1.5 px-1">
               This streak ({cardHistory.length})
             </div>
             <div className="flex items-center gap-1 overflow-x-auto">
@@ -275,17 +275,17 @@ export function HiloGame() {
 
         {/* Pre-game / lost */}
         {phase !== 'playing' ? (
-          <div className="rounded-2xl bg-bg-card border border-edge p-4 space-y-3">
+          <div className="rounded-lg bg-stake-card border border-stake-border p-4 space-y-3">
             <BetInput bet={bet} onBetChange={setBet} />
             {phase === 'lost' && (
-              <div className="text-center text-xs text-accent-hot font-semibold">
+              <div className="text-center text-xs text-stake-red font-semibold">
                 Lost {fmtCurrency(bet)} — better luck next round
               </div>
             )}
             <button
               onClick={phase === 'lost' ? () => { reset(); start(); } : start}
               disabled={busy || balance.balance < bet || bet <= 0}
-              className="w-full py-3.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
+              className="w-full py-3.5 rounded-xl bg-stake-green text-stake-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
             >
               Bet · {fmtCurrency(bet)}
             </button>
@@ -300,30 +300,30 @@ export function HiloGame() {
               <button
                 onClick={() => guess('higher')}
                 disabled={busy}
-                className="rounded-xl bg-bg-card border border-edge p-3 hover:bg-bg-hover disabled:opacity-50 transition active:scale-[0.98]"
+                className="rounded-xl bg-stake-card border border-stake-border p-3 hover:bg-stake-panel disabled:opacity-50 transition active:scale-[0.98]"
               >
-                <div className="text-[10px] uppercase tracking-widest text-ink-mute flex items-center justify-center gap-1">
-                  <span className="text-accent">▲</span> {hLabel}
+                <div className="text-[10px] uppercase tracking-widest text-stake-muted flex items-center justify-center gap-1">
+                  <span className="text-stake-green">▲</span> {hLabel}
                 </div>
-                <div className="font-mono font-bold text-xl text-accent mt-1 tabular-nums">
+                <div className="font-mono font-bold text-xl text-stake-green mt-1 tabular-nums">
                   {hMult > 0 ? fmtMultiplier(hMult) : '—'}
                 </div>
-                <div className="text-[9px] font-mono text-ink-mute tabular-nums mt-0.5">
+                <div className="text-[9px] font-mono text-stake-muted tabular-nums mt-0.5">
                   {hPct > 0 ? `${hPct.toFixed(1)}%` : '—'}
                 </div>
               </button>
               <button
                 onClick={() => guess('lower')}
                 disabled={busy}
-                className="rounded-xl bg-bg-card border border-edge p-3 hover:bg-bg-hover disabled:opacity-50 transition active:scale-[0.98]"
+                className="rounded-xl bg-stake-card border border-stake-border p-3 hover:bg-stake-panel disabled:opacity-50 transition active:scale-[0.98]"
               >
-                <div className="text-[10px] uppercase tracking-widest text-ink-mute flex items-center justify-center gap-1">
-                  <span className="text-accent">▼</span> {lLabel}
+                <div className="text-[10px] uppercase tracking-widest text-stake-muted flex items-center justify-center gap-1">
+                  <span className="text-stake-green">▼</span> {lLabel}
                 </div>
-                <div className="font-mono font-bold text-xl text-accent mt-1 tabular-nums">
+                <div className="font-mono font-bold text-xl text-stake-green mt-1 tabular-nums">
                   {lMult > 0 ? fmtMultiplier(lMult) : '—'}
                 </div>
-                <div className="text-[9px] font-mono text-ink-mute tabular-nums mt-0.5">
+                <div className="text-[9px] font-mono text-stake-muted tabular-nums mt-0.5">
                   {lPct > 0 ? `${lPct.toFixed(1)}%` : '—'}
                 </div>
               </button>
@@ -332,14 +332,14 @@ export function HiloGame() {
               <button
                 onClick={skip}
                 disabled={busy}
-                className="flex-shrink-0 px-4 py-3 rounded-xl bg-bg-elev border border-edge text-ink-dim hover:text-ink font-bold text-xs uppercase tracking-wider disabled:opacity-50"
+                className="flex-shrink-0 px-4 py-3 rounded-xl bg-stake-input border border-stake-border text-stake-muted hover:text-stake-text font-bold text-xs uppercase tracking-wider disabled:opacity-50"
               >
                 Skip Card
               </button>
               <button
                 onClick={cashOut}
                 disabled={busy || picks === 0}
-                className="flex-1 py-3 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
+                className="flex-1 py-3 rounded-xl bg-stake-green text-stake-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
               >
                 {picks === 0 ? 'Pick a side first' : `Cash Out · ${fmtCurrency(cashoutAmount)}`}
               </button>

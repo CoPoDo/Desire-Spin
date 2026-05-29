@@ -121,14 +121,14 @@ export function ScratchGame() {
     <OriginalPageLayout title="Scratch Card">
       <div className="flex flex-col p-4 gap-4 max-w-md mx-auto w-full">
         {/* Status */}
-        <div className="rounded-xl bg-bg-card border border-edge p-3 text-center min-h-[60px] flex flex-col items-center justify-center">
+        <div className="rounded-xl bg-stake-card border border-stake-border p-3 text-center min-h-[60px] flex flex-col items-center justify-center">
           {phase === 'idle' && (
-            <div className="text-[10px] uppercase tracking-widest text-ink-mute">
+            <div className="text-[10px] uppercase tracking-widest text-stake-muted">
               Match 3 symbols to win · 200× max
             </div>
           )}
           {phase === 'reveal' && (
-            <div className="text-[10px] uppercase tracking-widest text-accent">
+            <div className="text-[10px] uppercase tracking-widest text-stake-green">
               Tap each tile to reveal
             </div>
           )}
@@ -149,7 +149,7 @@ export function ScratchGame() {
         </div>
 
         {/* 3×3 scratch grid */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-4">
+        <div className="rounded-lg bg-stake-card border border-stake-border p-4">
           <div className="grid grid-cols-3 gap-2">
             {Array.from({ length: 9 }).map((_, i) => (
               <ScratchTile
@@ -166,8 +166,8 @@ export function ScratchGame() {
         </div>
 
         {/* Prize pool legend (compact) */}
-        <div className="rounded-xl bg-bg-card border border-edge p-2">
-          <div className="text-[10px] uppercase tracking-widest text-ink-mute mb-1.5 px-1">
+        <div className="rounded-xl bg-stake-card border border-stake-border p-2">
+          <div className="text-[10px] uppercase tracking-widest text-stake-muted mb-1.5 px-1">
             Prize pool
           </div>
           <div className="grid grid-cols-7 gap-1">
@@ -191,12 +191,12 @@ export function ScratchGame() {
         </div>
 
         {/* Bet + actions */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-4 space-y-3">
+        <div className="rounded-lg bg-stake-card border border-stake-border p-4 space-y-3">
           <BetInput bet={bet} onBetChange={setBet} disabled={busy || phase === 'reveal'} />
           {phase === 'reveal' && !allRevealed ? (
             <button
               onClick={revealAll}
-              className="w-full py-3.5 rounded-xl bg-bg-elev border border-edge text-ink-dim font-bold text-sm uppercase tracking-wider transition active:scale-[0.99]"
+              className="w-full py-3.5 rounded-xl bg-stake-input border border-stake-border text-stake-muted font-bold text-sm uppercase tracking-wider transition active:scale-[0.99]"
             >
               Reveal All
             </button>
@@ -204,7 +204,7 @@ export function ScratchGame() {
             <button
               onClick={phase === 'done' ? () => { reset(); start(); } : start}
               disabled={busy || balance.balance < bet || bet <= 0 || phase === 'reveal'}
-              className="w-full py-3.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
+              className="w-full py-3.5 rounded-xl bg-stake-green text-stake-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
             >
               {phase === 'done' ? 'Play Again' : `Buy Card · ${fmtCurrency(bet)}`}
             </button>

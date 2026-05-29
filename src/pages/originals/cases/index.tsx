@@ -137,14 +137,14 @@ export function CasesGame() {
     <OriginalPageLayout title="Cases">
       <div className="flex flex-col p-4 gap-4 max-w-md mx-auto w-full">
         {/* Status */}
-        <div className="rounded-xl bg-bg-card border border-edge p-3 text-center min-h-[60px] flex flex-col items-center justify-center">
+        <div className="rounded-xl bg-stake-card border border-stake-border p-3 text-center min-h-[60px] flex flex-col items-center justify-center">
           {phase === 'idle' && (
-            <div className="text-[10px] uppercase tracking-widest text-ink-mute">
+            <div className="text-[10px] uppercase tracking-widest text-stake-muted">
               Open a case · weighted prizes
             </div>
           )}
           {phase === 'opening' && (
-            <div className="text-[10px] uppercase tracking-widest text-ink-dim">Opening…</div>
+            <div className="text-[10px] uppercase tracking-widest text-stake-muted">Opening…</div>
           )}
           {phase === 'reveal' && result && (
             <div
@@ -158,7 +158,7 @@ export function CasesGame() {
         </div>
 
         {/* Carousel */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-3 overflow-hidden relative">
+        <div className="rounded-lg bg-stake-card border border-stake-border p-3 overflow-hidden relative">
           <div
             className="relative h-[88px] overflow-hidden mx-auto"
             style={{ width: '100%' }}
@@ -202,8 +202,8 @@ export function CasesGame() {
         </div>
 
         {/* Prize table — what you can get */}
-        <div className="rounded-xl bg-bg-card border border-edge p-3">
-          <div className="text-[10px] uppercase tracking-widest text-ink-mute mb-2 px-1">Prize Pool</div>
+        <div className="rounded-xl bg-stake-card border border-stake-border p-3">
+          <div className="text-[10px] uppercase tracking-widest text-stake-muted mb-2 px-1">Prize Pool</div>
           <div className="grid grid-cols-7 gap-1">
             {prizeTable.map((i) => (
               <div key={i.id} className="text-center">
@@ -216,7 +216,7 @@ export function CasesGame() {
                 <div className="text-[9px] font-mono font-bold tabular-nums" style={{ color: i.color }}>
                   {fmtMultiplier(i.multiplier)}
                 </div>
-                <div className="text-[8px] font-mono text-ink-mute tabular-nums">
+                <div className="text-[8px] font-mono text-stake-muted tabular-nums">
                   {i.pct < 1 ? i.pct.toFixed(1) : i.pct.toFixed(0)}%
                 </div>
               </div>
@@ -226,18 +226,18 @@ export function CasesGame() {
 
         {/* Bet + open */}
         {phase !== 'opening' ? (
-          <div className="rounded-2xl bg-bg-card border border-edge p-4 space-y-3">
+          <div className="rounded-lg bg-stake-card border border-stake-border p-4 space-y-3">
             <BetInput bet={bet} onBetChange={setBet} disabled={busy} />
             <button
               onClick={phase === 'reveal' ? () => { reset(); start(); } : start}
               disabled={busy || balance.balance < bet || bet <= 0}
-              className="w-full py-3.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
+              className="w-full py-3.5 rounded-xl bg-stake-green text-stake-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
             >
               {phase === 'reveal' ? 'Open Again' : `Open Case · ${fmtCurrency(bet)}`}
             </button>
           </div>
         ) : (
-          <div className="rounded-2xl bg-bg-card border border-edge p-4 text-center text-xs text-ink-dim">
+          <div className="rounded-lg bg-stake-card border border-stake-border p-4 text-center text-xs text-stake-muted">
             Unlocking…
           </div>
         )}

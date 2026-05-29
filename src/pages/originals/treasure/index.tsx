@@ -123,16 +123,16 @@ export function TreasureGame() {
     <OriginalPageLayout title="Treasure Hunt">
       <div className="flex flex-col p-4 gap-4 max-w-md mx-auto w-full">
         {/* Status */}
-        <div className="rounded-xl bg-bg-card border border-edge p-3 flex items-center justify-between">
+        <div className="rounded-xl bg-stake-card border border-stake-border p-3 flex items-center justify-between">
           <div className="flex flex-col">
-            <span className="text-[10px] uppercase tracking-widest text-ink-mute">Total</span>
-            <span className="font-mono font-bold text-lg text-ink tabular-nums">
+            <span className="text-[10px] uppercase tracking-widest text-stake-muted">Total</span>
+            <span className="font-mono font-bold text-lg text-stake-text tabular-nums">
               {fmtMultiplier(accumulated)}
             </span>
           </div>
           <div className="flex flex-col items-end">
-            <span className="text-[10px] uppercase tracking-widest text-ink-mute">Tiles</span>
-            <span className="font-mono font-semibold text-sm text-ink-dim tabular-nums">
+            <span className="text-[10px] uppercase tracking-widest text-stake-muted">Tiles</span>
+            <span className="font-mono font-semibold text-sm text-stake-muted tabular-nums">
               {safeRevealed}/{GRID_SIZE - TRAP_COUNT}
             </span>
           </div>
@@ -141,13 +141,13 @@ export function TreasureGame() {
         {/* Outcome */}
         {phase !== 'idle' && phase !== 'playing' && (
           <div
-            className={`rounded-xl bg-bg-card border border-edge p-3 text-center ${
-              phase === 'cashed' ? 'border-accent/40' : 'border-accent-hot/40'
+            className={`rounded-xl bg-stake-card border border-stake-border p-3 text-center ${
+              phase === 'cashed' ? 'border-stake-green/40' : 'border-accent-hot/40'
             }`}
           >
             <div
               className={`font-mono font-bold text-lg ${
-                phase === 'cashed' ? 'text-accent' : 'text-accent-hot'
+                phase === 'cashed' ? 'text-stake-green' : 'text-stake-red'
               }`}
             >
               {phase === 'cashed'
@@ -160,7 +160,7 @@ export function TreasureGame() {
         {/* 5x5 grid — shakes when the player hits a trap, like Mines/
          *  Tower/Pump. */}
         <div
-          className={`rounded-2xl bg-bg-card border border-edge p-3 ${phase === 'lost' ? 'shake-medium' : ''}`}
+          className={`rounded-lg bg-stake-card border border-stake-border p-3 ${phase === 'lost' ? 'shake-medium' : ''}`}
         >
           <div className="grid grid-cols-5 gap-2">
             {Array.from({ length: GRID_SIZE }).map((_, i) => {
@@ -220,7 +220,7 @@ export function TreasureGame() {
                       </motion.div>
                     )
                   ) : (
-                    <span className="absolute inset-0 flex items-center justify-center text-2xl text-ink-mute opacity-50">
+                    <span className="absolute inset-0 flex items-center justify-center text-2xl text-stake-muted opacity-50">
                       ?
                     </span>
                   )}
@@ -231,8 +231,8 @@ export function TreasureGame() {
         </div>
 
         {/* Pool legend */}
-        <div className="rounded-xl bg-bg-card border border-edge p-2">
-          <div className="text-[10px] uppercase tracking-widest text-ink-mute mb-1.5 px-1">
+        <div className="rounded-xl bg-stake-card border border-stake-border p-2">
+          <div className="text-[10px] uppercase tracking-widest text-stake-muted mb-1.5 px-1">
             Tile multipliers · {TRAP_COUNT} traps
           </div>
           <div className="flex items-center justify-center gap-2 flex-wrap">
@@ -257,34 +257,34 @@ export function TreasureGame() {
 
         {/* Controls */}
         {!inGame ? (
-          <div className="rounded-2xl bg-bg-card border border-edge p-4 space-y-3">
+          <div className="rounded-lg bg-stake-card border border-stake-border p-4 space-y-3">
             <BetInput bet={bet} onBetChange={setBet} />
             <button
               onClick={phase === 'idle' ? start : () => { reset(); start(); }}
               disabled={balance.balance < bet || bet <= 0}
-              className="w-full py-3.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
+              className="w-full py-3.5 rounded-xl bg-stake-green text-stake-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
             >
               {phase === 'idle' ? `Start · ${fmtCurrency(bet)}` : 'Play Again'}
             </button>
           </div>
         ) : (
-          <div className="rounded-2xl bg-bg-card border border-edge p-4 space-y-3">
+          <div className="rounded-lg bg-stake-card border border-stake-border p-4 space-y-3">
             <div className="flex items-center justify-between text-xs">
-              <span className="text-ink-mute uppercase tracking-widest text-[10px]">
+              <span className="text-stake-muted uppercase tracking-widest text-[10px]">
                 Cash out value
               </span>
-              <span className="font-mono font-bold text-base text-accent tabular-nums">
+              <span className="font-mono font-bold text-base text-stake-green tabular-nums">
                 {fmtCurrency(cashOutValue)}
               </span>
             </div>
             <button
               onClick={cashOut}
               disabled={accumulated <= 0}
-              className="w-full py-3.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
+              className="w-full py-3.5 rounded-xl bg-stake-green text-stake-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
             >
               Cash Out · {fmtCurrency(cashOutValue)}
             </button>
-            <div className="text-[10px] text-ink-mute text-center">
+            <div className="text-[10px] text-stake-muted text-center">
               Tap a tile to reveal a multiplier or hit a trap
             </div>
           </div>

@@ -270,7 +270,7 @@ export function AviatorGame() {
       <div className="flex flex-col p-4 gap-4 max-w-md mx-auto w-full">
         {/* Sky stage with plane */}
         <div
-          className={`rounded-2xl border border-edge p-4 relative overflow-hidden min-h-[280px] ${lost ? 'shake-medium' : ''}`}
+          className={`rounded-lg border border-stake-border p-4 relative overflow-hidden min-h-[280px] ${lost ? 'shake-medium' : ''}`}
           style={{
             background: lost
               ? 'linear-gradient(180deg, #2a0a14 0%, #5a0814 40%, #1a0408 100%)'
@@ -459,7 +459,7 @@ export function AviatorGame() {
                 exit={{ scale: 0.85, opacity: 0 }}
                 transition={{ type: 'spring', stiffness: 280, damping: 18 }}
                 className={`font-mono font-bold tabular-nums leading-none ${
-                  lost ? 'text-accent-hot' : someoneWon ? 'text-accent' : 'text-white'
+                  lost ? 'text-stake-red' : someoneWon ? 'text-stake-green' : 'text-white'
                 }`}
                 style={{
                   fontSize: 'clamp(48px, 14vw, 88px)',
@@ -484,7 +484,7 @@ export function AviatorGame() {
 
         {/* Recent rounds bar */}
         {recent.length > 0 && (
-          <div className="rounded-xl bg-bg-card border border-edge p-2.5">
+          <div className="rounded-xl bg-stake-card border border-stake-border p-2.5">
             <div className="flex items-end justify-end gap-0.5 h-12">
               {recent.slice().reverse().map((r) => {
                 const heightPct = Math.min(100, (Math.log(r.bust) / Math.log(20)) * 100);
@@ -506,7 +506,7 @@ export function AviatorGame() {
                     />
                     <span
                       className={`text-[8px] font-mono font-semibold tabular-nums leading-none ${
-                        tier === 'epic' ? 'text-accent-gold' : tier === 'good' ? 'text-accent' : 'text-accent-hot'
+                        tier === 'epic' ? 'text-accent-gold' : tier === 'good' ? 'text-stake-green' : 'text-stake-red'
                       }`}
                     >
                       {r.bust < 10 ? r.bust.toFixed(2) : r.bust.toFixed(0)}
@@ -519,7 +519,7 @@ export function AviatorGame() {
         )}
 
         {/* Bet panels */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-4 space-y-3">
+        <div className="rounded-lg bg-stake-card border border-stake-border p-4 space-y-3">
           <ManualAutoTabs mode={mode} onChange={setMode} disabled={autoActive || inGame} />
 
           <SlotPanel
@@ -536,7 +536,7 @@ export function AviatorGame() {
           {mode === 'manual' && !slotB.active && phase !== 'flying' && !autoActive && (
             <button
               onClick={() => setSlotB({ ...slotB, active: true })}
-              className="w-full py-2 rounded-lg bg-bg-elev border border-edge border-dashed text-ink-dim hover:text-ink hover:border-accent/40 text-xs font-semibold uppercase tracking-wider transition active:scale-95"
+              className="w-full py-2 rounded-lg bg-stake-input border border-stake-border border-dashed text-stake-muted hover:text-stake-text hover:border-stake-green/40 text-xs font-semibold uppercase tracking-wider transition active:scale-95"
             >
               + Add second bet
             </button>
@@ -559,7 +559,7 @@ export function AviatorGame() {
             <>
               <AutoConfigFields config={autoConfig} onChange={setAutoConfig} disabled={autoActive} />
               {autoActive && <AutoProgressDisplay progress={progress} config={autoConfig} />}
-              <p className="text-[10px] text-ink-mute leading-relaxed">
+              <p className="text-[10px] text-stake-muted leading-relaxed">
                 Auto-bet runs bet A only with its auto-cashout target. Bet B is paused during auto.
               </p>
             </>
@@ -570,7 +570,7 @@ export function AviatorGame() {
               <button
                 onClick={phase === 'done' ? () => { reset(); start(); } : start}
                 disabled={activeSlots.length === 0 || totalBet <= 0 || totalBet > balance.balance}
-                className="w-full py-3.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
+                className="w-full py-3.5 rounded-xl bg-stake-green text-stake-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
               >
                 {activeSlots.length === 0
                   ? 'Activate at least one bet'
@@ -584,7 +584,7 @@ export function AviatorGame() {
               onClick={() => setAutoActive((a) => !a)}
               disabled={!autoActive && (balance.balance < slotA.bet || slotA.bet <= 0)}
               className={`w-full py-3.5 rounded-xl font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99] ${
-                autoActive ? 'bg-accent-hot text-white' : 'bg-accent text-bg'
+                autoActive ? 'bg-stake-red text-white' : 'bg-stake-green text-stake-bg'
               }`}
             >
               {autoActive ? 'Stop Autobet' : 'Start Autobet'}
@@ -618,14 +618,14 @@ function SlotPanel({
   onRemove?: () => void;
 }) {
   const label = id === 'a' ? 'Bet A' : 'Bet B';
-  const accent = id === 'a' ? 'text-accent' : 'text-accent-cyan';
+  const accent = id === 'a' ? 'text-stake-green' : 'text-accent-cyan';
   const cashColor = id === 'a' ? 'bg-accent-gold' : 'bg-accent-cyan';
   const profitOnAuto = +(slot.bet * slot.autoCashout - slot.bet).toFixed(2);
   const livePayout = +(slot.bet * currentMult).toFixed(2);
   const editable = !inGame && !disabled;
 
   return (
-    <div className="rounded-xl bg-bg-elev border border-edge p-3 space-y-2.5">
+    <div className="rounded-xl bg-stake-input border border-stake-border p-3 space-y-2.5">
       <div className="flex items-center justify-between">
         <span className={`text-[10px] uppercase tracking-widest font-bold ${accent}`}>{label}</span>
         <div className="flex items-center gap-2">
@@ -634,7 +634,7 @@ function SlotPanel({
             <button
               onClick={onRemove}
               disabled={disabled}
-              className="text-ink-mute hover:text-accent-hot text-xs transition disabled:opacity-50"
+              className="text-stake-muted hover:text-stake-red text-xs transition disabled:opacity-50"
               aria-label="Remove bet B"
               title="Remove second bet"
             >
@@ -650,15 +650,15 @@ function SlotPanel({
         disabled={!editable}
       />
 
-      <div className="rounded-lg bg-bg-card border border-edge p-2">
+      <div className="rounded-lg bg-stake-card border border-stake-border p-2">
         <div className="flex items-center justify-between">
-          <label className="flex items-center gap-2 text-[11px] text-ink-dim cursor-pointer">
+          <label className="flex items-center gap-2 text-[11px] text-stake-muted cursor-pointer">
             <input
               type="checkbox"
               checked={slot.autoEnabled}
               onChange={(e) => onChange({ ...slot, autoEnabled: e.target.checked })}
               disabled={!editable}
-              className="accent-accent w-3.5 h-3.5"
+              className="accent-[#00e701] w-3.5 h-3.5"
             />
             Auto cashout
           </label>
@@ -673,12 +673,12 @@ function SlotPanel({
               const v = parseFloat(e.target.value);
               if (Number.isFinite(v)) onChange({ ...slot, autoCashout: Math.max(1.01, v) });
             }}
-            className="font-mono font-semibold text-xs tabular-nums bg-bg-elev border border-edge rounded px-2 py-1 w-20 text-right outline-none focus:border-accent/60 disabled:opacity-50"
+            className="font-mono font-semibold text-xs tabular-nums bg-stake-input border border-stake-border rounded px-2 py-1 w-20 text-right outline-none focus:border-stake-green/60 disabled:opacity-50"
           />
         </div>
         {slot.autoEnabled && (
           <div className="mt-1.5 flex justify-between text-[10px]">
-            <span className="text-ink-mute">Profit on auto</span>
+            <span className="text-stake-muted">Profit on auto</span>
             <span className={`font-mono font-semibold ${accent} tabular-nums`}>
               {fmtCurrency(profitOnAuto)}
             </span>
@@ -689,18 +689,18 @@ function SlotPanel({
       {inGame && slot.status === 'live' && (
         <button
           onClick={onCashOut}
-          className={`w-full py-2.5 rounded-lg ${cashColor} text-bg font-bold text-sm uppercase tracking-wider transition active:scale-[0.99] shadow-[0_0_14px_rgba(255,209,102,.4)]`}
+          className={`w-full py-2.5 rounded-lg ${cashColor} text-stake-bg font-bold text-sm uppercase tracking-wider transition active:scale-[0.99] shadow-[0_0_14px_rgba(255,209,102,.4)]`}
         >
           Cash Out · {fmtCurrency(livePayout)}
         </button>
       )}
       {inGame && slot.status === 'cashed' && (
-        <div className="text-center text-xs text-accent font-mono py-1">
+        <div className="text-center text-xs text-stake-green font-mono py-1">
           Cashed at {slot.cashedAt?.toFixed(2)}× · won {fmtCurrency(slot.bet * (slot.cashedAt ?? 0))}
         </div>
       )}
       {inGame && slot.status === 'busted' && (
-        <div className="text-center text-xs text-accent-hot font-mono py-1">
+        <div className="text-center text-xs text-stake-red font-mono py-1">
           Bust · lost {fmtCurrency(slot.bet)}
         </div>
       )}
@@ -712,20 +712,20 @@ function StatusBadge({ status, cashedAt }: { status: Slot['status']; cashedAt: n
   if (status === 'idle') return null;
   if (status === 'live') {
     return (
-      <span className="text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-accent/15 text-accent border border-accent/40">
+      <span className="text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-stake-green/15 text-stake-green border border-stake-green/40">
         LIVE
       </span>
     );
   }
   if (status === 'cashed') {
     return (
-      <span className="text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-accent/15 text-accent border border-accent/40">
+      <span className="text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-stake-green/15 text-stake-green border border-stake-green/40">
         CASHED {cashedAt?.toFixed(2)}×
       </span>
     );
   }
   return (
-    <span className="text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-accent-hot/15 text-accent-hot border border-accent-hot/40">
+    <span className="text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-stake-red/15 text-stake-red border border-accent-hot/40">
       BUST
     </span>
   );

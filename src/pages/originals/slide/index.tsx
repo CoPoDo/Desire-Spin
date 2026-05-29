@@ -144,14 +144,14 @@ export function SlideGame() {
     <OriginalPageLayout title="Slide">
       <div className="flex flex-col p-4 gap-4 max-w-md mx-auto w-full">
         {/* Live multiplier */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-5 flex flex-col items-center justify-center min-h-[140px]">
+        <div className="rounded-lg bg-stake-card border border-stake-border p-5 flex flex-col items-center justify-center min-h-[140px]">
           <motion.div
             className={`font-mono font-extrabold tabular-nums leading-none ${
               phase === 'reveal' && win === false
-                ? 'text-accent-hot'
+                ? 'text-stake-red'
                 : phase === 'reveal' && win === true
-                  ? 'text-accent'
-                  : 'text-ink'
+                  ? 'text-stake-green'
+                  : 'text-stake-text'
             }`}
             style={{ fontSize: 'clamp(2.5rem, 12vw, 4.5rem)' }}
             animate={
@@ -163,7 +163,7 @@ export function SlideGame() {
           >
             {fmtMultiplier(phase === 'idle' ? 1 : liveValue)}
           </motion.div>
-          <div className="text-[10px] uppercase tracking-widest text-ink-mute mt-2">
+          <div className="text-[10px] uppercase tracking-widest text-stake-muted mt-2">
             {phase === 'idle' && 'Set target & slide'}
             {phase === 'sliding' && 'Sliding…'}
             {phase === 'reveal' && (win
@@ -173,8 +173,8 @@ export function SlideGame() {
         </div>
 
         {/* Slider visual */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-3">
-          <div className="text-[10px] uppercase tracking-widest text-ink-mute mb-2 px-1">
+        <div className="rounded-lg bg-stake-card border border-stake-border p-3">
+          <div className="text-[10px] uppercase tracking-widest text-stake-muted mb-2 px-1">
             Live slider
           </div>
           <div
@@ -237,7 +237,7 @@ export function SlideGame() {
         {/* Recent results */}
         {recent.length > 0 && (
           <div className="flex items-center gap-1 overflow-x-auto py-1">
-            <span className="text-[10px] uppercase tracking-widest text-ink-mute mr-1 flex-shrink-0">
+            <span className="text-[10px] uppercase tracking-widest text-stake-muted mr-1 flex-shrink-0">
               Recent
             </span>
             <AnimatePresence initial={false}>
@@ -250,7 +250,7 @@ export function SlideGame() {
                   exit={{ scale: 0.8, opacity: 0 }}
                   transition={{ type: 'spring', stiffness: 360, damping: 22 }}
                   className={`font-mono font-semibold text-[10px] tabular-nums px-1.5 py-1 rounded-md flex-shrink-0 ${
-                    r.win ? 'bg-accent/15 text-accent' : 'bg-bg-elev text-ink-mute'
+                    r.win ? 'bg-stake-green/15 text-stake-green' : 'bg-stake-input text-stake-muted'
                   }`}
                 >
                   {fmtMultiplier(r.stop)}
@@ -261,15 +261,15 @@ export function SlideGame() {
         )}
 
         {/* Controls */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-4 space-y-3">
+        <div className="rounded-lg bg-stake-card border border-stake-border p-4 space-y-3">
           <ManualAutoTabs mode={mode} onChange={setMode} disabled={autoActive || busy} />
           <BetInput bet={bet} onBetChange={setBet} disabled={autoActive || busy} />
           <div>
             <div className="flex items-center justify-between mb-1">
-              <span className="text-[10px] uppercase tracking-widest text-ink-mute">
+              <span className="text-[10px] uppercase tracking-widest text-stake-muted">
                 Target multiplier
               </span>
-              <span className="font-mono font-semibold text-sm text-ink tabular-nums">
+              <span className="font-mono font-semibold text-sm text-stake-text tabular-nums">
                 {fmtMultiplier(target)}
               </span>
             </div>
@@ -281,18 +281,18 @@ export function SlideGame() {
               value={target}
               onChange={(e) => setTarget(Math.max(1.01, parseFloat(e.target.value) || 2))}
               disabled={autoActive || busy}
-              className="w-full bg-bg-elev border border-edge rounded-lg px-3 py-2 text-sm font-mono tabular-nums text-ink"
+              className="w-full bg-stake-input border border-stake-border rounded-lg px-3 py-2 text-sm font-mono tabular-nums text-stake-text"
             />
           </div>
           <div className="flex justify-between text-xs">
-            <span className="text-ink-mute">Win chance</span>
-            <span className="font-mono tabular-nums text-ink-dim">
+            <span className="text-stake-muted">Win chance</span>
+            <span className="font-mono tabular-nums text-stake-muted">
               {winChance.toFixed(2)}%
             </span>
           </div>
           <div className="flex justify-between text-xs">
-            <span className="text-ink-mute">Profit on Win</span>
-            <span className="font-mono font-semibold text-accent tabular-nums">
+            <span className="text-stake-muted">Profit on Win</span>
+            <span className="font-mono font-semibold text-stake-green tabular-nums">
               {fmtCurrency(profitOnWin)}
             </span>
           </div>
@@ -306,7 +306,7 @@ export function SlideGame() {
             <button
               onClick={() => void playOnce()}
               disabled={busy || balance.balance < bet || bet <= 0 || target < 1.01}
-              className="w-full py-3.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
+              className="w-full py-3.5 rounded-xl bg-stake-green text-stake-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
             >
               {busy ? 'Sliding…' : `Slide · ${fmtCurrency(bet)}`}
             </button>
@@ -315,7 +315,7 @@ export function SlideGame() {
               onClick={() => setAutoActive((a) => !a)}
               disabled={!autoActive && (balance.balance < bet || bet <= 0)}
               className={`w-full py-3.5 rounded-xl font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99] ${
-                autoActive ? 'bg-accent-hot text-white' : 'bg-accent text-bg'
+                autoActive ? 'bg-stake-red text-white' : 'bg-stake-green text-stake-bg'
               }`}
             >
               {autoActive ? 'Stop Autobet' : 'Start Autobet'}

@@ -103,19 +103,19 @@ export function PenaltyGame() {
     <OriginalPageLayout title="Penalty Shootout">
       <div className="flex flex-col p-4 gap-4 max-w-md mx-auto w-full">
         {/* Status */}
-        <div className="rounded-xl bg-bg-card border border-edge p-3 text-center min-h-[60px] flex flex-col items-center justify-center">
+        <div className="rounded-xl bg-stake-card border border-stake-border p-3 text-center min-h-[60px] flex flex-col items-center justify-center">
           {phase === 'idle' && (
-            <div className="text-[10px] uppercase tracking-widest text-ink-mute">
+            <div className="text-[10px] uppercase tracking-widest text-stake-muted">
               Pick a zone · {zonePayoutMultiplier(zone)}× on goal
             </div>
           )}
           {phase === 'shot' && (
-            <div className="text-[10px] uppercase tracking-widest text-ink-dim">Shooting…</div>
+            <div className="text-[10px] uppercase tracking-widest text-stake-muted">Shooting…</div>
           )}
           {phase === 'reveal' && goal !== null && (
             <div
               className={`font-mono font-bold text-lg ${
-                goal ? 'text-accent' : 'text-accent-hot'
+                goal ? 'text-stake-green' : 'text-stake-red'
               }`}
             >
               {goal
@@ -128,7 +128,7 @@ export function PenaltyGame() {
         {/* Goal frame — pitch shakes when a goal scores so the net
          *  ripple + crowd-cheer feel lands kinetically. */}
         <div
-          className={`rounded-2xl bg-bg-card border border-edge p-3 overflow-hidden ${phase === 'reveal' && goal === true ? 'shake-medium' : ''}`}
+          className={`rounded-lg bg-stake-card border border-stake-border p-3 overflow-hidden ${phase === 'reveal' && goal === true ? 'shake-medium' : ''}`}
         >
           <div
             className="relative w-full"
@@ -278,24 +278,24 @@ export function PenaltyGame() {
 
         {/* Controls */}
         {phase !== 'shot' ? (
-          <div className="rounded-2xl bg-bg-card border border-edge p-4 space-y-3">
+          <div className="rounded-lg bg-stake-card border border-stake-border p-4 space-y-3">
             <BetInput bet={bet} onBetChange={setBet} disabled={busy} />
             <div className="flex justify-between text-xs">
-              <span className="text-ink-mute">Profit on Goal</span>
-              <span className="font-mono font-semibold text-accent tabular-nums">
+              <span className="text-stake-muted">Profit on Goal</span>
+              <span className="font-mono font-semibold text-stake-green tabular-nums">
                 {fmtCurrency(profitOnWin)}
               </span>
             </div>
             <button
               onClick={phase === 'reveal' ? () => { reset(); start(); } : start}
               disabled={busy || balance.balance < bet || bet <= 0}
-              className="w-full py-3.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
+              className="w-full py-3.5 rounded-xl bg-stake-green text-stake-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
             >
               {phase === 'reveal' ? 'Shoot Again' : `Shoot · ${fmtCurrency(bet)}`}
             </button>
           </div>
         ) : (
-          <div className="rounded-2xl bg-bg-card border border-edge p-4 text-center text-xs text-ink-dim">
+          <div className="rounded-lg bg-stake-card border border-stake-border p-4 text-center text-xs text-stake-muted">
             <AnimatePresence>
               <motion.div
                 initial={{ opacity: 0 }}

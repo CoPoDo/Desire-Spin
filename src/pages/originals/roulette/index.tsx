@@ -135,11 +135,11 @@ export function RouletteGame() {
     <OriginalPageLayout title="Roulette">
       <div className="flex flex-col p-3 gap-3 max-w-md mx-auto w-full">
         {/* Wheel result */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-4 flex items-center justify-center min-h-[120px]">
+        <div className="rounded-lg bg-stake-card border border-stake-border p-4 flex items-center justify-center min-h-[120px]">
           <AnimatePresence mode="wait">
             {busy ? (
               <motion.div key="spin" className="text-center">
-                <div className="text-[10px] uppercase tracking-widest text-ink-mute">Spinning</div>
+                <div className="text-[10px] uppercase tracking-widest text-stake-muted">Spinning</div>
                 {/* Wheel hub with an off-centre ball orbiting around it.
                  *  Real roulette wheels DECELERATE over the last second
                  *  before the ball drops into a pocket — the previous
@@ -182,7 +182,7 @@ export function RouletteGame() {
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ type: 'spring', stiffness: 240, damping: 16 }}
               >
-                <div className="text-[10px] uppercase tracking-widest text-ink-mute">Result</div>
+                <div className="text-[10px] uppercase tracking-widest text-stake-muted">Result</div>
                 <div
                   className="inline-flex items-center justify-center w-20 h-20 rounded-full font-mono font-bold text-4xl mt-1"
                   style={{
@@ -202,10 +202,10 @@ export function RouletteGame() {
                   <div
                     className={`font-mono font-bold mt-2 tabular-nums text-lg ${
                       result.totalReturn > result.totalStake
-                        ? 'text-accent'
+                        ? 'text-stake-green'
                         : result.totalReturn === 0
-                          ? 'text-accent-hot'
-                          : 'text-ink-dim'
+                          ? 'text-stake-red'
+                          : 'text-stake-muted'
                     }`}
                   >
                     {result.totalReturn > 0
@@ -215,7 +215,7 @@ export function RouletteGame() {
                 )}
               </motion.div>
             ) : (
-              <div className="text-[11px] uppercase tracking-widest text-ink-mute">Place your bets</div>
+              <div className="text-[11px] uppercase tracking-widest text-stake-muted">Place your bets</div>
             )}
           </AnimatePresence>
         </div>
@@ -223,7 +223,7 @@ export function RouletteGame() {
         {/* Recent results */}
         {recent.length > 0 && (
           <div className="flex items-center gap-1 overflow-x-auto py-1">
-            <span className="text-[10px] uppercase tracking-widest text-ink-mute mr-1 flex-shrink-0">Recent</span>
+            <span className="text-[10px] uppercase tracking-widest text-stake-muted mr-1 flex-shrink-0">Recent</span>
             <AnimatePresence initial={false}>
               {recent.map((r) => (
                 <motion.span
@@ -255,7 +255,7 @@ export function RouletteGame() {
             bottom = column 1. The 0 cell spans all three rows on the
             left; the "2:1" column-bet cells span the right edge so the
             player can bet on an entire 12-number column. */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-2 space-y-1.5">
+        <div className="rounded-lg bg-stake-card border border-stake-border p-2 space-y-1.5">
           {/* Number table */}
           <div className="flex gap-1">
             {/* 0 cell — visually spans all three rows */}
@@ -315,7 +315,7 @@ export function RouletteGame() {
                   {chips[keyOf({ kind: 'street', street: s })] !== undefined &&
                    chips[keyOf({ kind: 'street', street: s })]! > 0 && (
                     <span
-                      className="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 rounded-full bg-accent-gold text-bg text-[7px] font-mono font-bold flex items-center justify-center"
+                      className="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 rounded-full bg-accent-gold text-stake-bg text-[7px] font-mono font-bold flex items-center justify-center"
                       style={{ boxShadow: '0 0 5px rgba(255,209,102,.7)' }}
                     >
                       ${chips[keyOf({ kind: 'street', street: s })]}
@@ -348,7 +348,7 @@ export function RouletteGame() {
                   {chips[keyOf({ kind: 'sixline', sixline: s })] !== undefined &&
                    chips[keyOf({ kind: 'sixline', sixline: s })]! > 0 && (
                     <span
-                      className="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 rounded-full bg-accent-gold text-bg text-[7px] font-mono font-bold flex items-center justify-center"
+                      className="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 rounded-full bg-accent-gold text-stake-bg text-[7px] font-mono font-bold flex items-center justify-center"
                       style={{ boxShadow: '0 0 5px rgba(255,209,102,.7)' }}
                     >
                       ${chips[keyOf({ kind: 'sixline', sixline: s })]}
@@ -390,8 +390,8 @@ export function RouletteGame() {
         </div>
 
         {/* Chip selector */}
-        <div className="rounded-xl bg-bg-card border border-edge p-2">
-          <div className="text-[10px] uppercase tracking-widest text-ink-mute mb-1.5 px-1">Chip Value</div>
+        <div className="rounded-xl bg-stake-card border border-stake-border p-2">
+          <div className="text-[10px] uppercase tracking-widest text-stake-muted mb-1.5 px-1">Chip Value</div>
           <div className="flex gap-1.5">
             {CHIP_OPTIONS.map((c) => (
               <button
@@ -400,8 +400,8 @@ export function RouletteGame() {
                 disabled={busy}
                 className={`flex-1 py-2 rounded-lg text-xs font-mono font-bold tabular-nums transition disabled:opacity-50 ${
                   chip === c
-                    ? 'bg-accent-gold text-bg shadow-[0_0_14px_rgba(255,209,102,.55)]'
-                    : 'bg-bg-elev border border-edge text-ink-dim hover:text-ink'
+                    ? 'bg-accent-gold text-stake-bg shadow-[0_0_14px_rgba(255,209,102,.55)]'
+                    : 'bg-stake-input border border-stake-border text-stake-muted hover:text-stake-text'
                 }`}
               >
                 ${c}
@@ -411,23 +411,23 @@ export function RouletteGame() {
         </div>
 
         {/* Total + actions */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-3 space-y-2">
+        <div className="rounded-lg bg-stake-card border border-stake-border p-3 space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] uppercase tracking-widest text-ink-mute">Total Stake</span>
-            <span className="font-mono font-bold text-lg text-ink tabular-nums">{fmtCurrency(totalStake)}</span>
+            <span className="text-[10px] uppercase tracking-widest text-stake-muted">Total Stake</span>
+            <span className="font-mono font-bold text-lg text-stake-text tabular-nums">{fmtCurrency(totalStake)}</span>
           </div>
           <div className="flex gap-2">
             <button
               onClick={clearBets}
               disabled={busy || totalStake === 0}
-              className="flex-1 py-2.5 rounded-xl bg-bg-elev border border-edge text-ink-dim font-bold text-xs uppercase tracking-wider disabled:opacity-50"
+              className="flex-1 py-2.5 rounded-xl bg-stake-input border border-stake-border text-stake-muted font-bold text-xs uppercase tracking-wider disabled:opacity-50"
             >
               Clear
             </button>
             <button
               onClick={spin}
               disabled={busy || totalStake === 0 || balance.balance < totalStake}
-              className="flex-[2] py-2.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
+              className="flex-[2] py-2.5 rounded-xl bg-stake-green text-stake-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
             >
               {busy
                 ? 'Spinning…'
@@ -477,7 +477,7 @@ function NumberCell({
       {n}
       {chip !== undefined && chip > 0 && (
         <span
-          className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-accent-gold text-bg text-[8px] font-mono font-bold flex items-center justify-center"
+          className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-accent-gold text-stake-bg text-[8px] font-mono font-bold flex items-center justify-center"
           style={{ boxShadow: '0 0 6px rgba(255,209,102,.7)' }}
         >
           {chip < 10 ? `$${chip}` : chip < 100 ? `$${chip}` : `${chip}`}
@@ -519,7 +519,7 @@ function BetCell({
       {label}
       {chip !== undefined && chip > 0 && (
         <span
-          className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-accent-gold text-bg text-[8px] font-mono font-bold flex items-center justify-center"
+          className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-accent-gold text-stake-bg text-[8px] font-mono font-bold flex items-center justify-center"
           style={{ boxShadow: '0 0 6px rgba(255,209,102,.7)' }}
         >
           ${chip}

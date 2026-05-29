@@ -102,21 +102,21 @@ export function RaceGame() {
     <OriginalPageLayout title="Race">
       <div className="flex flex-col p-4 gap-4 max-w-md mx-auto w-full">
         {/* Status */}
-        <div className="rounded-xl bg-bg-card border border-edge p-3 text-center">
+        <div className="rounded-xl bg-stake-card border border-stake-border p-3 text-center">
           {phase === 'idle' && (
-            <div className="text-[10px] uppercase tracking-widest text-ink-mute">
+            <div className="text-[10px] uppercase tracking-widest text-stake-muted">
               {picked === null
                 ? 'Pick a horse · 8 runners'
                 : `${HORSE_NAMES[picked]} · ${mult}× payout`}
             </div>
           )}
           {phase === 'racing' && (
-            <div className="text-[10px] uppercase tracking-widest text-ink-dim">Racing…</div>
+            <div className="text-[10px] uppercase tracking-widest text-stake-muted">Racing…</div>
           )}
           {phase === 'done' && winner !== null && (
             <div
               className={`font-mono font-bold text-lg ${
-                winner === picked ? 'text-accent' : 'text-accent-hot'
+                winner === picked ? 'text-stake-green' : 'text-stake-red'
               }`}
             >
               {HORSE_NAMES[winner]} wins
@@ -128,7 +128,7 @@ export function RaceGame() {
         </div>
 
         {/* Track — 8 lanes, named after creative horse names */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-2.5 space-y-1.5">
+        <div className="rounded-lg bg-stake-card border border-stake-border p-2.5 space-y-1.5">
           {Array.from({ length: HORSE_COUNT }).map((_, i) => {
             const isPicked = picked === i;
             const isWinner = winner === i;
@@ -194,9 +194,9 @@ export function RaceGame() {
 
         {/* Pick + bet */}
         {phase !== 'racing' ? (
-          <div className="rounded-2xl bg-bg-card border border-edge p-4 space-y-3">
+          <div className="rounded-lg bg-stake-card border border-stake-border p-4 space-y-3">
             <div>
-              <div className="text-[10px] uppercase tracking-widest text-ink-mute mb-1.5">Pick a Horse</div>
+              <div className="text-[10px] uppercase tracking-widest text-stake-muted mb-1.5">Pick a Horse</div>
               {/* 4-col × 2-row grid for 8 horses. Name + multiplier +
                   win chance shown on each card so the player sees the
                   risk profile at a glance. */}
@@ -232,19 +232,19 @@ export function RaceGame() {
             </div>
             <BetInput bet={bet} onBetChange={setBet} disabled={busy} />
             <div className="flex justify-between text-xs">
-              <span className="text-ink-mute">Profit on Win</span>
-              <span className="font-mono font-semibold text-accent tabular-nums">{fmtCurrency(profitOnWin)}</span>
+              <span className="text-stake-muted">Profit on Win</span>
+              <span className="font-mono font-semibold text-stake-green tabular-nums">{fmtCurrency(profitOnWin)}</span>
             </div>
             <button
               onClick={phase === 'done' ? () => { reset(); start(); } : start}
               disabled={busy || picked === null || balance.balance < bet || bet <= 0}
-              className="w-full py-3.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
+              className="w-full py-3.5 rounded-xl bg-stake-green text-stake-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
             >
               {phase === 'done' ? 'Race Again' : `Race · ${fmtCurrency(bet)}`}
             </button>
           </div>
         ) : (
-          <div className="rounded-2xl bg-bg-card border border-edge p-4 text-center text-xs text-ink-dim">
+          <div className="rounded-lg bg-stake-card border border-stake-border p-4 text-center text-xs text-stake-muted">
             Cheering for Horse {(picked ?? 0) + 1}…
           </div>
         )}

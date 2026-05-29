@@ -295,28 +295,28 @@ export function BigBassGame() {
                 </div>
                 <div className="rounded-xl bg-black/40 border border-[#ffd166]/40 p-4 mb-4 space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-ink-dim uppercase tracking-wider">You Get</span>
+                    <span className="text-xs text-stake-muted uppercase tracking-wider">You Get</span>
                     <span className="font-serif italic font-bold text-2xl text-[#ffd166]" style={{ textShadow: '0 0 12px rgba(255,209,102,.7)' }}>
                       10 Free Spins
                     </span>
                   </div>
                   <div className="border-t border-[#ffd166]/20" />
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-ink-dim uppercase tracking-wider">Cost</span>
-                    <span className="font-mono font-bold text-2xl text-ink">{fmtCurrency(buyBonusCost)}</span>
+                    <span className="text-xs text-stake-muted uppercase tracking-wider">Cost</span>
+                    <span className="font-mono font-bold text-2xl text-stake-text">{fmtCurrency(buyBonusCost)}</span>
                   </div>
-                  <div className="text-[10px] text-ink-mute">
+                  <div className="text-[10px] text-stake-muted">
                     {BUY_BONUS_MULT}× your current bet ({fmtCurrency(bet)})
                   </div>
                 </div>
-                <p className="text-[11px] text-ink-mute mb-4 leading-relaxed">
+                <p className="text-[11px] text-stake-muted mb-4 leading-relaxed">
                   Free spins feature money symbols collected by the fisherman 🦞.
                   Big variance — average return ≈ {fmtCurrency(buyBonusCost * 0.95)}.
                 </p>
                 <div className="flex gap-2">
                   <button
                     onClick={() => setShowBuyConfirm(false)}
-                    className="flex-1 py-3 rounded-xl bg-bg-hover border border-edge text-ink-dim font-semibold transition active:scale-95"
+                    className="flex-1 py-3 rounded-xl bg-stake-panel border border-stake-border text-stake-muted font-semibold transition active:scale-95"
                   >
                     Cancel
                   </button>
@@ -351,7 +351,7 @@ export function BigBassGame() {
               className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
             >
               <div
-                className="px-6 py-4 rounded-2xl text-center"
+                className="px-6 py-4 rounded-lg text-center"
                 style={{
                   background: 'radial-gradient(ellipse at center, rgba(95,184,255,.95), rgba(10,58,94,.95))',
                   border: '2px solid #ffd166',
@@ -391,7 +391,7 @@ export function BigBassGame() {
             </div>
             <div className="text-right">
               <div className="text-[10px] uppercase tracking-widest text-[#fff5dc]">FS Won</div>
-              <div className="font-mono font-bold text-lg text-accent tabular-nums leading-none mt-0.5">
+              <div className="font-mono font-bold text-lg text-stake-green tabular-nums leading-none mt-0.5">
                 {fmtCurrency(freeSpinsWon)}
               </div>
             </div>
@@ -400,7 +400,7 @@ export function BigBassGame() {
 
         {/* Reels */}
         <div
-          className="rounded-2xl border border-edge p-3 sm:p-4 relative"
+          className="rounded-lg border border-stake-border p-3 sm:p-4 relative"
           style={{
             background:
               'linear-gradient(180deg, #0a3a5e 0%, #062236 60%, #02101e 100%), radial-gradient(60% 100% at 50% 0%, rgba(95,184,255,.12), transparent 70%)',
@@ -503,11 +503,11 @@ export function BigBassGame() {
         </div>
 
         {/* Outcome */}
-        <div className="rounded-xl bg-bg-card border border-edge p-3 text-center min-h-[60px] flex flex-col items-center justify-center">
+        <div className="rounded-xl bg-stake-card border border-stake-border p-3 text-center min-h-[60px] flex flex-col items-center justify-center">
           {lastResult ? (
             <>
               {lastResult.lineSymbol ? (
-                <div className="text-[10px] uppercase tracking-widest text-ink-mute">
+                <div className="text-[10px] uppercase tracking-widest text-stake-muted">
                   {lastResult.lineLength}× {symbolById(lastResult.lineSymbol)?.emoji} · line
                   {lastResult.scatterCount >= 3
                     ? ` + ${lastResult.scatterCount}× 🦞`
@@ -515,16 +515,16 @@ export function BigBassGame() {
                   {lastResult.collectedMultiplier > 0 ? ` · COLLECT +${lastResult.collectedMultiplier}×` : ''}
                 </div>
               ) : lastResult.scatterCount >= 3 ? (
-                <div className="text-[10px] uppercase tracking-widest text-ink-mute">
+                <div className="text-[10px] uppercase tracking-widest text-stake-muted">
                   {lastResult.scatterCount}× scatter 🦞
                   {lastResult.collectedMultiplier > 0 ? ` · COLLECT +${lastResult.collectedMultiplier}×` : ''}
                 </div>
               ) : lastResult.collectedMultiplier > 0 ? (
-                <div className="text-[10px] uppercase tracking-widest text-ink-mute">
+                <div className="text-[10px] uppercase tracking-widest text-stake-muted">
                   Fisherman snagged +{lastResult.collectedMultiplier}×
                 </div>
               ) : (
-                <div className="text-[10px] uppercase tracking-widest text-ink-mute">
+                <div className="text-[10px] uppercase tracking-widest text-stake-muted">
                   No catch
                 </div>
               )}
@@ -533,10 +533,10 @@ export function BigBassGame() {
                   lastResult.multiplier >= 100
                     ? 'text-accent-gold'
                     : lastResult.multiplier >= 10
-                      ? 'text-accent'
+                      ? 'text-stake-green'
                       : lastResult.multiplier > 0
                         ? 'text-accent-cyan'
-                        : 'text-ink-mute'
+                        : 'text-stake-muted'
                 }`}
               >
                 {lastResult.multiplier > 0
@@ -545,15 +545,15 @@ export function BigBassGame() {
               </div>
             </>
           ) : (
-            <div className="text-[10px] uppercase tracking-widest text-ink-mute">
+            <div className="text-[10px] uppercase tracking-widest text-stake-muted">
               Cast & spin · 3+ 🦞 triggers free spins
             </div>
           )}
         </div>
 
         {/* Paytable summary */}
-        <div className="rounded-xl bg-bg-card border border-edge p-2">
-          <div className="text-[10px] uppercase tracking-widest text-ink-mute mb-1.5 px-1">
+        <div className="rounded-xl bg-stake-card border border-stake-border p-2">
+          <div className="text-[10px] uppercase tracking-widest text-stake-muted mb-1.5 px-1">
             Top pays · 5-of-a-kind · 3+ 🦞 = free spins
           </div>
           <div className="grid grid-cols-5 gap-1">
@@ -572,7 +572,7 @@ export function BigBassGame() {
         </div>
 
         {/* Controls */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-4 space-y-3">
+        <div className="rounded-lg bg-stake-card border border-stake-border p-4 space-y-3">
           <ManualAutoTabs mode={mode} onChange={setMode} disabled={autoActive || busy || inFs} />
           <BetInput bet={bet} onBetChange={setBet} disabled={autoActive || busy || inFs} />
           {mode === 'auto' && (
@@ -586,7 +586,7 @@ export function BigBassGame() {
               <button
                 onClick={() => void playOnce()}
                 disabled={busy || inFs || balance.balance < bet || bet <= 0}
-                className="w-full py-3.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
+                className="w-full py-3.5 rounded-xl bg-stake-green text-stake-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
               >
                 {inFs ? 'Free spins running…' : busy ? 'Reeling…' : `Cast · ${fmtCurrency(bet)}`}
               </button>
@@ -613,7 +613,7 @@ export function BigBassGame() {
               onClick={() => setAutoActive((a) => !a)}
               disabled={!autoActive && (balance.balance < bet || bet <= 0 || inFs)}
               className={`w-full py-3.5 rounded-xl font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99] ${
-                autoActive ? 'bg-accent-hot text-white' : 'bg-accent text-bg'
+                autoActive ? 'bg-stake-red text-white' : 'bg-stake-green text-stake-bg'
               }`}
             >
               {autoActive ? 'Stop Autobet' : 'Start Autobet'}

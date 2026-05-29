@@ -119,23 +119,23 @@ export function RpsGame() {
     <OriginalPageLayout title="Rock Paper Scissors">
       <div className="flex flex-col p-4 gap-4 max-w-md mx-auto w-full">
         {/* Status */}
-        <div className="rounded-xl bg-bg-card border border-edge p-3 text-center min-h-[60px] flex flex-col items-center justify-center">
+        <div className="rounded-xl bg-stake-card border border-stake-border p-3 text-center min-h-[60px] flex flex-col items-center justify-center">
           {phase === 'idle' && (
-            <div className="text-[10px] uppercase tracking-widest text-ink-mute">
+            <div className="text-[10px] uppercase tracking-widest text-stake-muted">
               Pick your move · {WIN_PAYOUT}× on win
             </div>
           )}
           {phase === 'reveal' && (
-            <div className="text-[10px] uppercase tracking-widest text-ink-dim">Revealing…</div>
+            <div className="text-[10px] uppercase tracking-widest text-stake-muted">Revealing…</div>
           )}
           {phase === 'done' && outcome && (
             <div
               className={`font-mono font-bold text-lg ${
                 outcome === 'win'
-                  ? 'text-accent'
+                  ? 'text-stake-green'
                   : outcome === 'tie'
-                    ? 'text-ink-dim'
-                    : 'text-accent-hot'
+                    ? 'text-stake-muted'
+                    : 'text-stake-red'
               }`}
             >
               {OUTCOME_TEXT[outcome]}
@@ -146,10 +146,10 @@ export function RpsGame() {
         </div>
 
         {/* Arena — opponent (top) and player (bottom) */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-6 space-y-4">
+        <div className="rounded-lg bg-stake-card border border-stake-border p-6 space-y-4">
           {/* Opponent */}
           <div className="text-center">
-            <div className="text-[10px] uppercase tracking-widest text-ink-mute mb-1">Opponent</div>
+            <div className="text-[10px] uppercase tracking-widest text-stake-muted mb-1">Opponent</div>
             <AnimatePresence mode="wait">
               {opponentMove === null && phase === 'reveal' ? (
                 <motion.div
@@ -227,7 +227,7 @@ export function RpsGame() {
 
           {/* Player */}
           <div className="text-center">
-            <div className="text-[10px] uppercase tracking-widest text-ink-mute mb-1">You</div>
+            <div className="text-[10px] uppercase tracking-widest text-stake-muted mb-1">You</div>
             {playerMove ? (
               <motion.div
                 key={`you-${playerMove}`}
@@ -254,16 +254,16 @@ export function RpsGame() {
 
         {/* Bet + move pickers */}
         {phase === 'idle' || phase === 'done' ? (
-          <div className="rounded-2xl bg-bg-card border border-edge p-4 space-y-3">
+          <div className="rounded-lg bg-stake-card border border-stake-border p-4 space-y-3">
             <BetInput bet={bet} onBetChange={setBet} disabled={busy} />
             <div className="flex justify-between text-xs">
-              <span className="text-ink-mute">Profit on Win</span>
-              <span className="font-mono font-semibold text-accent tabular-nums">
+              <span className="text-stake-muted">Profit on Win</span>
+              <span className="font-mono font-semibold text-stake-green tabular-nums">
                 {fmtCurrency(profitOnWin)}
               </span>
             </div>
             <div>
-              <div className="text-[10px] uppercase tracking-widest text-ink-mute mb-1.5">
+              <div className="text-[10px] uppercase tracking-widest text-stake-muted mb-1.5">
                 {phase === 'done' ? 'Play again' : 'Pick your move'}
               </div>
               <div className="grid grid-cols-3 gap-2">
@@ -275,7 +275,7 @@ export function RpsGame() {
                       start(m);
                     }}
                     disabled={busy || balance.balance < bet || bet <= 0}
-                    className="py-3 rounded-xl bg-bg-elev border border-edge font-bold text-3xl transition disabled:opacity-50 hover:border-accent hover:bg-accent/10 active:scale-95"
+                    className="py-3 rounded-xl bg-stake-input border border-stake-border font-bold text-3xl transition disabled:opacity-50 hover:border-stake-green hover:bg-stake-green/10 active:scale-95"
                   >
                     {MOVE_EMOJI[m]}
                   </button>
@@ -284,7 +284,7 @@ export function RpsGame() {
             </div>
           </div>
         ) : (
-          <div className="rounded-2xl bg-bg-card border border-edge p-4 text-center text-xs text-ink-dim">
+          <div className="rounded-lg bg-stake-card border border-stake-border p-4 text-center text-xs text-stake-muted">
             Watching the throw…
           </div>
         )}

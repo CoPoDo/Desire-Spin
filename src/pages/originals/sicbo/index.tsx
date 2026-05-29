@@ -138,7 +138,7 @@ export function SicBoGame() {
     <OriginalPageLayout title="Sic Bo">
       <div className="flex flex-col p-3 gap-3 max-w-md mx-auto w-full">
         {/* Dice + result */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-4 flex flex-col items-center justify-center min-h-[140px]">
+        <div className="rounded-lg bg-stake-card border border-stake-border p-4 flex flex-col items-center justify-center min-h-[140px]">
           <AnimatePresence mode="wait">
             {busy && !dice ? (
               <motion.div key="rolling" className="flex gap-3" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
@@ -171,13 +171,13 @@ export function SicBoGame() {
                   ))}
                 </div>
                 <div className="flex items-center gap-3 mt-1">
-                  <span className="font-mono font-bold text-lg text-ink tabular-nums">Sum: {dice[0] + dice[1] + dice[2]}</span>
+                  <span className="font-mono font-bold text-lg text-stake-text tabular-nums">Sum: {dice[0] + dice[1] + dice[2]}</span>
                   {result && (
                     <span
                       className={`font-mono font-bold text-lg tabular-nums ${
                         result.totalReturn > result.totalStake
-                          ? 'text-accent'
-                          : 'text-accent-hot'
+                          ? 'text-stake-green'
+                          : 'text-stake-red'
                       }`}
                     >
                       {result.totalReturn > 0
@@ -188,7 +188,7 @@ export function SicBoGame() {
                 </div>
               </motion.div>
             ) : (
-              <div className="text-[11px] uppercase tracking-widest text-ink-mute">Place your bets</div>
+              <div className="text-[11px] uppercase tracking-widest text-stake-muted">Place your bets</div>
             )}
           </AnimatePresence>
         </div>
@@ -196,7 +196,7 @@ export function SicBoGame() {
         {/* Recent sums */}
         {recent.length > 0 && (
           <div className="flex items-center gap-1 overflow-x-auto py-1">
-            <span className="text-[10px] uppercase tracking-widest text-ink-mute mr-1 flex-shrink-0">Recent</span>
+            <span className="text-[10px] uppercase tracking-widest text-stake-muted mr-1 flex-shrink-0">Recent</span>
             <AnimatePresence initial={false}>
               {recent.map((r) => (
                 <motion.span
@@ -207,8 +207,8 @@ export function SicBoGame() {
                   exit={{ scale: 0.8, opacity: 0 }}
                   transition={{ type: 'spring', stiffness: 360, damping: 22 }}
                   className={`font-mono font-semibold text-[11px] tabular-nums w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 ${
-                    r.sum >= 11 && r.sum <= 17 ? 'bg-accent-hot/30 text-accent-hot' :
-                    r.sum >= 4 && r.sum <= 10 ? 'bg-accent/30 text-accent' :
+                    r.sum >= 11 && r.sum <= 17 ? 'bg-stake-red/30 text-stake-red' :
+                    r.sum >= 4 && r.sum <= 10 ? 'bg-stake-green/30 text-stake-green' :
                     'bg-accent-gold/30 text-accent-gold'
                   }`}
                 >
@@ -220,7 +220,7 @@ export function SicBoGame() {
         )}
 
         {/* Outside bets: Small / Big / Odd / Even */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-2 space-y-1.5">
+        <div className="rounded-lg bg-stake-card border border-stake-border p-2 space-y-1.5">
           <div className="grid grid-cols-2 gap-1.5">
             <BetCell
               label="Small"
@@ -260,9 +260,9 @@ export function SicBoGame() {
         {/* Single die row — pick a face, pays 2× / 3× / 4× per count
             of that face on the three dice. ~92% RTP (real Sic Bo
             convention). High variance, low EV. */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-2 space-y-1.5">
-          <div className="text-[10px] uppercase tracking-widest text-ink-mute px-1 mb-1">
-            Single Die <span className="text-ink-dim font-normal normal-case">· pays 2× / 3× / 4× per count</span>
+        <div className="rounded-lg bg-stake-card border border-stake-border p-2 space-y-1.5">
+          <div className="text-[10px] uppercase tracking-widest text-stake-muted px-1 mb-1">
+            Single Die <span className="text-stake-muted font-normal normal-case">· pays 2× / 3× / 4× per count</span>
           </div>
           <div className="grid grid-cols-6 gap-1">
             {[1, 2, 3, 4, 5, 6].map((face) => (
@@ -282,8 +282,8 @@ export function SicBoGame() {
         </div>
 
         {/* Triples row */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-2 space-y-1.5">
-          <div className="text-[10px] uppercase tracking-widest text-ink-mute px-1 mb-1">Triples</div>
+        <div className="rounded-lg bg-stake-card border border-stake-border p-2 space-y-1.5">
+          <div className="text-[10px] uppercase tracking-widest text-stake-muted px-1 mb-1">Triples</div>
           <div className="grid grid-cols-7 gap-1">
             <BetCell
               label="Any"
@@ -310,8 +310,8 @@ export function SicBoGame() {
         </div>
 
         {/* Total bets 4-17 */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-2 space-y-1.5">
-          <div className="text-[10px] uppercase tracking-widest text-ink-mute px-1 mb-1">Total Sum</div>
+        <div className="rounded-lg bg-stake-card border border-stake-border p-2 space-y-1.5">
+          <div className="text-[10px] uppercase tracking-widest text-stake-muted px-1 mb-1">Total Sum</div>
           <div className="grid grid-cols-7 gap-1">
             {Array.from({ length: 14 }, (_, i) => i + 4).map((sum) => (
               <BetCell
@@ -330,8 +330,8 @@ export function SicBoGame() {
         </div>
 
         {/* Chip selector */}
-        <div className="rounded-xl bg-bg-card border border-edge p-2">
-          <div className="text-[10px] uppercase tracking-widest text-ink-mute mb-1.5 px-1">Chip Value</div>
+        <div className="rounded-xl bg-stake-card border border-stake-border p-2">
+          <div className="text-[10px] uppercase tracking-widest text-stake-muted mb-1.5 px-1">Chip Value</div>
           <div className="flex gap-1.5">
             {CHIP_OPTIONS.map((c) => (
               <button
@@ -340,8 +340,8 @@ export function SicBoGame() {
                 disabled={busy}
                 className={`flex-1 py-2 rounded-lg text-xs font-mono font-bold tabular-nums transition disabled:opacity-50 ${
                   chip === c
-                    ? 'bg-accent-gold text-bg shadow-[0_0_14px_rgba(255,209,102,.55)]'
-                    : 'bg-bg-elev border border-edge text-ink-dim hover:text-ink'
+                    ? 'bg-accent-gold text-stake-bg shadow-[0_0_14px_rgba(255,209,102,.55)]'
+                    : 'bg-stake-input border border-stake-border text-stake-muted hover:text-stake-text'
                 }`}
               >
                 ${c}
@@ -351,10 +351,10 @@ export function SicBoGame() {
         </div>
 
         {/* Total + actions */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-3 space-y-2">
+        <div className="rounded-lg bg-stake-card border border-stake-border p-3 space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] uppercase tracking-widest text-ink-mute">Total Stake</span>
-            <span className="font-mono font-bold text-lg text-ink tabular-nums">
+            <span className="text-[10px] uppercase tracking-widest text-stake-muted">Total Stake</span>
+            <span className="font-mono font-bold text-lg text-stake-text tabular-nums">
               {fmtCurrency(totalStake)}
             </span>
           </div>
@@ -362,14 +362,14 @@ export function SicBoGame() {
             <button
               onClick={clearBets}
               disabled={busy || totalStake === 0}
-              className="flex-1 py-2.5 rounded-xl bg-bg-elev border border-edge text-ink-dim font-bold text-xs uppercase tracking-wider disabled:opacity-50"
+              className="flex-1 py-2.5 rounded-xl bg-stake-input border border-stake-border text-stake-muted font-bold text-xs uppercase tracking-wider disabled:opacity-50"
             >
               Clear
             </button>
             <button
               onClick={rollDice}
               disabled={busy || totalStake === 0 || balance.balance < totalStake}
-              className="flex-[2] py-2.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
+              className="flex-[2] py-2.5 rounded-xl bg-stake-green text-stake-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
             >
               {busy
                 ? 'Rolling…'
@@ -425,9 +425,9 @@ function BetCell({
         boxShadow: chip ? `0 0 10px ${t.border}66` : 'inset 0 1px 0 rgba(255,255,255,.04)',
       }}
     >
-      <span className={`font-bold ${compact ? 'text-[10px]' : 'text-sm'} text-ink`}>{label}</span>
+      <span className={`font-bold ${compact ? 'text-[10px]' : 'text-sm'} text-stake-text`}>{label}</span>
       {sub && (
-        <span className={`${compact ? 'text-[8px]' : 'text-[9px]'} text-ink-mute`}>{sub}</span>
+        <span className={`${compact ? 'text-[8px]' : 'text-[9px]'} text-stake-muted`}>{sub}</span>
       )}
       {!hidePayout && (
         <span
@@ -439,7 +439,7 @@ function BetCell({
       )}
       {chip !== undefined && chip > 0 && (
         <span
-          className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-accent-gold text-bg text-[8px] font-mono font-bold flex items-center justify-center"
+          className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-accent-gold text-stake-bg text-[8px] font-mono font-bold flex items-center justify-center"
           style={{ boxShadow: '0 0 6px rgba(255,209,102,.7)' }}
         >
           ${chip}

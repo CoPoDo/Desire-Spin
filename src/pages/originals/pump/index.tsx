@@ -120,37 +120,37 @@ export function PumpGame() {
     <OriginalPageLayout title="Pump">
       <div className="flex flex-col p-4 gap-4 max-w-md mx-auto w-full">
         {/* Status */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-3 text-center">
+        <div className="rounded-lg bg-stake-card border border-stake-border p-3 text-center">
           {!round ? (
-            <div className="text-[10px] uppercase tracking-widest text-ink-mute">
+            <div className="text-[10px] uppercase tracking-widest text-stake-muted">
               Set bet & difficulty · {popPct}% pop chance per pump
             </div>
           ) : round.popped ? (
             <>
-              <div className="text-[10px] uppercase tracking-widest text-accent-hot">Popped!</div>
-              <div className="font-mono font-bold text-2xl mt-1 tabular-nums text-accent-hot">
+              <div className="text-[10px] uppercase tracking-widest text-stake-red">Popped!</div>
+              <div className="font-mono font-bold text-2xl mt-1 tabular-nums text-stake-red">
                 -{fmtCurrency(round.bet)}
               </div>
             </>
           ) : round.cashed ? (
             <>
-              <div className="text-[10px] uppercase tracking-widest text-accent">Cashed out</div>
-              <div className="font-mono font-bold text-2xl mt-1 tabular-nums text-accent">
+              <div className="text-[10px] uppercase tracking-widest text-stake-green">Cashed out</div>
+              <div className="font-mono font-bold text-2xl mt-1 tabular-nums text-stake-green">
                 +{fmtCurrency(round.payout - round.bet)}
               </div>
             </>
           ) : (
             <>
-              <div className="text-[10px] uppercase tracking-widest text-ink-mute">Multiplier</div>
+              <div className="text-[10px] uppercase tracking-widest text-stake-muted">Multiplier</div>
               <div
-                className="font-mono font-bold text-3xl text-accent tabular-nums leading-none mt-1"
+                className="font-mono font-bold text-3xl text-stake-green tabular-nums leading-none mt-1"
                 style={{ textShadow: '0 0 18px rgba(31,255,122,.6)' }}
               >
                 {fmtMultiplier(currentMult)}
               </div>
-              <div className="text-[10px] text-ink-dim mt-1">
+              <div className="text-[10px] text-stake-muted mt-1">
                 {round.pumps} pumps · cash out{' '}
-                <span className="text-accent">{fmtCurrency(cashoutAmount)}</span>
+                <span className="text-stake-green">{fmtCurrency(cashoutAmount)}</span>
               </div>
             </>
           )}
@@ -158,7 +158,7 @@ export function PumpGame() {
 
         {/* Balloon — container shakes when the balloon pops */}
         <div
-          className={`relative rounded-2xl bg-bg-card border border-edge p-6 flex items-center justify-center min-h-[220px] overflow-hidden ${round?.popped ? 'shake-medium' : ''}`}
+          className={`relative rounded-lg bg-stake-card border border-stake-border p-6 flex items-center justify-center min-h-[220px] overflow-hidden ${round?.popped ? 'shake-medium' : ''}`}
         >
           {/* Pop debris — 12 little balloon-shred particles fly outward
            *  radially when the balloon pops. Adds the "splat" feedback
@@ -239,10 +239,10 @@ export function PumpGame() {
 
         {/* Controls */}
         {!inGame ? (
-          <div className="rounded-2xl bg-bg-card border border-edge p-4 space-y-3">
+          <div className="rounded-lg bg-stake-card border border-stake-border p-4 space-y-3">
             <BetInput bet={bet} onBetChange={setBet} />
             <div>
-              <div className="text-[10px] uppercase tracking-widest text-ink-mute mb-1.5">Difficulty</div>
+              <div className="text-[10px] uppercase tracking-widest text-stake-muted mb-1.5">Difficulty</div>
               <div className="grid grid-cols-4 gap-1.5">
                 {DIFFICULTIES.map((d) => (
                   <button
@@ -250,36 +250,36 @@ export function PumpGame() {
                     onClick={() => setDifficulty(d)}
                     className={`py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition ${
                       difficulty === d
-                        ? 'bg-accent text-bg'
-                        : 'bg-bg-elev border border-edge text-ink-dim hover:text-ink'
+                        ? 'bg-stake-green text-stake-bg'
+                        : 'bg-stake-input border border-stake-border text-stake-muted hover:text-stake-text'
                     }`}
                   >
                     {d}
                   </button>
                 ))}
               </div>
-              <div className="mt-1.5 text-[10px] text-ink-mute">
+              <div className="mt-1.5 text-[10px] text-stake-muted">
                 {(popProbFor(difficulty) * 100).toFixed(1)}% pop / pump · ×{(((1 - 0.01) / (1 - popProbFor(difficulty)))).toFixed(3)} mult / pump
               </div>
             </div>
             <button
               onClick={round?.cashed || round?.popped ? () => { reset(); start(); } : start}
               disabled={busy || balance.balance < bet || bet <= 0}
-              className="w-full py-3.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
+              className="w-full py-3.5 rounded-xl bg-stake-green text-stake-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
             >
               {round?.cashed || round?.popped ? 'Play Again' : `Bet ${fmtCurrency(bet)}`}
             </button>
           </div>
         ) : (
-          <div className="rounded-2xl bg-bg-card border border-edge p-4 space-y-2">
+          <div className="rounded-lg bg-stake-card border border-stake-border p-4 space-y-2">
             <div className="grid grid-cols-2 gap-2 text-xs">
-              <div className="rounded-lg bg-bg-elev border border-edge p-2 text-center">
-                <div className="text-[10px] uppercase tracking-widest text-ink-mute">Next Pump</div>
-                <div className="font-mono font-bold text-base text-ink mt-0.5 tabular-nums">{fmtMultiplier(nextMult)}</div>
+              <div className="rounded-lg bg-stake-input border border-stake-border p-2 text-center">
+                <div className="text-[10px] uppercase tracking-widest text-stake-muted">Next Pump</div>
+                <div className="font-mono font-bold text-base text-stake-text mt-0.5 tabular-nums">{fmtMultiplier(nextMult)}</div>
               </div>
-              <div className="rounded-lg bg-bg-elev border border-edge p-2 text-center">
-                <div className="text-[10px] uppercase tracking-widest text-ink-mute">Pop Risk</div>
-                <div className="font-mono font-bold text-base text-accent-hot mt-0.5 tabular-nums">
+              <div className="rounded-lg bg-stake-input border border-stake-border p-2 text-center">
+                <div className="text-[10px] uppercase tracking-widest text-stake-muted">Pop Risk</div>
+                <div className="font-mono font-bold text-base text-stake-red mt-0.5 tabular-nums">
                   {(popProbFor(difficulty) * 100).toFixed(0)}%
                 </div>
               </div>
@@ -288,14 +288,14 @@ export function PumpGame() {
               <button
                 onClick={doCashOut}
                 disabled={busy || round.pumps === 0}
-                className="flex-1 py-3 rounded-xl bg-accent-gold text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99] shadow-[0_0_14px_rgba(255,209,102,.45)]"
+                className="flex-1 py-3 rounded-xl bg-accent-gold text-stake-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99] shadow-[0_0_14px_rgba(255,209,102,.45)]"
               >
                 {round.pumps === 0 ? 'Pump first' : `Cash Out · ${fmtCurrency(cashoutAmount)}`}
               </button>
               <button
                 onClick={onPump}
                 disabled={busy}
-                className="flex-1 py-3 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
+                className="flex-1 py-3 rounded-xl bg-stake-green text-stake-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
               >
                 Pump
               </button>

@@ -113,25 +113,25 @@ export function KenoGame() {
     <OriginalPageLayout title="Keno">
       <div className="flex flex-col p-4 gap-4 max-w-md mx-auto w-full">
         {/* Top: status */}
-        <div className="rounded-xl bg-bg-card border border-edge p-3 text-center">
+        <div className="rounded-xl bg-stake-card border border-stake-border p-3 text-center">
           {draw ? (
             <>
-              <div className="text-[10px] uppercase tracking-widest text-ink-mute">Result</div>
+              <div className="text-[10px] uppercase tracking-widest text-stake-muted">Result</div>
               <div className={`font-mono font-bold text-2xl mt-0.5 tabular-nums ${
-                draw.multiplier >= 5 ? 'text-accent' : draw.multiplier > 0 ? 'text-accent-cyan' : 'text-accent-hot'
+                draw.multiplier >= 5 ? 'text-stake-green' : draw.multiplier > 0 ? 'text-accent-cyan' : 'text-stake-red'
               }`}>
                 {draw.hits} hits · {draw.multiplier > 0 ? `${draw.multiplier}× = ${fmtCurrency(draw.payout)}` : 'no win'}
               </div>
             </>
           ) : (
-            <div className="text-[10px] uppercase tracking-widest text-ink-mute">
+            <div className="text-[10px] uppercase tracking-widest text-stake-muted">
               {picks.length === 0 ? 'Pick 1-10 numbers' : `${picks.length} picked · choose more or play`}
             </div>
           )}
         </div>
 
         {/* 8x5 number grid */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-2 sm:p-3">
+        <div className="rounded-lg bg-stake-card border border-stake-border p-2 sm:p-3">
           <div className="grid grid-cols-8 gap-1 sm:gap-1.5">
             {Array.from({ length: TOTAL }).map((_, i) => {
               const n = i + 1;
@@ -169,8 +169,8 @@ export function KenoGame() {
         </div>
 
         {/* Risk selector */}
-        <div className="rounded-xl bg-bg-card border border-edge p-3">
-          <div className="text-[10px] uppercase tracking-widest text-ink-mute mb-1.5">Risk</div>
+        <div className="rounded-xl bg-stake-card border border-stake-border p-3">
+          <div className="text-[10px] uppercase tracking-widest text-stake-muted mb-1.5">Risk</div>
           <div className="flex gap-1.5">
             {RISKS.map((r) => (
               <button
@@ -178,7 +178,7 @@ export function KenoGame() {
                 onClick={() => setRisk(r)}
                 disabled={busy}
                 className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition disabled:opacity-50 ${
-                  risk === r ? 'bg-accent text-bg' : 'bg-bg-elev border border-edge text-ink-dim hover:text-ink'
+                  risk === r ? 'bg-stake-green text-stake-bg' : 'bg-stake-input border border-stake-border text-stake-muted hover:text-stake-text'
                 }`}
               >
                 {r}
@@ -189,7 +189,7 @@ export function KenoGame() {
 
         {/* Payout ladder for current pick count */}
         {ladder.length > 0 && (
-          <div className="rounded-xl bg-bg-card border border-edge p-2.5">
+          <div className="rounded-xl bg-stake-card border border-stake-border p-2.5">
             <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${ladder.length}, minmax(0, 1fr))` }}>
               {ladder.map((m, i) => {
                 const isCurrent = draw && draw.hits === i;
@@ -217,20 +217,20 @@ export function KenoGame() {
         )}
 
         {/* Bet panel */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-4 space-y-3">
+        <div className="rounded-lg bg-stake-card border border-stake-border p-4 space-y-3">
           <BetInput bet={bet} onBetChange={setBet} disabled={busy} />
           <div className="flex gap-1.5">
             <button
               onClick={clearPicks}
               disabled={busy || picks.length === 0}
-              className="flex-1 py-2 rounded-lg bg-bg-elev border border-edge text-ink-dim font-bold text-xs uppercase tracking-wider disabled:opacity-50"
+              className="flex-1 py-2 rounded-lg bg-stake-input border border-stake-border text-stake-muted font-bold text-xs uppercase tracking-wider disabled:opacity-50"
             >
               Clear
             </button>
             <button
               onClick={autoPick}
               disabled={busy}
-              className="flex-1 py-2 rounded-lg bg-bg-elev border border-edge text-ink-dim font-bold text-xs uppercase tracking-wider disabled:opacity-50"
+              className="flex-1 py-2 rounded-lg bg-stake-input border border-stake-border text-stake-muted font-bold text-xs uppercase tracking-wider disabled:opacity-50"
             >
               Auto Pick
             </button>
@@ -238,7 +238,7 @@ export function KenoGame() {
           <button
             onClick={playRound}
             disabled={busy || picks.length === 0 || balance.balance < bet || bet <= 0}
-            className="w-full py-3.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
+            className="w-full py-3.5 rounded-xl bg-stake-green text-stake-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
           >
             {busy ? 'Drawing…' : `Play · ${fmtCurrency(bet)}`}
           </button>

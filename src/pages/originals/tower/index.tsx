@@ -148,10 +148,10 @@ export function TowerGame() {
     <OriginalPageLayout title="Tower">
       <div className="flex flex-col p-4 gap-4 max-w-md mx-auto w-full">
         {/* Status */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-3 text-center">
+        <div className="rounded-lg bg-stake-card border border-stake-border p-3 text-center">
           {!round || round.done ? (
             <>
-              <div className="text-[10px] uppercase tracking-widest text-ink-mute">
+              <div className="text-[10px] uppercase tracking-widest text-stake-muted">
                 {round?.hitSkull
                   ? 'You hit a skull'
                   : round?.done
@@ -163,7 +163,7 @@ export function TowerGame() {
               {round?.done && (
                 <div
                   className={`font-mono font-bold text-2xl mt-1 tabular-nums ${
-                    round.hitSkull ? 'text-accent-hot' : 'text-accent'
+                    round.hitSkull ? 'text-stake-red' : 'text-stake-green'
                   }`}
                 >
                   {round.hitSkull
@@ -174,16 +174,16 @@ export function TowerGame() {
             </>
           ) : (
             <>
-              <div className="text-[10px] uppercase tracking-widest text-ink-mute">Multiplier</div>
+              <div className="text-[10px] uppercase tracking-widest text-stake-muted">Multiplier</div>
               <div
-                className="font-mono font-bold text-3xl text-accent tabular-nums leading-none mt-1"
+                className="font-mono font-bold text-3xl text-stake-green tabular-nums leading-none mt-1"
                 style={{ textShadow: '0 0 18px rgba(31,255,122,.6)' }}
               >
                 {fmtMultiplier(currentMult)}
               </div>
-              <div className="text-[10px] text-ink-dim mt-1">
+              <div className="text-[10px] text-stake-muted mt-1">
                 Row {round.step + 1} / {ROWS} · cash out{' '}
-                <span className="text-accent">{fmtCurrency(cashoutAmount)}</span>
+                <span className="text-stake-green">{fmtCurrency(cashoutAmount)}</span>
               </div>
             </>
           )}
@@ -193,7 +193,7 @@ export function TowerGame() {
         {/* Tower grid — shakes when the player picks a skull tile.
          *  Same shake-medium utility used by Mines for consistency. */}
         <div
-          className={`rounded-2xl bg-bg-card border border-edge p-3 ${round?.done && round.hitSkull ? 'shake-medium' : ''}`}
+          className={`rounded-lg bg-stake-card border border-stake-border p-3 ${round?.done && round.hitSkull ? 'shake-medium' : ''}`}
         >
           <div className="flex flex-col-reverse gap-1">
             {Array.from({ length: ROWS }).map((_, rowIdx) => {
@@ -258,10 +258,10 @@ export function TowerGame() {
 
         {/* Controls */}
         {!inGame ? (
-          <div className="rounded-2xl bg-bg-card border border-edge p-4 space-y-3">
+          <div className="rounded-lg bg-stake-card border border-stake-border p-4 space-y-3">
             <BetInput bet={bet} onBetChange={setBet} />
             <div>
-              <div className="text-[10px] uppercase tracking-widest text-ink-mute mb-1.5">Difficulty</div>
+              <div className="text-[10px] uppercase tracking-widest text-stake-muted mb-1.5">Difficulty</div>
               <div className="grid grid-cols-5 gap-1">
                 {DIFFICULTIES.map((d) => (
                   <button
@@ -269,42 +269,42 @@ export function TowerGame() {
                     onClick={() => setDifficulty(d)}
                     className={`py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition ${
                       difficulty === d
-                        ? 'bg-accent text-bg'
-                        : 'bg-bg-elev border border-edge text-ink-dim hover:text-ink'
+                        ? 'bg-stake-green text-stake-bg'
+                        : 'bg-stake-input border border-stake-border text-stake-muted hover:text-stake-text'
                     }`}
                   >
                     {d}
                   </button>
                 ))}
               </div>
-              <div className="mt-1.5 text-[10px] text-ink-mute">
+              <div className="mt-1.5 text-[10px] text-stake-muted">
                 {configFor(difficulty).tiles - configFor(difficulty).deaths} safe of {configFor(difficulty).tiles} per row
               </div>
             </div>
             <button
               onClick={round?.done ? () => { reset(); start(); } : start}
               disabled={balance.balance < bet || bet <= 0}
-              className="w-full py-3.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
+              className="w-full py-3.5 rounded-xl bg-stake-green text-stake-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
             >
               {round?.done ? 'Play Again' : `Bet ${fmtCurrency(bet)}`}
             </button>
           </div>
         ) : (
-          <div className="rounded-2xl bg-bg-card border border-edge p-4 space-y-2">
+          <div className="rounded-lg bg-stake-card border border-stake-border p-4 space-y-2">
             <div className="grid grid-cols-2 gap-2 text-xs">
-              <div className="rounded-lg bg-bg-elev border border-edge p-2 text-center">
-                <div className="text-[10px] uppercase tracking-widest text-ink-mute">Next Row</div>
-                <div className="font-mono font-bold text-base text-ink mt-0.5 tabular-nums">{fmtMultiplier(nextMult)}</div>
+              <div className="rounded-lg bg-stake-input border border-stake-border p-2 text-center">
+                <div className="text-[10px] uppercase tracking-widest text-stake-muted">Next Row</div>
+                <div className="font-mono font-bold text-base text-stake-text mt-0.5 tabular-nums">{fmtMultiplier(nextMult)}</div>
               </div>
-              <div className="rounded-lg bg-bg-elev border border-edge p-2 text-center">
-                <div className="text-[10px] uppercase tracking-widest text-ink-mute">Skulls / Row</div>
-                <div className="font-mono font-bold text-base text-ink mt-0.5 tabular-nums">{cfg.deaths}</div>
+              <div className="rounded-lg bg-stake-input border border-stake-border p-2 text-center">
+                <div className="text-[10px] uppercase tracking-widest text-stake-muted">Skulls / Row</div>
+                <div className="font-mono font-bold text-base text-stake-text mt-0.5 tabular-nums">{cfg.deaths}</div>
               </div>
             </div>
             <div className="flex gap-2">
               <button
                 onClick={pickRandom}
-                className="flex-shrink-0 px-4 py-3 rounded-xl bg-bg-elev border border-edge text-ink hover:bg-bg-hover font-bold text-sm uppercase tracking-wider transition active:scale-[0.97]"
+                className="flex-shrink-0 px-4 py-3 rounded-xl bg-stake-input border border-stake-border text-stake-text hover:bg-stake-panel font-bold text-sm uppercase tracking-wider transition active:scale-[0.97]"
                 title="Pick a random tile in the current row"
               >
                 Pick Random
@@ -312,7 +312,7 @@ export function TowerGame() {
               <button
                 onClick={doCashOut}
                 disabled={round.step === 0}
-                className="flex-1 py-3 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
+                className="flex-1 py-3 rounded-xl bg-stake-green text-stake-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
               >
                 {round.step === 0 ? 'Pick a tile to start climbing' : `Cash Out · ${fmtCurrency(cashoutAmount)}`}
               </button>
