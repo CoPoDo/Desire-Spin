@@ -81,7 +81,13 @@ export function Grid({
                   ? { duration: 0.42, ease: [0.34, 1.2, 0.5, 1], delay: columnDelay }
                   : { type: 'spring', stiffness: 380, damping: 26 }
               }
-              style={{ willChange: 'transform' }}
+              // will-change only while a cell is actually animating (drop-in
+              // or win pulse). Declaring it on all 30+ cells permanently
+              // forces a GPU layer per cell — with the drop-shadow filters
+              // each symbol carries, that's real memory pressure on phones
+              // and a source of cascade stutter. Scope it to the few active
+              // cells so the GPU only promotes what's moving.
+              style={{ willChange: isNew || isWin ? 'transform' : 'auto' }}
               layout
             >
               {renderCell({
