@@ -117,7 +117,9 @@ const FRAME_DELAY: Record<string, number> = {
 // Per-frame minimum delay so turbo doesn't make things janky. Turbo
 // mode shortens these but keeps animations from overlapping.
 const TURBO_MIN_DELAY: Record<string, number> = {
-  initialDrop: 380,
+  initialDrop: 120,         // turbo now runs a real ~0.6s reel before
+                            //   this buffer, so it only needs a small
+                            //   settle (was 380 when turbo faked the reel).
   lightningStrike: 220,     // turbo post-stagger settle (handler now
                             // awaits internally, see FRAME_DELAY above).
   multipliersLanded: 180,   // turbo post-stagger settle. The internal
@@ -362,7 +364,12 @@ export function ImmersiveSlotView({
             // moving. When the spin resolves, the cells slot into the
             // regular Grid with no drop-in animation (isNew=false for
             // all keys) so the player just sees the reels settle.
-            const skipReel = skipRef.current || turboRef.current;
+            // Only an explicit tap-to-skip bypasses the reel for an
+            // instant grid swap. Turbo still SHOWS a reel — just a fast
+            // one (see durations in the SpinReel JSX) — because an
+            // instant full-grid blink reads as broken, and because the
+            // player should still see the board spin in free spins.
+            const skipReel = skipRef.current;
             if (!skipReel) {
               await new Promise<void>((resolve) => {
                 reelSpinResolveRef.current = resolve;
@@ -1527,8 +1534,10 @@ export function ImmersiveSlotView({
                 cfg={cfg}
                 renderCell={renderCell}
                 finalGrid={reelSpinTarget}
-                durationMs={900}
-                staggerMs={140}
+                /* Turbo runs a quick reel (still visible) instead of an
+                 * instant blink; normal speed is a full Vegas spin. */
+                durationMs={turboRef.current ? 300 : 900}
+                staggerMs={turboRef.current ? 60 : 140}
                 onComplete={() => reelSpinResolveRef.current?.()}
               />
             ) : (
