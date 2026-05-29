@@ -2429,3 +2429,36 @@
   100% { background-position: 200% 50%; }
 }
 
+
+/* ─────────────────────────────────────────────────────────────────────
+ * Dice slider thumb — a draggable vertical handle that sits over the
+ * coloured win/lose track. The track itself is a sibling div; this
+ * range input is transparent except for the thumb.
+ * ─────────────────────────────────────────────────────────────────── */
+.dice-slider {
+  height: 28px;
+  margin: 0;
+}
+.dice-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 26px;
+  border-radius: 5px;
+  background: linear-gradient(180deg, #ffffff, #c9d3e0);
+  border: 2px solid #2f4553;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  cursor: grab;
+}
+.dice-slider:active::-webkit-slider-thumb { cursor: grabbing; }
+.dice-slider::-moz-range-thumb {
+  width: 16px;
+  height: 26px;
+  border-radius: 5px;
+  background: linear-gradient(180deg, #ffffff, #c9d3e0);
+  border: 2px solid #2f4553;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  cursor: grab;
+}
+.dice-slider::-webkit-slider-runnable-track { background: transparent; }
+.dice-slider::-moz-range-track { background: transparent; }

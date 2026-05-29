@@ -30,18 +30,20 @@ export function ManualAutoTabs({
   onChange: (m: Mode) => void;
   disabled?: boolean;
 }) {
+  // Stake's segmented pill: a rounded dark well, the active half raised
+  // in the lighter panel tone with white text.
   return (
-    <div className="flex bg-bg-elev rounded-xl p-1 gap-1">
+    <div className="flex bg-stake-bg rounded-full p-1 gap-1">
       {(['manual', 'auto'] as Mode[]).map((m) => (
         <button
           key={m}
           onClick={() => onChange(m)}
           disabled={disabled}
-          className={`flex-1 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition ${
+          className={`flex-1 py-2 rounded-full text-sm font-semibold capitalize transition ${
             mode === m
-              ? 'bg-bg-card text-ink shadow-[0_1px_0_rgba(255,255,255,.05)_inset]'
-              : 'text-ink-mute hover:text-ink-dim'
-          }`}
+              ? 'bg-stake-panel text-stake-text shadow-[0_1px_2px_rgba(0,0,0,.3)]'
+              : 'text-stake-muted hover:text-stake-text'
+          } disabled:opacity-60`}
         >
           {m}
         </button>
@@ -62,63 +64,63 @@ export function AutoConfigFields({
   return (
     <div className="space-y-2.5">
       <Field label="Number of Bets">
-        <div className="flex gap-1.5">
+        <div className="flex items-stretch rounded bg-stake-input border border-stake-border overflow-hidden focus-within:border-stake-dim">
           <input
             type="number"
             min={0}
             inputMode="numeric"
-            value={config.count}
+            value={config.count || ''}
             disabled={disabled}
             onChange={(e) => {
               const v = parseInt(e.target.value);
               onChange({ ...config, count: Number.isFinite(v) ? Math.max(0, v) : 0 });
             }}
-            className="flex-1 bg-bg-elev border border-edge rounded-lg px-3 py-2 font-mono text-sm tabular-nums outline-none focus:border-accent/60"
-            placeholder="∞ for unlimited"
+            className="flex-1 min-w-0 bg-transparent px-3 py-2.5 font-mono text-sm text-stake-text tabular-nums outline-none"
+            placeholder="∞"
           />
           <button
             onClick={() => onChange({ ...config, count: 0 })}
             disabled={disabled}
-            className="px-3 rounded-lg bg-bg-elev border border-edge text-ink-dim hover:text-ink hover:border-accent/40 text-xs font-bold transition active:scale-95 disabled:opacity-50 disabled:active:scale-100"
+            className="px-3.5 border-l border-stake-border text-stake-muted hover:text-stake-text hover:bg-white/5 text-sm font-bold transition disabled:opacity-50"
           >
             ∞
           </button>
         </div>
       </Field>
       <Field label="Stop on Profit">
-        <div className="flex items-center gap-2 bg-bg-elev border border-edge rounded-lg px-3 py-2">
-          <span className="text-ink-mute text-sm">$</span>
+        <div className="flex items-center gap-1.5 rounded bg-stake-input border border-stake-border px-3 py-2.5 focus-within:border-stake-dim">
           <input
             type="number"
             min={0}
             step={0.1}
             value={config.stopOnProfit || ''}
             disabled={disabled}
-            placeholder="0 = none"
+            placeholder="0.00"
             onChange={(e) => {
               const v = parseFloat(e.target.value);
               onChange({ ...config, stopOnProfit: Number.isFinite(v) ? Math.max(0, v) : 0 });
             }}
-            className="flex-1 bg-transparent outline-none font-mono text-sm tabular-nums"
+            className="flex-1 min-w-0 bg-transparent outline-none font-mono text-sm text-stake-text tabular-nums"
           />
+          <span className="text-stake-dim text-sm font-mono">$</span>
         </div>
       </Field>
       <Field label="Stop on Loss">
-        <div className="flex items-center gap-2 bg-bg-elev border border-edge rounded-lg px-3 py-2">
-          <span className="text-ink-mute text-sm">$</span>
+        <div className="flex items-center gap-1.5 rounded bg-stake-input border border-stake-border px-3 py-2.5 focus-within:border-stake-dim">
           <input
             type="number"
             min={0}
             step={0.1}
             value={config.stopOnLoss || ''}
             disabled={disabled}
-            placeholder="0 = none"
+            placeholder="0.00"
             onChange={(e) => {
               const v = parseFloat(e.target.value);
               onChange({ ...config, stopOnLoss: Number.isFinite(v) ? Math.max(0, v) : 0 });
             }}
-            className="flex-1 bg-transparent outline-none font-mono text-sm tabular-nums"
+            className="flex-1 min-w-0 bg-transparent outline-none font-mono text-sm text-stake-text tabular-nums"
           />
+          <span className="text-stake-dim text-sm font-mono">$</span>
         </div>
       </Field>
     </div>
@@ -128,7 +130,7 @@ export function AutoConfigFields({
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-widest text-ink-mute mb-1">{label}</div>
+      <div className="text-xs text-stake-muted mb-1.5">{label}</div>
       {children}
     </div>
   );
@@ -208,21 +210,21 @@ export function AutoProgressDisplay({
 }) {
   return (
     <div className="grid grid-cols-2 gap-2">
-      <div className="rounded-lg bg-bg-elev border border-edge p-2.5 text-center">
-        <div className="text-[10px] uppercase tracking-widest text-ink-mute">Bets</div>
-        <div className="font-mono font-bold text-base text-ink mt-0.5 tabular-nums">
+      <div className="rounded bg-stake-input border border-stake-border p-2.5 text-center">
+        <div className="text-xs text-stake-muted">Bets</div>
+        <div className="font-mono font-bold text-base text-stake-text mt-0.5 tabular-nums">
           {progress.completed}
           {config.count > 0 && (
-            <span className="text-ink-mute"> / {config.count}</span>
+            <span className="text-stake-dim"> / {config.count}</span>
           )}
         </div>
       </div>
-      <div className="rounded-lg bg-bg-elev border border-edge p-2.5 text-center">
-        <div className="text-[10px] uppercase tracking-widest text-ink-mute">Profit</div>
+      <div className="rounded bg-stake-input border border-stake-border p-2.5 text-center">
+        <div className="text-xs text-stake-muted">Profit</div>
         <div
           className="font-mono font-bold text-base mt-0.5 tabular-nums"
           style={{
-            color: progress.netProfit > 0 ? '#1fff7a' : progress.netProfit < 0 ? '#ff5560' : '#e5e9f0',
+            color: progress.netProfit > 0 ? '#00e701' : progress.netProfit < 0 ? '#ed4163' : '#ffffff',
           }}
         >
           {progress.netProfit >= 0 ? '+' : ''}{fmtCurrency(progress.netProfit)}

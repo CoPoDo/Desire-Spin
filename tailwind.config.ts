@@ -34,6 +34,25 @@ export default {
           gold: '#ffc62a',
           deep: '#070d20',
         },
+        // Cool-navy palette for the Originals chrome — reproduces the
+        // look of the real Stake-style Originals (functional UI colour
+        // values + layout, not any proprietary asset). Kept distinct
+        // from the warmer generic `bg`/`accent` tokens used by the slots
+        // and lobby, and applied through the shared OriginalPageLayout +
+        // bet-control components so all 31 originals share it.
+        stake: {
+          bg: '#0f212e',         // page background
+          panel: '#213743',      // bet-control panel
+          card: '#1a2c38',       // game area / cards
+          input: '#0f212e',      // input wells (darker than panel)
+          border: '#2f4553',     // borders + dividers
+          green: '#00e701',      // signature bet button
+          'green-hi': '#1fff20', // bet button hover
+          red: '#ed4163',        // loss / danger
+          text: '#ffffff',
+          muted: '#b1bad3',      // secondary text
+          dim: '#557086',        // tertiary / placeholder
+        },
       },
       fontFamily: {
         display: ['"Sora"', '"Inter"', 'system-ui', 'sans-serif'],

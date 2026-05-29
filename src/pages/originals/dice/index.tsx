@@ -110,103 +110,115 @@ export function DiceGame() {
 
   return (
     <OriginalPageLayout title="Dice">
-      <div className="flex flex-col p-4 gap-4 max-w-md mx-auto w-full">
-        {/* Result display */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-5 text-center">
-          <div className="text-[10px] uppercase tracking-widest text-ink-mute mb-2">Roll</div>
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={lastRoll ?? 'idle'}
-              initial={{ scale: 0.6, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.8, opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 280, damping: 18 }}
-              className={`font-mono font-bold tabular-nums leading-none ${
-                lastRoll === null ? 'text-ink-dim' : lastWin ? 'text-accent' : 'text-accent-hot'
-              }`}
-              style={{
-                fontSize: '56px',
-                textShadow: lastWin
-                  ? '0 0 24px rgba(31,255,122,.7)'
-                  : lastRoll !== null
-                    ? '0 0 24px rgba(255,61,139,.55)'
-                    : 'none',
-              }}
-            >
-              {lastRoll === null ? '—' : lastRoll.toFixed(2)}
-            </motion.div>
-          </AnimatePresence>
-          <div className="mt-2 text-xs text-ink-dim">
-            {lastWin === null ? 'Roll the dice to begin' : lastWin ? `Won ${fmtCurrency(bet * multiplier)}` : 'No win'}
+      <div className="flex flex-col p-3 gap-3 max-w-md mx-auto w-full">
+        {/* Recent rolls — pill row across the top, newest on the right
+         *  (real Dice shows the live multiplier history here). */}
+        {recentRolls.length > 0 && (
+          <div className="flex items-center justify-end gap-1.5 overflow-x-auto py-0.5">
+            <AnimatePresence initial={false}>
+              {recentRolls.slice().reverse().map((r) => (
+                <motion.span
+                  key={r.id}
+                  layout
+                  initial={{ scale: 0.6, opacity: 0, y: -8 }}
+                  animate={{ scale: 1, opacity: 1, y: 0 }}
+                  exit={{ scale: 0.8, opacity: 0 }}
+                  transition={{ type: 'spring', stiffness: 360, damping: 22 }}
+                  className={`font-mono font-semibold text-xs tabular-nums px-2.5 py-1 rounded-full flex-shrink-0 ${
+                    r.win
+                      ? 'bg-stake-green/15 text-stake-green border border-stake-green/30'
+                      : 'bg-stake-card text-stake-muted border border-stake-border'
+                  }`}
+                >
+                  {r.roll.toFixed(2)}
+                </motion.span>
+              ))}
+            </AnimatePresence>
           </div>
-        </div>
+        )}
 
-        {/* Slider */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-4">
-          <div className="flex items-center justify-between text-[10px] uppercase tracking-widest text-ink-mute mb-2">
+        {/* Game area — slider with the result marker + flying value bubble */}
+        <div className="rounded-lg bg-stake-card border border-stake-border p-5 pt-8">
+          <div className="relative mb-3">
+            {/* Flying result bubble that drops onto the slider position */}
+            <AnimatePresence>
+              {lastRoll !== null && (
+                <motion.div
+                  key={lastRoll}
+                  className="absolute -top-7 z-10"
+                  style={{ left: `${lastRoll}%`, transform: 'translateX(-50%)' }}
+                  initial={{ scale: 0.4, opacity: 0, y: -6 }}
+                  animate={{ scale: 1, opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ type: 'spring', stiffness: 320, damping: 18 }}
+                >
+                  <div
+                    className={`px-2 py-1 rounded font-mono font-bold text-xs tabular-nums whitespace-nowrap ${
+                      lastWin ? 'bg-stake-green text-stake-bg' : 'bg-stake-panel text-stake-muted border border-stake-border'
+                    }`}
+                  >
+                    {lastRoll.toFixed(2)}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Track */}
+            <div className="relative h-2.5 bg-stake-bg rounded-full overflow-hidden">
+              {/* Lose zone (red) */}
+              <div
+                className="absolute top-0 bottom-0 bg-stake-red/80"
+                style={{
+                  left: direction === 'over' ? '0%' : `${target}%`,
+                  right: direction === 'over' ? `${100 - target}%` : '0%',
+                }}
+              />
+              {/* Win zone (green) */}
+              <div
+                className="absolute top-0 bottom-0 bg-stake-green"
+                style={{
+                  left: direction === 'over' ? `${target}%` : '0%',
+                  right: direction === 'over' ? '0%' : `${100 - target}%`,
+                }}
+              />
+              {lastRoll !== null && (
+                <motion.div
+                  className="absolute top-0 bottom-0 w-1 bg-white rounded-full"
+                  style={{ left: `${lastRoll}%`, transform: 'translateX(-50%)' }}
+                  initial={{ scaleY: 0 }}
+                  animate={{ scaleY: 1 }}
+                  transition={{ type: 'spring', stiffness: 320, damping: 18 }}
+                />
+              )}
+            </div>
+
+            {/* Draggable thumb at the target */}
+            <input
+              type="range"
+              min={2}
+              max={98}
+              step={0.01}
+              value={target}
+              disabled={busy || autoActive}
+              onChange={(e) => setTarget(parseFloat(e.target.value))}
+              className="dice-slider absolute inset-x-0 top-1/2 -translate-y-1/2 w-full appearance-none bg-transparent cursor-pointer disabled:cursor-default"
+            />
+          </div>
+
+          {/* Scale ticks */}
+          <div className="flex items-center justify-between text-[10px] font-mono text-stake-dim tabular-nums">
             <span>0</span><span>25</span><span>50</span><span>75</span><span>100</span>
           </div>
-          <div className="relative h-3 bg-bg-elev rounded-full mb-3 overflow-hidden">
-            {/* Lose zone (red) — opposite of the win zone, dimmed so the
-             *  win zone visually dominates. Real Stake-style dice colour-
-             *  codes the slider so the player reads risk at a glance. */}
-            <div
-              className="absolute top-0 bottom-0 bg-rose-500/20"
-              style={{
-                left: direction === 'over' ? '0%' : `${target}%`,
-                right: direction === 'over' ? `${100 - target}%` : '0%',
-              }}
-            />
-            {/* Win zone (vivid green so it dominates) */}
-            <div
-              className="absolute top-0 bottom-0"
-              style={{
-                left: direction === 'over' ? `${target}%` : '0%',
-                right: direction === 'over' ? '0%' : `${100 - target}%`,
-                background:
-                  'linear-gradient(180deg, rgba(31,255,122,.55), rgba(15,170,80,.32))',
-                boxShadow: 'inset 0 0 12px rgba(31,255,122,.35)',
-              }}
-            />
-            {lastRoll !== null && (
-              <motion.div
-                className="absolute top-0 bottom-0 w-1 rounded-full"
-                style={{
-                  left: `${lastRoll}%`,
-                  transform: 'translateX(-50%)',
-                  background: lastWin ? '#1fff7a' : '#ff3d8b',
-                  boxShadow: lastWin
-                    ? '0 0 12px rgba(31,255,122,.95)'
-                    : '0 0 12px rgba(255,61,139,.85)',
-                }}
-                initial={{ scaleY: 0 }}
-                animate={{ scaleY: 1 }}
-                transition={{ type: 'spring', stiffness: 320, damping: 18 }}
-              />
-            )}
-            <div className="absolute top-[-3px] bottom-[-3px] w-0.5 bg-ink"
-                 style={{ left: `${target}%`, transform: 'translateX(-50%)' }} />
-          </div>
-          <input
-            type="range"
-            min={2}
-            max={98}
-            step={0.01}
-            value={target}
-            disabled={busy || autoActive}
-            onChange={(e) => setTarget(parseFloat(e.target.value))}
-            className="w-full accent-accent"
-          />
         </div>
 
-        {/* Stats — multiplier + chance are linked: editing one updates target */}
+        {/* Stat trio — Multiplier | Roll Over/Under | Win Chance */}
         <div className="grid grid-cols-3 gap-2">
           <EditableStat
             label="Multiplier"
+            suffix="×"
             value={multiplier}
             disabled={busy || autoActive}
             onChange={(v) => {
-              // mult = 0.99 / chance%; chance% = 0.99 / mult * 100 = 99/mult
               const chance = Math.max(2, Math.min(98, 99 / Math.max(1.01, v)));
               setTarget(direction === 'over' ? +(100 - chance).toFixed(2) : +chance.toFixed(2));
             }}
@@ -215,49 +227,37 @@ export function DiceGame() {
           <button
             onClick={() => setDirection((d) => (d === 'over' ? 'under' : 'over'))}
             disabled={busy || autoActive}
-            className="rounded-xl bg-bg-card border border-edge p-3 text-center hover:bg-bg-hover disabled:opacity-50"
+            className="rounded bg-stake-input border border-stake-border p-2.5 text-left hover:border-stake-dim disabled:opacity-50 transition-colors"
           >
-            <div className="text-[10px] uppercase tracking-widest text-ink-mute">Roll {direction}</div>
-            <div className="font-mono font-bold text-base text-ink mt-0.5 tabular-nums">{target.toFixed(2)}</div>
+            <div className="text-xs text-stake-muted">Roll {direction === 'over' ? 'Over' : 'Under'}</div>
+            <div className="flex items-center justify-between mt-0.5">
+              <span className="font-mono font-bold text-base text-stake-text tabular-nums">{target.toFixed(2)}</span>
+              <span className="text-stake-green text-sm">⇅</span>
+            </div>
           </button>
           <EditableStat
             label="Win Chance"
+            suffix="%"
             value={winChance}
             disabled={busy || autoActive}
             onChange={(v) => {
               const c = Math.max(2, Math.min(98, v));
               setTarget(direction === 'over' ? +(100 - c).toFixed(2) : +c.toFixed(2));
             }}
-            format={(v) => `${v.toFixed(2)}%`}
+            format={(v) => `${v.toFixed(2)}`}
           />
         </div>
 
-        {/* Quick chance presets */}
-        <div className="flex gap-1.5">
-          {[
-            { label: '50/50', chance: 49.5 },
-            { label: '4×', chance: 24.75 },
-            { label: '10×', chance: 9.9 },
-            { label: '50×', chance: 1.98 },
-          ].map((p) => (
-            <button
-              key={p.label}
-              onClick={() => setTarget(direction === 'over' ? +(100 - p.chance).toFixed(2) : +p.chance.toFixed(2))}
-              disabled={busy || autoActive}
-              className="flex-1 py-1.5 rounded-lg bg-bg-elev border border-edge text-ink-dim hover:text-ink text-[10px] font-bold uppercase tracking-wider disabled:opacity-50"
-            >
-              {p.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Mode + bet panel */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-4 space-y-3">
+        {/* Bet panel */}
+        <div className="rounded-lg bg-stake-panel border border-stake-border p-3 space-y-3">
           <ManualAutoTabs mode={mode} onChange={setMode} disabled={autoActive} />
           <BetInput bet={bet} onBetChange={setBet} disabled={busy || autoActive} />
-          <div className="flex justify-between text-xs">
-            <span className="text-ink-mute">Profit on Win</span>
-            <span className="font-mono font-semibold text-accent tabular-nums">{fmtCurrency(profitOnWin)}</span>
+          <div>
+            <div className="text-xs text-stake-muted mb-1.5">Profit on Win</div>
+            <div className="flex items-center gap-1.5 rounded bg-stake-input border border-stake-border px-3 py-2.5">
+              <span className="flex-1 font-mono font-semibold text-sm text-stake-text tabular-nums">{fmtCurrency(profitOnWin)}</span>
+              <span className="text-stake-dim text-sm font-mono">$</span>
+            </div>
           </div>
           {mode === 'auto' && (
             <>
@@ -269,70 +269,49 @@ export function DiceGame() {
             <button
               onClick={manualRoll}
               disabled={busy || balance.balance < bet || bet <= 0}
-              className="w-full py-3.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
+              className="w-full py-3.5 rounded bg-stake-green text-stake-bg font-bold text-sm disabled:opacity-50 transition active:scale-[0.99] hover:bg-stake-green-hi"
             >
-              {busy ? 'Rolling…' : 'Roll Dice'}
+              {busy ? 'Rolling…' : 'Bet'}
             </button>
           ) : (
             <button
               onClick={() => setAutoActive((a) => !a)}
               disabled={!autoActive && (balance.balance < bet || bet <= 0)}
-              className={`w-full py-3.5 rounded-xl font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99] ${
-                autoActive ? 'bg-accent-hot text-white' : 'bg-accent text-bg'
+              className={`w-full py-3.5 rounded font-bold text-sm disabled:opacity-50 transition active:scale-[0.99] ${
+                autoActive ? 'bg-stake-red text-white' : 'bg-stake-green text-stake-bg hover:bg-stake-green-hi'
               }`}
             >
               {autoActive ? 'Stop Autobet' : 'Start Autobet'}
             </button>
           )}
         </div>
-
-        {recentRolls.length > 0 && (
-          <div className="flex items-center gap-1.5 overflow-x-auto py-1">
-            <span className="text-[10px] uppercase tracking-widest text-ink-mute mr-1 flex-shrink-0">Recent</span>
-            <AnimatePresence initial={false}>
-              {recentRolls.map((r) => (
-                <motion.span
-                  key={r.id}
-                  layout
-                  initial={{ scale: 0.6, opacity: 0, x: -12 }}
-                  animate={{ scale: 1, opacity: 1, x: 0 }}
-                  exit={{ scale: 0.8, opacity: 0 }}
-                  transition={{ type: 'spring', stiffness: 360, damping: 22 }}
-                  className={`font-mono font-semibold text-xs tabular-nums px-2 py-1 rounded-lg flex-shrink-0 ${
-                    r.win ? 'bg-accent/15 text-accent' : 'bg-bg-elev text-ink-mute'
-                  }`}
-                >
-                  {r.roll.toFixed(2)}
-                </motion.span>
-              ))}
-            </AnimatePresence>
-          </div>
-        )}
       </div>
     </OriginalPageLayout>
   );
 }
 
-// Click to edit numeric stat, Enter or blur commits — Stake's Dice has the
-// same "click multiplier or chance to drive the slider" interaction.
+// Click to edit numeric stat, Enter or blur commits — driving the slider
+// by typing a multiplier or win-chance, matching real Dice.
 function EditableStat({
   label,
   value,
   format,
+  suffix,
   onChange,
   disabled,
 }: {
   label: string;
   value: number;
   format: (v: number) => string;
+  suffix?: string;
   onChange: (v: number) => void;
   disabled?: boolean;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
   return (
-    <div className="rounded-xl bg-bg-card border border-edge p-3 text-center">
-      <div className="text-[10px] uppercase tracking-widest text-ink-mute">{label}</div>
+    <div className="rounded bg-stake-input border border-stake-border p-2.5">
+      <div className="text-xs text-stake-muted">{label}</div>
       {editing ? (
         <input
           autoFocus
@@ -349,15 +328,18 @@ function EditableStat({
             if (e.key === 'Enter') (e.currentTarget as HTMLInputElement).blur();
             if (e.key === 'Escape') setEditing(false);
           }}
-          className="font-mono font-bold text-base text-ink mt-0.5 tabular-nums bg-transparent outline-none w-full text-center"
+          className="font-mono font-bold text-base text-stake-text mt-0.5 tabular-nums bg-transparent outline-none w-full"
         />
       ) : (
         <button
           onClick={() => { if (!disabled) { setDraft(value.toFixed(2)); setEditing(true); } }}
           disabled={disabled}
-          className="font-mono font-bold text-base text-ink mt-0.5 tabular-nums hover:text-accent transition w-full disabled:opacity-50"
+          className="flex items-center justify-between w-full mt-0.5 disabled:opacity-50 group"
         >
-          {format(value)}
+          <span className="font-mono font-bold text-base text-stake-text tabular-nums group-hover:text-stake-green transition-colors">
+            {format(value)}
+          </span>
+          {suffix && <span className="text-stake-dim text-sm">{suffix}</span>}
         </button>
       )}
     </div>
