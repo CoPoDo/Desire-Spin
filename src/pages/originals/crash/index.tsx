@@ -301,14 +301,14 @@ export function CrashGame() {
 
   return (
     <OriginalPageLayout title="Crash">
-      <div className="flex flex-col p-4 gap-4 max-w-md mx-auto w-full">
+      <div className="flex flex-col p-3 gap-3 max-w-md mx-auto w-full">
         {/* Multiplier display + curve */}
-        <div className={`rounded-2xl bg-bg-card border border-edge p-4 relative overflow-hidden min-h-[260px] ${lost ? 'shake-medium' : ''}`}>
+        <div className={`rounded-lg bg-stake-card border border-stake-border p-4 relative overflow-hidden min-h-[260px] ${lost ? 'shake-medium' : ''}`}>
           <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 60" preserveAspectRatio="none">
             <defs>
               <linearGradient id="crash-curve" x1="0" y1="1" x2="1" y2="0">
-                <stop offset="0%" stopColor={lost ? '#ff3d8b' : '#1fff7a'} stopOpacity="0.05" />
-                <stop offset="100%" stopColor={lost ? '#ff3d8b' : '#1fff7a'} stopOpacity="0.45" />
+                <stop offset="0%" stopColor={lost ? '#ed4163' : '#00e701'} stopOpacity="0.05" />
+                <stop offset="100%" stopColor={lost ? '#ed4163' : '#00e701'} stopOpacity="0.45" />
               </linearGradient>
             </defs>
             {(() => {
@@ -322,7 +322,7 @@ export function CrashGame() {
                 path += ` L ${t} ${y}`;
               }
               path += ` L ${px} ${py} L ${px} 60 Z`;
-              const edgeColor = lost ? '#ff3d8b' : '#1fff7a';
+              const edgeColor = lost ? '#ed4163' : '#00e701';
               return (
                 <>
                   <path
@@ -353,14 +353,14 @@ export function CrashGame() {
                 exit={{ scale: 0.85, opacity: 0 }}
                 transition={{ type: 'spring', stiffness: 280, damping: 18 }}
                 className={`font-mono font-bold tabular-nums leading-none ${
-                  lost ? 'text-accent-hot' : someoneCashed ? 'text-accent' : inGame ? 'text-ink' : 'text-ink-dim'
+                  lost ? 'text-stake-red' : someoneCashed ? 'text-stake-green' : inGame ? 'text-stake-text' : 'text-stake-dim'
                 }`}
                 style={{
                   fontSize: 'clamp(48px, 14vw, 88px)',
                   textShadow: lost
-                    ? '0 0 28px rgba(255,61,139,.85)'
+                    ? '0 0 28px rgba(237,65,99,.85)'
                     : someoneCashed
-                      ? '0 0 28px rgba(31,255,122,.85)'
+                      ? '0 0 28px rgba(0,231,1,.7)'
                       : inGame
                         ? '0 0 18px rgba(255,255,255,.25)'
                         : 'none',
@@ -369,7 +369,7 @@ export function CrashGame() {
                 {(lost ? (bust ?? currentMult) : currentMult).toFixed(2)}×
               </motion.div>
             </AnimatePresence>
-            <div className="mt-2 text-xs text-ink-dim h-4">
+            <div className="mt-2 text-xs text-stake-muted h-4">
               {lost && `Crashed at ${bust?.toFixed(2)}×`}
               {someoneCashed && !lost && 'Round complete'}
               {inGame && 'Cash out before crash!'}
@@ -432,7 +432,7 @@ export function CrashGame() {
 
         {/* Bust history */}
         {recent.length > 0 && (
-          <div className="rounded-xl bg-bg-card border border-edge p-2.5">
+          <div className="rounded-lg bg-stake-card border border-stake-border p-2.5">
             <div className="flex items-end justify-end gap-0.5 h-12">
               {recent.slice().reverse().map((r) => {
                 const heightPct = Math.min(100, (Math.log(r.bust) / Math.log(20)) * 100);
@@ -448,14 +448,13 @@ export function CrashGame() {
                       style={{
                         height: `${Math.max(8, heightPct)}%`,
                         background:
-                          tier === 'epic' ? '#ffc62a' : tier === 'good' ? '#1fff7a' : '#ff3d8b',
+                          tier === 'epic' ? '#ffc62a' : tier === 'good' ? '#00e701' : '#ed4163',
                         boxShadow: tier !== 'low' ? `0 0 6px currentColor` : undefined,
                       }}
                     />
                     <span
-                      className={`text-[8px] font-mono font-semibold tabular-nums leading-none ${
-                        tier === 'epic' ? 'text-accent-gold' : tier === 'good' ? 'text-accent' : 'text-accent-hot'
-                      }`}
+                      className="text-[8px] font-mono font-semibold tabular-nums leading-none"
+                      style={{ color: tier === 'epic' ? '#ffc62a' : tier === 'good' ? '#00e701' : '#ed4163' }}
                     >
                       {r.bust < 10 ? r.bust.toFixed(2) : r.bust.toFixed(0)}
                     </span>
@@ -467,7 +466,7 @@ export function CrashGame() {
         )}
 
         {/* === Mode tabs + auto-bet config === */}
-        <div className="rounded-2xl bg-bg-card border border-edge p-4 space-y-3">
+        <div className="rounded-lg bg-stake-panel border border-stake-border p-3 space-y-3">
           <ManualAutoTabs mode={mode} onChange={setMode} disabled={autoActive || inGame} />
 
           {/* Slot A panel — always visible */}
@@ -486,7 +485,7 @@ export function CrashGame() {
           {mode === 'manual' && !slotB.active && phase !== 'running' && !autoActive && (
             <button
               onClick={() => setSlotB({ ...slotB, active: true })}
-              className="w-full py-2 rounded-lg bg-bg-elev border border-edge border-dashed text-ink-dim hover:text-ink hover:border-accent/40 text-xs font-semibold uppercase tracking-wider transition active:scale-95"
+              className="w-full py-2 rounded bg-stake-input border border-stake-border border-dashed text-stake-muted hover:text-stake-text hover:border-stake-dim text-xs font-semibold transition active:scale-95"
             >
               + Add second bet
             </button>
@@ -509,7 +508,7 @@ export function CrashGame() {
             <>
               <AutoConfigFields config={autoConfig} onChange={setAutoConfig} disabled={autoActive} />
               {autoActive && <AutoProgressDisplay progress={progress} config={autoConfig} />}
-              <p className="text-[10px] text-ink-mute leading-relaxed">
+              <p className="text-[11px] text-stake-dim leading-relaxed">
                 Auto-bet runs bet A only with its auto-cashout target. Bet B is paused during auto.
               </p>
             </>
@@ -525,7 +524,7 @@ export function CrashGame() {
                   totalBet <= 0 ||
                   totalBet > balance.balance
                 }
-                className="w-full py-3.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
+                className="w-full py-3.5 rounded bg-stake-green text-stake-bg font-bold text-sm disabled:opacity-50 transition active:scale-[0.99] hover:bg-stake-green-hi"
               >
                 {activeSlots.length === 0
                   ? 'Activate at least one bet'
@@ -538,8 +537,8 @@ export function CrashGame() {
             <button
               onClick={() => setAutoActive((a) => !a)}
               disabled={!autoActive && (balance.balance < slotA.bet || slotA.bet <= 0)}
-              className={`w-full py-3.5 rounded-xl font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99] ${
-                autoActive ? 'bg-accent-hot text-white' : 'bg-accent text-bg'
+              className={`w-full py-3.5 rounded font-bold text-sm disabled:opacity-50 transition active:scale-[0.99] ${
+                autoActive ? 'bg-stake-red text-white' : 'bg-stake-green text-stake-bg hover:bg-stake-green-hi'
               }`}
             >
               {autoActive ? 'Stop Autobet' : 'Start Autobet'}
@@ -575,23 +574,22 @@ function SlotPanel({
   onRemove?: () => void;
 }) {
   const label = id === 'a' ? 'Bet A' : 'Bet B';
-  const accent = id === 'a' ? 'text-accent' : 'text-accent-cyan';
-  const cashColor = id === 'a' ? 'bg-accent-gold' : 'bg-accent-cyan';
+  const accent = id === 'a' ? 'text-stake-green' : 'text-accent-cyan';
   const profitOnAuto = +(slot.bet * slot.autoCashout - slot.bet).toFixed(2);
   const livePayout = +(slot.bet * currentMult).toFixed(2);
   const editable = !inGame && !disabled;
 
   return (
-    <div className="rounded-xl bg-bg-elev border border-edge p-3 space-y-2.5">
+    <div className="rounded bg-stake-input border border-stake-border p-3 space-y-2.5">
       <div className="flex items-center justify-between">
-        <span className={`text-[10px] uppercase tracking-widest font-bold ${accent}`}>{label}</span>
+        <span className={`text-[11px] uppercase tracking-wider font-bold ${accent}`}>{label}</span>
         <div className="flex items-center gap-2">
           <StatusBadge status={slot.status} cashedAt={slot.cashedAt} />
           {allowToggleActive && onRemove && !inGame && (
             <button
               onClick={onRemove}
               disabled={disabled}
-              className="text-ink-mute hover:text-accent-hot text-xs transition disabled:opacity-50"
+              className="text-stake-dim hover:text-stake-red text-xs transition disabled:opacity-50"
               aria-label="Remove bet B"
               title="Remove second bet"
             >
@@ -607,17 +605,18 @@ function SlotPanel({
         disabled={!editable}
       />
 
-      <div className="rounded-lg bg-bg-card border border-edge p-2">
+      <div className="rounded bg-stake-card border border-stake-border p-2">
         <div className="flex items-center justify-between">
-          <label className="flex items-center gap-2 text-[11px] text-ink-dim cursor-pointer">
+          <label className="flex items-center gap-2 text-[11px] text-stake-muted cursor-pointer">
             <input
               type="checkbox"
               checked={slot.autoEnabled}
               onChange={(e) => onChange({ ...slot, autoEnabled: e.target.checked })}
               disabled={!editable}
-              className="accent-accent w-3.5 h-3.5"
+              className="w-3.5 h-3.5"
+              style={{ accentColor: '#00e701' }}
             />
-            Auto cashout
+            Auto Cashout
           </label>
           <input
             type="number"
@@ -630,12 +629,12 @@ function SlotPanel({
               const v = parseFloat(e.target.value);
               if (Number.isFinite(v)) onChange({ ...slot, autoCashout: Math.max(1.01, v) });
             }}
-            className="font-mono font-semibold text-xs tabular-nums bg-bg-elev border border-edge rounded px-2 py-1 w-20 text-right outline-none focus:border-accent/60 disabled:opacity-50"
+            className="font-mono font-semibold text-xs tabular-nums bg-stake-input border border-stake-border rounded px-2 py-1 w-20 text-right text-stake-text outline-none focus:border-stake-dim disabled:opacity-50"
           />
         </div>
         {slot.autoEnabled && (
           <div className="mt-1.5 flex justify-between text-[10px]">
-            <span className="text-ink-mute">Profit on auto</span>
+            <span className="text-stake-dim">Profit on auto</span>
             <span className={`font-mono font-semibold ${accent} tabular-nums`}>
               {fmtCurrency(profitOnAuto)}
             </span>
@@ -647,18 +646,18 @@ function SlotPanel({
       {inGame && slot.status === 'live' && (
         <button
           onClick={onCashOut}
-          className={`w-full py-2.5 rounded-lg ${cashColor} text-bg font-bold text-sm uppercase tracking-wider transition active:scale-[0.99] shadow-[0_0_14px_rgba(255,209,102,.4)]`}
+          className="w-full py-2.5 rounded bg-accent-gold text-stake-bg font-bold text-sm transition active:scale-[0.99] shadow-[0_0_14px_rgba(255,209,102,.4)]"
         >
           Cash Out · {fmtCurrency(livePayout)}
         </button>
       )}
       {inGame && slot.status === 'cashed' && (
-        <div className="text-center text-xs text-accent font-mono py-1">
+        <div className="text-center text-xs text-stake-green font-mono py-1">
           Cashed at {slot.cashedAt?.toFixed(2)}× · won {fmtCurrency(slot.bet * (slot.cashedAt ?? 0))}
         </div>
       )}
       {inGame && slot.status === 'busted' && (
-        <div className="text-center text-xs text-accent-hot font-mono py-1">
+        <div className="text-center text-xs text-stake-red font-mono py-1">
           Bust · lost {fmtCurrency(slot.bet)}
         </div>
       )}
@@ -670,20 +669,20 @@ function StatusBadge({ status, cashedAt }: { status: Slot['status']; cashedAt: n
   if (status === 'idle') return null;
   if (status === 'live') {
     return (
-      <span className="text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-accent/15 text-accent border border-accent/40">
+      <span className="text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-stake-green/15 text-stake-green border border-stake-green/40">
         LIVE
       </span>
     );
   }
   if (status === 'cashed') {
     return (
-      <span className="text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-accent/15 text-accent border border-accent/40">
+      <span className="text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-stake-green/15 text-stake-green border border-stake-green/40">
         CASHED {cashedAt?.toFixed(2)}×
       </span>
     );
   }
   return (
-    <span className="text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-accent-hot/15 text-accent-hot border border-accent-hot/40">
+    <span className="text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-stake-red/15 text-stake-red border border-stake-red/40">
       BUST
     </span>
   );

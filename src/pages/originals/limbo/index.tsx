@@ -110,35 +110,54 @@ export function LimboGame() {
 
   return (
     <OriginalPageLayout title="Limbo">
-      <div className="flex flex-col p-4 gap-4 max-w-md mx-auto w-full">
-        <div className="rounded-2xl bg-bg-card border border-edge p-6 text-center min-h-[180px] flex flex-col items-center justify-center">
-          <div className="text-[10px] uppercase tracking-widest text-ink-mute mb-3">Result</div>
+      <div className="flex flex-col p-3 gap-3 max-w-md mx-auto w-full">
+        {/* Recent results — pill row, newest on the right */}
+        {recent.length > 0 && (
+          <div className="flex items-center justify-end gap-1.5 overflow-x-auto py-0.5">
+            <AnimatePresence initial={false}>
+              {recent.slice().reverse().map((r) => (
+                <motion.span
+                  key={r.id}
+                  layout
+                  initial={{ scale: 0.6, opacity: 0, y: -8 }}
+                  animate={{ scale: 1, opacity: 1, y: 0 }}
+                  exit={{ scale: 0.8, opacity: 0 }}
+                  transition={{ type: 'spring', stiffness: 360, damping: 22 }}
+                  className={`font-mono font-semibold text-xs tabular-nums px-2.5 py-1 rounded-full flex-shrink-0 ${
+                    r.win
+                      ? 'bg-stake-green/15 text-stake-green border border-stake-green/30'
+                      : 'bg-stake-card text-stake-muted border border-stake-border'
+                  }`}
+                >
+                  {r.result.toFixed(2)}×
+                </motion.span>
+              ))}
+            </AnimatePresence>
+          </div>
+        )}
+
+        {/* Game area — giant rocket-climb multiplier */}
+        <div className="rounded-lg bg-stake-card border border-stake-border p-6 text-center min-h-[200px] flex flex-col items-center justify-center">
           <AnimatePresence mode="wait">
             <motion.div
               key={lastResult ?? 'idle'}
-              initial={{ scale: 0.5, opacity: 0, rotateX: -25 }}
-              animate={{ scale: 1, opacity: 1, rotateX: 0 }}
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.7, opacity: 0 }}
               transition={{ type: 'spring', stiffness: 240, damping: 16 }}
               className={`font-mono font-bold tabular-nums leading-none ${
-                lastResult === null ? 'text-ink-dim' : lastWin ? 'text-accent' : 'text-accent-hot'
+                lastResult === null ? 'text-stake-dim' : lastWin ? 'text-stake-green' : 'text-stake-muted'
               }`}
               style={{
                 fontSize: '64px',
                 textShadow: lastWin
-                  ? '0 0 28px rgba(31,255,122,.85), 0 0 60px rgba(31,255,122,.4)'
-                  : lastResult !== null
-                    ? '0 0 24px rgba(255,61,139,.55)'
-                    : 'none',
+                  ? '0 0 28px rgba(0,231,1,.7), 0 0 60px rgba(0,231,1,.35)'
+                  : 'none',
               }}
             >
               {lastResult === null ? (
-                '0.00×'
+                '1.00×'
               ) : (
-                /* CountUp climbs from 0 to the result over 700ms with
-                 * ease-out cubic — mimics the rocket launch feel real
-                 * Stake Limbo has, where the multiplier rapidly climbs
-                 * before settling on the final number. */
                 <CountUp
                   value={lastResult}
                   duration={700}
@@ -147,48 +166,32 @@ export function LimboGame() {
               )}
             </motion.div>
           </AnimatePresence>
-          {/* Progress bar — fills from 0 to (result/target) over the same
-           *  700ms as the CountUp. Real Stake Limbo shows a horizontal
-           *  rocket-trail bar that creeps right while the number climbs;
-           *  if it crosses the target line the bar locks green, otherwise
-           *  red. Adds the "tension release" beat that pure number-only
-           *  reveal lacked. Target marker shown as vertical line. */}
           {lastResult !== null && (
-            <div className="relative w-full max-w-[260px] h-1.5 mt-3 rounded-full bg-bg-elev overflow-hidden">
+            <div className="relative w-full max-w-[260px] h-1.5 mt-4 rounded-full bg-stake-bg overflow-hidden">
               <motion.div
                 key={`bar-${lastResult}`}
                 className="absolute inset-y-0 left-0 rounded-full"
                 initial={{ width: '0%' }}
                 animate={{ width: `${Math.min(100, (lastResult / Math.max(target, 1.01)) * 100)}%` }}
                 transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-                style={{
-                  background: lastWin
-                    ? 'linear-gradient(90deg, #1fff7a, #5dffae)'
-                    : 'linear-gradient(90deg, #ff3d8b, #ff7aa8)',
-                  boxShadow: lastWin
-                    ? '0 0 10px rgba(31,255,122,.7)'
-                    : '0 0 10px rgba(255,61,139,.45)',
-                }}
+                style={{ background: lastWin ? '#00e701' : '#ed4163' }}
               />
-              {/* Target marker — fixed line where the threshold sits */}
-              <div
-                className="absolute inset-y-[-2px] w-px bg-ink-dim/60"
-                style={{ left: '100%', transform: 'translateX(-1px)' }}
-              />
+              <div className="absolute inset-y-[-2px] w-px bg-white/50" style={{ left: '100%', transform: 'translateX(-1px)' }} />
             </div>
           )}
-          <div className="mt-3 text-xs text-ink-dim">
+          <div className="mt-3 text-xs text-stake-muted">
             {lastWin === null
               ? `Target ${target.toFixed(2)}× to win`
               : lastWin
                 ? `Won ${fmtCurrency(bet * target)}`
-                : `Below target (${target.toFixed(2)}×)`}
+                : `Below ${target.toFixed(2)}×`}
           </div>
         </div>
 
-        <div className="rounded-2xl bg-bg-card border border-edge p-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] uppercase tracking-widest text-ink-mute">Target Multiplier</span>
+        {/* Target slider + quick picks */}
+        <div className="rounded-lg bg-stake-card border border-stake-border p-4">
+          <div className="flex items-center justify-between mb-2.5">
+            <span className="text-xs text-stake-muted">Target Multiplier</span>
             <input
               type="number"
               inputMode="decimal"
@@ -200,7 +203,7 @@ export function LimboGame() {
                 const v = parseFloat(e.target.value);
                 if (Number.isFinite(v)) setTarget(Math.max(1.01, Math.min(1_000_000, v)));
               }}
-              className="font-mono font-semibold text-sm tabular-nums bg-bg-elev border border-edge rounded-lg px-2 py-1 w-24 text-right outline-none focus:border-accent/60"
+              className="font-mono font-semibold text-sm tabular-nums bg-stake-input border border-stake-border rounded px-2 py-1 w-24 text-right text-stake-text outline-none focus:border-stake-dim"
             />
           </div>
           <input
@@ -211,23 +214,21 @@ export function LimboGame() {
             value={Math.min(target, 100)}
             disabled={busy || autoActive}
             onChange={(e) => setTarget(parseFloat(e.target.value))}
-            className="w-full accent-accent"
+            className="dice-slider w-full appearance-none bg-stake-bg rounded-full h-2 cursor-pointer"
           />
-          <div className="flex items-center justify-between text-[10px] uppercase tracking-widest text-ink-mute mt-2">
+          <div className="flex items-center justify-between text-[10px] font-mono text-stake-dim mt-2 tabular-nums">
             <span>1.01×</span><span>5×</span><span>25×</span><span>100×</span>
           </div>
-          {/* Quick-pick presets — common targets players set with one tap.
-              Matches Stake's shortcut chips below the slider. */}
           <div className="flex gap-1.5 mt-3">
             {[1.5, 2, 4, 10, 100].map((t) => (
               <button
                 key={t}
                 onClick={() => setTarget(t)}
                 disabled={busy || autoActive}
-                className={`flex-1 py-1.5 rounded-lg text-[11px] font-mono font-bold tabular-nums transition disabled:opacity-50 ${
+                className={`flex-1 py-1.5 rounded text-[11px] font-mono font-bold tabular-nums transition disabled:opacity-50 ${
                   Math.abs(target - t) < 0.01
-                    ? 'bg-accent text-bg shadow-[0_0_10px_rgba(31,255,122,.45)]'
-                    : 'bg-bg-elev border border-edge text-ink-dim hover:text-ink hover:border-accent/40'
+                    ? 'bg-stake-green text-stake-bg'
+                    : 'bg-stake-input border border-stake-border text-stake-muted hover:text-stake-text hover:border-stake-dim'
                 }`}
               >
                 {t}×
@@ -237,16 +238,20 @@ export function LimboGame() {
         </div>
 
         <div className="grid grid-cols-2 gap-2">
-          <Stat label="Multiplier" value={fmtMultiplier(target)} />
-          <Stat label="Win Chance" value={`${winChance.toFixed(2)}%`} />
+          <Stat label="Target Payout" value={fmtMultiplier(target)} />
+          <Stat label="Win Chance" value={`${winChance.toFixed(4)}%`} />
         </div>
 
-        <div className="rounded-2xl bg-bg-card border border-edge p-4 space-y-3">
+        {/* Bet panel */}
+        <div className="rounded-lg bg-stake-panel border border-stake-border p-3 space-y-3">
           <ManualAutoTabs mode={mode} onChange={setMode} disabled={autoActive} />
           <BetInput bet={bet} onBetChange={setBet} disabled={busy || autoActive} />
-          <div className="flex justify-between text-xs">
-            <span className="text-ink-mute">Profit on Win</span>
-            <span className="font-mono font-semibold text-accent tabular-nums">{fmtCurrency(profitOnWin)}</span>
+          <div>
+            <div className="text-xs text-stake-muted mb-1.5">Profit on Win</div>
+            <div className="flex items-center gap-1.5 rounded bg-stake-input border border-stake-border px-3 py-2.5">
+              <span className="flex-1 font-mono font-semibold text-sm text-stake-text tabular-nums">{fmtCurrency(profitOnWin)}</span>
+              <span className="text-stake-dim text-sm font-mono">$</span>
+            </div>
           </div>
           {mode === 'auto' && (
             <>
@@ -258,7 +263,7 @@ export function LimboGame() {
             <button
               onClick={manualPlay}
               disabled={busy || balance.balance < bet || bet <= 0 || target < 1.01}
-              className="w-full py-3.5 rounded-xl bg-accent text-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
+              className="w-full py-3.5 rounded bg-stake-green text-stake-bg font-bold text-sm disabled:opacity-50 transition active:scale-[0.99] hover:bg-stake-green-hi"
             >
               {busy ? 'Rolling…' : 'Bet'}
             </button>
@@ -266,37 +271,14 @@ export function LimboGame() {
             <button
               onClick={() => setAutoActive((a) => !a)}
               disabled={!autoActive && (balance.balance < bet || bet <= 0)}
-              className={`w-full py-3.5 rounded-xl font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99] ${
-                autoActive ? 'bg-accent-hot text-white' : 'bg-accent text-bg'
+              className={`w-full py-3.5 rounded font-bold text-sm disabled:opacity-50 transition active:scale-[0.99] ${
+                autoActive ? 'bg-stake-red text-white' : 'bg-stake-green text-stake-bg hover:bg-stake-green-hi'
               }`}
             >
               {autoActive ? 'Stop Autobet' : 'Start Autobet'}
             </button>
           )}
         </div>
-
-        {recent.length > 0 && (
-          <div className="flex items-center gap-1.5 overflow-x-auto py-1">
-            <span className="text-[10px] uppercase tracking-widest text-ink-mute mr-1 flex-shrink-0">Recent</span>
-            <AnimatePresence initial={false}>
-              {recent.map((r) => (
-                <motion.span
-                  key={r.id}
-                  layout
-                  initial={{ scale: 0.6, opacity: 0, x: -12 }}
-                  animate={{ scale: 1, opacity: 1, x: 0 }}
-                  exit={{ scale: 0.8, opacity: 0 }}
-                  transition={{ type: 'spring', stiffness: 360, damping: 22 }}
-                  className={`font-mono font-semibold text-xs tabular-nums px-2 py-1 rounded-lg flex-shrink-0 ${
-                    r.win ? 'bg-accent/15 text-accent' : 'bg-bg-elev text-ink-mute'
-                  }`}
-                >
-                  {r.result.toFixed(2)}×
-                </motion.span>
-              ))}
-            </AnimatePresence>
-          </div>
-        )}
       </div>
     </OriginalPageLayout>
   );
@@ -304,9 +286,9 @@ export function LimboGame() {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl bg-bg-card border border-edge p-3 text-center">
-      <div className="text-[10px] uppercase tracking-widest text-ink-mute">{label}</div>
-      <div className="font-mono font-bold text-base text-ink mt-0.5 tabular-nums">{value}</div>
+    <div className="rounded bg-stake-input border border-stake-border p-2.5">
+      <div className="text-xs text-stake-muted">{label}</div>
+      <div className="font-mono font-bold text-base text-stake-text mt-0.5 tabular-nums">{value}</div>
     </div>
   );
 }
