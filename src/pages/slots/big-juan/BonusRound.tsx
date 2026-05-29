@@ -92,6 +92,20 @@ export function BigJuanBonusRound({
   const totalPayoutMult = cumulativeMult;
   const totalPayout = bet * totalPayoutMult;
 
+  // Live-state refs. resolve() is invoked from inside kickRespin's
+  // setTimeout chain, and kickRespin captures the FIRST resolve closure
+  // (its dep array is [sound]). Without these refs, resolve would read
+  // the bag/meters/cumulative values frozen at first mount — so every
+  // respin after the first resolved against stale state (BOOST adding to
+  // a perpetual 1× bag, WIN paying from a frozen cumulative, jackpot
+  // meters desyncing). Reading live values through refs fixes that.
+  const bagRef = useRef(bagValue);
+  bagRef.current = bagValue;
+  const metersRef = useRef(meters);
+  metersRef.current = meters;
+  const cumulativeRef = useRef(cumulativeMult);
+  cumulativeRef.current = cumulativeMult;
+
   // ── Intro: short "GET READY" beat before the first respin ──────────
   useEffect(() => {
     if (phase !== 'intro') return;
@@ -189,7 +203,14 @@ export function BigJuanBonusRound({
   //  start from a clean slate. */
   const resolve = useCallback(async (sample: { outer: RespinSymbol[]; fourth: FourthReelOutcome }) => {
     setPhase('resolving');
-    const res = resolveRespin(sample, { bagValue, meters, cumulativeMult });
+    // Read LIVE round state through refs — see bagRef/metersRef/
+    // cumulativeRef above. Using the closure-captured state here was the
+    // root of the "BOOST is buggy" desync.
+    const res = resolveRespin(sample, {
+      bagValue: bagRef.current,
+      meters: metersRef.current,
+      cumulativeMult: cumulativeRef.current,
+    });
     setLastRespinKind(res.kind);
     const animSet = new Set<number>();
     sample.outer.forEach((s, i) => {
