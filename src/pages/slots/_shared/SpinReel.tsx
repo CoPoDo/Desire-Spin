@@ -42,6 +42,24 @@ export function SpinReel({
   // height so a single number is enough.
   const [cellHeight, setCellHeight] = useState<number>(0);
 
+  // Hard safety net: no matter what happens with per-column measurement
+  // or transitionend, resolve the spin after the longest column would
+  // have finished + a buffer. Guarantees playFrames can never hang
+  // waiting on the reel. Fires onComplete exactly once.
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
+  useEffect(() => {
+    const longest = durationMs + (cfg.cols - 1) * staggerMs;
+    let done = false;
+    const t = window.setTimeout(() => {
+      if (done) return;
+      done = true;
+      onCompleteRef.current();
+    }, longest + 400);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     const el = bankRef.current;
     if (!el) return;
@@ -113,6 +131,19 @@ function SpinReelColumn({
 }) {
   const stripRef = useRef<HTMLDivElement>(null);
 
+  // Stable refs for values that must NOT re-trigger / restart the spin
+  // when the parent re-renders. The parent passes a fresh `onComplete`
+  // closure every render and `cellHeight` arrives asynchronously via a
+  // ResizeObserver — if those were effect deps, any mid-spin re-render
+  // would re-run the effect and visibly restart the reel from the top
+  // (the root cause of the "jittery / buggy" spin). We read them through
+  // refs and start the transition exactly once.
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
+  const durationRef = useRef(durationMs);
+  durationRef.current = durationMs;
+  const startedRef = useRef(false);
+
   // Strip layout, top → bottom:
   //   FINAL_SYMBOLS  (rows entries — revealed at rest)
   //   FILLER         (rows * SPIN_LOOPS entries — pass through during spin)
@@ -136,38 +167,40 @@ function SpinReelColumn({
 
   useEffect(() => {
     const strip = stripRef.current;
-    if (!strip || cellHeight <= 0) return;
+    // Wait for a real measured cell height, then start the spin EXACTLY
+    // once. `startedRef` guards against the effect re-running (e.g. a
+    // late ResizeObserver tick) and restarting the animation.
+    if (!strip || cellHeight <= 0 || startedRef.current) return;
+    startedRef.current = true;
 
+    const dur = durationRef.current;
     const stride = cellHeight + GAP_PX;
     const stripCount = stripSymbols.length;
-    // Total scroll distance: strip is positioned with its top at
-    // `startY` so the bottom block (filler) is initially in the
-    // viewport. At the end (translateY=0), the TOP block (final
-    // symbols) is in the viewport.
+    // Strip starts positioned with its top above the viewport so the
+    // bottom block (filler) is initially visible, then scrolls to
+    // translateY(0) which lands the TOP block (final symbols).
     const startY = -(stripCount - rows) * stride;
-    const endY = 0;
 
     strip.style.transition = 'none';
     strip.style.transform = `translate3d(0, ${startY}px, 0)`;
     void strip.offsetHeight;
-    strip.style.transition = `transform ${durationMs}ms cubic-bezier(0.08, 0.6, 0.2, 1)`;
-    strip.style.transform = `translate3d(0, ${endY}px, 0)`;
+    strip.style.transition = `transform ${dur}ms cubic-bezier(0.08, 0.6, 0.2, 1)`;
+    strip.style.transform = 'translate3d(0, 0, 0)';
 
     let settled = false;
     const handleEnd = () => {
       if (settled) return;
       settled = true;
-      onComplete?.();
-    };
-    // Fallback timer in case transitionend doesn't fire (tab-switch,
-    // unmount-mid-spin, etc.).
-    const t = window.setTimeout(handleEnd, durationMs + 120);
-    strip.addEventListener('transitionend', handleEnd, { once: true });
-    return () => {
       window.clearTimeout(t);
       strip.removeEventListener('transitionend', handleEnd);
+      onCompleteRef.current?.();
     };
-  }, [cellHeight, durationMs, rows, stripSymbols, onComplete]);
+    // Fallback in case transitionend doesn't fire (tab-switch, etc.).
+    const t = window.setTimeout(handleEnd, dur + 140);
+    strip.addEventListener('transitionend', handleEnd);
+    // Intentionally only depends on cellHeight — see refs above.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cellHeight]);
 
   return (
     <div
