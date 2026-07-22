@@ -72,7 +72,7 @@ function activeWeights(cfg: SlotConfig, mode: SpinMode, ante: boolean): number[]
 }
 
 /** Find pay-anywhere wins for non-multiplier, non-scatter symbols. */
-function findWins(grid: Grid, cfg: SlotConfig, bet: number): WinGroup[] {
+function findWins(grid: Grid, cfg: SlotConfig, bet: number, mode: SpinMode): WinGroup[] {
   const positions = new Map<string, [number, number][]>();
   for (let c = 0; c < grid.length; c++) {
     const col = grid[c]!;
@@ -90,7 +90,8 @@ function findWins(grid: Grid, cfg: SlotConfig, bet: number): WinGroup[] {
     if (pos.length < cfg.payAnywhereThreshold) continue;
     const sym = cfg.symbols.find((s) => s.id === symbolId);
     if (!sym) continue;
-    const payMultiplier = lookupPay(sym.payout, pos.length);
+    const scale = mode === 'base' ? (cfg.payoutScaleBase ?? 1) : (cfg.payoutScaleFree ?? 1);
+    const payMultiplier = lookupPay(sym.payout, pos.length) * scale;
     if (payMultiplier <= 0) continue;
     wins.push({
       symbolId,
@@ -143,6 +144,7 @@ function rollMultipliers(
   rng: Rng,
   mode: SpinMode,
 ): MultiplierLanding[] {
+  if (mode === 'base' && cfg.multiplierBaseMode === 'disabled') return [];
   const table = mode === 'base' ? cfg.multiplierTableBase : cfg.multiplierTableFree;
   // Probability gate: this is per-tumble.
   if (rng.next() >= table.pPerTumble) return [];
@@ -226,39 +228,7 @@ export function spin(rng: Rng, cfg: SlotConfig, opts: SpinOptions, mode: SpinMod
   // to *that* chain's payout (base game), and persist into next chain (free).
   let chainIdx = 0;
   let subtotal = 0;
-  const freeStickyMultipliers: number[] = [];
-
   let working: Grid = clone(grid);
-
-  // === Lightning Strike feature ===
-  // NOT actually in real Pragmatic Olympus — that game just has random
-  // multiplier orbs landing during tumbles. We keep it as a rare "special
-  // moment" (~0.8% per base spin = ~1 in 125 spins) so the dramatic Zeus
-  // overlay feels earned rather than spammy.
-  if (mode === 'base' && rng.next() < 0.008) {
-    const strikeCount = 2 + rng.nextInt(5); // 2..6 orbs
-    const landings: MultiplierLanding[] = [];
-    const used = new Set<string>();
-    let attempts = 0;
-    const valuesWeights = cfg.multiplierTableBase.values.map(([, w]) => w);
-    while (landings.length < strikeCount && attempts < 60) {
-      attempts++;
-      const c = rng.nextInt(cfg.cols);
-      const r = rng.nextInt(cfg.rows);
-      const key = `${c}:${r}`;
-      if (used.has(key)) continue;
-      const cell = working[c]?.[r];
-      if (!cell || cell.multiplier !== undefined || cell.symbolId === cfg.scatterId) continue;
-      used.add(key);
-      const vIdx = rng.weighted(valuesWeights);
-      const value = cfg.multiplierTableBase.values[vIdx]![0];
-      landings.push({ col: c, row: r, value, key: nextKey() });
-    }
-    if (landings.length > 0) {
-      working = applyMultiplierLandings(working, landings);
-      frames.push({ kind: 'lightningStrike', landings, grid: clone(working) });
-    }
-  }
 
   // Initial multiplier roll (per-tumble Zeus drops, distinct from the strike).
   {
@@ -270,7 +240,7 @@ export function spin(rng: Rng, cfg: SlotConfig, opts: SpinOptions, mode: SpinMod
   }
 
   while (true) {
-    const wins = findWins(working, cfg, bet);
+    const wins = findWins(working, cfg, bet, mode);
     if (wins.length === 0) break;
     const chainPayout = wins.reduce((a, w) => a + w.payout, 0);
     chainIdx++;
@@ -291,8 +261,6 @@ export function spin(rng: Rng, cfg: SlotConfig, opts: SpinOptions, mode: SpinMod
       // Free spins: track multipliers on grid for end-of-spin application;
       // chains pay 1× for now.
       subtotal += chainPayout;
-      const sum = sumGridMultipliers(working);
-      if (sum > 0) freeStickyMultipliers.push(sum); // remember snapshot per chain
     }
 
     // Tumble winners away.

@@ -1,91 +1,40 @@
-# Desire-Spin
+# Desire Spin
 
-A play-money emulator of modern crypto-casino slots. **No real wagering, no real money, no crypto, no accounts** — just a faithful client-side recreation of the games for entertainment and education.
+A private, client-side, play-money recreation of modern slots, Stake Originals, and canonical casino games. There are no accounts, deposits, withdrawals, cryptocurrency, or real multiplayer.
 
-v1 ships two high-fidelity tumble slots inspired by Pragmatic Play:
-
-- **Sweet Bonanza** — 6×5 pay-anywhere, fruit/candy theme, sticky free-spin multipliers, ~96.5% target RTP
-- **Gates of Olympus** — 6×5 pay-anywhere, Greek-myth theme, Zeus drops multiplier orbs, ~96.5% target RTP
-
-Both back onto a shared engine with provably-fair RNG (Stake-style HMAC-SHA256 + server seed + client seed + nonce), free spins, retriggers, ante bet, and buy-bonus.
-
-Future iterations: Dice, Mines, Crash, Plinko (placeholders in the lobby).
-
----
+The lobby contains **34 retained games**; five unsupported prototypes and all of their routes/assets were removed. See the dated [fidelity audit](docs/FIDELITY_AUDIT.md) for the reference and implementation status of every retained title.
 
 ## Run locally
 
 ```bash
 npm install
-npm run dev          # http://localhost:5173
-npm run build        # production bundle in dist/
-npm run preview      # serve the production build
-npm test             # vitest
+npm run dev
+npm test
+npm run build
 ```
 
-You start with 1,000 in play money. Refilling is free (top-bar `+1,000` button or Settings).
-
----
-
-## How to deploy (step-by-step)
-
-The app is a static SPA — works on Vercel, Netlify, Cloudflare Pages, or GitHub Pages. The plan you approved chose **Vercel**.
-
-### 1. Push the branch (this is what `git push -u origin claude/gambling-emulator-app-UlrCo` does)
-
-If you're following along inside Claude Code, the branch is already pushed for you.
-
-### 2. One-time Vercel setup (about 90 seconds)
-
-1. Go to [vercel.com](https://vercel.com) and sign in with the GitHub account that owns `CoPoDo/Desire-Spin`.
-2. Click **Add New… → Project**.
-3. Find `CoPoDo/Desire-Spin` in the list and click **Import**.
-4. **Framework Preset:** Vite (auto-detected).
-5. **Build Command:** `npm run build` (auto-detected).
-6. **Output Directory:** `dist` (auto-detected).
-7. **Root Directory:** leave as `./`.
-8. There are *no environment variables* to set.
-9. Click **Deploy**.
-
-The first build takes ~30–60 seconds. When it finishes you'll get a URL like `https://desire-spin.vercel.app`.
-
-### 3. After that — fully automatic
-
-Every push to *any* branch creates a unique preview URL. Pushes to your default branch (e.g. `main` once you merge) deploy to your production URL automatically. Nothing else to do.
-
-If you want to use **Netlify** or **Cloudflare Pages** instead: same flow, different domain. Both auto-detect Vite and need zero config.
-
----
+The starting balance is 1,000 play-money credits and can be refilled freely.
 
 ## Architecture
 
-| Layer | Files |
-|---|---|
-| RNG core | `src/lib/sha256.ts`, `src/lib/fairness.ts` |
-| State hooks | `src/hooks/{useBalance,useFairness,useBetHistory,useSound}.ts` |
-| App shell | `src/App.tsx`, `src/components/layout/*` |
-| Fairness UI | `src/components/fairness/*` |
-| Slot engine | `src/pages/slots/_shared/{engine,types,Grid,ImmersiveSlotView,BetControls,Paytable}.{ts,tsx}` |
-| Sweet Bonanza | `src/pages/slots/sweet-bonanza/{config.ts,index.tsx,symbols.tsx,Art.tsx}` |
-| Gates of Olympus | `src/pages/slots/gates-of-olympus/{config.ts,index.tsx,symbols.tsx,Art.tsx}` |
-| Tests | `tests/{sha256,fairness,engine}.test.ts` |
+- `src/games/references.ts` pins the reference version, published rules, RTP target, and known proprietary gaps for all 34 games.
+- `src/games/contracts.ts` defines reference manifests, deterministic round outcomes, and chronological playback events.
+- Sweet Bonanza and Gates use the pay-anywhere tumble engine.
+- Sugar Rush has a dedicated 7×7 orthogonal-cluster engine with persistent 2×–128× multiplier spots.
+- Wanted, Wolf Gold, and Pharaoh's Gold use reel/payline state machines with game-specific features.
+- Big Juan and Big Bass Bonanza use dedicated engines.
+- Every route is lazy-loaded so the lobby no longer downloads every game implementation up front.
 
-### Provably-fair RNG
+## Local fairness replay
 
-Each spin draws floats from `HMAC-SHA256(serverSeed, "${clientSeed}:${nonce}:${cursor}")`. The committed (hashed) server seed is shown in the Fairness panel before any bet; you can reveal it later via "Rotate" and verify all bets that used it. Same algorithm Stake / BC.Game / Roobet use publicly.
+Outcomes use deterministic HMAC-SHA256 floats derived from a locally generated secret seed, client seed, nonce, and cursor. The Fairness panel can reveal and replay those inputs. Because the application has no backend, this is a local integrity and replay tool—not an independently committed server-seed system.
 
-### Slot engine
+Crash and Aviator show simulated local round activity and bot wagers. They do not connect to other players or a shared server.
 
-Game-agnostic. Each slot is a `SlotConfig` (symbols, weights, paytable, multiplier table, theme). The engine returns a deterministic `frames[]` from `(rng, config, bet, mode)`; the React layer plays it back with framer-motion for drop / explode / count-up animations.
+## Fidelity policy
 
-Pay-anywhere ≥ 8 matching symbols anywhere on the 6×5 grid. Tumble cascade replaces winning cells. Multipliers can land at any time; in **base** game they apply per chain, in **free** spins they accumulate on the grid and sum-multiply the spin payout at the end.
-
-### RTP calibration
-
-At 80,000-spin samples, both games measure within ±5% of the real-world target (96.5% RTP, ~0.4% scatter trigger rate, ~27% hit rate). Real audits use 100M+ spins; this is an emulator, not a regulator.
-
----
+Observable rules, layouts, feature flows, and timing target the pinned reference versions. When proprietary reel strips or PAR sheets are unavailable, local weights are calibrated toward published RTP and volatility and are explicitly documented as approximations. Artwork and audio are original or reusable assets rather than copied provider media.
 
 ## Disclaimer
 
-Game names referenced are trademarks of their respective owners. Desire-Spin is unaffiliated fan software for entertainment and educational purposes only. All artwork is original. No real currency or cryptocurrency is involved. Do not gamble with real money — and if you have a problem with gambling, see [GamCare](https://www.gamcare.org.uk/) or call 1-800-GAMBLER.
+Game names referenced are trademarks of their respective owners. Desire Spin is unaffiliated fan software for entertainment and educational use. No real currency or winnings are involved.

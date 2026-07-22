@@ -20,6 +20,10 @@ export const sweetBonanzaConfig: SlotConfig = {
   cols: 6,
   rows: 5,
   payAnywhereThreshold: 8,
+  // Removing the former fake base-game multiplier bombs changes the model's
+  // hit contribution. This calibrated scale keeps the documented 96.5% target
+  // while multiplier bombs remain exclusive to free spins.
+  payoutScaleBase: 1.9,
   scatterId: 'lollipop',
   scatterTriggerCount: 4,
   scatterRetriggerCount: 3,
@@ -28,6 +32,8 @@ export const sweetBonanzaConfig: SlotConfig = {
   buyBonusCost: 100,
   ante: { betMultiplier: 1.25, scatterWeightBoost: 2.0 },
   multiplierFreeMode: 'sum-at-end',
+  // Multiplier bombs are a free-spins feature in the original game.
+  multiplierBaseMode: 'disabled',
   symbols: [
     {
       id: 'heart',

@@ -21,11 +21,12 @@ export type Side = 'dragon' | 'tiger';
 export type BetKind = Side | 'tie';
 
 export const DRAGON_TIGER_PAYOUT = 1.98;
-export const TIE_PAYOUT = 16.83;
+export const TIE_PAYOUT = 13.26;
 
 export type Card = {
   rank: number; // 2..14
   suit: 'spades' | 'hearts' | 'diamonds' | 'clubs';
+  deck: number;
 };
 
 const SUITS: Card['suit'][] = ['spades', 'hearts', 'diamonds', 'clubs'];
@@ -47,17 +48,8 @@ export function suitIsRed(suit: Card['suit']): boolean {
 }
 
 /** Draw one card from a standard deck (uniform over 52 cards). */
-function drawCard(rng: Rng, exclude?: Card): Card {
-  // For 2-card-without-replacement we only need to skip one prior card.
-  // Reroll if we'd duplicate the excluded card (vanishingly small skew vs.
-  // a full Fisher-Yates over 52 — and keeps the RNG draw count stable).
-  while (true) {
-    const idx = rng.nextInt(52); // 0..51
-    const rank = (idx % 13) + 2; // 2..14
-    const suit = SUITS[Math.floor(idx / 13)]!;
-    const card: Card = { rank, suit };
-    if (!exclude || !(exclude.rank === rank && exclude.suit === suit)) return card;
-  }
+function cardAt(idx: number): Card {
+  return { rank: (idx % 13) + 2, suit: SUITS[Math.floor(idx / 13) % 4]!, deck: Math.floor(idx / 52) };
 }
 
 export type DragonTigerResult = {
@@ -86,8 +78,11 @@ export function play(
   rng: Rng,
   bets: { kind: BetKind; amount: number }[],
 ): DragonTigerResult {
-  const dragon = drawCard(rng);
-  const tiger = drawCard(rng, dragon);
+  const dragonIndex = rng.nextInt(416);
+  const tigerRaw = rng.nextInt(415);
+  const tigerIndex = tigerRaw >= dragonIndex ? tigerRaw + 1 : tigerRaw;
+  const dragon = cardAt(dragonIndex);
+  const tiger = cardAt(tigerIndex);
   const winner: Side | 'tie' =
     dragon.rank > tiger.rank ? 'dragon' : tiger.rank > dragon.rank ? 'tiger' : 'tie';
 

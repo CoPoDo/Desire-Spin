@@ -498,15 +498,6 @@
     0 6px 22px rgba(255, 122, 217, 0.45),
     0 0 22px rgba(255, 122, 217, 0.50);
 }
-.olympus-fs-mode .cell-juan {
-  border-color: rgba(255, 174, 80, 0.65);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 224, 168, 0.45),
-    inset 0 -8px 18px rgba(0, 0, 0, 0.45),
-    inset 0 0 0 1px rgba(255, 174, 80, 0.18),
-    0 6px 22px rgba(255, 140, 40, 0.45),
-    0 0 22px rgba(255, 174, 80, 0.45);
-}
 .olympus-fs-mode .cell-wanted {
   border-color: rgba(200, 147, 46, 0.7);
   box-shadow:
@@ -846,152 +837,6 @@
   50%  { transform: scale(1.12); filter: brightness(1.6) saturate(1.3); }
   78%  { transform: scale(0.98); filter: brightness(1.25) saturate(1.15); }
   100% { transform: scale(1);    filter: brightness(1) saturate(1); }
-}
-
-/* ==========================================================================
-   JUAN'S CANTINA — Mexican mariachi theme. Sun-baked desert palette.
-   ========================================================================== */
-.cell-juan {
-  background:
-    radial-gradient(ellipse at 50% 0%, rgba(255, 174, 80, 0.32), transparent 65%),
-    linear-gradient(180deg, rgba(80, 30, 8, 0.78) 0%, rgba(40, 14, 2, 0.85) 100%);
-  border: 1px solid rgba(255, 174, 80, 0.32);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 224, 168, 0.22),
-    inset 0 -8px 18px rgba(0, 0, 0, 0.45),
-    inset 0 0 0 1px rgba(255, 174, 80, 0.07),
-    0 6px 18px rgba(0, 0, 0, 0.45);
-  border-radius: 12px;
-  position: relative;
-}
-.cell-juan::before {
-  content: '';
-  position: absolute;
-  inset: 1px;
-  border-radius: inherit;
-  background: linear-gradient(180deg, rgba(255, 232, 168, 0.10) 0%, transparent 28%);
-  pointer-events: none;
-}
-.cell-juan.win {
-  animation: juanWin 620ms ease-out;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 224, 168, 0.55),
-    inset 0 0 24px rgba(255, 174, 80, 0.45),
-    0 0 24px rgba(255, 174, 80, 0.6);
-}
-@keyframes juanWin {
-  0% { transform: scale(1); filter: brightness(1); }
-  50% { transform: scale(1.07); filter: brightness(1.55) saturate(1.25); }
-  100% { transform: scale(1); filter: brightness(1); }
-}
-
-/* Juan symbol container — shared with bonanza-sym semantics but its own
- * tinted drop-shadow so the gold/red palette reads. */
-.juan-sym {
-  width: 92%;
-  height: 92%;
-  display: grid;
-  place-items: center;
-  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.65)) saturate(1.1);
-  transform: translateZ(0);
-  will-change: transform;
-}
-/* Maraca scatter pulses to draw the eye */
-.juan-sym-scatter {
-  /* Real maracas SHAKE — short rotational wobble + a subtle scale lift,
-   * not just an idle scale pulse. Combined animation gives the scatter
-   * a "rattling" feel that matches the instrument. */
-  animation: juanScatterShake 1.4s ease-in-out infinite;
-  filter: drop-shadow(0 3px 6px rgba(0,0,0,.65))
-          drop-shadow(0 0 14px rgba(255, 200, 80, 0.7));
-  transform-origin: 50% 80%; /* rotate around the handle base */
-}
-@keyframes juanScatterShake {
-  0%, 100% { transform: rotate(-3deg) scale(1) translateZ(0); opacity: 0.95; }
-  20%      { transform: rotate(4deg) scale(1.03) translateZ(0); opacity: 1; }
-  40%      { transform: rotate(-3deg) scale(1.02) translateZ(0); }
-  60%      { transform: rotate(3deg) scale(1.04) translateZ(0); opacity: 1; }
-  80%      { transform: rotate(-2deg) scale(1.02) translateZ(0); }
-}
-/* Juan (top-pay) gently pulses like a cantina spotlight */
-.juan-sym-hero {
-  animation: juanHeroPulse 1.9s ease-in-out infinite;
-}
-@keyframes juanHeroPulse {
-  0%, 100% { transform: scale(1) translateZ(0); }
-  50%      { transform: scale(1.05) translateZ(0); }
-}
-
-/* Juan multiplier orb — fiesta-firework: yellow→red→burgundy.
- * Same layered brass-housing pattern as Olympus (Pass 5): bright fiesta
- * gold rim → bronze → dark inner ring → orb body. Visually unifies the
- * "metal-housed orb" treatment across the lobby. */
-.juan-orb {
-  position: relative;
-  width: 88%;
-  aspect-ratio: 1 / 1;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  background:
-    radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 0.95) 0%, rgba(255, 240, 168, 0.85) 12%, transparent 28%),
-    radial-gradient(circle at 50% 55%, #fff8c4 0%, #ffae50 22%, #ff5560 50%, #c8102e 78%, #5a0810 100%);
-  border: none;
-  box-shadow:
-    /* Layered metal-housing ring (outside-in): fiesta gold → bronze → dark */
-    0 0 0 1px rgba(255, 232, 130, 0.95),
-    0 0 0 2.5px rgba(180, 105, 30, 0.92),
-    0 0 0 4px rgba(40, 4, 8, 0.95),
-    /* Inner gloss + ember + bottom shading */
-    inset 0 0 0 1px rgba(255, 232, 168, 0.7),
-    inset 0 0 18px rgba(255, 174, 80, 0.6),
-    inset 0 -6px 12px rgba(50, 8, 8, 0.6),
-    /* Outer fiesta halo */
-    0 0 14px rgba(255, 174, 80, 0.85),
-    0 0 32px rgba(200, 16, 46, 0.55),
-    0 8px 18px rgba(0, 0, 0, 0.6);
-  animation: bonanzaOrbBreathe 1.6s ease-in-out infinite;
-}
-.juan-orb-text {
-  font-family: 'Cherry Bomb One', 'Fredoka', system-ui, sans-serif;
-  font-weight: 800;
-  font-size: clamp(0.78rem, 2.2cqw, 1.95rem);
-  color: #fff;
-  text-shadow:
-    0 0 4px rgba(0, 0, 0, 0.85),
-    0 2px 4px rgba(0, 0, 0, 0.85),
-    0 0 12px rgba(255, 200, 80, 0.7);
-  letter-spacing: -0.02em;
-}
-.juan-orb-big {
-  background:
-    radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 1) 0%, rgba(255, 240, 200, 0.95) 12%, transparent 28%),
-    radial-gradient(circle at 50% 55%, #fff8c4 0%, #ffd166 18%, #ff5560 45%, #c8102e 75%, #3a0408 100%);
-  box-shadow:
-    /* Brighter brass-housing ring on tier-up */
-    0 0 0 1px rgba(255, 240, 145, 1),
-    0 0 0 2.5px rgba(200, 130, 40, 0.95),
-    0 0 0 4px rgba(40, 4, 8, 0.95),
-    inset 0 0 24px rgba(255, 209, 102, 0.85),
-    inset 0 -8px 14px rgba(40, 4, 4, 0.7),
-    0 0 24px rgba(255, 174, 80, 0.95),
-    0 0 48px rgba(200, 16, 46, 0.65),
-    0 10px 22px rgba(0, 0, 0, 0.6);
-}
-.juan-orb-huge {
-  background:
-    radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 1) 0%, rgba(255, 248, 200, 0.95) 10%, transparent 28%),
-    radial-gradient(circle at 50% 55%, #fffbe0 0%, #ffd166 18%, #ff7a30 45%, #c8102e 70%, #2a0408 100%);
-  box-shadow:
-    /* Brightest brass-housing ring on top tier */
-    0 0 0 1px rgba(255, 248, 160, 1),
-    0 0 0 2.5px rgba(220, 145, 50, 0.95),
-    0 0 0 4px rgba(40, 4, 8, 0.95),
-    inset 0 0 28px rgba(255, 200, 80, 0.95),
-    inset 0 -10px 16px rgba(58, 4, 4, 0.8),
-    0 0 32px rgba(255, 174, 80, 1),
-    0 0 64px rgba(200, 16, 46, 0.8),
-    0 12px 28px rgba(0, 0, 0, 0.7);
 }
 
 /* ==========================================================================
@@ -1558,16 +1403,6 @@
   95% { transform: translate(1px, -1px); }
 }
 
-/* Cantina papel-picado bunting — subtle desert-breeze sway. The
- * transform-origin is the top of the SVG (where the string is hung)
- * so the whole row pivots from its hung point rather than rotating
- * around the centre. Long 6s cycle keeps it from feeling like a fan
- * is blowing. */
-@keyframes cantinaBuntingSway {
-  0%, 100% { transform: rotate(-0.6deg) translateX(-1%); }
-  50%      { transform: rotate(0.7deg)  translateX(1%); }
-}
-
 /* Wolf Gold wolf eye halo — subtle steady pulse so the silhouette
  * reads as alive watching the moon rather than a dead cardboard
  * cutout. Continuous gentle r-grow on the halo + opacity lift. */
@@ -1661,54 +1496,6 @@
 @keyframes pharaohEyeWatch {
   0%, 100% { transform: translate(-50%, -50%) scale(1);    opacity: 0.22; }
   50%      { transform: translate(-50%, -50%) scale(1.02); opacity: 0.4;  }
-}
-
-/* Cantina CANTINA sign — slow gold reflection breathe, matches the
- * Wanted SALOON sign treatment. */
-@keyframes cantinaSignGlow {
-  0%, 100% { filter: drop-shadow(0 0 .4px rgba(255,209,102,.35)) brightness(1);    }
-  50%      { filter: drop-shadow(0 0 1.4px rgba(255,232,168,.85)) brightness(1.18); }
-}
-
-/* Cantina cactus bloom — slow open/close pulse on the pink flower
- * resting atop the cactus arm. Looks like a desert flower expanding
- * + relaxing in dusk light. */
-@keyframes cantinaCactusBloom {
-  0%, 100% { r: 1.2;  opacity: 0.75; }
-  50%      { r: 1.55; opacity: 0.95; }
-}
-
-/* Cantina building windows + door — candle/oil flicker, similar to
- * Wanted's saloon gas lamps but with a slightly warmer pattern. Three
- * separate windows use different cycle timings so each candle seems
- * to catch a different draught. */
-@keyframes cantinaWindowFlicker {
-  0%, 100% { fill-opacity: 0.55; }
-  20%      { fill-opacity: 0.42; }
-  40%      { fill-opacity: 0.7;  }
-  62%      { fill-opacity: 0.5;  }
-  82%      { fill-opacity: 0.65; }
-}
-
-/* Cantina door lantern — oil-lamp flame flicker. Combines opacity
- * variation + r-value variation so the lantern dot grows / shrinks
- * subtly while flickering. Steeper irregular pattern reads as flame
- * catching draughts rather than a smooth pulse. */
-@keyframes cantinaLanternFlicker {
-  0%, 100% { fill-opacity: 0.85; r: 0.5;  }
-  18%      { fill-opacity: 0.7;  r: 0.45; }
-  35%      { fill-opacity: 1;    r: 0.6;  }
-  52%      { fill-opacity: 0.75; r: 0.48; }
-  72%      { fill-opacity: 0.95; r: 0.55; }
-}
-
-/* Cantina fairy lights — independent per-bulb twinkle. Pure opacity
- * cycle, no transform, so the GPU can cheaply animate dozens of bulbs
- * in parallel. Staggered animation-delay (set inline per bulb) makes
- * the string flicker like real bulbs. */
-@keyframes cantinaFairyLightTwinkle {
-  0%, 100% { opacity: 0.55; }
-  50%      { opacity: 1; }
 }
 
 /* Sugar Rush chocolate river — animated stroke-dashoffset so the
@@ -2498,6 +2285,14 @@
 .dice-slider::-webkit-slider-runnable-track { background: transparent; }
 .dice-slider::-moz-range-track { background: transparent; }
 
+/* Desktop game stages should use the available canvas rather than remaining
+ * phone-width islands in the middle of a widescreen viewport. Individual
+ * games can still choose a narrower child panel where their rules require it. */
+.original-game-main {
+  display: flex;
+  justify-content: center;
+}
+
 .bj-spin-glyph,
 .bj-spin-glyph > svg,
 .bj-spin-glyph > span,
@@ -2519,5 +2314,33 @@
     left: clamp(18px, 5vw, 90px);
     bottom: 72px;
     width: clamp(170px, 21vw, 280px);
+  }
+}
+.original-game-main > * {
+  width: 100%;
+}
+
+@media (min-width: 900px) {
+  .original-game-main > div[class*='max-w-md'] {
+    max-width: 920px !important;
+    padding-inline: clamp(24px, 5vw, 72px);
+  }
+
+  .immersive-slot-stage {
+    aspect-ratio: 5 / 6 !important;
+    width: min(100%, 620px);
+  }
+
+  .immersive-slot-stage > img {
+    object-fit: cover;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

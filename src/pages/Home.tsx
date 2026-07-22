@@ -4,7 +4,6 @@ import { useGame } from '../game-context';
 import { BonanzaArt } from './slots/sweet-bonanza/Art';
 import { OlympusArt } from './slots/gates-of-olympus/Art';
 import { SugarRushArt } from './slots/sugar-rush/Art';
-import { JuanCantinaArt } from './slots/juan-cantina/Art';
 import { WantedWildArt } from './slots/wanted-wild/Art';
 import { PharaohGoldArt } from './slots/pharaoh-gold/Art';
 import { WolfGoldArt } from './slots/wolf-gold/Art';
@@ -22,15 +21,14 @@ type Game = {
   searchTags?: string[];
 };
 
-const GAMES: Game[] = [
+export const GAMES: Game[] = [
   // --- Slots ---
-  { to: '/slots/sweet-bonanza',    title: 'Sweet Bonanza',          subtitle: 'Tumble · 21,100× max',           badge: 'HOT', bg: 'linear-gradient(180deg, #2a1148 0%, #160628 100%)', art: <BonanzaArt />,    category: 'slot', searchTags: ['fruit', 'candy', 'pragmatic', 'tumble', 'pink'] },
+  { to: '/slots/sweet-bonanza',    title: 'Sweet Bonanza',          subtitle: '6×5 tumble · 21,175× max',        badge: 'HOT', bg: 'linear-gradient(180deg, #2a1148 0%, #160628 100%)', art: <BonanzaArt />,    category: 'slot', searchTags: ['fruit', 'candy', 'pragmatic', 'tumble', 'pink'] },
   { to: '/slots/gates-of-olympus', title: 'Gates of Olympus',       subtitle: 'Tumble · 5,000× max',            badge: 'NEW', bg: 'linear-gradient(180deg, #0a1530 0%, #070d20 100%)', art: <OlympusArt />,    category: 'slot', searchTags: ['zeus', 'greek', 'pragmatic', 'tumble', 'gold', 'olympus'] },
-  { to: '/slots/juan-cantina',     title: "Juan's Cantina",         subtitle: 'Tumble · Mexican fiesta',        badge: 'NEW', bg: 'linear-gradient(180deg, #ff8a40 0%, #6a142e 100%)', art: <JuanCantinaArt />, category: 'slot', searchTags: ['mexican', 'pinata', 'cantina', 'fiesta', 'tumble'] },
-  { to: '/slots/sugar-rush',       title: 'Sugar Rush',             subtitle: 'Tumble · Sweet & sticky',        badge: 'NEW', bg: 'linear-gradient(180deg, #ff7ad9 0%, #5a1c70 100%)', art: <SugarRushArt />,  category: 'slot', searchTags: ['candy', 'sweet', 'sugar', 'cluster', 'pragmatic'] },
-  { to: '/slots/wanted-wild',      title: 'Wanted Dead or a Wild',  subtitle: 'Tumble · Western shoot-out',     badge: 'NEW', bg: 'linear-gradient(180deg, #d8442a 0%, #2a0810 100%)', art: <WantedWildArt />, category: 'slot', searchTags: ['western', 'hacksaw', 'wanted', 'wild west'] },
-  { to: '/slots/pharaoh-gold',     title: "Pharaoh's Gold",         subtitle: 'Tumble · Egyptian gold',         badge: 'NEW', bg: 'linear-gradient(180deg, #ffd166 0%, #14051a 100%)', art: <PharaohGoldArt />,category: 'slot', searchTags: ['egypt', 'pharaoh', 'gold', 'ancient'] },
-  { to: '/slots/wolf-gold',        title: 'Wolf Gold',              subtitle: 'Tumble · Moonlit wilderness',    badge: 'NEW', bg: 'linear-gradient(180deg, #6638c8 0%, #02010a 100%)', art: <WolfGoldArt />,   category: 'slot', searchTags: ['wolf', 'wild', 'animal', 'pragmatic'] },
+  { to: '/slots/sugar-rush',       title: 'Sugar Rush',             subtitle: '7×7 clusters · multiplier spots',badge: 'NEW', bg: 'linear-gradient(180deg, #ff7ad9 0%, #5a1c70 100%)', art: <SugarRushArt />,  category: 'slot', searchTags: ['candy', 'sweet', 'sugar', 'cluster', 'pragmatic'] },
+  { to: '/slots/wanted-wild',      title: 'Wanted Dead or a Wild',  subtitle: '5×5 · 15 paylines · DuelReels',  badge: 'NEW', bg: 'linear-gradient(180deg, #d8442a 0%, #2a0810 100%)', art: <WantedWildArt />, category: 'slot', searchTags: ['western', 'hacksaw', 'wanted', 'wild west'] },
+  { to: '/slots/pharaoh-gold',     title: "Pharaoh's Gold",         subtitle: '3×3 · classic 3-line reels',      badge: 'NEW', bg: 'linear-gradient(180deg, #ffd166 0%, #14051a 100%)', art: <PharaohGoldArt />,category: 'slot', searchTags: ['egypt', 'pharaoh', 'gold', 'ancient'] },
+  { to: '/slots/wolf-gold',        title: 'Wolf Gold',              subtitle: '5×3 · Money Respin',              badge: 'NEW', bg: 'linear-gradient(180deg, #6638c8 0%, #02010a 100%)', art: <WolfGoldArt />,   category: 'slot', searchTags: ['wolf', 'wild', 'animal', 'pragmatic'] },
   { to: '/slots/big-juan',         title: 'Big Juan',               subtitle: 'Hold-and-spin · Fiesta jackpots',badge: 'HOT', bg: 'radial-gradient(80% 60% at 50% 45%, #ff8a55 0%, #c8102e 35%, #5a0810 70%, #14040a 100%)', art: <BigJuanArt />, category: 'slot', searchTags: ['mexican', 'pinata', 'hold and spin', 'jackpot'] },
 
   // --- Originals ---
@@ -41,27 +39,23 @@ const GAMES: Game[] = [
   { to: '/originals/plinko',        title: 'Plinko',                subtitle: 'Drop the ball',             badge: 'LIVE', art: <PlaceholderArt label="🟣" tone="#241a3a" />, category: 'original', searchTags: ['stake', 'pegs', 'physics'] },
   { to: '/originals/wheel',         title: 'Wheel',                 subtitle: 'Spin to win',               badge: 'LIVE', art: <PlaceholderArt label="🎡" tone="#3a2010" />, category: 'original', searchTags: ['stake', 'spin', 'roulette'] },
   { to: '/originals/hilo',          title: 'Hilo',                  subtitle: 'Higher or lower',           badge: 'LIVE', art: <PlaceholderArt label="🃏" tone="#1a3a30" />, category: 'original', searchTags: ['stake', 'cards', 'higher lower'] },
-  { to: '/originals/tower',         title: 'Tower',                 subtitle: 'Climb the floors',          badge: 'LIVE', art: <PlaceholderArt label="🗼" tone="#3a1010" />, category: 'original', searchTags: ['stake', 'climb'] },
+  { to: '/originals/dragon-tower',  title: 'Dragon Tower',          subtitle: 'Climb the floors',          badge: 'LIVE', art: <PlaceholderArt label="🗼" tone="#3a1010" />, category: 'original', searchTags: ['stake', 'dragon', 'tower', 'climb'] },
   { to: '/originals/keno',          title: 'Keno',                  subtitle: 'Pick & match',              badge: 'LIVE', art: <PlaceholderArt label="🔢" tone="#1a3a3a" />, category: 'original', searchTags: ['lottery', 'numbers'] },
   { to: '/originals/roulette',      title: 'Roulette',              subtitle: 'European, single 0',        badge: 'LIVE', art: <PlaceholderArt label="🟢" tone="#1a3a1a" />, category: 'original', searchTags: ['table', 'classic'] },
   { to: '/originals/blackjack',     title: 'Blackjack',             subtitle: '3:2 BJ pays',               badge: 'LIVE', art: <PlaceholderArt label="🃏" tone="#102b3a" />, category: 'original', searchTags: ['cards', '21', 'table'] },
   { to: '/originals/baccarat',      title: 'Baccarat',              subtitle: 'Punto Banco',               badge: 'LIVE', art: <PlaceholderArt label="💎" tone="#3a1a3a" />, category: 'original', searchTags: ['cards', 'punto banco', 'table'] },
   { to: '/originals/diamonds',      title: 'Diamonds',              subtitle: '5-gem match',               badge: 'LIVE', art: <PlaceholderArt label="💎" tone="#1a3a3a" />, category: 'original', searchTags: ['gems'] },
   { to: '/originals/video-poker',   title: 'Video Poker',           subtitle: 'Jacks or Better',           badge: 'LIVE', art: <PlaceholderArt label="🃏" tone="#3a1a10" />, category: 'original', searchTags: ['cards', 'poker'] },
-  { to: '/originals/coin-flip',     title: 'Coin Flip',             subtitle: 'Streak the coin',           badge: 'LIVE', art: <PlaceholderArt label="🪙" tone="#3a3010" />, category: 'original', searchTags: ['coin', 'heads tails', 'streak'] },
+  { to: '/originals/flip',          title: 'Flip',                  subtitle: 'Streak the coin',           badge: 'LIVE', art: <PlaceholderArt label="🪙" tone="#3a3010" />, category: 'original', searchTags: ['coin', 'heads tails', 'streak'] },
   { to: '/originals/pump',          title: 'Pump',                  subtitle: 'Inflate before pop',        badge: 'LIVE', art: <PlaceholderArt label="🎈" tone="#3a1a3a" />, category: 'original', searchTags: ['stake', 'balloon'] },
-  { to: '/originals/cups',          title: '3 Cups',                subtitle: 'Find the ball',             badge: 'LIVE', art: <PlaceholderArt label="🥤" tone="#102b3a" />, category: 'original', searchTags: ['shell', 'guess'] },
-  { to: '/originals/mini-slot',     title: 'Mini Slot',             subtitle: 'Classic 3-reel',            badge: 'LIVE', art: <PlaceholderArt label="🎰" tone="#3a2010" />, category: 'original', searchTags: ['slot', 'classic', 'fruit'] },
-  { to: '/originals/race',          title: 'Race',                  subtitle: 'Pick a horse',              badge: 'LIVE', art: <PlaceholderArt label="🐎" tone="#1a3a10" />, category: 'original', searchTags: ['horse', 'race'] },
+  { to: '/originals/three-cups',    title: 'Three Cups',            subtitle: 'Find the ball',             badge: 'LIVE', art: <PlaceholderArt label="🥤" tone="#102b3a" />, category: 'original', searchTags: ['shell', 'guess'] },
+  { to: '/originals/classic-slot',  title: 'Classic 3-Reel Slot',   subtitle: 'Single-line fruit machine', badge: 'LIVE', art: <PlaceholderArt label="🎰" tone="#3a2010" />, category: 'original', searchTags: ['slot', 'classic', 'fruit'] },
   { to: '/originals/rps',           title: 'Rock Paper Scissors',   subtitle: 'Beat the opponent',         badge: 'LIVE', art: <PlaceholderArt label="✊" tone="#3a1a3a" />, category: 'original', searchTags: ['rps', 'classic'] },
   { to: '/originals/dragon-tiger',  title: 'Dragon Tiger',          subtitle: 'High card wins',            badge: 'LIVE', art: <PlaceholderArt label="🐉" tone="#3a1010" />, category: 'original', searchTags: ['cards', 'asian', 'table'] },
   { to: '/originals/cases',         title: 'Cases',                 subtitle: 'Open the crate',            badge: 'LIVE', art: <PlaceholderArt label="📦" tone="#3a2010" />, category: 'original', searchTags: ['crate', 'csgo'] },
   { to: '/originals/sicbo',         title: 'Sic Bo',                subtitle: 'Three dice',                badge: 'LIVE', art: <PlaceholderArt label="🎲" tone="#1a3a1a" />, category: 'original', searchTags: ['dice', 'asian', 'table'] },
-  { to: '/originals/mini-roulette', title: 'Mini Roulette',         subtitle: '13-pocket wheel',           badge: 'LIVE', art: <PlaceholderArt label="🎯" tone="#3a1a10" />, category: 'original', searchTags: ['table', 'spin'] },
   { to: '/originals/scratch',       title: 'Scratch Card',          subtitle: 'Match 3 to win',            badge: 'LIVE', art: <PlaceholderArt label="🎟️" tone="#2a3a10" />, category: 'original', searchTags: ['scratch', 'lottery'] },
-  { to: '/originals/penalty',       title: 'Penalty Shootout',      subtitle: 'Beat the keeper',           badge: 'LIVE', art: <PlaceholderArt label="⚽" tone="#10302a" />, category: 'original', searchTags: ['sport', 'football', 'soccer'] },
-  { to: '/originals/treasure',      title: 'Treasure Hunt',         subtitle: 'Variable-mult tiles',       badge: 'LIVE', art: <PlaceholderArt label="💎" tone="#10243a" />, category: 'original', searchTags: ['treasure', 'gems'] },
-  { to: '/originals/big-bass',      title: 'Big Bass',              subtitle: '5-reel fishing slot',       badge: 'LIVE', art: <PlaceholderArt label="🐟" tone="#10303a" />, category: 'original', searchTags: ['fish', 'fishing', 'pragmatic'] },
+  { to: '/slots/big-bass-bonanza',  title: 'Big Bass Bonanza',      subtitle: '5×3 · fisherman collects',  badge: 'NEW', art: <PlaceholderArt label="🐟" tone="#10303a" />, category: 'slot', searchTags: ['fish', 'fishing', 'pragmatic', 'slot'] },
   { to: '/originals/slide',         title: 'Slide',                 subtitle: 'Live multiplier slide',     badge: 'LIVE', art: <PlaceholderArt label="📈" tone="#1a3a30" />, category: 'original', searchTags: ['multiplier'] },
   { to: '/originals/bingo',         title: 'Bingo',                 subtitle: '5×5 lines + draws',         badge: 'LIVE', art: <PlaceholderArt label="🎱" tone="#3a1030" />, category: 'original', searchTags: ['bingo', 'numbers', 'lines'] },
   { to: '/originals/aviator',       title: 'Aviator',               subtitle: 'Plane crashes when?',       badge: 'LIVE', art: <PlaceholderArt label="✈️" tone="#1a3a5a" />, category: 'original', searchTags: ['plane', 'crash', 'spribe'] },
@@ -166,7 +160,7 @@ export function Home() {
         <section>
           <SectionHeader
             title="Originals"
-            subtitle={query ? `${originals.length} match${originals.length === 1 ? '' : 'es'}` : '31 Stake-style provably-fair games'}
+            subtitle={query ? `${originals.length} match${originals.length === 1 ? '' : 'es'}` : 'Stake Originals and canonical casino games'}
           />
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
             {originals.map((g) => (
@@ -290,14 +284,13 @@ function Hero() {
   return (
     <section className="relative overflow-hidden rounded-3xl border border-edge bg-gradient-to-br from-bonanza-purple/30 via-bg-card to-olympus-navy/30 p-8 md:p-12">
       <div className="relative z-10 max-w-2xl">
-        <div className="pill bg-accent/15 text-accent mb-3">play money · provably fair</div>
+        <div className="pill bg-accent/15 text-accent mb-3">play money · locally reproducible</div>
         <h1 className="font-display text-3xl md:text-5xl font-extrabold leading-tight">
           The casino, without the cost.
         </h1>
         <p className="mt-3 text-ink-dim max-w-lg">
-          A faithful emulator of modern crypto-casino slots. Every spin is deterministic
-          from a server seed, client seed, and nonce — verifiable in one click.
-          Zero real money, zero stakes.
+          A private, play-money recreation of modern slots and casino games. Every result
+          can be replayed from its local seed and nonce. No real money and no live wagering.
         </p>
       </div>
       <div

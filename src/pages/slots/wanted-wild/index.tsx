@@ -1,36 +1,27 @@
-import { ImmersiveSlotView } from '../_shared/ImmersiveSlotView';
-import { wantedWildConfig } from './config';
-import { WANTED_SYMBOL_MAP, MultiplierSymbol } from './symbols';
+import { LineSlotView } from '../_shared/LineSlotView';
+import { makePaylines, type LineSlotProfile } from '../_shared/lineEngine';
+import { WANTED_SYMBOL_MAP } from './symbols';
 import { WantedScene } from './Scene';
 
+export const WANTED_PROFILE: LineSlotProfile = {
+  id: 'wanted-wild', cols: 5, rows: 5, paylines: makePaylines(5, 5, 15), maxWin: 12500,
+  scatterId: 'poster', wildId: 'wild', feature: 'wanted', freeSpins: 10,
+  symbols: [
+    { id: 'outlaw', weight: 3, freeWeight: 4, pay: { 3: 20, 4: 100, 5: 500 } },
+    { id: 'sheriff', weight: 6, pay: { 3: 10, 4: 40, 5: 150 } },
+    { id: 'revolver', weight: 8, pay: { 3: 6, 4: 20, 5: 80 } },
+    { id: 'whiskey', weight: 10, pay: { 3: 4, 4: 12, 5: 40 } },
+    { id: 'horseshoe', weight: 12, pay: { 3: 2.5, 4: 7, 5: 20 } },
+    { id: 'boot', weight: 14, pay: { 3: 2, 4: 5, 5: 15 } },
+    { id: 'hat', weight: 16, pay: { 3: 1.5, 4: 3, 5: 10 } },
+    { id: 'card', weight: 18, pay: { 3: 1.2, 4: 2.5, 5: 7 } },
+    { id: 'coin', weight: 20, pay: { 3: 1, 4: 2, 5: 5 } },
+    { id: 'poster', weight: 1.2, freeWeight: 1.5, scatter: true },
+    { id: 'vs', weight: 0.9, freeWeight: 1.5 },
+    { id: 'wild', weight: 0, freeWeight: 0.5, wild: true },
+  ],
+};
+
 export function WantedWild() {
-  return (
-    <ImmersiveSlotView
-      cfg={wantedWildConfig}
-      backdropElement={<WantedScene />}
-      backdropAspect={{ w: 941, h: 1672 }}
-      archInsets={{ left: 8, top: 27, width: 84 }}
-      // Smoke + blood-red FS tint
-      freeSpinsTint="linear-gradient(180deg, rgba(120, 30, 10, 0.24) 0%, rgba(180, 30, 30, 0.32) 50%, rgba(40, 10, 10, 0.46) 100%)"
-      // Real Wanted Dead or a Wild's bonus name is iconic — "DEAD OR ALIVE"
-      // bounty rounds, sheriff-star burst on the trigger frame. Lightning
-      // bolts make zero sense for a Western. Use a sheriff-star glyph and
-      // a bounty-poster-style banner instead.
-      fsTriggerGlyph="⭐"
-      fsTriggerTitle="DEAD OR ALIVE"
-      maxWinLabel="12,500×"
-      renderCell={({ symbolId, multiplier }) => {
-        if (multiplier !== undefined) {
-          return (
-            <MultiplierSymbol
-              value={multiplier}
-              accent={wantedWildConfig.theme.accent}
-            />
-          );
-        }
-        const C = WANTED_SYMBOL_MAP[symbolId];
-        return C ? <C /> : <span className="text-xs text-ink-mute">{symbolId}</span>;
-      }}
-    />
-  );
+  return <LineSlotView profile={WANTED_PROFILE} title="Wanted Dead or a Wild" subtitle="5×5 · 15 paylines · DuelReels" scene={<WantedScene />} symbolMap={WANTED_SYMBOL_MAP} accent="#e8a449" />;
 }

@@ -16,6 +16,7 @@ import {
 } from '../_shared/AutoBetController';
 import { multiplierAt, rollBust, timeForMultiplier } from './engine';
 import { fireConfetti } from '../../../lib/confetti';
+import { LocalRoundFeed } from '../_shared/LocalRoundFeed';
 
 type Phase = 'idle' | 'running' | 'done';
 type SlotId = 'a' | 'b';
@@ -464,6 +465,8 @@ export function CrashGame() {
             </div>
           </div>
         )}
+
+        <LocalRoundFeed currentMultiplier={currentMult} active={inGame} crashed={lost} game="Crash" />
 
         {/* === Mode tabs + auto-bet config === */}
         <div className="rounded-lg bg-stake-panel border border-stake-border p-3 space-y-3">

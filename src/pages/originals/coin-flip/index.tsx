@@ -55,7 +55,7 @@ export function CoinFlipGame() {
         setPhase('lost');
         sound.play('drop');
         history.record({
-          game: 'Coin Flip',
+          game: 'Flip',
           bet,
           payout: 0,
           multiplier: 0,
@@ -81,7 +81,7 @@ export function CoinFlipGame() {
       });
     }
     history.record({
-      game: 'Coin Flip',
+      game: 'Flip',
       bet,
       payout: cashoutAmount,
       multiplier: accumMult,
@@ -118,7 +118,7 @@ export function CoinFlipGame() {
   }, true);
 
   return (
-    <OriginalPageLayout title="Coin Flip">
+    <OriginalPageLayout title="Flip">
       <div className="flex flex-col p-4 gap-4 max-w-md mx-auto w-full">
         {/* Status */}
         <div className="rounded-lg bg-stake-card border border-stake-border p-4 text-center min-h-[200px] flex flex-col items-center justify-center gap-3">

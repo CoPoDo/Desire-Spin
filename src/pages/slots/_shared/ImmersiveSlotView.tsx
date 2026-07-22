@@ -1240,7 +1240,7 @@ export function ImmersiveSlotView({
           // landed (orbRumble). Tier intensity decides shake strength:
           // BIG → light, HUGE → medium, MEGA+ → heavy. Orb rumble
           // overlays a brief shorter shake during multiplier landings.
-          className={`relative h-full ${inFree ? 'olympus-fs-mode' : ''} ${
+          className={`immersive-slot-stage relative h-full ${inFree ? 'olympus-fs-mode' : ''} ${
             bigWin
               ? bigWin.tier.intensity >= 1.7
                 ? 'shake-heavy'
@@ -3025,7 +3025,7 @@ export function ImmersiveSlotView({
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.2 }}
             >
-              Provably fair · play money
+              Local replay · play money
             </motion.div>
             <motion.div
               className="font-mono uppercase tracking-[0.32em] text-[11px] mb-1"

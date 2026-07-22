@@ -125,18 +125,17 @@ function RulesTab({ cfg }: { cfg: SlotConfig }) {
       </Section>
       {isOlympus && (
         <Section title="Lightning Strike" accent={accent}>
-          Occasionally before the first win check, Zeus will appear and strike the board
-          with 2–6 multiplier orbs at once. A dramatic full-screen moment that can lead to
-          massive cascades.
+          Multiplier symbols land as part of the normal tumble sequence. There is no separate
+          lightning-strike outcome in the reference game's rules.
         </Section>
       )}
       <Section title="Bet" accent={accent}>
         Adjust your bet with the −/+ buttons or tap the bet amount for a preset menu.
       </Section>
-      <Section title="Provably Fair" accent={accent}>
-        Every spin is deterministic from the server seed (committed before each bet via
-        SHA-256 hash), your client seed, and a per-bet nonce. Open the Fairness panel
-        from the menu to verify any past bet.
+      <Section title="Local Fairness Replay" accent={accent}>
+        Every spin is deterministic from a locally stored secret seed, your client seed,
+        and a per-bet nonce. Open the Fairness panel to replay past outcomes. Because this
+        app has no server, the hash is not an independent server commitment.
       </Section>
     </div>
   );

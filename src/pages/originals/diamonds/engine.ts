@@ -1,72 +1,85 @@
 import type { Rng } from '../../../lib/fairness';
 
-/** Diamonds (Stake-style) — 5 gem slots; pay based on biggest matching
- *  rank group. 7 gem types (rarer gems pay more). ~99% RTP. */
-
+/** Stake Diamonds: five independently and uniformly selected gem colours. */
 export const GEM_TYPES = [
-  { id: 'red',     emoji: '💎', color: '#ff5560', name: 'Ruby' },
-  { id: 'blue',    emoji: '💎', color: '#22d3ee', name: 'Sapphire' },
-  { id: 'green',   emoji: '💎', color: '#1fff7a', name: 'Emerald' },
-  { id: 'purple',  emoji: '💎', color: '#a78bfa', name: 'Amethyst' },
-  { id: 'yellow',  emoji: '💎', color: '#ffc62a', name: 'Topaz' },
-  { id: 'orange',  emoji: '💎', color: '#ff9b47', name: 'Citrine' },
-  { id: 'white',   emoji: '💎', color: '#f5f0e4', name: 'Diamond' },
+  { id: 'red', emoji: '◆', color: '#ff5560', name: 'Red' },
+  { id: 'blue', emoji: '◆', color: '#22d3ee', name: 'Blue' },
+  { id: 'green', emoji: '◆', color: '#1fff7a', name: 'Green' },
+  { id: 'purple', emoji: '◆', color: '#a78bfa', name: 'Purple' },
+  { id: 'yellow', emoji: '◆', color: '#ffc62a', name: 'Yellow' },
+  { id: 'orange', emoji: '◆', color: '#ff9b47', name: 'Orange' },
+  { id: 'white', emoji: '◆', color: '#f5f0e4', name: 'White' },
 ] as const;
 
 export type GemId = typeof GEM_TYPES[number]['id'];
+export type DiamondCategory = 'no-match' | 'pair' | 'two-pair' | 'three-kind' | 'full-house' | 'four-kind' | 'five-kind';
 
-/** Pay table: how much (in bet × X) for groups of 2/3/4/5 of a kind for
- *  the rarest gem in the group. Calibrated to ~99% RTP via 2M-spin
- *  Monte Carlo (was previously ~70% — pay values were copy-pasted from
- *  a different distribution and never re-verified). */
-const PAY: Record<number, Record<GemId, number>> = {
-  2: { red: 0,  blue: 0,  green: 0,  purple: 0,   yellow: 0,   orange: 0,   white: 0    },
-  3: { red: 2,  blue: 2.2, green: 2.4, purple: 3,   yellow: 3.5,  orange: 4.5, white: 7    },
-  4: { red: 7,  blue: 9,   green: 11,  purple: 15,  yellow: 20,   orange: 35,  white: 70   },
-  5: { red: 50, blue: 70,  green: 100, purple: 140, yellow: 350,  orange: 700, white: 1400 },
+export const DIAMOND_PAYTABLE: Readonly<Record<DiamondCategory, number>> = {
+  'no-match': 0,
+  pair: 0.1,
+  'two-pair': 2,
+  'three-kind': 3,
+  'full-house': 4,
+  'four-kind': 5,
+  'five-kind': 50,
+};
+
+export const DIAMOND_CATEGORY_LABEL: Readonly<Record<DiamondCategory, string>> = {
+  'no-match': 'No match',
+  pair: 'Pair',
+  'two-pair': 'Two pair',
+  'three-kind': 'Three of a kind',
+  'full-house': 'Full house',
+  'four-kind': 'Four of a kind',
+  'five-kind': 'Five of a kind',
 };
 
 export type DiamondsResult = {
   gems: GemId[];
-  /** Best matching count (1-5) and which gem made it. */
+  category: DiamondCategory;
+  winningGems: GemId[];
+  /** Compatibility fields used by the presentation layer. */
   bestCount: number;
   bestGem: GemId;
   multiplier: number;
   payout: number;
 };
 
+export function classify(gems: readonly GemId[]): Pick<DiamondsResult, 'category' | 'winningGems' | 'bestCount' | 'bestGem'> {
+  if (gems.length !== 5) throw new Error('Diamonds requires exactly five gems');
+  const counts = new Map<GemId, number>();
+  for (const gem of gems) counts.set(gem, (counts.get(gem) ?? 0) + 1);
+  const groups = [...counts.entries()].sort((a, b) => b[1] - a[1]);
+  const sizes = groups.map(([, count]) => count);
+  const bestCount = sizes[0] ?? 1;
+  const bestGem = groups[0]?.[0] ?? 'red';
+
+  let category: DiamondCategory = 'no-match';
+  if (bestCount === 5) category = 'five-kind';
+  else if (bestCount === 4) category = 'four-kind';
+  else if (bestCount === 3 && sizes[1] === 2) category = 'full-house';
+  else if (bestCount === 3) category = 'three-kind';
+  else if (bestCount === 2 && sizes[1] === 2) category = 'two-pair';
+  else if (bestCount === 2) category = 'pair';
+
+  const winningGems = category === 'no-match'
+    ? []
+    : groups.filter(([, count]) => count >= 2).map(([gem]) => gem);
+  return { category, winningGems, bestCount, bestGem };
+}
+
 export function play(rng: Rng, bet: number): DiamondsResult {
-  // Draw 5 gems with weighted distribution — rarer gems are rarer.
-  // Using approximately uniform for simplicity (true Stake uses weighted).
-  const gems: GemId[] = [];
-  for (let i = 0; i < 5; i++) {
-    gems.push(GEM_TYPES[rng.nextInt(GEM_TYPES.length)]!.id);
-  }
-  // Find biggest matching rank group
-  const counts: Record<string, number> = {};
-  for (const g of gems) counts[g] = (counts[g] ?? 0) + 1;
-  let bestCount = 0;
-  let bestGem: GemId = 'red';
-  for (const [g, c] of Object.entries(counts)) {
-    if (c > bestCount || (c === bestCount && rarityOrder(g as GemId) > rarityOrder(bestGem))) {
-      bestCount = c;
-      bestGem = g as GemId;
-    }
-  }
-  const multiplier = bestCount >= 2 ? (PAY[bestCount]?.[bestGem] ?? 0) : 0;
+  const gems = Array.from({ length: 5 }, () => GEM_TYPES[rng.nextInt(GEM_TYPES.length)]!.id);
+  const classification = classify(gems);
+  const multiplier = DIAMOND_PAYTABLE[classification.category];
   return {
     gems,
-    bestCount,
-    bestGem,
+    ...classification,
     multiplier,
     payout: +(bet * multiplier).toFixed(2),
   };
 }
 
-function rarityOrder(g: GemId): number {
-  return GEM_TYPES.findIndex((x) => x.id === g);
-}
-
 export function gemMeta(id: GemId) {
-  return GEM_TYPES.find((g) => g.id === id)!;
+  return GEM_TYPES.find((gem) => gem.id === id)!;
 }

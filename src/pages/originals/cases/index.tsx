@@ -5,7 +5,7 @@ import { useGame } from '../../../game-context';
 import { createRng } from '../../../lib/fairness';
 import { fmtCurrency, fmtMultiplier } from '../../../lib/format';
 import { BetInput } from '../_shared/BetInput';
-import { CASE_ITEMS, type CaseItem, play } from './engine';
+import { CASE_POOLS, type CaseItem, type CaseRisk, play } from './engine';
 import { fireConfetti } from '../../../lib/confetti';
 
 type Phase = 'idle' | 'opening' | 'reveal';
@@ -16,6 +16,7 @@ const ITEM_WIDTH = 80; // px (incl. gap)
 export function CasesGame() {
   const { balance, fairness, sound, history, session } = useGame();
   const [bet, setBet] = useState(1);
+  const [risk, setRisk] = useState<CaseRisk>('medium');
   const [phase, setPhase] = useState<Phase>('idle');
   const [result, setResult] = useState<CaseItem | null>(null);
   const [reel, setReel] = useState<CaseItem[]>([]);
@@ -39,7 +40,8 @@ export function CasesGame() {
     setResult(null);
     const seeds = fairness.consumeNonce();
     const rng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
-    const r = play(rng, bet);
+    const r = play(rng, bet, risk);
+    const activePool = CASE_POOLS[risk];
     // Build the carousel: a long strip of random items, with the WINNING
     // item placed at the deterministic landing index (REEL_LENGTH - 6),
     // so the ticker decelerates and stops on it.
@@ -50,7 +52,7 @@ export function CasesGame() {
         strip.push(r.item);
       } else {
         // Filler items — mostly low-rarity to feel realistic.
-        const filler = CASE_ITEMS[rng.nextInt(CASE_ITEMS.length)]!;
+        const filler = activePool[rng.nextInt(activePool.length)]!;
         strip.push(filler);
       }
     }
@@ -115,7 +117,7 @@ export function CasesGame() {
       session.recordSpin(bet, r.payout, false);
       setBusy(false);
     }, 3100);
-  }, [busy, balance, bet, fairness, sound, history, session]);
+  }, [busy, balance, bet, risk, fairness, sound, history, session]);
 
   const reset = useCallback(() => {
     setPhase('idle');
@@ -129,8 +131,8 @@ export function CasesGame() {
 
   // Probability table for the info row — derived once.
   const prizeTable = useMemo(
-    () => CASE_ITEMS.map((i) => ({ ...i, pct: (i.weight / 1000) * 100 })),
-    [],
+    () => CASE_POOLS[risk].map((i) => ({ ...i, pct: (i.weight / 1_000_000) * 100 })),
+    [risk],
   );
 
   return (
@@ -193,7 +195,7 @@ export function CasesGame() {
               </motion.div>
             ) : (
               <div className="flex gap-2 items-center justify-center h-full">
-                {CASE_ITEMS.slice(0, 5).map((item, idx) => (
+                {CASE_POOLS[risk].slice(0, 5).map((item, idx) => (
                   <CaseTile key={idx} item={item} dim />
                 ))}
               </div>
@@ -227,6 +229,19 @@ export function CasesGame() {
         {/* Bet + open */}
         {phase !== 'opening' ? (
           <div className="rounded-lg bg-stake-card border border-stake-border p-4 space-y-3">
+            <div className="grid grid-cols-4 gap-1.5">
+              {(['easy', 'medium', 'hard', 'expert'] as CaseRisk[]).map((value) => (
+                <button
+                  key={value}
+                  type="button"
+                  disabled={busy}
+                  onClick={() => setRisk(value)}
+                  className={`rounded-md py-2 text-[10px] font-bold uppercase tracking-wide transition ${risk === value ? 'bg-stake-green text-stake-bg' : 'bg-stake-input border border-stake-border text-stake-muted'}`}
+                >
+                  {value}
+                </button>
+              ))}
+            </div>
             <BetInput bet={bet} onBetChange={setBet} disabled={busy} />
             <button
               onClick={phase === 'reveal' ? () => { reset(); start(); } : start}
