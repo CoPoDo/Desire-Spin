@@ -20,7 +20,7 @@
  *  wide-open smile with teeth, round belly, green-and-gold mariachi
  *  vest with white shirt + red bow tie underneath, hands raised holding
  *  maracas in fiesta pose. */
-export function BigJuanSvg({ size = '100%' }: { size?: string | number }) {
+export function BigJuanSvg({ size = '100%', armed = false }: { size?: string | number; armed?: boolean }) {
   return (
     <svg viewBox="0 0 64 64" width={size} height={size}>
       <defs>
@@ -147,9 +147,36 @@ export function BigJuanSvg({ size = '100%' }: { size?: string | number }) {
       <circle cx="5" cy="15" r="2" fill="#1fff7a" stroke="#0a3a18" strokeWidth="0.4" />
       <circle cx="59" cy="15" r="2" fill="#5fb8ff" stroke="#0a2a5a" strokeWidth="0.4" />
 
+      {/* Foreground expression stays readable even when the mascot is small. */}
+      <ellipse cx="26" cy="21.5" rx="3.2" ry="3.5" fill="#fff9e9" stroke="#30140a" strokeWidth="0.65" />
+      <ellipse cx="38" cy="21.5" rx="3.2" ry="3.5" fill="#fff9e9" stroke="#30140a" strokeWidth="0.65" />
+      <circle cx="27" cy="22" r="1.35" fill="#18100c" />
+      <circle cx="37" cy="22" r="1.35" fill="#18100c" />
+      <circle cx="27.4" cy="21.5" r="0.35" fill="#fff" />
+      <circle cx="37.4" cy="21.5" r="0.35" fill="#fff" />
+      <path d="M22 17.8q4-2.3 7 .2M35 18q3-2.5 7-.2" fill="none" stroke="#160807" strokeWidth="1.1" strokeLinecap="round" />
+      <path d="M32 27q-5-3.2-11 1.5-4 3.2-8 1.2 2.5 5.1 9.3 1.4 5.6-2.7 9.7.8 4.1-3.5 9.7-.8 6.8 3.7 9.3-1.4-4 2-8-1.2Q37 23.8 32 27Z" fill="#100607" />
+      <path d="M27 32.2q5 5 10 0-1.5 6.2-5 6.2t-5-6.2Z" fill="#5a0810" stroke="#160807" strokeWidth="0.55" />
+      <path d="M28.4 33h7.2" stroke="#fff8e8" strokeWidth="1.4" strokeLinecap="round" />
+
       {/* ═══ HANDS + MARACAS ═══ */}
       <circle cx="11" cy="44" r="3.5" fill="url(#juan-skin)" stroke="#5a3018" strokeWidth="0.6" />
       <circle cx="53" cy="44" r="3.5" fill="url(#juan-skin)" stroke="#5a3018" strokeWidth="0.6" />
+      {armed ? (
+        <>
+          <g transform="rotate(-10 11 42)">
+            <path d="M11 39H1v4h10z" fill="#69737b" stroke="#20262b" strokeWidth=".7" />
+            <path d="M9 42h5v5h-3z" fill="#4a3024" stroke="#20140e" strokeWidth=".6" />
+            <circle cx="2" cy="41" r="1" fill="#c7d0d4" />
+          </g>
+          <g transform="rotate(10 53 42)">
+            <path d="M53 39h10v4H53z" fill="#69737b" stroke="#20262b" strokeWidth=".7" />
+            <path d="M55 42h-5v5h3z" fill="#4a3024" stroke="#20140e" strokeWidth=".6" />
+            <circle cx="62" cy="41" r="1" fill="#c7d0d4" />
+          </g>
+        </>
+      ) : (
+      <>
       {/* Left maraca (tilted -15°) */}
       <g transform="rotate(-15 9 38)">
         <ellipse cx="9" cy="36" rx="2.8" ry="3.6" fill="url(#juan-maraca)"
@@ -172,6 +199,8 @@ export function BigJuanSvg({ size = '100%' }: { size?: string | number }) {
         <rect x="54.2" y="39" width="1.6" height="3.5" fill="#5a3a04" stroke="#3a1a04" strokeWidth="0.3" />
         <rect x="53.8" y="40.5" width="2.4" height="0.9" fill="#c8102e" />
       </g>
+      </>
+      )}
     </svg>
   );
 }

@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useGame } from '../../../game-context';
 import { useHotkey } from '../../../hooks/useHotkey';
 import { createRng } from '../../../lib/fairness';
 import { fmtCurrency } from '../../../lib/format';
-import { loadJson, saveJson } from '../../../lib/storage';
+import { loadJson, removeKey, saveJson } from '../../../lib/storage';
 import {
   AUTOPLAY_OPTIONS,
+  BASE_REEL_STRIPS,
   BET_MAX,
   BET_MIN,
   BIG_WIN_TIERS,
@@ -14,6 +15,7 @@ import {
   COIN_VALUES,
   COINS_PER_LINE,
   JACKPOTS,
+  JACKPOT_THRESHOLD,
   PAYLINES,
   PAYLINE_COUNT,
   SYMBOLS,
@@ -21,9 +23,12 @@ import {
   type SpinResult,
   type SymbolDef,
   type WinLine,
+  type RespinRoundOutcome,
   bigWinTierFor,
+  generateBonusBuyGrid,
   play,
   rollBonusBuyEntry,
+  simulateRespinRound,
   symbolById,
   totalBetFor,
 } from './engine';
@@ -43,23 +48,32 @@ import { SpinReel, type SpinReelHandle } from './SpinReel';
 import { JuanCharacter, type JuanMood } from './JuanCharacter';
 import { animateCountUp } from './winCounter';
 
-/** Big Juan — full Pragmatic Play clone per the public spec.
- *
- *  5×4 grid, 40 paylines, RTP 96.70% / 96.53% buy, max win 2,600× bet.
- *  Features: Wild Switch (6+ same on reels 2-3-4 → all wild), Respins
- *  feature (3×3 + 4th-reel cell, sticky Money Bag, jackpot meters).
- *
- *  See `/root/.claude/uploads/.../big_juan_spec.md` for the complete
- *  reference document this file implements. */
+type PendingBigJuanSettlement = {
+  wagerCost: number;
+  payout: number | null;
+  multiplier: number;
+  game: string;
+  serverSeedHash: string;
+  clientSeed: string;
+  nonce: number;
+  feature: boolean;
+};
+
+const PENDING_SETTLEMENT_KEY = 'bj:pending-settlement';
+
+/** A play-money reconstruction of Big Juan's documented rules and flow.
+ * Original art/audio are used; exposed display-loop order is reproduced,
+ * while the unpublished server PAR/outcome probabilities are calibrated. */
 export function BigJuan() {
   const { balance, fairness, history, sound, session } = useGame();
+  const reducedMotion = useReducedMotion();
 
   // ── Bet structure — spec §1: total_bet = coin × cpl × 40 ─────────
   // Persist coin value + coins-per-line so the player's stake survives
   // a page reload (matches the cross-game persistedBet pattern).
   const [coinValue, setCoinValue] = useState<number>(() => {
-    const v = loadJson<number>('bj:coin', 0.025);
-    return COIN_VALUES.includes(v as never) ? v : 0.025;
+    const v = loadJson<number>('bj:coin', 0.01);
+    return COIN_VALUES.includes(v as never) ? v : 0.01;
   });
   const [coinsPerLine, setCoinsPerLine] = useState<number>(() => {
     const v = loadJson<number>('bj:cpl', 1);
@@ -73,19 +87,20 @@ export function BigJuan() {
 
   // ── Round + UI state ──────────────────────────────────────────────
   const [busy, setBusy] = useState(false);
+  const [reelsSpinning, setReelsSpinning] = useState(false);
   const [grid, setGrid] = useState<TGrid>(() => makeBlankGrid());
   /** Last result. The UI uses it for the win-cycle, last-win pill,
    *  and the scatter status badge. */
   const [lastResult, setLastResult] = useState<SpinResult | null>(null);
   const [winningCells, setWinningCells] = useState<Set<string>>(new Set());
   const [activeWin, setActiveWin] = useState<WinLine | null>(null);
-  /** Reel-5 anticipation glow flag — managed at the parent level so the
+  /** Active anticipation reel — managed at the parent level so the
    *  glow can fade in/out independently of the SpinReel's internal
    *  animation. */
-  const [anticipating, setAnticipating] = useState(false);
+  const [anticipatingReel, setAnticipatingReel] = useState<number | null>(null);
   /** FS trigger banner. Number is scatter count (3/4/5). */
   const [showFsTrigger, setShowFsTrigger] = useState<number | null>(null);
-  /** Multi-phase trigger animation per bible Part 8.1:
+  /** Multi-phase trigger animation based on the observed presentation:
    *    'pulse'  → piñatas pulse + Juan reacts (1.4-1.8s)
    *    'banner' → BONUS! + respin-count banner (2.2-2.5s)
    *    null     → idle / mount the bonus
@@ -102,6 +117,7 @@ export function BigJuan() {
   /** Visible win display. Animated by animateCountUp; reset to 0 on
    *  each spin start. */
   const [winDisplay, setWinDisplay] = useState(0);
+  const [lastWinPayout, setLastWinPayout] = useState(0);
   const winDisplayElRef = useRef<HTMLSpanElement>(null);
   const winValueRef = useRef(0);
   useEffect(() => { winValueRef.current = winDisplay; }, [winDisplay]);
@@ -109,6 +125,14 @@ export function BigJuan() {
   /** Refs to each of the 5 SpinReels — used by spin() to call into the
    *  imperative strip animation on each reel with the right options. */
   const reelRefs = useRef<(SpinReelHandle | null)[]>([null, null, null, null, null]);
+  const reelStopRequestedRef = useRef(false);
+  const staggerWakeupsRef = useRef<Set<() => void>>(new Set());
+  const stopReels = useCallback(() => {
+    reelStopRequestedRef.current = true;
+    for (const wake of staggerWakeupsRef.current) wake();
+    staggerWakeupsRef.current.clear();
+    for (const reel of reelRefs.current) reel?.stop();
+  }, []);
 
   /** Measured cell pixel dimensions. The CSS sets --bj-cell-h /
    *  --bj-cell-gap on the reel-bank from these values, and SpinReel
@@ -150,19 +174,21 @@ export function BigJuan() {
   const [autoplaySheetOpen, setAutoplaySheetOpen] = useState(false);
   const [paytableOpen, setPaytableOpen] = useState(false);
   const [buyBonusConfirm, setBuyBonusConfirm] = useState(false);
-  const [welcomeSplash, setWelcomeSplash] = useState(true);
-  useEffect(() => {
-    const t = setTimeout(() => setWelcomeSplash(false), 3500);
-    return () => clearTimeout(t);
-  }, []);
+  const [welcomeSplash, setWelcomeSplash] = useState(
+    () => !loadJson<boolean>('bj:intro-hidden', false),
+  );
+  const [hideIntroNextTime, setHideIntroNextTime] = useState(false);
 
   // ── Bonus round mount state ───────────────────────────────────────
   const [bonus, setBonus] = useState<{
+    source: 'organic' | 'buy';
     scatterCount: number;
-    /** When set, overrides the default 10/12/15 award (used by Bonus
-     *  Buy to force the spec-pinned 12 or 15). */
-    initialRespinsOverride?: number;
-    seeds: { serverSeed: string; clientSeed: string; nonce: number };
+    outcome: RespinRoundOutcome;
+    /** Seed displayed on the single combined history entry. */
+    historySeeds: { clientSeed: string; nonce: number; serverSeedHash: string };
+    bet: number;
+    wagerCost: number;
+    baseMultiplier: number;
   } | null>(null);
 
   // ── Autoplay + turbo + big-win banner ────────────────────────────
@@ -173,10 +199,96 @@ export function BigJuan() {
 
   // ── Aux refs ─────────────────────────────────────────────────────
   const aliveRef = useRef(true);
+  const roundLockedRef = useRef(false);
+  const pendingSettlementRef = useRef<PendingBigJuanSettlement | null>(null);
+  const balanceCreditRef = useRef(balance.credit);
+  const historyRecordRef = useRef(history.record);
+  const sessionRecordRef = useRef(session.recordSpin);
+  balanceCreditRef.current = balance.credit;
+  historyRecordRef.current = history.record;
+  sessionRecordRef.current = session.recordSpin;
+  const timersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
+  const delay = useCallback((ms: number) => new Promise<void>((resolve) => {
+    const timer = setTimeout(() => {
+      timersRef.current.delete(timer);
+      resolve();
+    }, ms);
+    timersRef.current.add(timer);
+  }), []);
+  const delayReelStagger = useCallback((ms: number) => {
+    if (ms <= 0 || reelStopRequestedRef.current) return Promise.resolve();
+    return new Promise<void>((resolve) => {
+      let complete = false;
+      let timer: ReturnType<typeof setTimeout>;
+      const finish = () => {
+        if (complete) return;
+        complete = true;
+        clearTimeout(timer);
+        timersRef.current.delete(timer);
+        staggerWakeupsRef.current.delete(finish);
+        resolve();
+      };
+      timer = setTimeout(finish, ms);
+      timersRef.current.add(timer);
+      staggerWakeupsRef.current.add(finish);
+    });
+  }, []);
+  const schedule = useCallback((work: () => void, ms: number) => {
+    const timer = setTimeout(() => {
+      timersRef.current.delete(timer);
+      if (aliveRef.current) work();
+    }, ms);
+    timersRef.current.add(timer);
+  }, []);
+  const persistPendingSettlement = useCallback((pending: PendingBigJuanSettlement) => {
+    pendingSettlementRef.current = pending;
+    saveJson(PENDING_SETTLEMENT_KEY, pending);
+  }, []);
+  const clearPendingSettlement = useCallback(() => {
+    pendingSettlementRef.current = null;
+    removeKey(PENDING_SETTLEMENT_KEY);
+  }, []);
+  const commitPendingSettlement = useCallback((pending: PendingBigJuanSettlement) => {
+    if (pending.payout === null) {
+      balanceCreditRef.current(pending.wagerCost);
+      return;
+    }
+    balanceCreditRef.current(pending.payout);
+    historyRecordRef.current({
+      game: pending.game,
+      bet: pending.wagerCost,
+      payout: pending.payout,
+      multiplier: pending.multiplier,
+      serverSeedHash: pending.serverSeedHash,
+      clientSeed: pending.clientSeed,
+      nonce: pending.nonce,
+    });
+    sessionRecordRef.current(pending.wagerCost, pending.payout, pending.feature);
+  }, []);
   useEffect(() => {
     aliveRef.current = true;
-    return () => { aliveRef.current = false; };
-  }, []);
+    // A hard refresh can bypass React's unmount cleanup. Recover the durable
+    // prepared settlement before allowing another wager.
+    const recovered = loadJson<PendingBigJuanSettlement | null>(PENDING_SETTLEMENT_KEY, null);
+    if (recovered) {
+      clearPendingSettlement();
+      commitPendingSettlement(recovered);
+    }
+    return () => {
+      aliveRef.current = false;
+      for (const wake of staggerWakeupsRef.current) wake();
+      staggerWakeupsRef.current.clear();
+      for (const timer of timersRef.current) clearTimeout(timer);
+      timersRef.current.clear();
+      // Route changes must never strand a debited game cycle. Once the seeded
+      // outcome is known, commit it atomically; otherwise void/refund it.
+      const pending = pendingSettlementRef.current;
+      if (pending) {
+        clearPendingSettlement();
+        commitPendingSettlement(pending);
+      }
+    };
+  }, [clearPendingSettlement, commitPendingSettlement]);
 
   // ── Win-line cycling ─────────────────────────────────────────────
   useEffect(() => {
@@ -193,9 +305,12 @@ export function BigJuan() {
 
   // ── Spin ─────────────────────────────────────────────────────────
   const spin = useCallback(async () => {
-    if (busy || bonus) return;
+    if (roundLockedRef.current || busy || bonus) return;
     if (balance.balance < bet || bet <= 0) return;
+    roundLockedRef.current = true;
+    reelStopRequestedRef.current = false;
     setBusy(true);
+    const roundBet = bet;
     setActiveWin(null);
     setLastResult(null);
     setWinningCells(new Set());
@@ -205,40 +320,77 @@ export function BigJuan() {
     setJuanMood('idle');
     // Reset the visible win display to zero at the start of every spin.
     setWinDisplay(0);
+    setLastWinPayout(0);
     winValueRef.current = 0;
     if (winDisplayElRef.current) winDisplayElRef.current.textContent = fmtCurrency(0);
     sound.play('click');
-    balance.debit(bet);
+    balance.debit(roundBet);
 
+    const roundServerSeedHash = fairness.hash;
     const seeds = fairness.consumeNonce();
+    persistPendingSettlement({
+      wagerCost: roundBet,
+      payout: null,
+      multiplier: 0,
+      game: 'Big Juan',
+      serverSeedHash: roundServerSeedHash,
+      clientSeed: seeds.clientSeed,
+      nonce: seeds.nonce,
+      feature: false,
+    });
     const rng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
     const r = play(rng);
+    const baseMult = r.baseMultiplier;
+    const basePayout = +(roundBet * baseMult).toFixed(2);
+    const entersBonus = r.triggersBonus && baseMult < 2600;
+    let preparedBonus: { outcome: RespinRoundOutcome } | null = null;
+    if (entersBonus) {
+      preparedBonus = {
+        // Continue the same round RNG after the base result so one history
+        // seed/nonce replays the complete cycle.
+        outcome: simulateRespinRound(rng, r.respinsAwarded, baseMult),
+      };
+    }
+    const fullCycleMultiplier = +(baseMult + (preparedBonus?.outcome.totalMultiplier ?? 0)).toFixed(4);
+    const fullCyclePayout = +(roundBet * fullCycleMultiplier).toFixed(2);
+    persistPendingSettlement({
+      wagerCost: roundBet,
+      payout: fullCyclePayout,
+      multiplier: fullCycleMultiplier,
+      game: 'Big Juan',
+      serverSeedHash: roundServerSeedHash,
+      clientSeed: seeds.clientSeed,
+      nonce: seeds.nonce,
+      feature: entersBonus,
+    });
 
-    // ── Drive each SpinReel imperatively per the bible Part 4 spec.
+    // ── Drive each reel with the local reference-tuned motion profile.
     //    Reel-to-reel stagger + each reel spins longer than the last;
-    //    reel 5 gets two-phase anticipation when 2+ piñatas already
-    //    visible on reels 1-4 (spec §10b.2). ───────────────────────
-    const reelStaggerMs = turbo ? 60 : 130;
-    const baseDurationMs = turbo ? 360 : 900;
-    const perReelIncrementMs = turbo ? 50 : 110;
+    //    reel 4/5 gets a suspense tail for Wild Switch/scatter teasers.
+    const reelStaggerMs = reducedMotion ? 0 : turbo ? 60 : 130;
+    const baseDurationMs = reducedMotion ? 0 : turbo ? 360 : 900;
+    const perReelIncrementMs = reducedMotion ? 0 : turbo ? 50 : 110;
 
     // Bible Part 4.4: build all final symbol arrays, then start each reel
     // with a stagger. We use Promise.all so the staggered starts run
     // concurrently but spin() awaits them all.
     const reelPromises: Promise<void>[] = [];
+    setReelsSpinning(true);
     for (let i = 0; i < 5; i++) {
-      const isLast = i === 4;
-      const useAnticipation = isLast && r.anticipation;
-      // Reel duration grows with each reel — the bible's reel-5 always
+      const useAnticipation = !reducedMotion && i === r.anticipationReel;
+      // Reel duration grows with each reel so reel 5 lands last.
       // lands last for tension. Anticipation adds a slow tail.
       let duration = baseDurationMs + i * perReelIncrementMs;
-      if (useAnticipation) duration += turbo ? 600 : 1200;
+      if (!reducedMotion && r.anticipationReel !== null && i >= r.anticipationReel) {
+        duration += turbo ? 600 : 1200;
+      }
 
       const p = (async () => {
-        await new Promise<void>((res) => setTimeout(res, i * reelStaggerMs));
+        await delayReelStagger(i * reelStaggerMs);
+        if (!aliveRef.current) return;
         if (useAnticipation) {
-          setAnticipating(true);
-          sound.play('big-win'); // anticipation horn sting
+          setAnticipatingReel(i);
+          sound.play('juan-anticipation');
         }
         await reelRefs.current[i]?.spin(r.initialGrid[i]!, {
           durationMs: duration,
@@ -246,91 +398,38 @@ export function BigJuan() {
           cellHeight: cellPx.height,
           cellGap: cellPx.gap,
           reelIndex: i,
+          instant: !!reducedMotion || reelStopRequestedRef.current,
         });
-        sound.play('drop');
-        if (isLast) setAnticipating(false);
+        sound.play('juan-reel-stop');
+        if (useAnticipation) setAnticipatingReel(null);
       })();
       reelPromises.push(p);
     }
     await Promise.all(reelPromises);
+    setReelsSpinning(false);
+    if (!aliveRef.current) return;
 
     // Promote the React rest-view to the pre-switch grid. (SpinReel
     // hands off cleanly: its imperative strip is now empty + hidden,
     // and the React grid takes over the display.)
     setGrid(r.initialGrid);
 
-    // ── Pay pre-switch line wins (spec §5: paid first, BEFORE switch) ──
-    let runningCredit = 0;
-    if (r.preSwitchWins.length > 0) {
-      const winSet = new Set<string>();
-      for (const w of r.preSwitchWins) for (const [reel, row] of w.positions) winSet.add(`${reel}:${row}`);
-      setWinningCells(winSet);
-      const preMult = r.preSwitchWins.reduce((s, w) => s + w.multiplier, 0);
-      if (preMult > 0) {
-        const prePayout = +(bet * preMult).toFixed(2);
-        if (prePayout > 0) {
-          balance.credit(prePayout);
-          sound.play(preMult >= 50 ? 'mega-win' : preMult >= 10 ? 'big-win' : 'win');
-          // Animate the count-up on the visible WIN display.
-          runningCredit += prePayout;
-          if (winDisplayElRef.current) {
-            await animateCountUp(
-              winDisplayElRef.current,
-              winValueRef.current,
-              runningCredit,
-              (n) => fmtCurrency(n),
-              { bet, durationMs: turbo ? 600 : 1500 },
-            );
-            winValueRef.current = runningCredit;
-            setWinDisplay(runningCredit);
-          }
-        }
-      }
-      // Brief pause to let the player see the line wins before switch.
-      await new Promise<void>((res) => setTimeout(res, turbo ? 200 : 400));
-    }
-
-    // ── Wild Switch (if triggered) — spec §6 + §10b.4 ──────────────
+    // Wild Switch replaces qualifying middle-reel symbols before the paid
+    // result is evaluated. The initial snapshot exists only for animation.
     if (r.wildSwitch.switched) {
       const positions = r.wildSwitch.positions;
       const igniteSet = new Set(positions.map(([reel, row]) => `${reel}:${row}`));
       setIgniteCells(igniteSet);
       setShowWildSwitch(true);
-      sound.play('mega-win');
+      sound.play('juan-switch');
       // Flame burst beat (~600-900ms).
-      await new Promise<void>((res) => setTimeout(res, turbo ? 500 : 900));
+      await delay(reducedMotion ? 0 : turbo ? 420 : 760);
       // Transform cells: swap to the post-switch grid.
       setGrid(r.grid);
-      await new Promise<void>((res) => setTimeout(res, turbo ? 250 : 500));
+      await delay(reducedMotion ? 0 : turbo ? 180 : 360);
       setIgniteCells(new Set());
-      // Pay post-switch line wins.
-      if (r.postSwitchWins.length > 0) {
-        const winSet = new Set<string>();
-        for (const w of r.postSwitchWins) for (const [reel, row] of w.positions) winSet.add(`${reel}:${row}`);
-        setWinningCells((prev) => new Set([...prev, ...winSet]));
-        const postMult = r.postSwitchWins.reduce((s, w) => s + w.multiplier, 0);
-        if (postMult > 0) {
-          const postPayout = +(bet * postMult).toFixed(2);
-          if (postPayout > 0) {
-            balance.credit(postPayout);
-            sound.play(postMult >= 50 ? 'mega-win' : 'big-win');
-            runningCredit += postPayout;
-            if (winDisplayElRef.current) {
-              await animateCountUp(
-                winDisplayElRef.current,
-                winValueRef.current,
-                runningCredit,
-                (n) => fmtCurrency(n),
-                { bet, durationMs: turbo ? 600 : 1500 },
-              );
-              winValueRef.current = runningCredit;
-              setWinDisplay(runningCredit);
-            }
-          }
-        }
-      }
-      setTimeout(() => setShowWildSwitch(false), 1400);
-      await new Promise<void>((res) => setTimeout(res, turbo ? 200 : 400));
+      schedule(() => setShowWildSwitch(false), reducedMotion ? 0 : turbo ? 650 : 1100);
+      await delay(reducedMotion ? 0 : turbo ? 140 : 260);
     }
 
     // ── Headline result + big-win banner ────────────────────────────
@@ -339,16 +438,31 @@ export function BigJuan() {
     setWinningCells(winSet);
     setLastResult(r);
 
-    const baseMult = r.baseMultiplier;
-    const basePayout = +(bet * baseMult).toFixed(2);
+    setLastWinPayout(basePayout);
+    if (basePayout > 0) {
+      // A trigger and its respins form one cycle. Preserve the visible base
+      // count-up, but settle the combined balance only after the feature.
+      sound.play(baseMult >= 50 ? 'mega-win' : baseMult >= 10 ? 'big-win' : 'win');
+      if (winDisplayElRef.current && !reducedMotion) {
+        await animateCountUp(
+          winDisplayElRef.current,
+          0,
+          basePayout,
+          (value) => fmtCurrency(value),
+          { bet: roundBet, durationMs: turbo ? 500 : 1250 },
+        );
+      }
+      winValueRef.current = basePayout;
+      setWinDisplay(basePayout);
+    }
 
-    // Big-win tier banner — spec §10b.10 thresholds. Juan reacts.
+    // Locally calibrated presentation tiers; provider thresholds are private.
     const tier = bigWinTierFor(baseMult);
-    if (tier) {
+    if (tier && !entersBonus) {
       setBigWin({ payout: basePayout, tier });
       setJuanMood(tier.name === 'max' || tier.name === 'epic' ? 'pistols' : 'cheer');
       const dismissMs = turbo ? Math.max(2200, tier.durationMs * 0.6) : tier.durationMs;
-      setTimeout(() => setBigWin(null), dismissMs);
+      schedule(() => setBigWin(null), dismissMs);
       const confettiCount =
         tier.name === 'max' ? 280
         : tier.name === 'epic' ? 220
@@ -363,7 +477,7 @@ export function BigJuan() {
       });
     }
 
-    // ── Bonus trigger (3+ scatters) — spec §10b.5 / bible Part 8.1 ──
+    // ── Bonus trigger (3+ scatters) — observed three-beat transition ──
     //
     //  Multi-phase trigger sequence:
     //    Phase 1 "pulse"  — scatter cells throb + Juan fires pistols
@@ -373,79 +487,103 @@ export function BigJuan() {
     //    Phase 3 — mount the bonus overlay (3x3 grid slides in).
     //
     //  Turbo compresses the durations by ~40% but does not skip any
-    //  phase — bible Part 10b.14 says celebrations are LOCKED. */
-    if (r.triggersBonus) {
+    //  phase so the feature transition remains legible. */
+    if (entersBonus) {
       setJuanMood('pistols');
       setShowFsTrigger(r.scatterCount);
       setTriggerPhase('pulse');
-      sound.play('free-spins-trigger');
-      const pulseMs = turbo ? 850 : 1500;
-      const bannerMs = turbo ? 1400 : 2200;
-      setTimeout(() => {
-        if (!aliveRef.current) return;
-        setTriggerPhase('banner');
-        sound.play('big-win');
-      }, pulseMs);
-      setTimeout(() => {
-        if (!aliveRef.current) return;
-        setShowFsTrigger(null);
-        setTriggerPhase(null);
-        const bonusSeeds = fairness.consumeNonce();
-        setBonus({ scatterCount: r.scatterCount, seeds: bonusSeeds });
-      }, pulseMs + bannerMs);
+      sound.play('juan-fanfare');
+      const pulseMs = reducedMotion ? 0 : turbo ? 850 : 1500;
+      const bannerMs = reducedMotion ? 0 : turbo ? 1400 : 2200;
+      await delay(pulseMs);
+      if (!aliveRef.current) return;
+      setTriggerPhase('banner');
+      sound.play('big-win');
+      await delay(bannerMs);
+      if (!aliveRef.current) return;
+      setShowFsTrigger(null);
+      setTriggerPhase(null);
+      setBonus({
+        source: 'organic',
+        scatterCount: r.scatterCount,
+        outcome: preparedBonus!.outcome,
+        historySeeds: {
+          clientSeed: seeds.clientSeed,
+          nonce: seeds.nonce,
+          serverSeedHash: roundServerSeedHash,
+        },
+        bet: roundBet,
+        wagerCost: roundBet,
+        baseMultiplier: baseMult,
+      });
+      return;
     }
 
     // ── History + session ──────────────────────────────────────────
+    clearPendingSettlement();
+    if (basePayout > 0) balance.credit(basePayout);
     history.record({
       game: 'Big Juan',
-      bet,
+      bet: roundBet,
       payout: basePayout,
       multiplier: baseMult,
-      serverSeedHash: fairness.hash,
+      serverSeedHash: roundServerSeedHash,
       clientSeed: seeds.clientSeed,
       nonce: seeds.nonce,
     });
-    session.recordSpin(bet, basePayout, false);
+    session.recordSpin(roundBet, basePayout, false);
+    roundLockedRef.current = false;
     setBusy(false);
-  }, [busy, bonus, bet, balance, fairness, sound, history, session, turbo]);
+  }, [busy, bonus, bet, balance, fairness, sound, history, session, turbo, reducedMotion, cellPx, delay, delayReelStagger, schedule, persistPendingSettlement, clearPendingSettlement]);
 
   // ── Bonus resolved ────────────────────────────────────────────────
   const resolveBonus = useCallback((totalBonusMult: number) => {
     if (!bonus) return;
-    const payout = +(bet * totalBonusMult).toFixed(2);
+    const totalCycleMult = +(bonus.baseMultiplier + totalBonusMult).toFixed(4);
+    const payout = +(bonus.bet * totalCycleMult).toFixed(2);
+    clearPendingSettlement();
     if (payout > 0) {
       balance.credit(payout);
-      // Bonus tier banner (use BIG_WIN_TIERS the same way the base game does).
-      const tier = bigWinTierFor(totalBonusMult);
+      // Feature cycles celebrate their combined base + respin result.
+      const tier = bigWinTierFor(totalCycleMult);
       if (tier) {
         setBigWin({ payout, tier });
         const dismissMs = turbo ? Math.max(2200, tier.durationMs * 0.6) : tier.durationMs;
-        setTimeout(() => setBigWin(null), dismissMs);
+        schedule(() => setBigWin(null), dismissMs);
         fireConfetti({
           count: tier.name === 'max' ? 300 : tier.name === 'epic' ? 220 : 160,
           colors: ['#ff5560', '#ffd166', '#1fff7a', '#5fb8ff', '#c042b8', '#ffffff'],
         });
       }
-      sound.play(totalBonusMult >= 100 ? 'mega-win' : 'big-win');
+      sound.play(totalCycleMult >= 100 ? 'mega-win' : 'big-win');
     }
     history.record({
-      game: 'Big Juan',
-      bet,
+      game: bonus.source === 'buy' ? 'Big Juan · Bonus Buy' : 'Big Juan',
+      bet: bonus.wagerCost,
       payout,
-      multiplier: totalBonusMult,
-      serverSeedHash: fairness.hash,
-      clientSeed: bonus.seeds.clientSeed,
-      nonce: bonus.seeds.nonce,
+      multiplier: +(payout / Math.max(bonus.wagerCost, 0.01)).toFixed(4),
+      serverSeedHash: bonus.historySeeds.serverSeedHash,
+      clientSeed: bonus.historySeeds.clientSeed,
+      nonce: bonus.historySeeds.nonce,
     });
-    session.recordSpin(bet, payout, false);
+    session.recordSpin(bonus.wagerCost, payout, true);
+    winValueRef.current = payout;
+    setWinDisplay(payout);
+    setLastWinPayout(payout);
     setBonus(null);
-  }, [bonus, bet, balance, fairness.hash, history, session, sound, turbo]);
+    roundLockedRef.current = false;
+    setBusy(false);
+  }, [bonus, balance, history, session, sound, turbo, schedule, clearPendingSettlement]);
 
   // ── Autoplay loop ─────────────────────────────────────────────────
   useEffect(() => {
-    if (!autoplay || autoplay.remaining <= 0) return;
+    if (!autoplay) return;
+    if (autoplay.remaining <= 0) {
+      setAutoplay(null);
+      return;
+    }
     if (busy || bonus) return;
-    if (bigWin) return; // Spec §10b.14: autoplay pauses on Big Win+.
+    if (bigWin) return; // Local safety: do not bury a win presentation.
     if (balance.balance < bet) {
       setAutoplay(null);
       return;
@@ -459,50 +597,123 @@ export function BigJuan() {
 
   // ── Bonus Buy ────────────────────────────────────────────────────
   const buyBonusCost = +(bet * BUY_BONUS_COST_MULTIPLIER).toFixed(2);
-  const buyBonus = useCallback(() => {
-    if (busy || bonus) return;
+  const buyBonus = useCallback(async () => {
+    if (roundLockedRef.current || busy || bonus) return;
     if (balance.balance < buyBonusCost) return;
+    roundLockedRef.current = true;
+    reelStopRequestedRef.current = false;
+    setBusy(true);
+    const roundBet = bet;
+    const wagerCost = buyBonusCost;
     sound.play('click');
-    balance.debit(buyBonusCost);
+    balance.debit(wagerCost);
     setBuyBonusConfirm(false);
+    setLastResult(null);
+    setWinningCells(new Set());
+    setWinDisplay(0);
+    setLastWinPayout(0);
 
-    // Spec §8: buy entry rolls 4 or 5 piñatas (weighted 85/15). Use a
-    // fresh nonce so the entry roll is provably-fair and reproducible
-    // from history.
+    // The entry rolls 4 or 5 piñatas. Their unpublished weighting is locally
+    // calibrated; a fresh nonce keeps this local result reproducible.
+    const roundServerSeedHash = fairness.hash;
     const seeds = fairness.consumeNonce();
+    persistPendingSettlement({
+      wagerCost,
+      payout: null,
+      multiplier: 0,
+      game: 'Big Juan · Bonus Buy',
+      serverSeedHash: roundServerSeedHash,
+      clientSeed: seeds.clientSeed,
+      nonce: seeds.nonce,
+      feature: true,
+    });
     const entryRng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
     const entry = rollBonusBuyEntry(entryRng);
+    const entryGrid = generateBonusBuyGrid(entryRng, entry.scatters);
+    const outcome = simulateRespinRound(entryRng, entry.respinsAwarded);
+    const payout = +(roundBet * outcome.totalMultiplier).toFixed(2);
+    persistPendingSettlement({
+      wagerCost,
+      payout,
+      multiplier: +(payout / Math.max(wagerCost, 0.01)).toFixed(4),
+      game: 'Big Juan · Bonus Buy',
+      serverSeedHash: roundServerSeedHash,
+      clientSeed: seeds.clientSeed,
+      nonce: seeds.nonce,
+      feature: true,
+    });
+
+    const reelStaggerMs = reducedMotion ? 0 : turbo ? 45 : 105;
+    setReelsSpinning(true);
+    const reelPromises = entryGrid.map(async (symbols, reelIndex) => {
+      await delayReelStagger(reelIndex * reelStaggerMs);
+      if (!aliveRef.current) return;
+      await reelRefs.current[reelIndex]?.spin(symbols, {
+        durationMs: (turbo ? 380 : 820) + reelIndex * (turbo ? 45 : 100),
+        anticipation: reelIndex === 4,
+        cellHeight: cellPx.height,
+        cellGap: cellPx.gap,
+        reelIndex,
+        instant: !!reducedMotion || reelStopRequestedRef.current,
+      });
+      sound.play('juan-reel-stop');
+    });
+    await Promise.all(reelPromises);
+    setReelsSpinning(false);
+    if (!aliveRef.current) return;
+    setGrid(entryGrid);
 
     setShowFsTrigger(entry.scatters);
     setTriggerPhase('pulse');
-    sound.play('free-spins-trigger');
+    sound.play('juan-fanfare');
     setJuanMood('pistols');
-    const pulseMs = turbo ? 700 : 1300;
-    const bannerMs = turbo ? 1300 : 1800;
-    setTimeout(() => {
-      if (!aliveRef.current) return;
-      setTriggerPhase('banner');
-      sound.play('big-win');
-    }, pulseMs);
-    setTimeout(() => {
-      if (!aliveRef.current) return;
-      setShowFsTrigger(null);
-      setTriggerPhase(null);
-      const bonusSeeds = fairness.consumeNonce();
-      setBonus({
-        scatterCount: entry.scatters,
-        initialRespinsOverride: entry.respinsAwarded,
-        seeds: bonusSeeds,
-      });
-    }, pulseMs + bannerMs);
-  }, [busy, bonus, balance, buyBonusCost, fairness, sound, turbo]);
+    const pulseMs = reducedMotion ? 0 : turbo ? 700 : 1300;
+    const bannerMs = reducedMotion ? 0 : turbo ? 1300 : 1800;
+    await delay(pulseMs);
+    if (!aliveRef.current) return;
+    setTriggerPhase('banner');
+    sound.play('big-win');
+    await delay(bannerMs);
+    if (!aliveRef.current) return;
+    setShowFsTrigger(null);
+    setTriggerPhase(null);
+    setBonus({
+      source: 'buy',
+      scatterCount: entry.scatters,
+      outcome,
+      historySeeds: {
+        clientSeed: seeds.clientSeed,
+        nonce: seeds.nonce,
+        serverSeedHash: roundServerSeedHash,
+      },
+      bet: roundBet,
+      wagerCost,
+      baseMultiplier: 0,
+    });
+  }, [busy, bonus, balance, buyBonusCost, bet, fairness, sound, turbo, reducedMotion, delay, delayReelStagger, cellPx, persistPendingSettlement]);
 
   // ── Hotkeys ──────────────────────────────────────────────────────
-  useHotkey(' ', () => {
+  const dismissWelcome = useCallback(() => {
+    if (hideIntroNextTime) saveJson('bj:intro-hidden', true);
+    setWelcomeSplash(false);
+  }, [hideIntroNextTime]);
+  const hasBlockingOverlay = betSheetOpen || autoplaySheetOpen || paytableOpen || buyBonusConfirm;
+  const onPlayHotkey = useCallback(() => {
+    if (welcomeSplash) {
+      dismissWelcome();
+      return;
+    }
+    if (hasBlockingOverlay) return;
+    if (reelsSpinning) {
+      stopReels();
+      return;
+    }
     if (autoplay) { setAutoplay(null); return; }
     if (busy || bonus || balance.balance < bet) return;
     void spin();
-  }, !autoplay && !bonus);
+  }, [welcomeSplash, dismissWelcome, hasBlockingOverlay, reelsSpinning, stopReels, autoplay, busy, bonus, balance.balance, bet, spin]);
+  useHotkey(' ', onPlayHotkey, !bonus);
+  useHotkey('Enter', onPlayHotkey, !bonus);
 
   // Esc closes open sheets / banners.
   useHotkey('Escape', () => {
@@ -521,7 +732,7 @@ export function BigJuan() {
 
       {/* Jackpot tier ribbon — top of screen, Grand → Mini. Values in
        *  currency (× bet). Real Big Juan shows this prominently. */}
-      <div className="absolute z-20 left-1/2 -translate-x-1/2 top-12 flex gap-1 px-2 pointer-events-none">
+      <div className="bj-jackpot-ribbon absolute z-20 left-1/2 -translate-x-1/2 top-12 flex gap-1 px-2 pointer-events-none">
         {(['grand', 'major', 'minor', 'mini'] as const).map((tier) => {
           const c = tier === 'grand' ? '#a78bfa'
             : tier === 'major' ? '#ff5560'
@@ -560,14 +771,14 @@ export function BigJuan() {
        *  pt-12 keeps the jackpot ribbon clear; main is flex-1 so it
        *  absorbs slack on tall phones without pushing the footer down. */}
       <main className="flex-1 min-h-0 flex items-center justify-center pt-[88px] pb-2 px-3 relative">
-        <div className="relative w-full max-w-md" style={{ aspectRatio: '1.22 / 1' }}>
+        <div className="bj-reels-shell relative w-full max-w-[760px]">
           <div
-            className="absolute inset-0 rounded-2xl p-3 overflow-hidden"
+            className="bj-reel-frame absolute inset-0 rounded-2xl p-3 overflow-hidden"
             style={{
-              background: 'linear-gradient(180deg, #2a0810 0%, #5a0810 50%, #14040a 100%)',
-              border: '3px solid #c8932e',
+              background: 'linear-gradient(180deg, #841a19 0%, #b43822 8%, #d8a446 9%, #684213 100%)',
+              border: '4px solid #e0b556',
               boxShadow:
-                '0 0 0 1px rgba(255,209,102,.3), inset 0 1px 0 rgba(255,209,102,.4), inset 0 -8px 18px rgba(0,0,0,.55), 0 12px 30px rgba(0,0,0,.6)',
+                '0 0 0 2px #244f67, 0 0 0 5px rgba(121,43,24,.8), inset 0 1px 0 rgba(255,245,190,.65), inset 0 -8px 18px rgba(0,0,0,.38), 0 14px 34px rgba(45,18,4,.55)',
             }}
           >
             {/* Bible Part 4: viewport-and-strip pattern. Each reel is a
@@ -611,8 +822,8 @@ export function BigJuan() {
                     activeWinRow={activeWinRow}
                     igniteRows={igniteRows}
                     renderCell={renderBigJuanSymbol}
-                    fillerPool={REEL_FILLER_POOL}
-                    showAnticipationGlow={reelIdx === 4 && anticipating}
+                    fillerPool={BASE_REEL_STRIPS[reelIdx]!}
+                    showAnticipationGlow={reelIdx === anticipatingReel}
                   />
                 );
               })}
@@ -663,7 +874,7 @@ export function BigJuan() {
           )}
         </AnimatePresence>
 
-        {/* FS trigger banner — multi-phase per bible Part 8.1. */}
+        {/* FS trigger banner — observed multi-phase transition. */}
         <AnimatePresence>
           {showFsTrigger !== null && triggerPhase === 'pulse' && (
             <div key="trigger-pulse-wrap" className="absolute inset-0 z-40 flex items-center justify-center pointer-events-none">
@@ -709,6 +920,21 @@ export function BigJuan() {
         </AnimatePresence>
       </main>
 
+      <div
+        className="absolute z-30 left-1/2 -translate-x-1/2 bottom-[78px] min-w-[150px] rounded-full border px-4 py-1.5 text-center pointer-events-none"
+        style={{
+          background: 'linear-gradient(180deg, rgba(32,15,5,.92), rgba(8,3,1,.92))',
+          borderColor: 'rgba(255,209,102,.7)',
+          boxShadow: '0 4px 18px rgba(0,0,0,.5), inset 0 1px rgba(255,255,255,.12)',
+        }}
+        aria-live="polite"
+      >
+        <span className="mr-2 text-[9px] font-bold uppercase tracking-[.2em] text-[#ffe0a8]">Win</span>
+        <span ref={winDisplayElRef} className="font-mono text-sm font-extrabold tabular-nums text-[#ffd166]">
+          {fmtCurrency(winDisplay)}
+        </span>
+      </div>
+
       {/* Bottom bar — bet | buy | info | SPIN | turbo | auto.
        *  flex-shrink-0 + min-height guarantee the footer stays on screen
        *  even when the reel stage tries to claim the full main area. */}
@@ -747,8 +973,9 @@ export function BigJuan() {
           ⓘ
         </button>
         <button
-          onClick={() => spin()}
-          disabled={busy || !!bonus || balance.balance < bet || bet <= 0}
+          onClick={() => { if (reelsSpinning) stopReels(); else void spin(); }}
+          disabled={!!bonus || (busy && !reelsSpinning) || (!busy && (balance.balance < bet || bet <= 0))}
+          aria-label={reelsSpinning ? 'Stop reels' : 'Spin reels'}
           className={`flex-shrink-0 w-[88px] h-[60px] rounded-2xl font-display font-extrabold text-sm uppercase tracking-wider transition active:scale-[0.99] ${
             !busy && !bonus ? 'spin-btn-idle' : ''
           }`}
@@ -758,10 +985,11 @@ export function BigJuan() {
             border: '2px solid #fff5c4',
           }}
         >
-          {busy ? '…' : 'Spin'}
+          {reelsSpinning ? 'Stop' : busy ? '…' : 'Spin'}
         </button>
         <button
           aria-label="Turbo"
+          aria-pressed={turbo}
           onClick={() => setTurbo((t) => !t)}
           className="flex items-center justify-center w-11 h-11 rounded-full backdrop-blur-sm border text-base flex-shrink-0 transition active:scale-90"
           style={{
@@ -794,18 +1022,18 @@ export function BigJuan() {
       </footer>
 
       {/* Last-win pill */}
-      {lastResult && lastResult.baseMultiplier > 0 && (
+      {lastWinPayout > 0 && (
         <div
           className="absolute z-20 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[11px] font-mono font-bold tabular-nums pointer-events-none"
           style={{
-            bottom: '76px',
+            bottom: '112px',
             background: 'rgba(0,0,0,.6)',
             border: '1px solid rgba(255,209,102,.55)',
             color: '#ffd166',
             textShadow: '0 0 6px rgba(0,0,0,.85)',
           }}
         >
-          Last win {fmtCurrency(bet * lastResult.baseMultiplier)}
+          Last win {fmtCurrency(lastWinPayout)}
         </div>
       )}
 
@@ -814,7 +1042,7 @@ export function BigJuan() {
         <div
           className="absolute z-20 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[11px] font-mono font-bold tabular-nums pointer-events-none"
           style={{
-            bottom: '92px',
+            bottom: '136px',
             background: 'rgba(0,0,0,.65)',
             border: `1px solid ${symbolById(activeWin.symbolId)?.color}aa`,
             color: '#fff5c4',
@@ -839,10 +1067,10 @@ export function BigJuan() {
       <AnimatePresence>
         {bonus && (
           <BigJuanBonusRound
-            bet={bet}
+            bet={bonus.bet}
             scatterCount={bonus.scatterCount}
-            initialRespinsOverride={bonus.initialRespinsOverride}
-            seeds={bonus.seeds}
+            outcome={bonus.outcome}
+            speedMultiplier={reducedMotion ? 40 : turbo ? 1.8 : 1}
             onClose={resolveBonus}
           />
         )}
@@ -858,9 +1086,10 @@ export function BigJuan() {
       {/* Welcome splash */}
       <AnimatePresence>
         {welcomeSplash && (
-          <motion.button
-            type="button"
-            onClick={() => setWelcomeSplash(false)}
+          <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Big Juan introduction"
             className="absolute inset-0 z-[150] flex flex-col items-center justify-center text-center p-6"
             style={{
               background: 'radial-gradient(ellipse at center, rgba(120,16,46,.92), rgba(15,5,5,.98) 70%)',
@@ -888,13 +1117,25 @@ export function BigJuan() {
               BIG JUAN
             </motion.div>
             <motion.div
-              className="font-mono uppercase tracking-[0.32em] text-[#FFE0A8] text-[11px] mb-6"
+              className="font-mono uppercase tracking-[0.32em] text-[#FFE0A8] text-[11px] mb-3"
               initial={{ y: 10, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.2 }}
             >
-              Provably fair · play money
+              Local replay · play money
             </motion.div>
+            <motion.div
+              className="mb-4 max-w-[520px] rounded-xl border border-[#ffd166]/40 bg-black/30 px-4 py-3 text-[11px] font-semibold leading-relaxed text-[#fff5c4]"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              <span className="text-[#ff8a40]">WILD SWITCH</span> can turn six matching symbols on reels 2–4 Wild.
+              <span className="mt-1 block text-[#ffd166]">3 or more Piñatas trigger Fiesta Respins.</span>
+            </motion.div>
+            <div className="mb-3 flex gap-1 text-xl text-[#ffd166]" aria-label="Very high volatility, five out of five">
+              {Array.from({ length: 5 }, (_, index) => <span key={index}>ϟ</span>)}
+            </div>
             <motion.div
               className="font-mono uppercase tracking-[0.32em] text-[#FFE0A8] text-[10px] mb-1"
               initial={{ opacity: 0 }}
@@ -919,20 +1160,34 @@ export function BigJuan() {
               2,600×
             </motion.div>
             <motion.div
-              className="absolute bottom-12 left-1/2 -translate-x-1/2 text-[10px] uppercase tracking-[0.3em] text-[#FFE0A8]/70"
+              className="absolute bottom-7 left-1/2 flex w-[min(90vw,360px)] -translate-x-1/2 flex-col items-center gap-2"
               initial={{ opacity: 0 }}
-              animate={{ opacity: [0.45, 0.85, 0.45] }}
-              transition={{ delay: 1, duration: 1.5, repeat: Infinity }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.7 }}
             >
-              Tap to begin
+              <button
+                type="button"
+                onClick={dismissWelcome}
+                className="w-full rounded-full border-2 border-[#fff5c4] bg-gradient-to-b from-[#ffd166] to-[#c8932e] px-8 py-3 font-display text-base font-extrabold uppercase tracking-[.2em] text-[#2a0b04] shadow-[0_0_28px_rgba(255,209,102,.55)] transition active:scale-95"
+              >
+                Start Fiesta
+              </button>
+              <label className="flex cursor-pointer items-center gap-2 text-[10px] uppercase tracking-[.16em] text-[#ffe0a8]">
+                <input
+                  type="checkbox"
+                  checked={hideIntroNextTime}
+                  onChange={(event) => setHideIntroNextTime(event.target.checked)}
+                  className="accent-[#ffd166]"
+                />
+                Don&apos;t show next time
+              </label>
             </motion.div>
-          </motion.button>
+          </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Big-win banner — per-tier typography in CSS (bj-bigwin-tier-*)
-       *  with screen-shake on Super+ and rainbow shimmer on Epic+ per
-       *  bible Part 9. Tap-anywhere dismisses the banner after the
+      {/* Big-win banner — local per-tier typography in CSS
+       *  (bj-bigwin-tier-*). Tap-anywhere dismisses the banner after the
        *  minimum display time. */}
       <AnimatePresence>
         {bigWin && (
@@ -1060,6 +1315,9 @@ export function BigJuan() {
              *  without affecting positioning. */}
             <div className="fixed inset-0 z-[160] flex items-center justify-center p-4 pointer-events-none">
               <motion.div
+                role="dialog"
+                aria-modal="true"
+                aria-label="Confirm Bonus Buy"
                 className="pointer-events-auto w-[min(92vw,360px)] max-h-[calc(100dvh-1.5rem)] overflow-y-auto rounded-2xl p-5"
                 initial={{ scale: 0.85, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
@@ -1103,7 +1361,7 @@ export function BigJuan() {
                 </div>
               </div>
               <div className="text-[10px] text-ink-mute text-center mb-4 leading-relaxed">
-                Buy RTP 96.53%. 4-scatter entry is more common than 5.
+                Published target RTP 96.53%. The private 4/5 entry weighting is locally calibrated.
               </div>
               <div className="flex gap-2">
                 <button
@@ -1170,16 +1428,6 @@ function makeBlankGrid(): TGrid {
   return grid;
 }
 
-/** Symbol pool used by SpinReel to populate the random filler cells
- *  during the spin animation. Skip the scatter (we don't want piñatas
- *  flashing past during the spin since they hint at the bonus) and
- *  weight lows heavier than highs to match the reel distribution. */
-const REEL_FILLER_POOL: string[] = [
-  'A', 'A', 'K', 'K', 'Q', 'Q', 'J', 'J', '10', '10',
-  'vihuela', 'hot_sauce', 'chihuahua', 'senorita', 'juan',
-  'chili',
-];
-
 // =============================================================================
 // Payline overlay
 // =============================================================================
@@ -1240,6 +1488,9 @@ function BetSheet({
             aria-label="Close bet"
           />
           <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Bet settings"
             className="fixed left-0 right-0 bottom-0 z-50 rounded-t-3xl bg-bg-card border-t border-edge p-4 max-w-md mx-auto"
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
@@ -1351,6 +1602,9 @@ function Paytable({
            *  + framer-motion scale conflict pushes the modal off-screen). */}
           <div className="fixed inset-0 z-[160] flex items-center justify-center p-3 pointer-events-none">
           <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Big Juan pay table"
             className="pointer-events-auto w-[min(94vw,440px)] max-h-[calc(100dvh-1.5rem)] overflow-y-auto rounded-2xl p-5"
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -1386,14 +1640,14 @@ function Paytable({
             {/* Game info */}
             <div className="rounded-xl p-3 mb-4 bg-black/40 border border-[#ffd166]/30">
               <div className="grid grid-cols-3 gap-2 text-center">
-                <Stat label="RTP" value="96.70%" color="#ffd166" />
+                <Stat label="Reference RTP" value="96.70%" color="#ffd166" />
                 <Stat label="Volatility" value="5/5" color="#ff5560" />
                 <Stat label="Max Win" value="2,600×" color="#ffd166" />
               </div>
               <div className="mt-3 grid grid-cols-3 gap-2 text-center">
                 <Stat label="Grid" value="5×4" color="#fff5c4" />
                 <Stat label="Lines" value={String(PAYLINE_COUNT)} color="#fff5c4" />
-                <Stat label="Buy RTP" value="96.53%" color="#ff8a8a" />
+                <Stat label="Buy target" value="96.53%" color="#ff8a8a" />
               </div>
             </div>
 
@@ -1412,7 +1666,7 @@ function Paytable({
               Card pays · 3 / 4 / 5 on a line (× total bet) — all 5 share this row
             </div>
             <div
-              className="rounded-lg p-2 flex items-center gap-2 mb-3"
+              className="rounded-lg p-2 flex items-center justify-between gap-2 mb-3"
               style={{ background: 'rgba(0,0,0,.35)', border: '1px solid rgba(255,209,102,.15)' }}
             >
               <div className="flex -space-x-2">
@@ -1422,8 +1676,7 @@ function Paytable({
                   </span>
                 ))}
               </div>
-              <span className="flex-1 text-xs text-ink-dim ml-2">10 / J / Q / K / A</span>
-              <span className="font-mono font-bold text-xs tabular-nums text-[#ffd166]">
+              <span className="ml-auto whitespace-nowrap font-mono font-bold text-[11px] tabular-nums text-[#ffd166]">
                 0.125× · 0.25× · 1.00×
               </span>
             </div>
@@ -1444,8 +1697,8 @@ function Paytable({
                 <div className="text-[10px] text-ink-dim mt-1 leading-relaxed">
                   Substitutes for any non-scatter symbol. Pays as its own symbol at the top tier.
                   <strong className="text-[#ff8a8a]"> Wild Switch:</strong> when 6+ identical symbols
-                  land entirely on reels 2-3-4, all of them transform into Chili Wilds — paylines
-                  re-evaluate for a second pay. Tie-break: highest-paying symbol wins.
+                  land across reels 2-3-4, every qualifying group transforms into Chili Wilds before
+                  paylines are evaluated.
                 </div>
               </div>
             )}
@@ -1478,7 +1731,7 @@ function Paytable({
                   : tier === 'major' ? '#ff5560'
                   : tier === 'minor' ? '#ffd166'
                   : '#5fb8ff';
-                const need = tier === 'mini' ? 3 : tier === 'minor' ? 4 : 5;
+                const need = JACKPOT_THRESHOLD[tier];
                 return (
                   <div
                     key={tier}
@@ -1507,7 +1760,7 @@ function Paytable({
                 Each respin a separate <strong>4th reel</strong> lands one of three outcomes:
                 <span className="block mt-1.5">
                   <strong className="text-[#ffd166]">WIN</strong> — collect all visible coins + bag,
-                  jackpot meters tick, +1-respin tokens add.
+                  and jackpot meters tick.
                 </span>
                 <span className="block mt-1">
                   <strong className="text-[#ff8a40]">BOOST</strong> — coins on the grid are added{' '}
@@ -1516,8 +1769,16 @@ function Paytable({
                 <span className="block mt-1">
                   <strong className="text-ink-mute">BLANK</strong> — nothing collects; respin -1.
                 </span>
+                <span className="mt-1 block">
+                  <strong className="text-[#78e4ff]">EXTRA SPIN</strong> — adds one respin whenever it lands,
+                  independently of WIN, BOOST or blank.
+                </span>
                 <span className="block mt-1.5">
-                  Coin values: 1× / 2× / 3× / 5× / 10× / 15× / 20× / 25× / 50× / 100× / 250× bet.
+                  Money values: 0.5× / 1× / 2× / 3× / 5× / 8× / 10× / 15× / 20× / 25× /
+                  40× / 50× / 100× / 125× / 200× / 250× bet.
+                </span>
+                <span className="mt-1.5 block text-ink-mute">
+                  One of the first three respins is a seeded guaranteed WIN with two Money and two Jackpot symbols.
                 </span>
               </div>
             </div>
@@ -1587,7 +1848,10 @@ function BigJuanBackdrop() {
       <div
         className="absolute inset-0"
         style={{
-          background: 'radial-gradient(80% 60% at 50% 38%, #ff8a55 0%, #c8102e 30%, #5a0810 60%, #14040a 85%, #02010a 100%)',
+          background: `
+            radial-gradient(circle at 72% 18%, rgba(255,247,185,.95) 0 5%, rgba(255,193,86,.35) 11%, transparent 24%),
+            linear-gradient(180deg, #65b4c5 0%, #a8d1c2 24%, #e8a95f 47%, #b95a2e 72%, #542315 100%)
+          `,
         }}
       />
       {/* Distant village silhouette */}
@@ -1599,7 +1863,7 @@ function BigJuanBackdrop() {
       >
         <path
           d="M 0 5 L 0 3 L 4 3 L 4 1.5 L 8 1.5 L 8 3 L 12 3 L 12 2 L 18 2 L 18 3.4 L 22 3.4 L 22 1.8 L 28 1.8 L 28 3 L 34 3 L 34 2.2 L 40 2.2 L 40 3.4 L 46 3.4 L 46 1.6 L 52 1.6 L 52 3 L 58 3 L 58 2 L 64 2 L 64 3.4 L 70 3.4 L 70 1.8 L 76 1.8 L 76 3 L 82 3 L 82 2.2 L 88 2.2 L 88 3.4 L 94 3.4 L 94 2 L 100 2 L 100 5 Z"
-          fill="#1a0408"
+          fill="#7b351e"
         />
       </svg>
       {/* Spotlight glow */}

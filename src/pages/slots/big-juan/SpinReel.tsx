@@ -1,4 +1,4 @@
-import { forwardRef, useCallback, useImperativeHandle, useRef, useState, type ReactNode } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState, type ReactNode } from 'react';
 
 /** SpinReel v3 — true downward-scrolling slot reel.
  *
@@ -38,10 +38,13 @@ export type SpinOptions = {
   slowDownExponent?: number;
   slowPhaseCells?: number;
   reelIndex?: number;
+  /** Skip RAF movement while still handing off the deterministic final grid. */
+  instant?: boolean;
 };
 
 export type SpinReelHandle = {
   spin: (final: ReelSymbolId[], options: SpinOptions) => Promise<void>;
+  stop: () => void;
 };
 
 const ROWS = 4;
@@ -53,31 +56,51 @@ export const SpinReel = forwardRef<SpinReelHandle, {
   activeWinRow: number | null;
   igniteRows: ReadonlySet<number>;
   renderCell: (symbolId: ReelSymbolId) => ReactNode;
-  fillerPool: ReelSymbolId[];
+  fillerPool: readonly ReelSymbolId[];
   showAnticipationGlow?: boolean;
 }>(function SpinReel(
   { reelIndex, symbols, winningRows, activeWinRow, igniteRows, renderCell, fillerPool, showAnticipationGlow },
   ref,
 ) {
   const stripRef = useRef<HTMLDivElement>(null);
+  const activeSpinRef = useRef<AbortController | null>(null);
   const [spinning, setSpinning] = useState(false);
+  // Keep the just-landed column locally until React promotes the complete
+  // result grid. Without this hand-off, an early reel briefly showed its
+  // previous symbols while the remaining reels were still decelerating.
+  const [settledSymbols, setSettledSymbols] = useState<ReelSymbolId[]>(symbols);
+
+  useEffect(() => {
+    setSettledSymbols(symbols);
+  }, [symbols]);
+
+  useEffect(() => () => activeSpinRef.current?.abort(), []);
 
   const spin = useCallback(async (final: ReelSymbolId[], opts: SpinOptions) => {
     const strip = stripRef.current;
     if (!strip) return;
+    activeSpinRef.current?.abort();
+    const controller = new AbortController();
+    activeSpinRef.current = controller;
     setSpinning(true);
     try {
-      await runMultiPhaseSpin(strip, symbols, final, fillerPool, opts);
+      await runMultiPhaseSpin(strip, symbols, final, fillerPool, opts, controller.signal);
     } finally {
       strip.style.transition = 'none';
       strip.style.transform = 'translate3d(0,0,0)';
       strip.classList.remove('bj-spinning', 'bj-slowing');
       strip.innerHTML = '';
-      setSpinning(false);
+      if (activeSpinRef.current === controller) {
+        activeSpinRef.current = null;
+        setSettledSymbols(final);
+        setSpinning(false);
+      }
     }
   }, [symbols, fillerPool]);
 
-  useImperativeHandle(ref, () => ({ spin }), [spin]);
+  const stop = useCallback(() => activeSpinRef.current?.abort(), []);
+
+  useImperativeHandle(ref, () => ({ spin, stop }), [spin, stop]);
 
   return (
     <div className="spin-reel" data-reel={reelIndex}>
@@ -85,7 +108,7 @@ export const SpinReel = forwardRef<SpinReelHandle, {
         className="bj-rest-cells"
         style={{ visibility: spinning ? 'hidden' : 'visible' }}
       >
-        {symbols.map((sym, row) => {
+        {settledSymbols.map((sym, row) => {
           const isWinning = winningRows.has(row);
           const isActiveWin = activeWinRow === row;
           const isIgniting = igniteRows.has(row);
@@ -116,8 +139,9 @@ async function runMultiPhaseSpin(
   strip: HTMLDivElement,
   currentSymbols: ReelSymbolId[],
   finalSymbols: ReelSymbolId[],
-  fillerPool: ReelSymbolId[],
+  fillerPool: readonly ReelSymbolId[],
   opts: SpinOptions,
+  signal: AbortSignal,
 ): Promise<void> {
   const {
     durationMs,
@@ -126,6 +150,7 @@ async function runMultiPhaseSpin(
     anticipation = false,
     reelIndex = 0,
   } = opts;
+  if (opts.instant || signal.aborted) return;
   const stride = cellHeight + cellGap;
 
   const spinUpMs = opts.spinUpMs ?? Math.min(150, Math.max(40, durationMs * 0.10));
@@ -148,8 +173,11 @@ async function runMultiPhaseSpin(
 
   // Strip order (top→bottom): FINAL → SLOW → FILLER → CURRENT
   const filler: ReelSymbolId[] = [];
+  const stripStart = Math.floor(Math.random() * fillerPool.length);
   for (let i = 0; i < fillerCount; i++) {
-    filler.push(fillerPool[Math.floor(Math.random() * fillerPool.length)]!);
+    // Cells are traversed bottom-to-top by the animation, so build in
+    // reverse to display the provider strip in its published order.
+    filler.push(fillerPool[(stripStart - i + fillerPool.length * 4) % fillerPool.length]!);
   }
   const slowPhase: ReelSymbolId[] = [];
   for (let i = 0; i < slowPhaseCells; i++) {
@@ -157,7 +185,9 @@ async function runMultiPhaseSpin(
     if (anticipation && fillerPool.includes('pinata') && (i === 3 || i === 6 || i === 9)) {
       slowPhase.push('pinata');
     } else {
-      slowPhase.push(fillerPool[Math.floor(Math.random() * fillerPool.length)]!);
+      slowPhase.push(
+        fillerPool[(stripStart - fillerCount - i + fillerPool.length * 8) % fillerPool.length]!,
+      );
     }
   }
 
@@ -179,15 +209,15 @@ async function runMultiPhaseSpin(
   strip.classList.remove('bj-spinning', 'bj-slowing');
   void strip.offsetHeight;
 
-  await phaseSpinUp(strip, startPosition, spinUpMs, topSpeed);
+  await phaseSpinUp(strip, startPosition, spinUpMs, topSpeed, signal);
 
   const constantStartPos = startPosition + (topSpeed / 2 * spinUpMs) / 1000;
-  await phaseConstant(strip, constantStartPos, constantMs, topSpeed, slowDownStartPosition);
+  await phaseConstant(strip, constantStartPos, constantMs, topSpeed, slowDownStartPosition, signal);
 
   const currentPos = readCurrentY(strip);
-  await phaseSlowDown(strip, currentPos, endPosition, slowDownMs, slowDownExponent);
+  await phaseSlowDown(strip, currentPos, endPosition, slowDownMs, slowDownExponent, signal);
 
-  await phaseSettle(strip, endPosition);
+  await phaseSettle(strip, endPosition, signal);
 }
 
 function phaseSpinUp(
@@ -195,6 +225,7 @@ function phaseSpinUp(
   startPos: number,
   durationMs: number,
   topSpeed: number,
+  signal: AbortSignal,
 ): Promise<void> {
   return new Promise(resolve => {
     strip.classList.add('bj-spinning');
@@ -202,6 +233,7 @@ function phaseSpinUp(
     const distance = (topSpeed / 2) * (durationMs / 1000);
 
     const tick = (now: number) => {
+      if (signal.aborted) { resolve(); return; }
       const elapsed = now - startTime;
       const t = Math.min(elapsed / durationMs, 1);
       const eased = 1 - Math.pow(1 - t, 3); // easeOutCubic
@@ -221,11 +253,13 @@ function phaseConstant(
   durationMs: number,
   topSpeed: number,
   slowDownStartPos: number,
+  signal: AbortSignal,
 ): Promise<void> {
   return new Promise(resolve => {
     const startTime = performance.now();
 
     const tick = (now: number) => {
+      if (signal.aborted) { resolve(); return; }
       const elapsed = now - startTime;
       const y = startPos + (topSpeed * elapsed) / 1000;
 
@@ -250,6 +284,7 @@ function phaseSlowDown(
   endPos: number,
   durationMs: number,
   exponent: number,
+  signal: AbortSignal,
 ): Promise<void> {
   return new Promise(resolve => {
     strip.classList.remove('bj-spinning');
@@ -266,6 +301,7 @@ function phaseSlowDown(
       : 66;
 
     const tick = (now: number) => {
+      if (signal.aborted) { resolve(); return; }
       const elapsed = now - startTime;
       const t = Math.min(elapsed / durationMs, 1);
       // Single high-exponent curve — no velocity discontinuity, no jitter.
@@ -298,13 +334,14 @@ function phaseSlowDown(
   });
 }
 
-function phaseSettle(strip: HTMLDivElement, finalPos: number): Promise<void> {
+function phaseSettle(strip: HTMLDivElement, finalPos: number, signal: AbortSignal): Promise<void> {
   return new Promise(resolve => {
     const overshoot = 1.5;
     const durationMs = 60;
     const startTime = performance.now();
 
     const tick = (now: number) => {
+      if (signal.aborted) { resolve(); return; }
       const elapsed = now - startTime;
       const t = Math.min(elapsed / durationMs, 1);
       const bounce = Math.sin(t * Math.PI) * overshoot;
@@ -336,8 +373,8 @@ function renderCellHtml(symbolId: ReelSymbolId): string {
   const glyph = symbolGlyph(symbolId);
   return (
     `<div class="bj-spin-cell" data-symbol-id="${symbolId}" ` +
-    `style="background: linear-gradient(180deg, ${colour}44, ${colour}10); border-color: ${colour}55;">` +
-    `<span class="bj-spin-glyph">${glyph}</span></div>`
+    `style="border-color: ${colour}66;">` +
+    `<span class="bj-spin-glyph" style="width:82%;height:82%">${glyph}</span></div>`
   );
 }
 
@@ -358,13 +395,13 @@ const COLOR_FOR = new Map<string, string>([
 
 function symbolGlyph(id: string): string {
   switch (id) {
-    case 'juan':      return '🤠';
-    case 'senorita':  return '💃';
-    case 'chihuahua': return '🐕';
-    case 'vihuela':   return '🎸';
-    case 'hot_sauce':
-    case 'chili':     return '🌶';
-    case 'pinata':    return '🎉';
+    case 'juan': return `<svg viewBox="0 0 64 64" aria-hidden="true"><path fill="#c52b28" d="M5 17h54l-8 9H13z"/><path fill="#d94332" d="M18 7h28l7 12H11z"/><circle cx="32" cy="35" r="15" fill="#df9b5d"/><path d="M20 38q6-7 12 0 6-7 12 0-5 8-12 3-7 5-12-3" fill="#25150e"/><circle cx="26" cy="32" r="2"/><circle cx="38" cy="32" r="2"/><path d="M16 52h32l-5 12H21z" fill="#267052"/></svg>`;
+    case 'senorita': return `<svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="16" r="9" fill="#d7925b"/><path d="M23 24h18l5 12-7 5 10 17H15l10-17-7-5z" fill="#d83c83"/><path d="M16 56q16-15 32 0" fill="none" stroke="#ffd166" stroke-width="5"/><circle cx="43" cy="10" r="6" fill="#f05b65"/></svg>`;
+    case 'chihuahua': return `<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M14 23 8 6l17 10M50 23 56 6 39 16" fill="#b9743a" stroke="#6b3a1e" stroke-width="2"/><circle cx="32" cy="34" r="19" fill="#c88a4f"/><path d="M11 18h42l-7 8H18z" fill="#49a16f"/><circle cx="25" cy="32" r="2"/><circle cx="39" cy="32" r="2"/><path d="M28 40h8l-4 5z" fill="#2b1710"/></svg>`;
+    case 'vihuela': return `<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M36 3h8v30h-8z" fill="#7f4a25"/><path d="M40 26c16 0 19 11 10 18 7 11-2 18-10 14-8 4-17-3-10-14-9-7-6-18 10-18z" fill="#b66b2f" stroke="#603619" stroke-width="2"/><circle cx="40" cy="43" r="6" fill="#3c2418"/><path d="M40 4v53" stroke="#f3d49b" stroke-width="1.5"/></svg>`;
+    case 'hot_sauce': return `<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M25 5h14v10l5 7v34H20V22l5-7z" fill="#d32d28" stroke="#7b1b18" stroke-width="2"/><path d="M24 29h16v17H24z" fill="#f6d467"/><path d="M29 32q9 4 3 11-7-4-3-11" fill="#e43d26"/><path d="M25 5h14v7H25z" fill="#4d8c48"/></svg>`;
+    case 'chili': return `<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M43 12q-10 5-8 14" fill="none" stroke="#3b9b52" stroke-width="6"/><path d="M37 21q20 14-3 35Q12 70 9 47q20 9 28-26" fill="#e6312d" stroke="#8f1818" stroke-width="2"/><text x="32" y="48" text-anchor="middle" font-size="12" font-weight="900" fill="#fff4b5">WILD</text></svg>`;
+    case 'pinata': return `<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M15 24h34v22H15z" fill="#4ebbd0"/><path d="M13 42h13v8H13zM38 42h13v8H38z" fill="#a54ac4"/><path d="M43 18h13v20H45z" fill="#ef5c68"/><path d="m17 24 7-12 8 12" fill="#ffd166"/><path d="M15 29h34M15 35h34M15 41h34" stroke="#f3c43f" stroke-width="3"/><circle cx="51" cy="24" r="2"/></svg>`;
     case 'A':         return '<span class="bj-royal" style="color:#ff5560">A</span>';
     case 'K':         return '<span class="bj-royal" style="color:#ffd166">K</span>';
     case 'Q':         return '<span class="bj-royal" style="color:#ff7ad9">Q</span>';
