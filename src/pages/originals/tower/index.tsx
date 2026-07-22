@@ -51,7 +51,7 @@ export function TowerGame() {
       if (next.hitSkull) {
         sound.play('drop');
         history.record({
-          game: 'Tower',
+          game: 'Dragon Tower',
           bet: round.bet,
           payout: 0,
           multiplier: 0,
@@ -65,7 +65,7 @@ export function TowerGame() {
         balance.credit(next.payout);
         sound.play('mega-win');
         history.record({
-          game: 'Tower',
+          game: 'Dragon Tower',
           bet: round.bet,
           payout: next.payout,
           multiplier: multiplierAt(round.difficulty, ROWS),
@@ -104,7 +104,7 @@ export function TowerGame() {
       });
     }
     history.record({
-      game: 'Tower',
+      game: 'Dragon Tower',
       bet: round.bet,
       payout: next.payout,
       multiplier: currentMult,
@@ -145,7 +145,7 @@ export function TowerGame() {
   }, true);
 
   return (
-    <OriginalPageLayout title="Tower">
+    <OriginalPageLayout title="Dragon Tower">
       <div className="flex flex-col p-4 gap-4 max-w-md mx-auto w-full">
         {/* Status */}
         <div className="rounded-lg bg-stake-card border border-stake-border p-3 text-center">

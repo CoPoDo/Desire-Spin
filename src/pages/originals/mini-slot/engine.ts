@@ -1,6 +1,6 @@
 import type { Rng } from '../../../lib/fairness';
 
-/** Mini Slot — classic 3-reel single-line slot.
+/** Classic 3-Reel Slot — classic single-line reel game.
  *
  *  Symbols (with reel weights and 3-of-a-kind multipliers):
  *    🍒  cherry    weight 10  · 3× match: 3

@@ -28,6 +28,7 @@ function keyOf(bet: Bet): string {
     case 'even': return 'even';
     case 'anyTriple': return 'anyTriple';
     case 'specificTriple': return `triple:${bet.face}`;
+    case 'double': return `double:${bet.face}`;
     case 'total': return `total:${bet.sum}`;
     case 'singleDie': return `single:${bet.face}`;
   }
@@ -41,6 +42,9 @@ function betOf(key: string): Bet {
   }
   if (key.startsWith('single:')) {
     return { kind: 'singleDie', face: parseInt(key.slice(7)) };
+  }
+  if (key.startsWith('double:')) {
+    return { kind: 'double', face: parseInt(key.slice(7)) };
   }
   // total:N
   return { kind: 'total', sum: parseInt(key.slice(6)) };
@@ -277,6 +281,15 @@ export function SicBoGame() {
                 compact
                 hidePayout
               />
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-lg bg-stake-card border border-stake-border p-2 space-y-1.5">
+          <div className="text-[10px] uppercase tracking-widest text-stake-muted px-1 mb-1">Specific doubles · pays 11× return</div>
+          <div className="grid grid-cols-6 gap-1">
+            {[1, 2, 3, 4, 5, 6].map((face) => (
+              <BetCell key={face} label={`${face}·${face}`} sub="double" payout={11} chip={chips[keyOf({ kind: 'double', face })]} onClick={() => placeChip({ kind: 'double', face })} tone="cyan" compact />
             ))}
           </div>
         </div>

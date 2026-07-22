@@ -87,7 +87,7 @@ export function MiniSlotGame() {
     }
     setLastOutcome({ outcome: r.outcome, payout: r.payout, mult: r.multiplier });
     history.record({
-      game: 'Mini Slot',
+      game: 'Classic 3-Reel Slot',
       bet: b,
       payout: r.payout,
       multiplier: r.multiplier,
@@ -111,7 +111,7 @@ export function MiniSlotGame() {
   useHotkey(' ', () => { if (mode === 'manual') void playOnce(); }, !autoActive);
 
   return (
-    <OriginalPageLayout title="Mini Slot">
+    <OriginalPageLayout title="Classic 3-Reel Slot">
       <div className="flex flex-col p-4 gap-4 max-w-md mx-auto w-full">
         {/* Reels */}
         <div className="rounded-lg bg-stake-card border border-stake-border p-4">

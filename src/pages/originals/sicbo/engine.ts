@@ -43,16 +43,15 @@ export const SUM_WAYS: Record<number, number> = {
   11: 27, 12: 25, 13: 21, 14: 15, 15: 10, 16: 6, 17: 3, 18: 1,
 };
 
-export const SUM_PAYOUTS: Record<number, number> = Object.fromEntries(
-  Object.entries(SUM_WAYS)
-    .filter(([n]) => +n >= 4 && +n <= 17)
-    .map(([n, w]) => [n, +(0.99 * 216 / w).toFixed(2)]),
-);
+export const SUM_PAYOUTS: Record<number, number> = {
+  4: 51, 5: 19, 6: 15, 7: 13, 8: 9, 9: 7, 10: 7,
+  11: 7, 12: 7, 13: 9, 14: 13, 15: 15, 16: 19, 17: 51,
+};
 
-export const SMALL_BIG_PAYOUT = 2.04;
-export const ODD_EVEN_PAYOUT = 2.04;
-export const ANY_TRIPLE_PAYOUT = 35.64;
-export const SPECIFIC_TRIPLE_PAYOUT = 213.84;
+export const SMALL_BIG_PAYOUT = 2;
+export const ODD_EVEN_PAYOUT = 2;
+export const ANY_TRIPLE_PAYOUT = 31;
+export const SPECIFIC_TRIPLE_PAYOUT = 181;
 
 export type Bet =
   | { kind: 'small' }
@@ -61,6 +60,7 @@ export type Bet =
   | { kind: 'even' }
   | { kind: 'anyTriple' }
   | { kind: 'specificTriple'; face: number } // 1..6
+  | { kind: 'double'; face: number }         // 1..6
   | { kind: 'total'; sum: number }           // 4..17
   | { kind: 'singleDie'; face: number };     // 1..6, pays per count
 
@@ -90,6 +90,10 @@ export function payoutMultiplier(bet: Bet, r: Roll): number {
       return triple ? ANY_TRIPLE_PAYOUT : 0;
     case 'specificTriple':
       return triple && r[0] === bet.face ? SPECIFIC_TRIPLE_PAYOUT : 0;
+    case 'double': {
+      const count = r.filter((die) => die === bet.face).length;
+      return count >= 2 ? 11 : 0;
+    }
     case 'total':
       // Sum bets win on ANY 3-dice combination producing that sum,
       // including triples (Stake / standard Sic Bo convention). The

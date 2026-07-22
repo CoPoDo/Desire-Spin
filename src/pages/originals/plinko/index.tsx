@@ -169,7 +169,7 @@ export function PlinkoGame() {
           <div>
             <div className="text-xs text-stake-muted mb-1.5">Risk</div>
             <div className="flex gap-1.5">
-              {(['low', 'medium', 'high'] as Risk[]).map((r) => (
+              {(['easy', 'medium', 'hard', 'expert'] as Risk[]).map((r) => (
                 <button
                   key={r}
                   onClick={() => setRisk(r)}

@@ -25,7 +25,11 @@ export function BigBassGame() {
   const [autoConfig, setAutoConfig] = useState<AutoConfig>({ count: 10, stopOnProfit: 0, stopOnLoss: 0 });
   const [autoActive, setAutoActive] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [reels, setReels] = useState<string[]>(['anchor', 'rod', 'blue', 'green', 'orange']);
+  const [reels, setReels] = useState<string[]>([
+    'anchor', 'tackle', 'ace', 'king', 'queen',
+    'jack', 'smallfish', 'bigbass', 'truck', 'anchor',
+    'queen', 'king', 'tackle', 'ace', 'jack',
+  ]);
   const [lastResult, setLastResult] = useState<BassResult | null>(null);
   /** Free-spins state. Triggered by 3+ scatters on the main spin.
    *  Real Pragmatic Big Bass: 3 = 10 FS, 4 = 15, 5 = 20. During FS,
@@ -73,7 +77,7 @@ export function BigBassGame() {
       sound.play('drop');
     }
     history.record({
-      game: 'Big Bass',
+      game: 'Big Bass Bonanza',
       bet: b,
       payout: r.payout,
       multiplier: r.multiplier,
@@ -134,14 +138,17 @@ export function BigBassGame() {
   // by useEffect below to allow buyFreeSpins to call it without circular
   // declaration issues.
 
-  /** Animate revealing 5 reels left-to-right with a stagger. */
+  /** Reveal the 5×3 grid one reel at a time. */
   const revealReels = useCallback(async (r: BassResult) => {
     setLastResult(null);
-    for (let i = 0; i < 5; i++) {
+    for (let reel = 0; reel < 5; reel++) {
       await new Promise<void>((res) => setTimeout(res, 230));
       setReels((prev) => {
         const next = [...prev];
-        next[i] = r.reels[i]!;
+        for (let row = 0; row < 3; row++) {
+          const index = row * 5 + reel;
+          next[index] = r.reels[index]!;
+        }
         return next;
       });
       sound.play('drop');
@@ -154,6 +161,8 @@ export function BigBassGame() {
   const runFreeSpins = useCallback(async (count: number, b: number): Promise<number> => {
     let totalWin = 0;
     let remaining = count;
+    let fishermanProgress = 0;
+    let collectorMultiplier = 1;
     setFreeSpinsRemaining(remaining);
     setFreeSpinsWon(0);
     while (remaining > 0) {
@@ -161,7 +170,7 @@ export function BigBassGame() {
       await new Promise<void>((res) => setTimeout(res, 350));
       const seeds = fairness.consumeNonce();
       const rng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
-      const r = spinFreeRound(rng, b);
+      const r = spinFreeRound(rng, b, collectorMultiplier);
       await revealReels(r);
       setLastResult(r);
       remaining -= 1;
@@ -196,8 +205,18 @@ export function BigBassGame() {
         await new Promise<void>((res) => setTimeout(res, 1500));
         setShowFsBanner(null);
       }
+      fishermanProgress += r.fishermanCount;
+      while (fishermanProgress >= 4) {
+        fishermanProgress -= 4;
+        collectorMultiplier = collectorMultiplier === 1 ? 2 : collectorMultiplier === 2 ? 3 : 10;
+        remaining += 10;
+        setFreeSpinsRemaining(remaining);
+        setShowFsBanner({ count: 10 });
+        await new Promise<void>((res) => setTimeout(res, 1200));
+        setShowFsBanner(null);
+      }
       history.record({
-        game: 'Big Bass FS',
+        game: 'Big Bass Bonanza FS',
         bet: 0, // free spin
         payout: r.payout,
         multiplier: r.multiplier,
@@ -248,8 +267,8 @@ export function BigBassGame() {
   const inFs = freeSpinsRemaining > 0;
 
   return (
-    <OriginalPageLayout title="Big Bass">
-      <div className="flex flex-col p-4 gap-4 max-w-md mx-auto w-full">
+    <OriginalPageLayout title="Big Bass Bonanza">
+      <div className="grid grid-cols-1 p-4 gap-4 max-w-5xl mx-auto w-full lg:grid-cols-[minmax(0,620px)_320px] lg:items-start lg:justify-center">
         {/* Buy Free Spins confirmation dialog */}
         <AnimatePresence>
           {showBuyConfirm && (
@@ -373,6 +392,7 @@ export function BigBassGame() {
           )}
         </AnimatePresence>
 
+        <div className="flex min-w-0 flex-col gap-3">
         {/* FS counter (shown while FS active) */}
         {inFs && (
           <div
@@ -419,7 +439,7 @@ export function BigBassGame() {
               return (
                 <motion.div
                   key={i}
-                  className="aspect-[2/3] rounded-lg flex items-center justify-center select-none relative"
+                  className="aspect-square rounded-lg flex items-center justify-center select-none relative"
                   animate={
                     highlight
                       ? { scale: [1, 1.12, 1], rotate: [0, -3, 3, 0] }
@@ -570,9 +590,10 @@ export function BigBassGame() {
             ))}
           </div>
         </div>
+        </div>
 
         {/* Controls */}
-        <div className="rounded-lg bg-stake-card border border-stake-border p-4 space-y-3">
+        <div className="order-first rounded-lg bg-stake-card border border-stake-border p-4 space-y-3 lg:order-none">
           <ManualAutoTabs mode={mode} onChange={setMode} disabled={autoActive || busy || inFs} />
           <BetInput bet={bet} onBetChange={setBet} disabled={autoActive || busy || inFs} />
           {mode === 'auto' && (

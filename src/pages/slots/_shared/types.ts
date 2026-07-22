@@ -134,12 +134,17 @@ export type SlotConfig = {
   freeSpinsAwardOnRetrigger: number;
   /** Pay-anywhere threshold (Pragmatic = 8). */
   payAnywhereThreshold: number;
-  /** Multiplier table for base game. */
+  /** Calibration applied after the published paytable lookup. Defaults to 1. */
+  payoutScaleBase?: number;
+  payoutScaleFree?: number;
+  /** Whether multiplier symbols may be generated in the base game. */
+  multiplierBaseMode?: 'enabled' | 'disabled';
+  /** Multiplier table for base game. Ignored when base multipliers are disabled. */
   multiplierTableBase: MultiplierTable;
   /** Multiplier table for free spins. */
   multiplierTableFree: MultiplierTable;
-  /** When true, *base*-game multipliers apply only to the chain that they landed on (Olympus); when false they apply at the end of the entire spin sum (Bonanza-style: applies after summing the chain). For free spins, behavior is configured per game in engine. */
-  multiplierFreeMode: 'sum-at-end' | 'sum-at-end'; // both Bonanza & Olympus sum at end of free spin
+  /** Multiplier symbols are summed after the complete free-spin tumble. */
+  multiplierFreeMode: 'sum-at-end';
   /** Buy bonus cost (multiple of bet). */
   buyBonusCost: number;
   /** Ante bet adjustments. */

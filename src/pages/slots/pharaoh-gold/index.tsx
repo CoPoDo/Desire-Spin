@@ -1,37 +1,25 @@
-import { ImmersiveSlotView } from '../_shared/ImmersiveSlotView';
-import { pharaohGoldConfig } from './config';
-import { PHARAOH_SYMBOL_MAP, MultiplierSymbol } from './symbols';
+import { LineSlotView } from '../_shared/LineSlotView';
+import type { LineSlotProfile } from '../_shared/lineEngine';
+import { PHARAOH_SYMBOL_MAP } from './symbols';
 import { PharaohScene } from './Scene';
 
+export const PHARAOH_PROFILE: LineSlotProfile = {
+  id: 'pharaoh-gold', cols: 3, rows: 3, paylines: [[0, 0, 0], [1, 1, 1], [2, 2, 2]], maxWin: 2500,
+  scatterId: 'scarab', feature: 'classic', freeSpins: 0,
+  symbols: [
+    { id: 'pharaoh', weight: 3, pay: { 3: 100 } },
+    { id: 'eye', weight: 7, pay: { 3: 40 } },
+    { id: 'ankh', weight: 9, pay: { 3: 25 } },
+    { id: 'jackal', weight: 11, pay: { 3: 15 } },
+    { id: 'falcon', weight: 13, pay: { 3: 10 } },
+    { id: 'lotus', weight: 15, pay: { 3: 7 } },
+    { id: 'gem-blue', weight: 18, pay: { 3: 5 } },
+    { id: 'gem-red', weight: 20, pay: { 3: 4 } },
+    { id: 'gem-green', weight: 22, pay: { 3: 3 } },
+    { id: 'scarab', weight: 2, scatter: true },
+  ],
+};
+
 export function PharaohGold() {
-  return (
-    <ImmersiveSlotView
-      cfg={pharaohGoldConfig}
-      backdropElement={<PharaohScene />}
-      backdropAspect={{ w: 941, h: 1672 }}
-      archInsets={{ left: 8, top: 27, width: 84 }}
-      // Warm gold + lapis FS tint
-      freeSpinsTint="linear-gradient(180deg, rgba(140, 80, 10, 0.24) 0%, rgba(180, 120, 30, 0.32) 50%, rgba(40, 18, 4, 0.46) 100%)"
-      // Real Egyptian-themed slots (Eye of Horus, John Hunter & the Tomb
-      // of the Scarab Queen, Book of Ra-likes) frame their bonus rounds
-      // around a "Tomb opens" / "Pharaoh's blessing" moment with scarab
-      // bursts, not lightning bolts. Override with a scarab beetle and a
-      // pharaonic banner.
-      fsTriggerGlyph="🪲"
-      fsTriggerTitle="PHARAOH'S BOUNTY"
-      maxWinLabel="5,000×"
-      renderCell={({ symbolId, multiplier }) => {
-        if (multiplier !== undefined) {
-          return (
-            <MultiplierSymbol
-              value={multiplier}
-              accent={pharaohGoldConfig.theme.accent}
-            />
-          );
-        }
-        const C = PHARAOH_SYMBOL_MAP[symbolId];
-        return C ? <C /> : <span className="text-xs text-ink-mute">{symbolId}</span>;
-      }}
-    />
-  );
+  return <LineSlotView profile={PHARAOH_PROFILE} title="Pharaoh's Gold" subtitle="Realtime Gaming classic · 3 reels · 3 paylines" scene={<PharaohScene />} symbolMap={PHARAOH_SYMBOL_MAP} accent="#ffd166" />;
 }

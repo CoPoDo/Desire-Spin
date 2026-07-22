@@ -41,14 +41,14 @@ export function Settings() {
       </section>
 
       <section className="card p-5 space-y-3">
-        <h2 className="font-semibold">Provably-fair seeds</h2>
+        <h2 className="font-semibold">Local fairness seeds</h2>
         <p className="text-sm text-ink-dim">
-          Rotate your server seed to reveal the current one (so you can verify past bets) and
-          start a new one. The previous seed will be stored for verification.
+          Rotate the browser's local secret seed to reveal it for deterministic replay and
+          start a new one. This is a local integrity tool, not a remote server commitment.
         </p>
         <div className="flex flex-wrap gap-2">
           <button className="btn-ghost" onClick={fairness.rotate}>
-            Rotate server seed
+            Rotate local seed
           </button>
           <button className="btn-danger" onClick={fairness.resetSeeds}>
             Reset all seeds

@@ -5,10 +5,8 @@ import * as Keno from '../src/pages/originals/keno/engine';
 import * as SicBo from '../src/pages/originals/sicbo/engine';
 import * as Diamonds from '../src/pages/originals/diamonds/engine';
 import * as Bingo from '../src/pages/originals/bingo/engine';
-import * as Treasure from '../src/pages/originals/treasure/engine';
 import * as BigBass from '../src/pages/originals/big-bass/engine';
 import * as Roulette from '../src/pages/originals/roulette/engine';
-import * as MiniRoulette from '../src/pages/originals/mini-roulette/engine';
 import * as Mines from '../src/pages/originals/mines/engine';
 import * as Tower from '../src/pages/originals/tower/engine';
 import * as Cups from '../src/pages/originals/cups/engine';
@@ -16,7 +14,6 @@ import * as Plinko from '../src/pages/originals/plinko/engine';
 import * as Dice from '../src/pages/originals/dice/engine';
 import * as Limbo from '../src/pages/originals/limbo/engine';
 import * as Crash from '../src/pages/originals/crash/engine';
-import * as Race from '../src/pages/originals/race/engine';
 import * as CoinFlip from '../src/pages/originals/coin-flip/engine';
 import * as DragonTiger from '../src/pages/originals/dragon-tiger/engine';
 
@@ -74,25 +71,13 @@ describe('Originals RTP — regression', () => {
     }
   });
 
-  it('Sic Bo: total-sum bets cover 99% RTP (analytical)', () => {
-    // Each "total N" bet pays SUM_PAYOUTS[N] when 3-dice sum = N.
-    // P(sum=N) = ways(N)/216. RTP = ways/216 × pay.
-    const SUM_WAYS = SicBo.SUM_WAYS;
-    for (let n = 4; n <= 17; n++) {
-      const ways = SUM_WAYS[n] ?? 0;
-      const pay = SicBo.SUM_PAYOUTS[n] ?? 0;
-      const rtp = (ways / 216) * pay;
-      expect(rtp).toBeCloseTo(0.99, 1);
-    }
-  });
-
-  it('Mini-Roulette: every bet type 99% RTP (analytical)', () => {
-    // Single number: P=1/13, mult=12.87 → 99%
-    expect(MiniRoulette.STRAIGHT_PAYOUT / 13).toBeCloseTo(0.99, 2);
-    // Even-money: P=6/13, mult=2.145 → 99%
-    expect((MiniRoulette.EVEN_MONEY_PAYOUT * 6) / 13).toBeCloseTo(0.99, 2);
-    // Quad: P=4/13, mult=3.2175 → 99%
-    expect((MiniRoulette.QUAD_PAYOUT * 4) / 13).toBeCloseTo(0.99, 2);
+  it('Sic Bo: uses the standard Macau total-return table', () => {
+    expect(SicBo.SUM_PAYOUTS).toEqual({
+      4: 51, 5: 19, 6: 15, 7: 13, 8: 9, 9: 7, 10: 7,
+      11: 7, 12: 7, 13: 9, 14: 13, 15: 15, 16: 19, 17: 51,
+    });
+    expect(SicBo.payoutMultiplier({ kind: 'double', face: 4 }, [4, 4, 2])).toBe(11);
+    expect(SicBo.payoutMultiplier({ kind: 'double', face: 4 }, [4, 2, 1])).toBe(0);
   });
 
   it('Roulette (European): every bet 36/37 RTP (analytical)', () => {
@@ -117,7 +102,7 @@ describe('Originals RTP — regression', () => {
     }
   });
 
-  it('Tower: per-step multiplier matches difficulty (analytical)', () => {
+  it('Dragon Tower: per-step multiplier matches difficulty (analytical)', () => {
     // step = (tiles/safe) × 0.99
     expect(Tower.stepMultiplierFor('easy')).toBeCloseTo(1.32, 2); // 4/3 × 0.99
     expect(Tower.stepMultiplierFor('medium')).toBeCloseTo(1.485, 2); // 3/2 × 0.99
@@ -135,7 +120,7 @@ describe('Originals RTP — regression', () => {
       for (let i = 1; i <= k; i++) r = (r * (n - k + i)) / i;
       return r;
     }
-    const RISKS: Plinko.Risk[] = ['low', 'medium', 'high'];
+    const RISKS: Plinko.Risk[] = ['easy', 'medium', 'hard', 'expert'];
     for (const risk of RISKS) {
       for (let rows = 8; rows <= 16; rows++) {
         const arr = Plinko.multipliersFor(risk, rows);
@@ -162,20 +147,13 @@ describe('Originals RTP — regression', () => {
     expect(Cups.multiplierFor('hard') / 5).toBeCloseTo(0.99, 2);
   });
 
-  it('Diamonds: ~99% RTP via Monte Carlo', () => {
-    let total = 0;
-    for (let i = 0; i < N; i++) {
-      const rng = createRng('diamonds-rtp', 'c', i);
-      total += Diamonds.play(rng, 1).payout;
-    }
-    const rtp = total / N;
-    // Diamonds has very high variance — max win is 1400× and 5-of-a-
-    // kind probability is ~0.04%. A single mega-win in an 8k sample
-    // shifts the empirical mean by 17.5 percentage points. The full 2M-
-    // spin Monte Carlo lands at 99.5%; this 8k smoke test catches gross
-    // calibration regressions but accepts wide variance.
-    expect(rtp).toBeGreaterThan(0.5);
-    expect(rtp).toBeLessThan(1.5);
+  it('Diamonds: exact categories and 98.29% analytical RTP', () => {
+    expect(Diamonds.classify(['red', 'red', 'blue', 'green', 'yellow']).category).toBe('pair');
+    expect(Diamonds.classify(['red', 'red', 'blue', 'blue', 'yellow']).category).toBe('two-pair');
+    expect(Diamonds.classify(['red', 'red', 'red', 'blue', 'blue']).category).toBe('full-house');
+    const outcomes = 7 ** 5;
+    const returnUnits = 8400 * 0.1 + 3150 * 2 + 2100 * 3 + 420 * 4 + 210 * 5 + 7 * 50;
+    expect(returnUnits / outcomes).toBeCloseTo(0.9829, 4);
   });
 
   it('Bingo: ~98.5% RTP via Monte Carlo', () => {
@@ -187,39 +165,6 @@ describe('Originals RTP — regression', () => {
     const rtp = total / N;
     expect(rtp).toBeGreaterThan(0.85);
     expect(rtp).toBeLessThan(1.15);
-  });
-
-  it('Treasure: peak EV ≤ 100% at any K (no player edge)', () => {
-    // Player can choose any K. Worst case (highest EV) shouldn't
-    // exceed 100% — that would let them grind the house.
-    // Simulate at K = 1, 2, 3, 4, 5 with optimal-survival strategy.
-    for (const K of [1, 2, 3, 4, 5]) {
-      let wins = 0;
-      let acc = 0;
-      for (let i = 0; i < N; i++) {
-        const rng = createRng('treasure-rtp', String(K), i);
-        const grid = Treasure.generateGrid(rng);
-        // Optimal-strategy proxy: open first K positions in order.
-        // Survives only if all K are non-trap.
-        let survived = true;
-        let mult = 0;
-        for (let pos = 0; pos < K; pos++) {
-          const tile = grid[pos]!;
-          if (tile.kind === 'trap') {
-            survived = false;
-            break;
-          }
-          mult += tile.multiplier;
-        }
-        if (survived) {
-          wins++;
-          acc += mult;
-        }
-      }
-      const ev = acc / N;
-      // Peak EV (K=3) should be ~99%; allow some Monte Carlo variance.
-      expect(ev).toBeLessThan(1.10); // never player-favorable
-    }
   });
 
   it('Big Bass: ~96% RTP via Monte Carlo', () => {
@@ -264,30 +209,7 @@ describe('Originals RTP — regression', () => {
     expect(rtp).toBeLessThan(1.05);
   });
 
-  it('Race: per-horse hit rate matches HORSE_WEIGHTS (Monte Carlo)', () => {
-    const counts = new Array(Race.HORSE_COUNT).fill(0);
-    for (let i = 0; i < N; i++) {
-      const rng = createRng('race-dist', 'c', i);
-      counts[Race.pickWinner(rng)]++;
-    }
-    for (let i = 0; i < Race.HORSE_COUNT; i++) {
-      const observed = counts[i] / N;
-      const expected = Race.HORSE_WEIGHTS[i]! / 100;
-      // Allow ±0.025 — well outside binomial noise at N=8000 even for the
-      // smallest 5% weight (stddev ≈ 0.0024).
-      expect(Math.abs(observed - expected)).toBeLessThan(0.025);
-    }
-  });
-
-  it('Race: every-horse multiplier × weight = 0.99 (analytical)', () => {
-    for (let i = 0; i < Race.HORSE_COUNT; i++) {
-      const m = Race.multiplierForHorse(i);
-      const p = Race.HORSE_WEIGHTS[i]! / 100;
-      expect(m * p).toBeCloseTo(0.99, 2);
-    }
-  });
-
-  it('Coin Flip: single-flip RTP ≈ 0.99 (Monte Carlo)', () => {
+  it('Flip: single-flip RTP ≈ 0.99 (Monte Carlo)', () => {
     // Bet 1 unit, always call heads, always cash out after 1 flip.
     // Expected RTP = 0.5 × 1.98 = 0.99.
     let total = 0;

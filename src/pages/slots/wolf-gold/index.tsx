@@ -1,35 +1,27 @@
-import { ImmersiveSlotView } from '../_shared/ImmersiveSlotView';
-import { wolfGoldConfig } from './config';
-import { WOLF_SYMBOL_MAP, MultiplierSymbol } from './symbols';
+import { LineSlotView } from '../_shared/LineSlotView';
+import { makePaylines, type LineSlotProfile } from '../_shared/lineEngine';
+import { WOLF_SYMBOL_MAP } from './symbols';
 import { WolfScene } from './Scene';
 
+export const WOLF_PROFILE: LineSlotProfile = {
+  id: 'wolf-gold', cols: 5, rows: 3, paylines: makePaylines(5, 3, 25), maxWin: 2500,
+  scatterId: 'coyote', wildId: 'wild', feature: 'wolf', freeSpins: 5,
+  symbols: [
+    { id: 'wolf', weight: 3, pay: { 3: 25, 4: 100, 5: 500 } },
+    { id: 'eagle', weight: 6, pay: { 3: 12, 4: 40, 5: 150 } },
+    { id: 'cougar', weight: 8, pay: { 3: 8, 4: 25, 5: 100 } },
+    { id: 'mustang', weight: 10, pay: { 3: 5, 4: 15, 5: 50 } },
+    { id: 'feather', weight: 12, pay: { 3: 3, 4: 8, 5: 25 } },
+    { id: 'arrow', weight: 14, pay: { 3: 2, 4: 5, 5: 15 } },
+    { id: 'turquoise', weight: 16, pay: { 3: 1.5, 4: 3, 5: 10 } },
+    { id: 'amber', weight: 18, pay: { 3: 1.2, 4: 2.5, 5: 7 } },
+    { id: 'jasper', weight: 20, pay: { 3: 1, 4: 2, 5: 5 } },
+    { id: 'coyote', weight: 1.2, freeWeight: 1.4, scatter: true },
+    { id: 'money', weight: 5, freeWeight: 6, money: true },
+    { id: 'wild', weight: 0.8, freeWeight: 1.2, wild: true },
+  ],
+};
+
 export function WolfGold() {
-  return (
-    <ImmersiveSlotView
-      cfg={wolfGoldConfig}
-      backdropElement={<WolfScene />}
-      backdropAspect={{ w: 941, h: 1672 }}
-      archInsets={{ left: 8, top: 27, width: 84 }}
-      // Violet+gold FS tint
-      freeSpinsTint="linear-gradient(180deg, rgba(102, 56, 200, 0.24) 0%, rgba(167, 139, 250, 0.32) 50%, rgba(20, 8, 40, 0.46) 100%)"
-      // Real Pragmatic Wolf Gold's bonus is the iconic "Money Respin"
-      // moment — full moon centred, wolf-howl callout. Lightning bolts
-      // are wrong. Use a full-moon glyph and the actual bonus name.
-      fsTriggerGlyph="🌕"
-      fsTriggerTitle="MONEY RESPIN"
-      maxWinLabel="9,500×"
-      renderCell={({ symbolId, multiplier }) => {
-        if (multiplier !== undefined) {
-          return (
-            <MultiplierSymbol
-              value={multiplier}
-              accent={wolfGoldConfig.theme.accent}
-            />
-          );
-        }
-        const C = WOLF_SYMBOL_MAP[symbolId];
-        return C ? <C /> : <span className="text-xs text-ink-mute">{symbolId}</span>;
-      }}
-    />
-  );
+  return <LineSlotView profile={WOLF_PROFILE} title="Wolf Gold" subtitle="5×3 · 25 paylines · Money Respin" scene={<WolfScene />} symbolMap={WOLF_SYMBOL_MAP} accent="#a78bfa" />;
 }

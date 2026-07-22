@@ -1,6 +1,6 @@
 import type { Rng } from '../../../lib/fairness';
 
-/** Tower (Stake-style):
+/** Dragon Tower (Stake-style):
  *  Climb a tower row by row. Each row has N tiles, of which D are deadly
  *  (skulls) and N-D are safe. Pick a safe tile to advance. Cash out
  *  anytime; one skull = lose all.

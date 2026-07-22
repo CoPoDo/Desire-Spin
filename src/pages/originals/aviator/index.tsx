@@ -16,6 +16,7 @@ import {
 } from '../_shared/AutoBetController';
 import { multiplierAt, rollCrash } from './engine';
 import { fireConfetti } from '../../../lib/confetti';
+import { LocalRoundFeed } from '../_shared/LocalRoundFeed';
 
 type Phase = 'idle' | 'flying' | 'done';
 type SlotId = 'a' | 'b';
@@ -517,6 +518,8 @@ export function AviatorGame() {
             </div>
           </div>
         )}
+
+        <LocalRoundFeed currentMultiplier={currentMult} active={inGame} crashed={lost} game="Aviator" />
 
         {/* Bet panels */}
         <div className="rounded-lg bg-stake-card border border-stake-border p-4 space-y-3">

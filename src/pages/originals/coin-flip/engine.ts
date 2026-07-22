@@ -1,6 +1,6 @@
 import type { Rng } from '../../../lib/fairness';
 
-/** Coin Flip — Stake-style streak coin game.
+/** Flip — Stake-style streak coin game.
  *
  *  Player picks Heads or Tails. RNG flips a coin. Each correct call
  *  doubles the multiplier (slightly less than 2× to bake in the 1%

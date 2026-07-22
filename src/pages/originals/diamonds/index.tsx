@@ -14,7 +14,7 @@ import {
   type Mode,
   useAutoBetRunner,
 } from '../_shared/AutoBetController';
-import { type DiamondsResult, gemMeta, play } from './engine';
+import { DIAMOND_CATEGORY_LABEL, DIAMOND_PAYTABLE, type DiamondsResult, gemMeta, play } from './engine';
 import { fireConfetti } from '../../../lib/confetti';
 
 export function DiamondsGame() {
@@ -93,9 +93,7 @@ export function DiamondsGame() {
           {result ? (
             <>
               <div className="text-[10px] uppercase tracking-widest text-stake-muted">
-                {result.bestCount >= 3
-                  ? `${result.bestCount} of a kind · ${gemMeta(result.bestGem).name}`
-                  : 'No match'}
+                {DIAMOND_CATEGORY_LABEL[result.category]}
               </div>
               <div
                 className={`font-mono font-bold text-2xl mt-0.5 tabular-nums ${
@@ -120,8 +118,7 @@ export function DiamondsGame() {
             {Array.from({ length: 5 }).map((_, i) => {
               const revealed = i < revealing;
               const gem = revealed && result ? result.gems[i] : null;
-              const isWinning =
-                result && revealed && result.bestCount >= 3 && gem === result.bestGem;
+              const isWinning = Boolean(result && revealed && gem && result.winningGems.includes(gem));
               const meta = gem ? gemMeta(gem) : null;
               return (
                 <motion.div
@@ -168,6 +165,15 @@ export function DiamondsGame() {
               );
             })}
           </div>
+        </div>
+
+        <div className="grid grid-cols-4 gap-1.5 rounded-lg bg-stake-card border border-stake-border p-3">
+          {Object.entries(DIAMOND_PAYTABLE).filter(([category]) => category !== 'no-match').map(([category, multiplier]) => (
+            <div key={category} className="rounded-md bg-stake-input px-2 py-1.5 text-center">
+              <div className="text-[8px] uppercase tracking-wide text-stake-muted">{DIAMOND_CATEGORY_LABEL[category as keyof typeof DIAMOND_CATEGORY_LABEL]}</div>
+              <div className="font-mono text-xs font-bold text-stake-text">{multiplier}×</div>
+            </div>
+          ))}
         </div>
 
         {/* Bet panel */}
