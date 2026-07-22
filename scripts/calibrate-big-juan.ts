@@ -7,11 +7,11 @@
 import { createRng } from '../src/lib/fairness';
 import {
   play,
-  resolveRespin,
-  rollRespin,
+  rollBonusBuyEntry,
+  simulateRespinRound,
 } from '../src/pages/slots/big-juan/engine';
 
-const N = 200_000;
+const N = Number(process.env.BJ_CALIBRATION_SPINS ?? 200_000);
 let totalBase = 0;
 let totalBonus = 0;
 let triggers = 0;
@@ -26,25 +26,19 @@ for (let i = 0; i < N; i++) {
   if (r.wildSwitch.switched) switchHits++;
   if (r.triggersBonus) {
     triggers++;
-    // Simulate bonus
     const award = r.scatterCount === 3 ? 10 : r.scatterCount === 4 ? 12 : 15;
-    let respins = award;
-    let bag = 1;
-    let meters = { mini: 0, minor: 0, major: 0, grand: 0 };
-    let cum = 0;
-    while (respins > 0 && cum < 2600) {
-      const sample = rollRespin(rng);
-      const res = resolveRespin(sample, { bagValue: bag, meters, cumulativeMult: cum });
-      cum += res.paid;
-      bag = res.newBagValue;
-      meters = res.newMeters;
-      respins = Math.max(0, respins - 1 + res.extraSpins);
-      if (res.cappedAtMax) break;
-    }
+    const cum = simulateRespinRound(rng, award, r.baseMultiplier).totalMultiplier;
     totalBonus += cum;
     maxBonus = Math.max(maxBonus, cum);
     bonusHistogram.push(cum);
   }
+}
+
+let totalBuyPayout = 0;
+for (let i = 0; i < N; i++) {
+  const rng = createRng('calib-buy', 'c', i);
+  const entry = rollBonusBuyEntry(rng);
+  totalBuyPayout += simulateRespinRound(rng, entry.respinsAwarded).totalMultiplier;
 }
 
 const rtpBase = totalBase / N;
@@ -68,10 +62,11 @@ console.log('──────────────────────�
 console.log(`  RTP (base only)       : ${(rtpBase * 100).toFixed(2)}%`);
 console.log(`  RTP (bonus contrib)   : ${(rtpBonus * 100).toFixed(2)}%`);
 console.log(`  RTP (total)           : ${(rtpTotal * 100).toFixed(2)}%`);
-console.log(`  Trigger rate          : ${(triggerRate * 100).toFixed(3)}% (target ~0.5%)`);
-console.log(`  Wild Switch rate      : ${(switchRate * 100).toFixed(2)}% (target 1-2.5%)`);
+console.log(`  Bonus Buy RTP         : ${(totalBuyPayout / N).toFixed(2)}%`);
+console.log(`  Trigger rate          : ${(triggerRate * 100).toFixed(3)}% (local analytic ~0.489%)`);
+console.log(`  Wild Switch rate      : ${(switchRate * 100).toFixed(2)}% (local calibration ~0.574%)`);
 console.log(`  Bonuses simulated     : ${triggers.toLocaleString()}`);
-console.log(`  Avg bonus payout      : ${avgBonus.toFixed(1)}× (target ~80-120×)`);
+console.log(`  Avg bonus payout      : ${avgBonus.toFixed(1)}× (local calibration ~71.2×)`);
 console.log(`  Max bonus seen        : ${maxBonus.toFixed(1)}×`);
 console.log('  Bonus distribution    :');
 for (let i = 0; i < buckets.length; i++) {

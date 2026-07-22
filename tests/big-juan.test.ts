@@ -1,32 +1,104 @@
 import { describe, expect, it } from 'vitest';
 import { createRng } from '../src/lib/fairness';
 import {
+  BASE_REEL_STRIPS,
+  CALIBRATED_BASE_MODEL,
   BIG_WIN_TIERS,
   BUY_BONUS_COST_MULTIPLIER,
   COIN_VALUES,
   COINS_PER_LINE,
   JACKPOTS,
   JACKPOT_THRESHOLD,
+  PAYLINES,
   PAYLINE_COUNT,
+  RESPIN_MONEY_VALUES,
   SYMBOLS,
   applyWildSwitch,
   bigWinTierFor,
+  generateBonusBuyGrid,
+  generateGrid,
   type Grid,
   play,
+  resolveLine,
   resolveRespin,
   rollBonusBuyEntry,
+  rollGuaranteedWinRespin,
   rollRespin,
+  simulateRespinRound,
   symbolById,
   totalBetFor,
 } from '../src/pages/slots/big-juan/engine';
 
-/** Big Juan engine regression suite — derived directly from the
- *  public spec. Each section maps to a spec section so a future
- *  refactor that breaks a feature is caught immediately. */
+/** Big Juan engine regression suite. Provider-documented rules are pinned
+ * exactly; calibrated distributions and presentation thresholds are labelled
+ * separately so they are not mistaken for published operator values. */
+
+const PUBLISHED_PAYLINES: number[][] = [
+  [0, 0, 0, 0, 0],
+  [0, 0, 0, 1, 2],
+  [0, 0, 1, 2, 2],
+  [0, 0, 1, 0, 0],
+  [0, 1, 1, 1, 0],
+  [0, 1, 1, 1, 2],
+  [0, 1, 2, 1, 0],
+  [1, 0, 0, 0, 1],
+  [1, 0, 1, 0, 1],
+  [1, 0, 1, 2, 1],
+  [1, 1, 1, 2, 3],
+  [1, 1, 1, 1, 1],
+  [1, 1, 2, 1, 1],
+  [1, 1, 2, 3, 3],
+  [1, 2, 1, 2, 1],
+  [1, 2, 1, 0, 1],
+  [1, 2, 2, 2, 1],
+  [1, 2, 2, 2, 3],
+  [1, 2, 3, 2, 1],
+  [1, 2, 3, 3, 3],
+  [2, 3, 3, 3, 2],
+  [2, 3, 2, 3, 2],
+  [2, 3, 2, 1, 2],
+  [2, 2, 2, 1, 0],
+  [2, 2, 2, 2, 2],
+  [2, 2, 1, 2, 2],
+  [2, 2, 1, 0, 0],
+  [2, 1, 2, 1, 2],
+  [2, 1, 2, 3, 2],
+  [2, 1, 1, 1, 2],
+  [2, 1, 1, 1, 0],
+  [2, 1, 0, 0, 0],
+  [2, 1, 0, 1, 2],
+  [3, 2, 1, 2, 3],
+  [3, 2, 2, 2, 3],
+  [3, 2, 2, 2, 1],
+  [3, 3, 2, 3, 3],
+  [3, 3, 2, 1, 1],
+  [3, 3, 3, 2, 1],
+  [3, 3, 3, 3, 3],
+];
+
+function gridWithTopLine(ids: string[]): Grid {
+  return ids.map((id) => [id, '10', 'J', 'Q']);
+}
 
 describe('Big Juan — spec compliance: layout & paytable', () => {
   it('has 40 paylines (spec §1)', () => {
     expect(PAYLINE_COUNT).toBe(40);
+  });
+
+  it('matches all 40 published paylines in provider order', () => {
+    expect(PAYLINES).toEqual(PUBLISHED_PAYLINES);
+  });
+
+  it('contains 40 unique payline paths', () => {
+    expect(new Set(PAYLINES.map((line) => line.join(','))).size).toBe(40);
+  });
+
+  it('uses the current official display-strip ordering with placeholders removed', () => {
+    expect(BASE_REEL_STRIPS.map((reel) => reel.length)).toEqual([42, 84, 59, 75, 119]);
+    expect(BASE_REEL_STRIPS.flat()).not.toContain(undefined);
+    expect(BASE_REEL_STRIPS[0]!.slice(0, 8)).toEqual([
+      'A', 'vihuela', 'vihuela', 'J', 'vihuela', 'pinata', '10', 'J',
+    ]);
   });
 
   it('exposes 11 paying symbols + 1 scatter (spec §3)', () => {
@@ -77,7 +149,7 @@ describe('Big Juan — spec compliance: layout & paytable', () => {
 describe('Big Juan — bet structure (spec §1)', () => {
   it('total = coin × cpl × 40', () => {
     expect(totalBetFor(0.01, 1)).toBeCloseTo(0.40, 6);
-    expect(totalBetFor(0.50, 10)).toBeCloseTo(200.00, 6);
+    expect(totalBetFor(0.60, 10)).toBeCloseTo(240.00, 6);
     expect(totalBetFor(0.10, 5)).toBeCloseTo(20.00, 6);
   });
 
@@ -87,14 +159,14 @@ describe('Big Juan — bet structure (spec §1)', () => {
     expect(totalBetFor(minCoin, minCpl)).toBeCloseTo(0.40, 6);
   });
 
-  it('max bet is 200.00 (0.50 × 10 × 40)', () => {
+  it('current sver=5 max bet is 240.00 (0.60 × 10 × 40)', () => {
     const maxCoin = Math.max(...COIN_VALUES);
     const maxCpl = Math.max(...COINS_PER_LINE);
-    expect(totalBetFor(maxCoin, maxCpl)).toBeCloseTo(200.00, 6);
+    expect(totalBetFor(maxCoin, maxCpl)).toBeCloseTo(240.00, 6);
   });
 });
 
-describe('Big Juan — Wild Switch (spec §6)', () => {
+describe('Big Juan — Wild Switch (pinned provider rule)', () => {
   it('does not trigger on 5 same symbols across reels 2-3-4', () => {
     // Place exactly 5 A's on reels 2/3/4 — should NOT trigger (need 6+).
     // Other symbols capped at <6 too so no other candidate triggers.
@@ -138,9 +210,9 @@ describe('Big Juan — Wild Switch (spec §6)', () => {
     expect(r.info.switched).toBe(false);
   });
 
-  it('tie-break picks the higher-paying symbol (spec §6)', () => {
-    // Two candidates with 6+: A (low, 1.00× for 5) vs juan (top, 6.25× for 5)
-    // — juan should win. Need 6+ of each on reels 2-3-4.
+  it('transforms every group represented at least six times', () => {
+    // Both A and Juan occupy six cells across reels 2–4, so both groups
+    // transform; the published rules do not define a winner-takes-all tie.
     const grid: Grid = [
       ['10', '10', '10', '10'],
       ['A', 'A', 'A', 'juan'],
@@ -150,7 +222,76 @@ describe('Big Juan — Wild Switch (spec §6)', () => {
     ];
     const r = applyWildSwitch(grid);
     expect(r.info.switched).toBe(true);
-    expect(r.info.switchedSymbol).toBe('juan');
+    expect(r.info.switchedSymbols).toEqual(['A', 'juan']);
+    expect(r.info.positions).toHaveLength(12);
+    expect(r.grid[1]).toEqual(['chili', 'chili', 'chili', 'chili']);
+    expect(r.grid[2]).toEqual(['chili', 'chili', 'chili', 'chili']);
+    expect(r.grid[3]).toEqual(['chili', 'chili', 'chili', 'chili']);
+  });
+});
+
+describe('Big Juan — leading-Wild line resolution', () => {
+  const topLine = [0, 0, 0, 0, 0];
+
+  it('[W,W,W,A,A] pays the higher W3 value', () => {
+    const win = resolveLine(
+      gridWithTopLine(['chili', 'chili', 'chili', 'A', 'A']),
+      0,
+      topLine,
+    );
+    expect(win).toMatchObject({ symbolId: 'chili', count: 3, multiplier: 1.25 });
+  });
+
+  it('[W,W,W,pinata,...] still pays W3 before the scatter', () => {
+    const win = resolveLine(
+      gridWithTopLine(['chili', 'chili', 'chili', 'pinata', 'A']),
+      0,
+      topLine,
+    );
+    expect(win).toMatchObject({ symbolId: 'chili', count: 3, multiplier: 1.25 });
+  });
+
+  it('[W,W,A,A,A] pays A5', () => {
+    const win = resolveLine(
+      gridWithTopLine(['chili', 'chili', 'A', 'A', 'A']),
+      0,
+      topLine,
+    );
+    expect(win).toMatchObject({ symbolId: 'A', count: 5, multiplier: 1 });
+  });
+});
+
+describe('Big Juan — scatter placement constraints', () => {
+  it('pins the audited local outcome model separately from display loops', () => {
+    expect(CALIBRATED_BASE_MODEL.scatterChancePerReel).toBe(0.0822);
+    expect(CALIBRATED_BASE_MODEL.symbols.map(({ id, weight }) => [id, weight])).toEqual([
+      ['juan', 4000], ['senorita', 5000], ['chihuahua', 6000],
+      ['vihuela', 7000], ['hot_sauce', 7000],
+      ['A', 10000], ['K', 10000], ['Q', 10000], ['J', 10000], ['10', 10000],
+      ['chili', 7160],
+    ]);
+  });
+
+  it('base grids contain at most one Piñata on each reel', () => {
+    for (let nonce = 0; nonce < 500; nonce++) {
+      const grid = generateGrid(createRng('base-grid', 'scatter-limit', nonce));
+      for (const reel of grid) {
+        expect(reel.filter((symbol) => symbol === 'pinata')).toHaveLength(
+          reel.includes('pinata') ? 1 : 0,
+        );
+      }
+    }
+  });
+
+  it.each([4, 5] as const)('buy grid contains exactly %i Piñatas with at most one per reel', (count) => {
+    for (let nonce = 0; nonce < 100; nonce++) {
+      const grid = generateBonusBuyGrid(createRng('buy-grid', String(count), nonce), count);
+      const scatterCount = grid.flat().filter((symbol) => symbol === 'pinata').length;
+      expect(scatterCount).toBe(count);
+      for (const reel of grid) {
+        expect(reel.filter((symbol) => symbol === 'pinata').length).toBeLessThanOrEqual(1);
+      }
+    }
   });
 });
 
@@ -167,6 +308,25 @@ describe('Big Juan — base game determinism', () => {
 });
 
 describe('Big Juan — Respins feature mechanics (spec §7)', () => {
+  it('precomputes an identical whole-feature timeline from identical seeds', () => {
+    const first = simulateRespinRound(createRng('feature-replay', 'client', 42), 12, 3.5);
+    const second = simulateRespinRound(createRng('feature-replay', 'client', 42), 12, 3.5);
+    expect(first).toEqual(second);
+    expect(first.events.length).toBeGreaterThanOrEqual(12);
+    expect(first.events.filter((event) => event.guaranteedWin)).toHaveLength(1);
+    expect(first.events.find((event) => event.guaranteedWin)?.ordinal).toBe(
+      first.guaranteedWinOrdinal,
+    );
+    expect(first.events.at(-1)?.cumulativeAfter ?? 0).toBe(first.totalMultiplier);
+  });
+
+  it('does not create feature events when the base result already reached max win', () => {
+    const outcome = simulateRespinRound(createRng('feature-cap', 'client', 1), 10, 2600);
+    expect(outcome.events).toHaveLength(0);
+    expect(outcome.totalMultiplier).toBe(0);
+    expect(outcome.cappedAtMax).toBe(true);
+  });
+
   it('BLANK 4th reel collects nothing and updates bag/meters identically', () => {
     const sample = {
       outer: Array(8).fill(null).map(() => ({ kind: 'coin' as const, value: 10 })),
@@ -256,11 +416,46 @@ describe('Big Juan — Respins feature mechanics (spec §7)', () => {
     expect(res.newMeters.mini).toBe(0); // reset after fill
   });
 
-  it('Grand meter requires 5 symbols (spec §7.6)', () => {
+  it('uses the current sver=5 3 / 4 / 5 / 5 meter thresholds', () => {
     expect(JACKPOT_THRESHOLD.mini).toBe(3);
     expect(JACKPOT_THRESHOLD.minor).toBe(4);
     expect(JACKPOT_THRESHOLD.major).toBe(5);
     expect(JACKPOT_THRESHOLD.grand).toBe(5);
+  });
+
+  it('uses the exact current Money symbol value set', () => {
+    expect(RESPIN_MONEY_VALUES).toEqual([
+      0.5, 1, 2, 3, 5, 8, 10, 15, 20, 25, 40, 50, 100, 125, 200, 250,
+    ]);
+  });
+
+  it('EXTRA SPIN awards one respin independently of the fourth reel', () => {
+    for (const fourth of ['blank', 'boost', 'win'] as const) {
+      const res = resolveRespin({
+        outer: [
+          { kind: 'extra' },
+          ...Array.from({ length: 7 }, () => ({ kind: 'blank' as const })),
+        ],
+        fourth,
+      }, {
+        bagValue: 1,
+        meters: { mini: 0, minor: 0, major: 0, grand: 0 },
+        cumulativeMult: 0,
+      });
+      expect(res.extraSpins).toBe(1);
+    }
+  });
+
+  it('guaranteed WIN samples contain exactly 2 coins and 2 jackpot symbols', () => {
+    const jackpotKinds = new Set(['mini', 'minor', 'major', 'grand']);
+    for (let nonce = 0; nonce < 500; nonce++) {
+      const sample = rollGuaranteedWinRespin(createRng('guaranteed-win', 'shape', nonce));
+      expect(sample.fourth).toBe('win');
+      expect(sample.outer).toHaveLength(8);
+      expect(sample.outer.filter((symbol) => symbol.kind === 'coin')).toHaveLength(2);
+      expect(sample.outer.filter((symbol) => jackpotKinds.has(symbol.kind))).toHaveLength(2);
+      expect(sample.outer.filter((symbol) => symbol.kind === 'blank')).toHaveLength(4);
+    }
   });
 
   it('jackpot payouts match spec §7.6 (12.5 / 50 / 250 / 2500)', () => {
@@ -284,10 +479,23 @@ describe('Big Juan — Respins feature mechanics (spec §7)', () => {
     expect(res.cappedAtMax).toBe(true);
     expect(res.paid).toBeCloseTo(600, 4);
   });
+
+  it('ends immediately when a resolution reaches exactly 2,600×', () => {
+    const res = resolveRespin({
+      outer: Array.from({ length: 8 }, () => ({ kind: 'blank' as const })),
+      fourth: 'win',
+    }, {
+      bagValue: 1,
+      meters: { mini: 0, minor: 0, major: 0, grand: 0 },
+      cumulativeMult: 2599,
+    });
+    expect(res.paid).toBe(1);
+    expect(res.cappedAtMax).toBe(true);
+  });
 });
 
-describe('Big Juan — Bonus Buy (spec §8)', () => {
-  it('rolls only 4 or 5 piñatas (never 3)', () => {
+describe('Big Juan — calibrated Bonus Buy entry', () => {
+  it('calibrated entry table rolls only 4 or 5 piñatas', () => {
     let count4 = 0, count5 = 0;
     for (let i = 0; i < 10000; i++) {
       const rng = createRng('buy', 'c', i);
@@ -296,7 +504,7 @@ describe('Big Juan — Bonus Buy (spec §8)', () => {
       if (entry.scatters === 4) count4++;
       else count5++;
     }
-    // Spec §8: weighted ~85/15 toward 4. Allow 4% noise.
+    // The local calibrated table is weighted ~85/15 toward four.
     const ratio4 = count4 / (count4 + count5);
     expect(ratio4).toBeGreaterThan(0.81);
     expect(ratio4).toBeLessThan(0.89);
@@ -311,13 +519,13 @@ describe('Big Juan — Bonus Buy (spec §8)', () => {
     }
   });
 
-  it('Buy cost multiplier is 100× (spec §8)', () => {
+  it('Buy cost multiplier is pinned at 100×', () => {
     expect(BUY_BONUS_COST_MULTIPLIER).toBe(100);
   });
 });
 
-describe('Big Juan — Big-win tiers (spec §10b.10)', () => {
-  it('tier thresholds match spec', () => {
+describe('Big Juan — calibrated presentation tiers', () => {
+  it('keeps the local tier thresholds pinned', () => {
     expect(bigWinTierFor(9)).toBeNull();          // <10× no banner
     expect(bigWinTierFor(15)!.name).toBe('nice'); // 10-25
     expect(bigWinTierFor(30)!.name).toBe('big');  // 25-50
@@ -347,16 +555,15 @@ describe('Big Juan — base-game RTP envelope (Monte Carlo)', () => {
       totalPaid += r.baseMultiplier;
       if (r.triggersBonus) trigger++;
     }
-    // Base contribution alone (without bonus) should be a fraction of the
-    // 96.7% total. Spec §11 suggests ~30-35% of RTP from base line wins.
-    // Our calibration targets that band loosely — accept 15-65% line RTP.
+    // This is the local hidden-outcome calibration, not a provider claim.
+    // Large offline simulations target about 61.86% line-win contribution.
     const baseRtp = totalPaid / N;
-    expect(baseRtp).toBeGreaterThan(0.10);
-    expect(baseRtp).toBeLessThan(0.80);
-    // Bonus trigger rate target: ~0.5%. Accept 0.2-2.0%.
+    expect(baseRtp).toBeGreaterThan(0.35);
+    expect(baseRtp).toBeLessThan(0.90);
+    // q=0.0822 gives an analytic 3+-reel trigger rate of about 0.489%.
     const triggerRate = trigger / N;
     expect(triggerRate).toBeGreaterThan(0.001);
-    expect(triggerRate).toBeLessThan(0.02);
+    expect(triggerRate).toBeLessThan(0.012);
   });
 });
 
@@ -366,11 +573,9 @@ describe('Big Juan — full-round RTP envelope (Monte Carlo)', () => {
     // bonus when triggered. We bootstrap the bonus via the engine's roll/
     // resolve helpers so this captures Money Bag + jackpots + cap.
     //
-    // Sample variance at N=10k is large because bonuses are rare (~0.5%
-    // trigger) and a single jackpot fill swings RTP by ~25%. Calibrated
-    // target via the 200k-spin calibration script is 96.7%; the test
-    // envelope below catches a 5x calibration drift but tolerates the
-    // legitimate ±15% Monte Carlo noise at this sample size.
+    // Sample variance at N=10k is large because bonuses are rare and a
+    // single jackpot fill can move the result materially. This is a broad
+    // regression envelope, not an assertion of provider-exact RTP.
     const N = 10000;
     let total = 0;
     for (let i = 0; i < N; i++) {
@@ -383,9 +588,18 @@ describe('Big Juan — full-round RTP envelope (Monte Carlo)', () => {
         let bag = 1;
         let meters = { mini: 0, minor: 0, major: 0, grand: 0 };
         let cum = 0;
+        const guaranteedWinOrdinal = rng.nextInt(3) + 1;
+        let respinNumber = 0;
         while (respins > 0 && cum < 2600) {
-          const sample = rollRespin(rng);
-          const res = resolveRespin(sample, { bagValue: bag, meters, cumulativeMult: cum });
+          respinNumber++;
+          const sample = respinNumber === guaranteedWinOrdinal
+            ? rollGuaranteedWinRespin(rng)
+            : rollRespin(rng);
+          const res = resolveRespin(sample, {
+            bagValue: bag,
+            meters,
+            cumulativeMult: r.baseMultiplier + cum,
+          });
           cum += res.paid;
           bag = res.newBagValue;
           meters = res.newMeters;
@@ -396,9 +610,8 @@ describe('Big Juan — full-round RTP envelope (Monte Carlo)', () => {
       }
     }
     const rtp = total / N;
-    // Loose envelope: 0.60-1.50. The 200k-spin calibration script reports
-    // a stable ~96.7% — this in-suite envelope just guards against major
-    // regressions while keeping the test under 2 seconds.
+    // Loose envelope: this catches major payout drift while keeping the
+    // in-suite simulation quick enough for regular development.
     expect(rtp).toBeGreaterThan(0.60);
     expect(rtp).toBeLessThan(1.50);
   });

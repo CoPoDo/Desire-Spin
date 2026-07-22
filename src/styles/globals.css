@@ -2039,6 +2039,37 @@
   --bj-cell-gap: 6px;
 }
 
+.bj-reels-shell {
+  aspect-ratio: 1.24 / 1;
+}
+
+.bj-reel-frame::before {
+  content: '';
+  position: absolute;
+  z-index: 4;
+  top: 0;
+  left: 2%;
+  right: 2%;
+  height: 8%;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 6% 0, #d94b2b 0 45%, transparent 48%) 0 100% / 20% 100% repeat-x,
+    linear-gradient(180deg, #d55131, #8d1d1b);
+  filter: drop-shadow(0 3px 2px rgba(67, 25, 8, .45));
+}
+
+@media (min-width: 900px) {
+  .bj-reels-shell {
+    aspect-ratio: 1.36 / 1;
+    width: min(67vw, 760px);
+    margin-left: clamp(150px, 18vw, 270px);
+  }
+
+  .bj-jackpot-ribbon {
+    margin-left: clamp(72px, 9vw, 135px);
+  }
+}
+
 .spin-reel {
   position: relative;
   width: 100%;
@@ -2049,8 +2080,9 @@
   height: 100%;
   overflow: hidden;
   border-radius: 8px;
-  background: rgba(0, 0, 0, 0.28);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), inset 0 -4px 12px rgba(0, 0, 0, 0.45);
+  background: linear-gradient(90deg, #ead9ae, #fff3cf 50%, #e6cf9b);
+  border: 1px solid rgba(72, 94, 73, .48);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7), inset 0 -4px 12px rgba(92, 57, 19, .18);
 }
 
 .spin-reel-strip {
@@ -2089,6 +2121,7 @@
 .bj-rest-cells {
   position: absolute;
   inset: 0;
+  display: flex;
   flex-direction: column;
   gap: var(--bj-cell-gap);
 }
@@ -2098,9 +2131,11 @@
   height: var(--bj-cell-h);
   flex-shrink: 0;
   border-radius: 8px;
-  border: 1.5px solid rgba(255, 255, 255, 0.10);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(0, 0, 0, 0.42));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(68, 88, 65, .32);
+  background:
+    radial-gradient(circle at 50% 28%, rgba(255,255,255,.72), transparent 44%),
+    linear-gradient(180deg, #fff1c9, #ead39e);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .72), inset 0 -2px 5px rgba(87, 53, 14, .14);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2238,7 +2273,7 @@
   position: absolute;
   bottom: 96px;
   left: 6px;
-  width: clamp(56px, 14vw, 84px);
+  width: clamp(64px, 16vw, 112px);
   aspect-ratio: 3 / 4;
   pointer-events: none;
   z-index: 5;
@@ -2462,3 +2497,27 @@
 }
 .dice-slider::-webkit-slider-runnable-track { background: transparent; }
 .dice-slider::-moz-range-track { background: transparent; }
+
+.bj-spin-glyph,
+.bj-spin-glyph > svg,
+.bj-spin-glyph > span,
+.bj-spin-glyph > span > svg {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.bj-spin-glyph > svg,
+.bj-spin-glyph > span,
+.bj-spin-glyph > span > svg {
+  width: 100%;
+  height: 100%;
+}
+
+@media (min-width: 900px) {
+  .bj-juan-character {
+    left: clamp(18px, 5vw, 90px);
+    bottom: 72px;
+    width: clamp(170px, 21vw, 280px);
+  }
+}

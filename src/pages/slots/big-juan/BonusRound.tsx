@@ -1,6 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { createRng, type Rng } from '../../../lib/fairness';
 import { fmtCurrency } from '../../../lib/format';
 import { useGame } from '../../../game-context';
 import {
@@ -8,17 +7,16 @@ import {
   JACKPOT_THRESHOLD,
   type FourthReelOutcome,
   type JackpotTier,
+  type RespinRoundOutcome,
   type RespinSymbol,
-  resolveRespin,
-  rollRespin,
+  type RespinTimelineEvent,
 } from './engine';
 import { fireConfetti } from '../../../lib/confetti';
 import { PinataSvg } from './symbols';
 import { flyCoin } from './coinFly';
 
-const sleep = (ms: number) => new Promise<void>((res) => setTimeout(res, ms));
-
-/** Big Juan Respins feature — full clone of the spec §7 mechanics.
+/** Big Juan Respins feature reconstructed from the pinned sver=5 rules and
+ * observed runtime event ordering, using locally calibrated hidden weights.
  *
  *  Layout:
  *
@@ -33,10 +31,10 @@ const sleep = (ms: number) => new Promise<void>((res) => setTimeout(res, ms));
  *  Each respin: 8 outer cells + 4th-reel cell roll. Resolution depends on
  *  the 4th reel:
  *    BLANK → nothing collects; respin -= 1
- *    WIN   → coins + bag pay out, jackpot meters tick, +extra-spin tokens
- *            add to respin counter; respin -= 1
- *    BOOST → coins added permanently to bag value; jackpot/extra DO NOT
- *            collect; respin -= 1
+ *    WIN   → coins + bag pay out and jackpot meters tick; respin -= 1
+ *    BOOST → coins added permanently to bag value; jackpots do not collect;
+ *            respin -= 1
+ *    EXTRA SPIN tokens add one respin independently of the fourth reel.
  *
  *  Per spec §7.3 the bag starts at 1× bet. Jackpot meters fill at 3/4/5/5.
  *  Cap = 2,600× bet hits → end immediately.
@@ -45,32 +43,65 @@ const sleep = (ms: number) => new Promise<void>((res) => setTimeout(res, ms));
 export type BonusRoundProps = {
   bet: number;
   scatterCount: number;
-  /** Pre-rolled override: if set, the bonus's first roll uses this scatter
-   *  count to seed the initial respins. Used by Bonus Buy. */
-  initialRespinsOverride?: number;
-  seeds: { serverSeed: string; clientSeed: string; nonce: number };
+  /** Immutable seeded math timeline. Rendering only replays these events. */
+  outcome: RespinRoundOutcome;
+  /** Playback speed. Values above 1 shorten feature delays; default is 1. */
+  speedMultiplier?: number;
   onClose: (totalPayoutMultiplier: number) => void;
 };
-
-const RESPIN_AWARD: Record<number, number> = { 3: 10, 4: 12, 5: 15 };
 
 export function BigJuanBonusRound({
   bet,
   scatterCount,
-  initialRespinsOverride,
-  seeds,
+  outcome,
+  speedMultiplier = 1,
   onClose,
 }: BonusRoundProps) {
   const { sound } = useGame();
 
-  // Single shared RNG — entire bonus reproducible from a single nonce.
-  const rngRef = useRef<Rng | null>(null);
-  if (!rngRef.current) {
-    rngRef.current = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
-  }
+  // Every delay owned by this component goes through one scheduler so it can
+  // be sped up consistently and cancelled when the feature unmounts.
+  const mountedRef = useRef(true);
+  const timeoutIdsRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
+  const safeSpeed = Number.isFinite(speedMultiplier) && speedMultiplier > 0
+    ? speedMultiplier
+    : 1;
+  const scaledMs = useCallback(
+    (ms: number) => Math.max(0, Math.round(ms / safeSpeed)),
+    [safeSpeed],
+  );
+  const schedule = useCallback((callback: () => void, ms: number) => {
+    const id = setTimeout(() => {
+      timeoutIdsRef.current.delete(id);
+      if (mountedRef.current) callback();
+    }, scaledMs(ms));
+    timeoutIdsRef.current.add(id);
+    return id;
+  }, [scaledMs]);
+  const cancelScheduled = useCallback((id: ReturnType<typeof setTimeout>) => {
+    clearTimeout(id);
+    timeoutIdsRef.current.delete(id);
+  }, []);
+  const sleep = useCallback(
+    (ms: number) => new Promise<void>((resolveSleep) => {
+      schedule(resolveSleep, ms);
+    }),
+    [schedule],
+  );
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      for (const id of timeoutIdsRef.current) clearTimeout(id);
+      timeoutIdsRef.current.clear();
+    };
+  }, []);
+
+  const eventCursorRef = useRef(0);
 
   // ── Round state ─────────────────────────────────────────
-  const initialRespins = initialRespinsOverride ?? RESPIN_AWARD[scatterCount] ?? 10;
+  const initialRespins = outcome.initialRespins;
   const [respinsLeft, setRespinsLeft] = useState(initialRespins);
   const [bagValue, setBagValue] = useState(1); // Spec §7.3: starts at 1× bet
   const [meters, setMeters] = useState<Record<JackpotTier, number>>({
@@ -83,35 +114,32 @@ export function BigJuanBonusRound({
   const [jackpotFiring, setJackpotFiring] = useState<{ tier: JackpotTier; amount: number } | null>(null);
   const [lastRespinKind, setLastRespinKind] = useState<FourthReelOutcome | null>(null);
   const [coinsLanded, setCoinsLanded] = useState<Set<number>>(new Set());
-  // Note: extra-spin token animations are inlined via coin-stream visuals
-  // rather than a separate counter overlay (kept simple per spec §10b.8).
+  // Extra-spin token animations feed directly into the visible counter.
   /** Cap-hit flag — when the running total or pending payout would exceed
    *  2,600× bet. End immediately per spec §7.7. */
-  const [cappedAtMax, setCappedAtMax] = useState(false);
+  const [cappedAtMax, setCappedAtMax] = useState(
+    () => outcome.cappedAtMax && outcome.events.length === 0,
+  );
 
   const totalPayoutMult = cumulativeMult;
   const totalPayout = bet * totalPayoutMult;
 
-  // Live-state refs. resolve() is invoked from inside kickRespin's
-  // setTimeout chain, and kickRespin captures the FIRST resolve closure
-  // (its dep array is [sound]). Without these refs, resolve would read
-  // the bag/meters/cumulative values frozen at first mount — so every
-  // respin after the first resolved against stale state (BOOST adding to
-  // a perpetual 1× bag, WIN paying from a frozen cumulative, jackpot
-  // meters desyncing). Reading live values through refs fixes that.
-  const bagRef = useRef(bagValue);
-  bagRef.current = bagValue;
+  // Live presentation refs prevent timer callbacks from reading stale state.
   const metersRef = useRef(meters);
   metersRef.current = meters;
   const cumulativeRef = useRef(cumulativeMult);
   cumulativeRef.current = cumulativeMult;
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+  const soundRef = useRef(sound);
+  soundRef.current = sound;
 
   // ── Intro: short "GET READY" beat before the first respin ──────────
   useEffect(() => {
     if (phase !== 'intro') return;
-    const t = setTimeout(() => setPhase('idle'), 800);
-    return () => clearTimeout(t);
-  }, [phase]);
+    const t = schedule(() => setPhase('idle'), 800);
+    return () => cancelScheduled(t);
+  }, [phase, schedule, cancelScheduled]);
 
   // ── End-of-feature confetti shower ─────────────────────────────────
   useEffect(() => {
@@ -127,18 +155,31 @@ export function BigJuanBonusRound({
   useEffect(() => {
     if (phase !== 'idle') return;
     if (respinsLeft <= 0 || cappedAtMax) {
-      // End-of-feature — emit final fanfare then call onClose.
+      // Enter the finished presentation. Closing is deliberately handled by
+      // a separate effect so this phase change cannot cancel its own timer.
       setPhase('finished');
-      sound.play(totalPayoutMult >= 100 ? 'mega-win' : 'big-win');
-      const t = setTimeout(() => onClose(totalPayoutMult), 3200);
-      return () => clearTimeout(t);
+      return;
     }
-    const t = setTimeout(() => kickRespin(), 600);
-    return () => clearTimeout(t);
+    const t = schedule(() => kickRespin(), 600);
+    return () => cancelScheduled(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, respinsLeft, cappedAtMax]);
+  }, [phase, respinsLeft, cappedAtMax, schedule, cancelScheduled]);
 
-  // ── Kick off a respin: roll, then animate outer cells, then 4th reel ──
+  // Keep the completion delay alive for the whole finished phase. In the old
+  // combined effect, setPhase('finished') immediately ran cleanup and cleared
+  // the onClose timer before it could commit the payout.
+  useEffect(() => {
+    if (phase !== 'finished') return;
+    const finalFeatureMultiplier = cumulativeRef.current;
+    soundRef.current.play(finalFeatureMultiplier >= 100 ? 'mega-win' : 'big-win');
+    const t = schedule(
+      () => onCloseRef.current(finalFeatureMultiplier),
+      3200,
+    );
+    return () => cancelScheduled(t);
+  }, [phase, schedule, cancelScheduled]);
+
+  // ── Replay the next precomputed respin event ─────────────────────
   const kickRespin = useCallback(() => {
     setPhase('spinning');
     setLastRespinKind(null);
@@ -146,13 +187,19 @@ export function BigJuanBonusRound({
     setFourth(null);
     sound.play('click');
 
-    const rng = rngRef.current!;
-    const sample = rollRespin(rng);
+    const event = outcome.events[eventCursorRef.current];
+    if (!event) {
+      setRespinsLeft(0);
+      setPhase('idle');
+      return;
+    }
+    eventCursorRef.current += 1;
+    const sample = event.sample;
 
-    // Outer cells reveal staggered (~80ms per cell). Real spec §10b.7
-    // says ~0.6s for the 8 cells to land.
+    // Outer cells use a reference-tuned stagger; this timing is presentation,
+    // not a published probability or protocol value.
     sample.outer.forEach((sym, i) => {
-      setTimeout(() => {
+      schedule(() => {
         setOuter((prev) => {
           const next = [...prev];
           next[i] = sym;
@@ -161,33 +208,32 @@ export function BigJuanBonusRound({
         if (sym.kind === 'coin' || sym.kind === 'extra' ||
             sym.kind === 'mini' || sym.kind === 'minor' ||
             sym.kind === 'major' || sym.kind === 'grand') {
-          sound.play('drop');
+          sound.play('juan-reel-stop');
         }
       }, 80 * (i + 1));
     });
 
     // 4th reel spins ~1.2s after the last outer cell.
-    setTimeout(() => {
+    schedule(() => {
       setPhase('fourth');
       // 4th reel "spins" visually for ~1.2s before settling.
-      setTimeout(() => {
+      schedule(() => {
         setFourth(sample.fourth);
         // Settle SFX based on outcome.
-        if (sample.fourth === 'win') sound.play('big-win');
-        else if (sample.fourth === 'boost') sound.play('coin');
-        else sound.play('drop');
+        if (sample.fourth === 'win') sound.play('juan-fanfare');
+        else if (sample.fourth === 'boost') sound.play('juan-coin');
+        else sound.play('juan-reel-stop');
         // Resolve after a short settle. resolve() is async — fire-and-
         // forget since the phase state machine handles the next respin.
-        setTimeout(() => { void resolve(sample); }, 480);
+        schedule(() => { void resolve(event); }, 480);
       }, 1200);
     }, 80 * 9);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sound]);
+  }, [sound, schedule, outcome]);
 
   // ── Resolve the respin against current state ─────────────────────────
   //
-  //  Bible Part 8.9 describes the resolution beats in detail. We mirror
-  //  them here:
+  //  The renderer mirrors the observed resolution beats:
   //
   //    WIN  → each coin element flies one-by-one to the WIN tally with
   //           a small stagger; the money bag also fires its value to
@@ -201,16 +247,9 @@ export function BigJuanBonusRound({
   //  animations. State updates that affect React layout still happen
   //  immediately after the animation phase so the next respin can
   //  start from a clean slate. */
-  const resolve = useCallback(async (sample: { outer: RespinSymbol[]; fourth: FourthReelOutcome }) => {
+  const resolve = useCallback(async (event: RespinTimelineEvent) => {
     setPhase('resolving');
-    // Read LIVE round state through refs — see bagRef/metersRef/
-    // cumulativeRef above. Using the closure-captured state here was the
-    // root of the "BOOST is buggy" desync.
-    const res = resolveRespin(sample, {
-      bagValue: bagRef.current,
-      meters: metersRef.current,
-      cumulativeMult: cumulativeRef.current,
-    });
+    const { sample, resolution: res } = event;
     setLastRespinKind(res.kind);
     const animSet = new Set<number>();
     sample.outer.forEach((s, i) => {
@@ -218,44 +257,87 @@ export function BigJuanBonusRound({
     });
     setCoinsLanded(animSet);
 
-    // ── WIN: fly coins to tally, jackpot symbols to meters ───────────
+    // The official queue resolves Extras first, before WIN/BOOST/blank.
+    const respinCounterEl = document.querySelector('[data-bj-respins]') as HTMLElement | null;
+    for (let i = 0; i < sample.outer.length; i++) {
+      if (sample.outer[i]!.kind !== 'extra') continue;
+      const cellEl = document.querySelector(`[data-bj-outer-cell="${i}"]`) as HTMLElement | null;
+      if (cellEl && respinCounterEl) {
+        flyCoin(cellEl, respinCounterEl, {
+          glyph: '+1', value: 0, durationMs: scaledMs(500), endScale: 0.7,
+        });
+        sound.play('juan-reel-stop');
+        await sleep(200);
+      }
+    }
+    if (res.extraSpins > 0) {
+      setRespinsLeft((previous) => previous + res.extraSpins);
+    }
+
+    // WIN resolves jackpot tokens, meter fills/awards/resets, and only then
+    // Money plus the Bag. This ordering is visible in the reference queue.
     if (res.kind === 'win') {
       const tallyEl = document.querySelector('[data-bj-tally]') as HTMLElement | null;
       const bagEl = document.querySelector('[data-bj-money-bag]') as HTMLElement | null;
+      const visualMeters: Record<JackpotTier, number> = { ...metersRef.current };
+      for (const tier of ['mini', 'minor', 'major', 'grand'] as const) {
+        for (let i = 0; i < sample.outer.length; i++) {
+          const s = sample.outer[i]!;
+          if (s.kind !== tier) continue;
+          const cellEl = document.querySelector(`[data-bj-outer-cell="${i}"]`) as HTMLElement | null;
+          const meterEl = document.querySelector(`[data-bj-meter="${tier}"]`) as HTMLElement | null;
+          if (cellEl && meterEl) {
+            flyCoin(cellEl, meterEl, {
+              glyph: tier.toUpperCase(),
+              value: 0,
+              durationMs: scaledMs(480),
+              endScale: 0.6,
+              endRotate: 360,
+            });
+            sound.play('juan-reel-stop');
+            await sleep(100);
+          }
+          visualMeters[tier] += 1;
+          setMeters({ ...visualMeters });
+          await sleep(120);
+
+          if (visualMeters[tier] >= JACKPOT_THRESHOLD[tier]) {
+            const hit = { tier, amount: JACKPOTS[tier] };
+            setPhase('jackpot');
+            setJackpotFiring(hit);
+            sound.play('mega-win');
+            const duration = tier === 'grand'
+              ? 4500
+              : tier === 'major'
+                ? 2800
+                : tier === 'minor'
+                  ? 2200
+                  : 1800;
+            await sleep(duration);
+            visualMeters[tier] -= JACKPOT_THRESHOLD[tier];
+            setMeters({ ...visualMeters });
+            setJackpotFiring(null);
+            setPhase('resolving');
+            await sleep(300);
+          }
+        }
+      }
       // Each coin element flies → tally with a small stagger.
       for (let i = 0; i < sample.outer.length; i++) {
         const s = sample.outer[i]!;
         const cellEl = document.querySelector(`[data-bj-outer-cell="${i}"]`) as HTMLElement | null;
         if (!cellEl || !tallyEl) continue;
         if (s.kind === 'coin') {
-          flyCoin(cellEl, tallyEl, { glyph: '🪙', value: s.value, durationMs: 580 });
-          sound.play('coin');
+          flyCoin(cellEl, tallyEl, { glyph: '$', value: s.value, durationMs: scaledMs(580) });
+          sound.play('juan-coin');
           await sleep(140);
         }
       }
       // Money bag fires its value to the tally.
       if (bagEl && tallyEl && res.bagPaid > 0) {
-        flyCoin(bagEl, tallyEl, { glyph: '💰', value: res.bagPaid, durationMs: 600 });
-        sound.play('coin');
+        flyCoin(bagEl, tallyEl, { glyph: 'BAG', value: res.bagPaid, durationMs: scaledMs(600) });
+        sound.play('juan-coin');
         await sleep(280);
-      }
-      // Jackpot symbols pop to their meters with particles.
-      for (let i = 0; i < sample.outer.length; i++) {
-        const s = sample.outer[i]!;
-        if (s.kind !== 'mini' && s.kind !== 'minor' && s.kind !== 'major' && s.kind !== 'grand') continue;
-        const cellEl = document.querySelector(`[data-bj-outer-cell="${i}"]`) as HTMLElement | null;
-        const meterEl = document.querySelector(`[data-bj-meter="${s.kind}"]`) as HTMLElement | null;
-        if (cellEl && meterEl) {
-          flyCoin(cellEl, meterEl, {
-            glyph: s.kind === 'grand' ? '💎' : s.kind === 'major' ? '🔴' : s.kind === 'minor' ? '🟡' : '🔵',
-            value: 0,
-            durationMs: 480,
-            endScale: 0.6,
-            endRotate: 360,
-          });
-          sound.play('drop');
-          await sleep(100);
-        }
       }
     }
 
@@ -268,56 +350,29 @@ export function BigJuanBonusRound({
         const cellEl = document.querySelector(`[data-bj-outer-cell="${i}"]`) as HTMLElement | null;
         if (cellEl && bagEl) {
           flyCoin(cellEl, bagEl, {
-            glyph: '🪙',
+            glyph: '$',
             value: s.value,
-            durationMs: 520,
+            durationMs: scaledMs(520),
             endScale: 0.3,
             endRotate: 180,
           });
-          sound.play('coin');
+          sound.play('juan-coin');
           await sleep(120);
         }
       }
     }
 
-    // Apply state changes after the fly animations have played.
-    const applyDelay = res.kind === 'blank' ? 350 : res.jackpotHits.length > 0 ? 600 : 350;
-    setTimeout(() => {
-      setBagValue(res.newBagValue);
-      setMeters(res.newMeters);
-      setCumulativeMult((prev) => +(prev + res.paid).toFixed(4));
-      setRespinsLeft((prev) => Math.max(0, prev - 1 + res.extraSpins));
-
-      if (res.cappedAtMax) setCappedAtMax(true);
-
-      if (res.jackpotHits.length > 0) {
-        setPhase('jackpot');
-        let i = 0;
-        const playNext = () => {
-          if (i >= res.jackpotHits.length) {
-            setOuter((prev) => prev.map(() => ({ kind: 'blank' })));
-            setPhase('idle');
-            return;
-          }
-          const hit = res.jackpotHits[i]!;
-          setJackpotFiring(hit);
-          sound.play('mega-win');
-          const dur = hit.tier === 'grand' ? 4500 : hit.tier === 'major' ? 2800 : hit.tier === 'minor' ? 2200 : 1800;
-          setTimeout(() => {
-            setJackpotFiring(null);
-            i++;
-            setTimeout(playNext, 300);
-          }, dur);
-        };
-        setTimeout(playNext, 250);
-      } else {
-        setTimeout(() => {
-          setOuter((prev) => prev.map(() => ({ kind: 'blank' })));
-          setPhase('idle');
-        }, 500);
-      }
-    }, applyDelay);
-  }, [bagValue, meters, cumulativeMult, sound]);
+    // Commit the resolved state after all visible collection beats.
+    await sleep(350);
+    setBagValue(res.newBagValue);
+    setMeters(res.newMeters);
+    setCumulativeMult(event.cumulativeAfter);
+    setRespinsLeft(event.respinsAfter);
+    if (res.cappedAtMax) setCappedAtMax(true);
+    setOuter((previous) => previous.map(() => ({ kind: 'blank' })));
+    await sleep(500);
+    setPhase('idle');
+  }, [sleep, sound, scaledMs]);
 
   return (
     <motion.div
@@ -327,7 +382,7 @@ export function BigJuanBonusRound({
       exit={{ opacity: 0 }}
       style={{
         background:
-          'radial-gradient(80% 60% at 50% 38%, #c8102e 0%, #5a0810 50%, #14040a 90%, #02010a 100%)',
+          'radial-gradient(circle at 78% 14%, rgba(255,246,194,.9) 0 3%, rgba(122,145,213,.2) 9%, transparent 20%), linear-gradient(180deg, #111c55 0%, #30215f 38%, #6e293e 70%, #160813 100%)',
         backdropFilter: 'blur(4px)',
       }}
     >
@@ -352,12 +407,12 @@ export function BigJuanBonusRound({
       </div>
 
       {/* Main play area — jackpot meters | 3x3 grid | 4th reel */}
-      <div className="flex items-center justify-center gap-2 flex-1 w-full max-w-md">
+      <div className="flex items-center justify-center gap-2 flex-1 w-full max-w-3xl">
         {/* Left rail: 4 jackpot meters stacked. Each shows tier + payout
             + segment progress (filled / required). Per spec §9: floats
             on the left side of the feature screen. */}
-        <div className="flex flex-col gap-1.5 w-[68px] flex-shrink-0">
-          {(['mini', 'minor', 'major', 'grand'] as JackpotTier[]).map((tier) => (
+        <div className="flex flex-col gap-1.5 w-[clamp(52px,14vw,90px)] flex-shrink-0">
+          {(['grand', 'major', 'minor', 'mini'] as JackpotTier[]).map((tier) => (
             <JackpotMeter
               key={tier}
               tier={tier}
@@ -383,7 +438,9 @@ export function BigJuanBonusRound({
 
       {/* Stats bar — respins / total win / bag value */}
       <div className="flex items-center justify-center gap-2 w-full max-w-md mt-3 mb-1 px-3">
-        <StatTile label="Respins" value={String(respinsLeft)} accent="#ffd166" />
+        <div data-bj-respins="true">
+          <StatTile label="Respins" value={String(respinsLeft)} accent="#ffd166" />
+        </div>
         <StatTile label="Total Win" value={fmtCurrency(totalPayout)} accent="#1fff7a" wide tallyTarget />
         <StatTile label="Money Bag" value={`${bagValue.toFixed(2)}×`} accent="#ff8a40" />
       </div>
@@ -396,7 +453,7 @@ export function BigJuanBonusRound({
         {phase === 'resolving' && lastRespinKind === 'win' && 'WIN — collecting'}
         {phase === 'resolving' && lastRespinKind === 'boost' && 'BOOST — bag growing'}
         {phase === 'resolving' && lastRespinKind === 'blank' && 'No win'}
-        {phase === 'jackpot' && '🎉 JACKPOT!'}
+        {phase === 'jackpot' && 'JACKPOT!'}
         {phase === 'finished' && (cappedAtMax ? 'MAX WIN!' : 'Round complete')}
         {phase === 'idle' && respinsLeft > 0 && 'Next respin…'}
       </div>
@@ -586,12 +643,12 @@ function BonusGrid({
     <div
       className="rounded-2xl p-2 relative"
       style={{
-        background: 'linear-gradient(180deg, #2a0810 0%, #5a0810 50%, #14040a 100%)',
-        border: '3px solid #c8932e',
-        boxShadow: '0 0 0 1px rgba(255,209,102,.3), inset 0 1px 0 rgba(255,209,102,.4), 0 12px 30px rgba(0,0,0,.6)',
+        background: 'linear-gradient(145deg, #fff0a6 0%, #bf7d14 42%, #6d3b07 100%)',
+        border: '3px solid #fff5c4',
+        boxShadow: '0 0 0 2px #8d510d, inset 0 1px 0 rgba(255,255,255,.75), 0 14px 32px rgba(0,0,0,.65)',
       }}
     >
-      <div className="grid grid-cols-3 gap-1.5" style={{ width: 'min(220px, 64vw)' }}>
+      <div className="grid grid-cols-3 gap-1.5" style={{ width: 'clamp(150px, 48vw, 320px)' }}>
         {Array.from({ length: 9 }).map((_, gridIdx) => {
           if (gridIdx === 4) {
             return (
@@ -636,18 +693,22 @@ function MoneyBagCell({ value, pulse }: { value: number; pulse: boolean }) {
       data-bj-money-bag="true"
       className="relative aspect-square rounded-lg flex flex-col items-center justify-center"
       style={{
-        background: 'radial-gradient(circle at 35% 30%, #ffd166 0%, #c8932e 40%, #5a3a04 90%)',
-        border: '2px solid #fff5c4',
-        boxShadow: 'inset 0 1px 0 rgba(255,255,255,.4), 0 0 14px rgba(255,209,102,.5), 0 4px 8px rgba(0,0,0,.5)',
+        background: 'radial-gradient(circle at 35% 28%, #1aa875 0%, #087151 48%, #063c32 100%)',
+        border: '2px solid #ffd166',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,.35), 0 0 14px rgba(255,209,102,.55), 0 4px 8px rgba(0,0,0,.5)',
       }}
       animate={pulse ? { scale: [1, 1.18, 1.08], rotate: [0, -2, 2, 0] } : { scale: 1 }}
       transition={{ duration: 0.8, ease: 'easeOut' }}
     >
-      <span className="text-2xl drop-shadow-md leading-none">💰</span>
+      <svg viewBox="0 0 64 64" aria-hidden="true" className="h-8 w-8 drop-shadow-md">
+        <path d="M20 16h24l-4 10c9 7 13 17 9 26H15c-4-9 0-19 9-26z" fill="#f4b73f" stroke="#6f3f0a" strokeWidth="3" />
+        <path d="M20 16q12 7 24 0M23 26h18" fill="none" stroke="#fff0a6" strokeWidth="3" />
+        <text x="32" y="46" textAnchor="middle" fontSize="18" fontWeight="900" fill="#6f3f0a">$</text>
+      </svg>
       <span
         className="font-mono font-extrabold text-[11px] tabular-nums mt-1 leading-none"
         style={{
-          color: '#5a0810',
+          color: '#fff5c4',
           textShadow: '0 1px 0 rgba(255,255,255,.4)',
         }}
       >
@@ -669,59 +730,60 @@ function OuterCell({
   streamingToBag: boolean;
 }) {
   const baseStyle = {
-    background: 'linear-gradient(180deg, rgba(255,255,255,.04), rgba(0,0,0,.45))',
-    border: '1px solid rgba(200,147,46,.25)',
+    background: 'linear-gradient(100deg, #edf8ff 0%, #b9d3e2 47%, #f7fdff 74%, #94b4ca 100%)',
+    border: '1px solid rgba(126,78,12,.5)',
+    boxShadow: 'inset 0 0 12px rgba(70,116,145,.2)',
   };
   return (
-    <motion.div
+    <div
       data-bj-outer-cell={outerIdx}
       className="aspect-square rounded-lg flex items-center justify-center relative overflow-hidden"
       style={baseStyle}
-      initial={landed ? { scale: 0.5, opacity: 0 } : false}
-      animate={
-        collectingForWin
-          ? { scale: [1, 1.15, 0.4], opacity: [1, 1, 0], y: [0, -4, 30] }
-          : streamingToBag
-            ? { scale: [1, 1.1, 0.5], opacity: [1, 1, 0], x: 8, y: 4 }
-            : fadingOut
-              ? { scale: 0.85, opacity: 0 }
-              : landed
-                ? { scale: 1, opacity: 1 }
-                : { scale: 1, opacity: 1 }
-      }
-      transition={
-        collectingForWin
-          ? { duration: 0.7, ease: 'easeIn' }
-          : streamingToBag
-            ? { duration: 0.55, ease: 'easeIn' }
-            : fadingOut
-              ? { duration: 0.4 }
-              : { duration: 0.25, ease: [0.34, 1.4, 0.5, 1] }
-      }
     >
-      <RespinSymbolGlyph symbol={symbol} spinning={spinning} />
-    </motion.div>
+      <motion.div
+        className="absolute inset-0 flex items-center justify-center"
+        initial={landed ? { scale: 0.5, opacity: 0 } : false}
+        animate={{
+          scale: 1,
+          opacity: fadingOut || collectingForWin || streamingToBag ? 0 : 1,
+        }}
+        transition={{ duration: fadingOut || collectingForWin || streamingToBag ? 0.4 : 0.25 }}
+      >
+        <RespinSymbolGlyph symbol={symbol} spinning={spinning} />
+      </motion.div>
+    </div>
   );
 }
 
 function RespinSymbolGlyph({ symbol, spinning }: { symbol: RespinSymbol; spinning: boolean }) {
   if (spinning) {
-    // "?" flicker while the cell is rolling.
     return (
-      <motion.span
-        className="font-display font-extrabold text-2xl text-[#ffd166]/70"
-        animate={{ opacity: [0.3, 0.95, 0.3], scale: [0.85, 1.05, 0.85] }}
-        transition={{ duration: 0.32, repeat: Infinity, ease: 'easeInOut' }}
+      <motion.div
+        className="absolute inset-x-0 top-0 flex flex-col items-center gap-2 py-2"
+        animate={{ y: [0, -610] }}
+        transition={{ duration: 0.72, repeat: Infinity, ease: 'linear' }}
       >
-        ?
-      </motion.span>
+        {[...RESPIN_DISPLAY_TOKENS, ...RESPIN_DISPLAY_TOKENS.slice(0, 3)].map((token, index) => (
+          <span
+            key={`${token}-${index}`}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 font-display text-[7px] font-black uppercase"
+            style={respinTokenStyle(token)}
+          >
+            {token === 'money' ? '$' : token}
+          </span>
+        ))}
+      </motion.div>
     );
   }
   if (symbol.kind === 'blank') return null;
   if (symbol.kind === 'coin') {
     return (
       <div className="flex flex-col items-center justify-center">
-        <span className="text-xl leading-none">🪙</span>
+        <span
+          className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-[#fff0a6] bg-gradient-to-br from-[#fff0a6] via-[#e6a72d] to-[#8d510d] font-display text-xs font-black text-[#6f3f0a] shadow-[0_0_8px_rgba(255,209,102,.65)]"
+        >
+          $
+        </span>
         <span
           className="font-mono font-extrabold text-[10px] tabular-nums leading-none mt-0.5"
           style={{ color: '#fff5c4', textShadow: '0 1px 1px rgba(0,0,0,.6), 0 0 4px rgba(255,209,102,.85)' }}
@@ -734,13 +796,7 @@ function RespinSymbolGlyph({ symbol, spinning }: { symbol: RespinSymbol; spinnin
   if (symbol.kind === 'extra') {
     return (
       <div className="flex flex-col items-center justify-center">
-        <span className="text-xl leading-none">🎊</span>
-        <span
-          className="font-mono font-bold text-[9px] tabular-nums leading-none mt-0.5"
-          style={{ color: '#1fff7a', textShadow: '0 0 4px rgba(31,255,122,.85)' }}
-        >
-          +1
-        </span>
+        <span className="flex h-9 w-9 rotate-6 items-center justify-center rounded-[35%] border-2 border-[#d6ffca] bg-[#15984f] font-display text-[11px] font-black text-white shadow-[0_0_8px_rgba(31,255,122,.65)]">+1</span>
       </div>
     );
   }
@@ -750,25 +806,43 @@ function RespinSymbolGlyph({ symbol, spinning }: { symbol: RespinSymbol; spinnin
     : symbol.kind === 'major' ? '#ff5560'
     : symbol.kind === 'minor' ? '#ffd166'
     : '#5fb8ff';
-  const glyph =
-    symbol.kind === 'grand' ? '💎'
-    : symbol.kind === 'major' ? '🔴'
-    : symbol.kind === 'minor' ? '🟡'
-    : '🔵';
   return (
     <div className="flex flex-col items-center justify-center">
-      <span className="text-lg leading-none" style={{ filter: `drop-shadow(0 0 4px ${color}aa)` }}>
-        {glyph}
-      </span>
       <span
-        className="font-display font-extrabold text-[7px] uppercase tracking-widest leading-none mt-0.5"
-        style={{ color, textShadow: `0 0 3px ${color}88` }}
+        className="flex h-9 w-9 items-center justify-center rounded-md border-2 font-display text-[7px] font-black uppercase tracking-tight text-white"
+        style={{ background: `linear-gradient(145deg, ${color}, #281335)`, borderColor: '#fff0a6', boxShadow: `0 0 8px ${color}aa` }}
       >
         {symbol.kind}
       </span>
     </div>
   );
 }
+
+const RESPIN_DISPLAY_TOKENS = [
+  'major', 'money', 'mini', 'major', 'money', 'grand', 'extra', 'mini',
+  'money', 'extra', 'grand', 'money', 'minor', 'money', 'grand', 'minor',
+] as const;
+
+function respinTokenStyle(token: typeof RESPIN_DISPLAY_TOKENS[number]): CSSProperties {
+  const color = token === 'grand' ? '#8d5de8'
+    : token === 'major' ? '#d13a45'
+    : token === 'minor' ? '#d49a19'
+    : token === 'mini' ? '#338bc0'
+    : token === 'extra' ? '#15984f'
+    : '#e6a72d';
+  return {
+    color: '#fff',
+    background: `linear-gradient(145deg, ${color}, #281335)`,
+    borderColor: '#fff0a6',
+    boxShadow: `0 0 7px ${color}99`,
+  };
+}
+
+const FOURTH_REEL_DISPLAY_STRIP: FourthReelOutcome[] = [
+  'boost', 'win', 'blank', 'boost', 'blank', 'boost', 'boost', 'boost', 'win', 'win',
+  'blank', 'blank', 'boost', 'blank', 'boost', 'win', 'win', 'win', 'blank', 'win',
+  'win', 'blank', 'boost', 'blank', 'blank',
+];
 
 function FourthReelCell({ phase, value }: { phase: string; value: FourthReelOutcome | null }) {
   const spinning = phase === 'spinning' || phase === 'fourth';
@@ -777,30 +851,41 @@ function FourthReelCell({ phase, value }: { phase: string; value: FourthReelOutc
     <div
       className="rounded-2xl p-2 flex items-center justify-center"
       style={{
-        background: 'linear-gradient(180deg, #2a0810 0%, #5a0810 50%, #14040a 100%)',
-        border: '3px solid #c8932e',
-        boxShadow: '0 0 0 1px rgba(255,209,102,.3), inset 0 1px 0 rgba(255,209,102,.4), 0 12px 30px rgba(0,0,0,.6)',
-        width: 'min(76px, 22vw)',
-        height: 'min(220px, 64vw)',
+        background: 'linear-gradient(145deg, #fff0a6 0%, #bf7d14 42%, #6d3b07 100%)',
+        border: '3px solid #fff5c4',
+        boxShadow: '0 0 0 2px #8d510d, inset 0 1px 0 rgba(255,255,255,.75), 0 12px 30px rgba(0,0,0,.65)',
+        width: 'clamp(52px, 16vw, 100px)',
+        height: 'clamp(150px, 48vw, 320px)',
       }}
     >
       <div
         className="w-full h-full rounded-lg flex items-center justify-center text-center overflow-hidden relative"
         style={{
-          background: 'linear-gradient(180deg, rgba(255,255,255,.04), rgba(0,0,0,.55))',
-          border: '1px solid rgba(200,147,46,.3)',
+          background: 'linear-gradient(100deg, #edf8ff 0%, #b9d3e2 47%, #f7fdff 74%, #94b4ca 100%)',
+          border: '1px solid rgba(126,78,12,.5)',
         }}
       >
         <AnimatePresence mode="wait">
           {spinning && value === null ? (
             <motion.div
               key="spin"
-              className="font-display font-extrabold text-3xl text-[#ffd166]/65"
-              animate={{ opacity: [0.3, 0.95, 0.3], y: [-8, 8, -8] }}
-              transition={{ duration: 0.35, repeat: Infinity, ease: 'easeInOut' }}
+              className="absolute inset-x-0 top-0 flex flex-col items-stretch font-display font-extrabold"
+              animate={{ y: [0, -900] }}
+              transition={{ duration: 0.72, repeat: Infinity, ease: 'linear' }}
               exit={{ opacity: 0 }}
             >
-              ?
+              {FOURTH_REEL_DISPLAY_STRIP.map((outcome, index) => (
+                <div
+                  key={`${outcome}-${index}`}
+                  className="flex h-12 shrink-0 items-center justify-center border-b border-[#c8932e]/25 text-[10px] uppercase"
+                  style={{
+                    color: outcome === 'win' ? '#ffd166' : outcome === 'boost' ? '#ff8a40' : '#8f7786',
+                    background: outcome === 'blank' ? 'rgba(0,0,0,.26)' : 'rgba(255,209,102,.07)',
+                  }}
+                >
+                  {outcome === 'blank' ? '—' : outcome}
+                </div>
+              ))}
             </motion.div>
           ) : value === 'win' ? (
             <motion.div

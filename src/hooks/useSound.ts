@@ -17,7 +17,12 @@ type Voice =
   | 'free-spins-trigger'
   | 'free-spins-end'
   | 'coin'
-  | 'tick';
+  | 'tick'
+  | 'juan-reel-stop'
+  | 'juan-anticipation'
+  | 'juan-switch'
+  | 'juan-fanfare'
+  | 'juan-coin';
 
 /**
  * Web Audio synthesizer for slot SFX. No copyrighted assets — every effect is
@@ -191,6 +196,40 @@ export function useSound() {
           break;
         case 'click':
           tone(880, 30, 'square', 0.025);
+          break;
+        case 'juan-reel-stop':
+          // Original muted-vihuela pluck plus a compact wooden reel knock.
+          tone(196, 95, 'triangle', 0.045, 118);
+          tone(784, 34, 'square', 0.018, 520, 4);
+          noiseBurst(34, 950, 0.035);
+          break;
+        case 'juan-anticipation':
+          // Short original brass call used only for Big Juan suspense tails.
+          [293.66, 369.99, 440].forEach((frequency, index) =>
+            tone(frequency, 260, 'sawtooth', 0.025, undefined, index * 105),
+          );
+          tone(587.33, 420, 'triangle', 0.055, 659.25, 310);
+          break;
+        case 'juan-switch':
+          noiseBurst(210, 3300, 0.07);
+          tone(174.61, 360, 'sawtooth', 0.035, 698.46);
+          [698.46, 880, 1174.66].forEach((frequency, index) =>
+            tone(frequency, 190, 'triangle', 0.055, undefined, 180 + index * 80),
+          );
+          break;
+        case 'juan-fanfare':
+          // Bespoke, synthesized fiesta cadence; no provider recording/assets.
+          [293.66, 369.99, 440].forEach((frequency) =>
+            tone(frequency, 420, 'sawtooth', 0.025),
+          );
+          [440, 523.25, 587.33, 880].forEach((frequency, index) =>
+            tone(frequency, 260, 'triangle', 0.065, undefined, 260 + index * 95),
+          );
+          noiseBurst(90, 2400, 0.045, 250);
+          break;
+        case 'juan-coin':
+          tone(1174.66, 70, 'triangle', 0.045, 1760);
+          tone(2349.32, 45, 'sine', 0.022, undefined, 30);
           break;
       }
     },

@@ -38,18 +38,18 @@ export function JuanCharacter({ mood }: { mood: JuanMood }) {
 
   return (
     <div className={cls} aria-hidden>
-      <BigJuanSvg />
+      <BigJuanSvg armed={active === 'pistols'} />
       {/* Pistol muzzle-flashes anchored at hand positions in the SVG.
        *  They're keyed to .bj-juan-pistols and fire twice (delay) per
        *  the css animation timing. Each muzzle has its own delay so
        *  the two pistols don't fire perfectly in sync. */}
       <div
         className="bj-juan-muzzle bj-juan-muzzle-l"
-        style={{ left: '12%', top: '50%' }}
+        style={{ left: '-2%', top: '58%' }}
       />
       <div
         className="bj-juan-muzzle bj-juan-muzzle-r"
-        style={{ right: '12%', top: '50%' }}
+        style={{ right: '-2%', top: '58%' }}
       />
     </div>
   );
