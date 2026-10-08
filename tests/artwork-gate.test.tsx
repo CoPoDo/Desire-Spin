@@ -34,7 +34,12 @@ it('offers retry when a network request stalls instead of locking the game indef
   render(<ArtworkGate assets={['/slow.webp']} title="Game"><button>Spin</button></ArtworkGate>);
   await act(async () => { await vi.advanceTimersByTimeAsync(20000); });
   expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument();
+  expect(screen.getByRole('status')).toHaveTextContent('taking longer to load');
+  expect(screen.getByRole('status')).not.toHaveTextContent('could not load');
   expect(screen.queryByRole('button', { name: 'Spin' })).not.toBeInTheDocument();
+  await ready(images[0]);
+  expect(screen.getByRole('button', { name: 'Spin' })).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Try again' })).not.toBeInTheDocument();
   vi.useRealTimers();
 });
 

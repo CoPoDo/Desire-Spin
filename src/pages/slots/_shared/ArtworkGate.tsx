@@ -7,21 +7,21 @@ export function ArtworkGate({ assets, title, children, color = '#d8bf85' }: {
   assets: readonly string[]; title: string; children: ReactNode; color?: string;
 }) {
   const [readyKey, setReadyKey] = useState('');
-  const [failed, setFailed] = useState(false);
+  const [failure, setFailure] = useState<'slow' | 'error' | null>(null);
   const [attempt, setAttempt] = useState(0);
   const key = assets.join('|');
   useEffect(() => {
     let cancelled = false;
-    setFailed(false);
-    const timeout = window.setTimeout(() => { if (!cancelled) setFailed(true); }, 20000);
+    setFailure(null);
+    const timeout = window.setTimeout(() => { if (!cancelled) setFailure('slow'); }, 20000);
     Promise.all(key.split('|').filter(Boolean).map((src) => new Promise<void>((resolve, reject) => {
       const image = new Image();
       image.onload = () => { if (typeof image.decode === 'function') image.decode().then(resolve, reject); else resolve(); };
       image.onerror = reject;
       image.src = src;
-    }))).then(() => { if (!cancelled) { window.clearTimeout(timeout); setFailed(false); setReadyKey(key); } }).catch(() => { if (!cancelled) { window.clearTimeout(timeout); setFailed(true); } });
+    }))).then(() => { if (!cancelled) { window.clearTimeout(timeout); setFailure(null); setReadyKey(key); } }).catch(() => { if (!cancelled) { window.clearTimeout(timeout); setFailure('error'); } });
     return () => { cancelled = true; window.clearTimeout(timeout); };
   }, [key, attempt]);
   if (readyKey === key) return <>{children}</>;
-  return <div className="artwork-loading" style={{ color }}><h1>{title}</h1><p role="status">{failed ? 'The game artwork could not load.' : 'Preparing the game…'}</p>{failed && <button onClick={() => setAttempt((value) => value + 1)}>Try again</button>}</div>;
+  return <div className="artwork-loading" style={{ color }}><h1>{title}</h1><p role="status">{failure === 'slow' ? 'The artwork is taking longer to load. You can wait or try again.' : failure === 'error' ? 'The game artwork could not load.' : 'Preparing the game…'}</p>{failure && <button onClick={() => setAttempt((value) => value + 1)}>Try again</button>}</div>;
 }
