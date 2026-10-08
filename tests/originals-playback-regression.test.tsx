@@ -31,6 +31,12 @@ vi.mock('../src/game-context', () => ({ useGame: () => fixture.game }));
 vi.mock('../src/components/layout/OriginalPageLayout', () => ({
   OriginalPageLayout: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
+vi.mock('../src/components/layout/SlotPageLayout', () => ({
+  SlotPageLayout: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+}));
+vi.mock('../src/pages/slots/_shared/ArtworkGate', () => ({
+  ArtworkGate: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}));
 vi.mock('../src/lib/confetti', () => ({ fireConfetti: vi.fn() }));
 // Keep geometry and interaction real while removing cosmetic animation timers.
 // The requested target rotation remains inspectable independently of Framer.
@@ -40,6 +46,7 @@ vi.mock('framer-motion', async () => {
   const ignored = new Set(['animate', 'initial', 'exit', 'transition', 'layout', 'layoutId', 'whileHover', 'whileTap']);
   return {
     AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+    useReducedMotion: () => false,
     motion: new Proxy({}, { get: (_, tag: string) => {
       if (!components.has(tag)) components.set(tag, React.forwardRef((props: any, ref) => {
         const clean = Object.fromEntries(Object.entries(props).filter(([key]) => !ignored.has(key)));
@@ -419,14 +426,14 @@ describe('Predetermined reel-strip outcomes', () => {
       const cells = strips.map(strip => Array.from(strip.children));
       reels.forEach((reel, index) => {
         expect(reel).toHaveAttribute('data-reel-outcome', expected.reels[index]);
-        expect(cells[index]![0]!.textContent).toBe(Mini.symbolMeta(previous[index] as Mini.SymbolId).emoji);
-        expect(cells[index]!.at(-1)!.textContent).toBe(Mini.symbolMeta(expected.reels[index]!).emoji);
+        expect(cells[index]![0]!.querySelector('[data-symbol-id]')).toHaveAttribute('data-symbol-id', previous[index]);
+        expect(cells[index]!.at(-1)!.querySelector('[data-symbol-id]')).toHaveAttribute('data-symbol-id', expected.reels[index]);
       });
       await tick(1200);
       reels.forEach((reel, index) => {
         expect(reel.firstElementChild).toBe(strips[index]);
         expect(Array.from(strips[index]!.children).every((cell, row) => cell === cells[index]![row])).toBe(true);
-        expect(strips[index]!.lastElementChild!.textContent).toBe(Mini.symbolMeta(expected.reels[index]!).emoji);
+        expect(strips[index]!.lastElementChild!.querySelector('[data-symbol-id]')).toHaveAttribute('data-symbol-id', expected.reels[index]);
       });
       expect(fixture.game.history.record).toHaveBeenCalledTimes(nonce + 1);
       previous = expected.reels;
@@ -448,8 +455,9 @@ describe('Predetermined reel-strip outcomes', () => {
       reels.forEach((reel, column) => {
         const symbols = [expected.base!.reels[column]!, expected.base!.reels[5 + column]!, expected.base!.reels[10 + column]!];
         expect(reel).toHaveAttribute('data-reel-outcome', symbols.join(','));
-        expect(cells[column]!.slice(-3).map(cell => cell.querySelector('span')!.textContent))
-          .toEqual(symbols.map(symbol => Bass.symbolById(symbol)!.emoji));
+        expect(cells[column]!.slice(-3).map(cell => cell.querySelector('[data-bass-symbol]')?.getAttribute('data-bass-symbol')))
+          .toEqual(symbols);
+        expect(cells[column]!.slice(-3).every(cell => cell.querySelector('.painted-slot-crop img'))).toBe(true);
       });
       await tick(1500);
       reels.forEach((reel, column) => {
@@ -461,4 +469,47 @@ describe('Predetermined reel-strip outcomes', () => {
       nextNonce++;
     }
   });
+});
+
+
+it('Roulette inside chips use one aggregate debit and freeze while the result is playing', async () => {
+  const view = render(<RouletteGame />);
+  const add = screen.getByRole('button', { name: /Add .* inside chip/ });
+  repeatClick(add); // Default zero/one split, two chips.
+  fireEvent.change(screen.getByRole('combobox', { name: 'Inside bet type' }), { target: { value: 'corner' } });
+  fireEvent.click(add); // First corner1,2,4,5.
+  fireEvent.change(screen.getByRole('combobox', { name: 'Inside bet type' }), { target: { value: 'zero' } });
+  fireEvent.change(screen.getByRole('combobox', { name: 'Inside bet numbers' }), { target: { value: '2' } });
+  fireEvent.click(add); // First four0,1,2,3.
+  repeatClick(screen.getByRole('button', { name: /^Spin ·/ }));
+  expect(fixture.game.balance.debit).toHaveBeenCalledTimes(1);
+  expect(fixture.game.balance.debit).toHaveBeenCalledWith(4);
+  expect(add).toBeDisabled();
+  expect(screen.getByRole('combobox', { name: 'Inside bet type' })).toBeDisabled();
+  const result = Roulette.play(rng(), [
+    { type: { kind: 'split', numbers: [0,1] }, amount: 2 },
+    { type: { kind: 'corner', numbers: [1,2,4,5] }, amount: 1 },
+    { type: { kind: 'first-four' }, amount: 1 },
+  ]);
+  expectLedger('Roulette',4,result.totalReturn);
+  view.unmount(); await tick(4000);
+  expect(fixture.game.history.record).toHaveBeenCalledTimes(1);
+});
+
+it('Sic Bo combination chips share one settlement and cannot change during playback', async () => {
+  const view = render(<SicBoGame />);
+  const pair = screen.getByRole('button', { name: /1 \+ 2 both appear/ });
+  repeatClick(pair);
+  fireEvent.click(screen.getByRole('button', { name: /5 \+ 6 both appear/ }));
+  repeatClick(screen.getByRole('button', { name: /^Roll ·/ }));
+  expect(fixture.game.balance.debit).toHaveBeenCalledTimes(1);
+  expect(fixture.game.balance.debit).toHaveBeenCalledWith(3);
+  expect(pair).toBeDisabled();
+  const result = SicBo.play(rng(), [
+    { bet: { kind: 'combination', faces: [1,2] }, amount: 2 },
+    { bet: { kind: 'combination', faces: [5,6] }, amount: 1 },
+  ]);
+  expectLedger('Sic Bo', 3, result.totalReturn);
+  view.unmount(); await tick(4000);
+  expect(fixture.game.history.record).toHaveBeenCalledTimes(1);
 });

@@ -20,7 +20,26 @@ export type BetType =
   | { kind: 'dozen'; dozen: 1 | 2 | 3 }        // 2:1 (1-12 / 13-24 / 25-36)
   | { kind: 'column'; column: 1 | 2 | 3 }      // 2:1
   | { kind: 'street'; street: number }         // 11:1 — 3 numbers in a column
-  | { kind: 'sixline'; sixline: number };      // 5:1 — 6 numbers (two adjacent streets, 1-11)
+  | { kind: 'sixline'; sixline: number }
+  | { kind: 'split'; numbers: readonly [number, number] }
+  | { kind: 'corner'; numbers: readonly [number, number, number, number] }
+  | { kind: 'trio'; numbers: readonly [0, 1, 2] | readonly [0, 2, 3] }
+  | { kind: 'first-four' };      // 5:1 — 6 numbers (two adjacent streets, 1-11)
+
+/** Canonical European inside-bet sets. Values are pocket numbers, not
+ * neighbouring wheel pockets; zero has three dedicated split seams. */
+export const SPLIT_BETS: readonly (readonly [number, number])[] = [
+  [0, 1], [0, 2], [0, 3],
+  ...Array.from({ length: 12 }, (_, row) => [[row * 3 + 1, row * 3 + 2], [row * 3 + 2, row * 3 + 3]] as [number, number][]).flat(),
+  ...Array.from({ length: 33 }, (_, index) => [index + 1, index + 4] as [number, number]),
+];
+export const CORNER_BETS: readonly (readonly [number, number, number, number])[] = Array.from({ length: 11 }, (_, row) => [
+  [row * 3 + 1, row * 3 + 2, row * 3 + 4, row * 3 + 5],
+  [row * 3 + 2, row * 3 + 3, row * 3 + 5, row * 3 + 6],
+] as [number, number, number, number][]).flat();
+function validSet(values: readonly number[], choices: readonly (readonly number[])[]): boolean {
+  return choices.some((choice) => choice.length === values.length && choice.every((value) => values.includes(value)) && new Set(values).size === values.length);
+}
 
 export type Bet = { type: BetType; amount: number };
 
@@ -38,6 +57,14 @@ export function colorOf(n: number): 'red' | 'black' | 'green' {
 export function payoutMultiplier(type: BetType, winningNumber: number): number {
   const n = winningNumber;
   switch (type.kind) {
+    case 'split':
+      return validSet(type.numbers, SPLIT_BETS) && type.numbers.includes(n) ? 18 : 0;
+    case 'corner':
+      return validSet(type.numbers, CORNER_BETS) && type.numbers.includes(n) ? 9 : 0;
+    case 'trio':
+      return validSet(type.numbers, [[0, 1, 2], [0, 2, 3]]) && (type.numbers as readonly number[]).includes(n) ? 12 : 0;
+    case 'first-four':
+      return n >= 0 && n <= 3 ? 9 : 0;
     case 'number':
       return n === type.n ? 36 : 0; // 35:1 + stake = 36×
     case 'color':

@@ -1,0 +1,667 @@
+{
+  "generatedAt": "2026-10-08T08:56:51.654Z",
+  "disclaimer": "Local empirical sampling only. Normal intervals summarize observed sampling variation; rare unobserved tails can invalidate those intervals. No provider RTP certification.",
+  "results": [
+    {
+      "game": "sweet-bonanza",
+      "seed": "holdout-B",
+      "mode": "base",
+      "n": 100000,
+      "cost": 1,
+      "observedReturn": 0.981253999999882,
+      "standardError": 0.03515935076440301,
+      "approximate95Interval": [
+        0.9123416725016522,
+        1.050166327498112
+      ],
+      "max": 724,
+      "triggered": 684,
+      "zero": 67385,
+      "capHits": 0
+    },
+    {
+      "game": "sweet-bonanza",
+      "seed": "holdout-B",
+      "mode": "ante",
+      "n": 100000,
+      "cost": 1.25,
+      "observedReturn": 0.9807655999998353,
+      "standardError": 0.03238538225848851,
+      "approximate95Interval": [
+        0.9172902507731978,
+        1.0442409492264728
+      ],
+      "max": 724,
+      "triggered": 945,
+      "zero": 67526,
+      "capHits": 0
+    },
+    {
+      "game": "sweet-bonanza",
+      "seed": "holdout-B",
+      "mode": "buy",
+      "n": 10000,
+      "cost": 100,
+      "observedReturn": 0.9582836500000036,
+      "standardError": 0.008382933622209992,
+      "approximate95Interval": [
+        0.941853100100472,
+        0.9747141998995352
+      ],
+      "max": 954.3,
+      "triggered": 10000,
+      "zero": 13,
+      "capHits": 0
+    },
+    {
+      "game": "sweet-bonanza",
+      "seed": "holdout-C",
+      "mode": "base",
+      "n": 100000,
+      "cost": 1,
+      "observedReturn": 0.9425544999998954,
+      "standardError": 0.032763559893636246,
+      "approximate95Interval": [
+        0.8783379226083683,
+        1.0067710773914225
+      ],
+      "max": 493.65,
+      "triggered": 657,
+      "zero": 67156,
+      "capHits": 0
+    },
+    {
+      "game": "sweet-bonanza",
+      "seed": "holdout-C",
+      "mode": "ante",
+      "n": 100000,
+      "cost": 1.25,
+      "observedReturn": 0.9310403999998398,
+      "standardError": 0.030726603672020385,
+      "approximate95Interval": [
+        0.8708162568026798,
+        0.9912645431969997
+      ],
+      "max": 708.85,
+      "triggered": 886,
+      "zero": 67344,
+      "capHits": 0
+    },
+    {
+      "game": "sweet-bonanza",
+      "seed": "holdout-C",
+      "mode": "buy",
+      "n": 10000,
+      "cost": 100,
+      "observedReturn": 0.9530424500000001,
+      "standardError": 0.008079702985403163,
+      "approximate95Interval": [
+        0.9372062321486099,
+        0.9688786678513903
+      ],
+      "max": 942.6,
+      "triggered": 10000,
+      "zero": 5,
+      "capHits": 0
+    },
+    {
+      "game": "sweet-bonanza",
+      "seed": "holdout-D",
+      "mode": "base",
+      "n": 100000,
+      "cost": 1,
+      "observedReturn": 0.9825179999998712,
+      "standardError": 0.03468460346485105,
+      "approximate95Interval": [
+        0.9145361772087631,
+        1.0504998227909792
+      ],
+      "max": 734.65,
+      "triggered": 727,
+      "zero": 67137,
+      "capHits": 0
+    },
+    {
+      "game": "sweet-bonanza",
+      "seed": "holdout-D",
+      "mode": "ante",
+      "n": 100000,
+      "cost": 1.25,
+      "observedReturn": 1.0034063999998135,
+      "standardError": 0.03283839372511128,
+      "approximate95Interval": [
+        0.9390431482985954,
+        1.0677696517010316
+      ],
+      "max": 734.65,
+      "triggered": 972,
+      "zero": 67291,
+      "capHits": 0
+    },
+    {
+      "game": "sweet-bonanza",
+      "seed": "holdout-D",
+      "mode": "buy",
+      "n": 10000,
+      "cost": 100,
+      "observedReturn": 0.956488550000001,
+      "standardError": 0.008208545795803126,
+      "approximate95Interval": [
+        0.9403998002402268,
+        0.9725772997597751
+      ],
+      "max": 724.55,
+      "triggered": 10000,
+      "zero": 8,
+      "capHits": 0
+    },
+    {
+      "game": "gates-of-olympus",
+      "seed": "holdout-B",
+      "mode": "base",
+      "n": 100000,
+      "cost": 1,
+      "observedReturn": 0.8785339999999701,
+      "standardError": 0.046472789439736324,
+      "approximate95Interval": [
+        0.7874473326980869,
+        0.9696206673018533
+      ],
+      "max": 2223,
+      "triggered": 508,
+      "zero": 70616,
+      "capHits": 0
+    },
+    {
+      "game": "gates-of-olympus",
+      "seed": "holdout-B",
+      "mode": "ante",
+      "n": 100000,
+      "cost": 1.25,
+      "observedReturn": 0.9641675999998981,
+      "standardError": 0.05047023314742344,
+      "approximate95Interval": [
+        0.8652459430309482,
+        1.063089256968848
+      ],
+      "max": 2223,
+      "triggered": 817,
+      "zero": 70733,
+      "capHits": 0
+    },
+    {
+      "game": "gates-of-olympus",
+      "seed": "holdout-B",
+      "mode": "buy",
+      "n": 10000,
+      "cost": 100,
+      "observedReturn": 0.9215274000000071,
+      "standardError": 0.022477130314580693,
+      "approximate95Interval": [
+        0.877472224583429,
+        0.9655825754165852
+      ],
+      "max": 5000,
+      "triggered": 10000,
+      "zero": 0,
+      "capHits": 3
+    },
+    {
+      "game": "gates-of-olympus",
+      "seed": "holdout-C",
+      "mode": "base",
+      "n": 100000,
+      "cost": 1,
+      "observedReturn": 0.9525529999999539,
+      "standardError": 0.05058212095030762,
+      "approximate95Interval": [
+        0.853412042937351,
+        1.0516939570625568
+      ],
+      "max": 1790,
+      "triggered": 518,
+      "zero": 70802,
+      "capHits": 0
+    },
+    {
+      "game": "gates-of-olympus",
+      "seed": "holdout-C",
+      "mode": "ante",
+      "n": 100000,
+      "cost": 1.25,
+      "observedReturn": 1.0185979999998913,
+      "standardError": 0.061799045036337444,
+      "approximate95Interval": [
+        0.8974718717286699,
+        1.1397241282711128
+      ],
+      "max": 4020.05,
+      "triggered": 795,
+      "zero": 70981,
+      "capHits": 0
+    },
+    {
+      "game": "gates-of-olympus",
+      "seed": "holdout-C",
+      "mode": "buy",
+      "n": 10000,
+      "cost": 100,
+      "observedReturn": 0.9526043000000095,
+      "standardError": 0.024143959727979256,
+      "approximate95Interval": [
+        0.9052821389331702,
+        0.9999264610668488
+      ],
+      "max": 5000,
+      "triggered": 10000,
+      "zero": 0,
+      "capHits": 1
+    },
+    {
+      "game": "gates-of-olympus",
+      "seed": "holdout-D",
+      "mode": "base",
+      "n": 100000,
+      "cost": 1,
+      "observedReturn": 1.0560139999999065,
+      "standardError": 0.06878829864241413,
+      "approximate95Interval": [
+        0.9211889346607749,
+        1.1908390653390382
+      ],
+      "max": 2794.7,
+      "triggered": 577,
+      "zero": 71106,
+      "capHits": 0
+    },
+    {
+      "game": "gates-of-olympus",
+      "seed": "holdout-D",
+      "mode": "ante",
+      "n": 100000,
+      "cost": 1.25,
+      "observedReturn": 0.9913295999999079,
+      "standardError": 0.0582322875511053,
+      "approximate95Interval": [
+        0.8771943163997415,
+        1.1054648836000742
+      ],
+      "max": 2903.85,
+      "triggered": 826,
+      "zero": 71204,
+      "capHits": 0
+    },
+    {
+      "game": "gates-of-olympus",
+      "seed": "holdout-D",
+      "mode": "buy",
+      "n": 10000,
+      "cost": 100,
+      "observedReturn": 0.8911268000000079,
+      "standardError": 0.01992206233322582,
+      "approximate95Interval": [
+        0.8520795578268853,
+        0.9301740421731305
+      ],
+      "max": 3478.95,
+      "triggered": 10000,
+      "zero": 0,
+      "capHits": 0
+    }
+  ],
+  "summary": [
+    {
+      "game": "sweet-bonanza",
+      "mode": "base",
+      "n": 300000,
+      "observedReturn": 0.9687754999998829,
+      "standardError": 0.01975584139766189,
+      "approximate95Interval": [
+        0.9300540508604656,
+        1.0074969491393002
+      ],
+      "seedRange": [
+        0.9425544999998954,
+        0.9825179999998712
+      ]
+    },
+    {
+      "game": "sweet-bonanza",
+      "mode": "ante",
+      "n": 300000,
+      "observedReturn": 0.9717374666664963,
+      "standardError": 0.018473116175786546,
+      "approximate95Interval": [
+        0.9355301589619547,
+        1.007944774371038
+      ],
+      "seedRange": [
+        0.9310403999998398,
+        1.0034063999998135
+      ]
+    },
+    {
+      "game": "sweet-bonanza",
+      "mode": "buy",
+      "n": 30000,
+      "observedReturn": 0.9559382166666682,
+      "standardError": 0.004748371534150915,
+      "approximate95Interval": [
+        0.9466314084597325,
+        0.965245024873604
+      ],
+      "seedRange": [
+        0.9530424500000001,
+        0.9582836500000036
+      ]
+    },
+    {
+      "game": "gates-of-olympus",
+      "mode": "base",
+      "n": 300000,
+      "observedReturn": 0.9623669999999435,
+      "standardError": 0.03240404139468476,
+      "approximate95Interval": [
+        0.8988550788663613,
+        1.0258789211335255
+      ],
+      "seedRange": [
+        0.8785339999999701,
+        1.0560139999999065
+      ]
+    },
+    {
+      "game": "gates-of-olympus",
+      "mode": "ante",
+      "n": 300000,
+      "observedReturn": 0.9913650666665659,
+      "standardError": 0.03292637490402224,
+      "approximate95Interval": [
+        0.9268293718546823,
+        1.0559007614784495
+      ],
+      "seedRange": [
+        0.9641675999998981,
+        1.0185979999998913
+      ]
+    },
+    {
+      "game": "gates-of-olympus",
+      "mode": "buy",
+      "n": 30000,
+      "observedReturn": 0.9217528333333415,
+      "standardError": 0.012845797964878091,
+      "approximate95Interval": [
+        0.8965750693221805,
+        0.9469305973445025
+      ],
+      "seedRange": [
+        0.8911268000000079,
+        0.9526043000000095
+      ]
+    }
+  ],
+  "diagnosticTarget": "Broad local sanity near0.95 return, not an exact fitted/certified provider RTP.",
+  "configurations": [
+    {
+      "id": "sweet-bonanza",
+      "weightsBase": [
+        4,
+        16,
+        14,
+        12,
+        11,
+        9,
+        18,
+        6,
+        8,
+        2.25
+      ],
+      "weightsFree": [
+        4,
+        16,
+        14,
+        12,
+        11,
+        9,
+        26,
+        6,
+        8,
+        2.6
+      ],
+      "ante": {
+        "betMultiplier": 1.25,
+        "scatterWeightBoost": 1.09
+      },
+      "multiplierTableBase": {
+        "pPerTumble": 0,
+        "maxPerTumble": 1,
+        "values": [
+          [
+            2,
+            1
+          ]
+        ]
+      },
+      "multiplierTableFree": {
+        "pPerTumble": 0.75,
+        "maxPerTumble": 3,
+        "values": [
+          [
+            2,
+            24
+          ],
+          [
+            3,
+            18
+          ],
+          [
+            5,
+            16
+          ],
+          [
+            8,
+            10
+          ],
+          [
+            10,
+            8
+          ],
+          [
+            12,
+            6
+          ],
+          [
+            15,
+            5
+          ],
+          [
+            18,
+            4
+          ],
+          [
+            20,
+            3
+          ],
+          [
+            25,
+            2.5
+          ],
+          [
+            30,
+            2
+          ],
+          [
+            35,
+            1.5
+          ],
+          [
+            50,
+            1.2
+          ],
+          [
+            100,
+            0.7
+          ]
+        ]
+      },
+      "maxWinMultiplier": 21100
+    },
+    {
+      "id": "gates-of-olympus",
+      "weightsBase": [
+        4,
+        6,
+        9,
+        11,
+        12,
+        14,
+        16,
+        16,
+        18,
+        2.3
+      ],
+      "weightsFree": [
+        6,
+        8,
+        10,
+        12,
+        13,
+        14,
+        14,
+        14,
+        14,
+        2.7
+      ],
+      "ante": {
+        "betMultiplier": 1.25,
+        "scatterWeightBoost": 1.13
+      },
+      "multiplierTableBase": {
+        "pPerTumble": 0.025,
+        "maxPerTumble": 2,
+        "values": [
+          [
+            2,
+            22
+          ],
+          [
+            3,
+            16
+          ],
+          [
+            4,
+            13
+          ],
+          [
+            5,
+            10
+          ],
+          [
+            6,
+            7
+          ],
+          [
+            8,
+            6
+          ],
+          [
+            10,
+            5
+          ],
+          [
+            15,
+            4
+          ],
+          [
+            20,
+            3.5
+          ],
+          [
+            25,
+            3
+          ],
+          [
+            50,
+            2
+          ],
+          [
+            100,
+            1.5
+          ],
+          [
+            250,
+            0.6
+          ],
+          [
+            500,
+            0.3
+          ]
+        ]
+      },
+      "multiplierTableFree": {
+        "pPerTumble": 0.55,
+        "maxPerTumble": 3,
+        "values": [
+          [
+            2,
+            24
+          ],
+          [
+            3,
+            18
+          ],
+          [
+            4,
+            14
+          ],
+          [
+            5,
+            11
+          ],
+          [
+            6,
+            8
+          ],
+          [
+            8,
+            6
+          ],
+          [
+            10,
+            5
+          ],
+          [
+            15,
+            4
+          ],
+          [
+            20,
+            3
+          ],
+          [
+            25,
+            2.5
+          ],
+          [
+            50,
+            1.8
+          ],
+          [
+            100,
+            1.2
+          ],
+          [
+            250,
+            0.5
+          ],
+          [
+            500,
+            0.25
+          ]
+        ]
+      },
+      "maxWinMultiplier": 5000
+    }
+  ]
+}

@@ -6,6 +6,8 @@ import { useGame } from '../../../game-context';
 import { createRng } from '../../../lib/fairness';
 import { fmtCurrency } from '../../../lib/format';
 import {
+  SPLIT_BETS,
+  CORNER_BETS,
   type Bet,
   type BetType,
   colorOf,
@@ -19,6 +21,10 @@ type ChipMap = Record<string, number>;
 
 function keyOf(t: BetType): string {
   switch (t.kind) {
+    case 'split': return `split:${[...t.numbers].sort((a,b)=>a-b).join(',')}`;
+    case 'corner': return `corner:${[...t.numbers].sort((a,b)=>a-b).join(',')}`;
+    case 'trio': return `trio:${t.numbers.join(',')}`;
+    case 'first-four': return 'first-four:0';
     case 'number': return `n:${t.n}`;
     case 'color':  return `c:${t.color}`;
     case 'parity': return `p:${t.parity}`;
@@ -31,6 +37,10 @@ function keyOf(t: BetType): string {
 }
 function typeOf(key: string): BetType {
   const [kind, val] = key.split(':');
+  if (kind === 'split') return { kind: 'split', numbers: val!.split(',').map(Number) as [number,number] };
+  if (kind === 'corner') return { kind: 'corner', numbers: val!.split(',').map(Number) as [number,number,number,number] };
+  if (kind === 'trio') return { kind: 'trio', numbers: val!.split(',').map(Number) as [0,1,2] | [0,2,3] };
+  if (kind === 'first-four') return { kind: 'first-four' };
   if (kind === 'n') return { kind: 'number', n: parseInt(val!) };
   if (kind === 'c') return { kind: 'color', color: val as 'red' | 'black' };
   if (kind === 'p') return { kind: 'parity', parity: val as 'even' | 'odd' };
@@ -43,6 +53,8 @@ function typeOf(key: string): BetType {
 
 export function RouletteGame() {
   const { balance, fairness, sound, history, session } = useGame();
+  const [insideKind, setInsideKind] = useState<'split' | 'corner' | 'zero'>('split');
+  const [insideIndex, setInsideIndex] = useState(0);
   const [chip, setChip] = useState(1);
   const [chips, setChips] = useState<ChipMap>({});
   const { busy, busyRef, setBusy, schedule } = useRoundPlayback();
@@ -134,6 +146,13 @@ export function RouletteGame() {
     }
     return cells;
   }, []);
+
+  const insideChoices: BetType[] = insideKind === 'split' ? SPLIT_BETS.map((numbers) => ({ kind: 'split', numbers }))
+    : insideKind === 'corner' ? CORNER_BETS.map((numbers) => ({ kind: 'corner', numbers }))
+    : [{ kind: 'trio', numbers: [0,1,2] }, { kind: 'trio', numbers: [0,2,3] }, { kind: 'first-four' }];
+  const selectedInside = insideChoices[insideIndex] ?? insideChoices[0]!;
+  const insideLabel = (choice: BetType) => choice.kind === 'first-four' ? '0 / 1 / 2 / 3 · 9× return'
+    : 'numbers' in choice ? `${choice.numbers.join(' / ')} · ${choice.kind === 'split' ? 18 : choice.kind === 'trio' ? 12 : 9}× return` : '';
 
   return (
     <OriginalPageLayout title="Roulette">
@@ -315,7 +334,7 @@ export function RouletteGame() {
                   }}
                   title={`Street ${s} — covers ${s * 3 - 2}, ${s * 3 - 1}, ${s * 3} (11:1)`}
                 >
-                  11×
+                  12×
                   {chips[keyOf({ kind: 'street', street: s })] !== undefined &&
                    chips[keyOf({ kind: 'street', street: s })]! > 0 && (
                     <span
@@ -348,7 +367,7 @@ export function RouletteGame() {
                   }}
                   title={`Six line ${s} — covers ${s * 3 - 2} through ${s * 3 + 3} (5:1)`}
                 >
-                  5×
+                  6×
                   {chips[keyOf({ kind: 'sixline', sixline: s })] !== undefined &&
                    chips[keyOf({ kind: 'sixline', sixline: s })]! > 0 && (
                     <span
@@ -392,6 +411,25 @@ export function RouletteGame() {
             <div className="w-9" />
           </div>
         </div>
+
+        <section className="rounded-lg border border-stake-border bg-stake-card p-3 space-y-2" aria-label="Inside bets">
+          <div className="text-xs font-semibold">Inside bets</div>
+          <div className="flex gap-2">
+            <label className="flex-1 text-[10px] text-stake-muted">Bet type
+              <select aria-label="Inside bet type" value={insideKind} disabled={busy} onChange={(event) => { setInsideKind(event.target.value as typeof insideKind); setInsideIndex(0); }} className="mt-1 block w-full rounded bg-stake-input p-2 text-xs text-white">
+                <option value="split">Split</option><option value="corner">Corner</option><option value="zero">Zero trio / first four</option>
+              </select>
+            </label>
+            <label className="flex-[2] text-[10px] text-stake-muted">Covered numbers
+              <select aria-label="Inside bet numbers" value={insideIndex} disabled={busy} onChange={(event) => setInsideIndex(Number(event.target.value))} className="mt-1 block w-full rounded bg-stake-input p-2 text-xs text-white">
+                {insideChoices.map((choice,index) => <option key={keyOf(choice)} value={index}>{insideLabel(choice)}</option>)}
+              </select>
+            </label>
+          </div>
+          <button type="button" disabled={busy} onClick={() => placeChip(selectedInside)} className="w-full rounded bg-stake-input px-3 py-2 text-xs font-bold disabled:opacity-50">Add {fmtCurrency(chip)} inside chip</button>
+          {(chips[keyOf(selectedInside)] ?? 0) > 0 && <p className="text-xs text-accent-gold">Placed: {fmtCurrency(chips[keyOf(selectedInside)]!)}</p>}
+          <p className="text-[10px] text-stake-muted">Returns include your stake. Single-zero European rules; no American five-number basket or La Partage.</p>
+        </section>
 
         {/* Chip selector */}
         <div className="rounded-xl bg-stake-card border border-stake-border p-2">

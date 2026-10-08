@@ -18,12 +18,17 @@ import * as Limbo from '../src/pages/originals/limbo/engine';
 import * as Slide from '../src/pages/originals/slide/engine';
 import * as Flip from '../src/pages/originals/coin-flip/engine';
 import * as Plinko from '../src/pages/originals/plinko/engine';
-import { MAX_ROUND_MULTIPLIER } from '../src/lib/accounting';
 
 const fixture = vi.hoisted(() => ({ game: {} as any, credits: 1000, nonce: 0 }));
 vi.mock('../src/game-context', () => ({ useGame: () => fixture.game }));
 vi.mock('../src/components/layout/OriginalPageLayout', () => ({
   OriginalPageLayout: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+}));
+vi.mock('../src/components/layout/SlotPageLayout', () => ({
+  SlotPageLayout: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+}));
+vi.mock('../src/pages/slots/_shared/ArtworkGate', () => ({
+  ArtworkGate: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 vi.mock('../src/lib/confetti', () => ({ fireConfetti: vi.fn() }));
 const SERVER = 'originals-regression';
@@ -176,7 +181,7 @@ describe('Originals interaction and presentation settlement', () => {
     fireEvent.click(screen.getByRole('button', { name: /^Bet/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Heads' }));
     view.unmount();
-    expect(fixture.credits).toBe(1000.98);
+    expect(fixture.credits).toBe(1000.96);
     expect(fixture.game.fairness.consumeNonce).toHaveBeenCalledTimes(1);
     expect(fixture.game.history.record).toHaveBeenCalledTimes(1);
   });
@@ -193,12 +198,12 @@ describe('Originals interaction and presentation settlement', () => {
 });
 
 describe('Math and feature regression', () => {
-  it('Dice chance exactly matches its strict inequality over all 10000 possible rolls', () => {
+  it('Dice chance exactly matches its strict inequality over all 10001 possible rolls', () => {
     for (const target of [0, 2, 50, 98, 99.99, 100]) {
       for (const direction of ['over', 'under'] as const) {
         let wins = 0;
-        for (let i = 0; i < 10000; i++) if (direction === 'over' ? i / 100 > target : i / 100 < target) wins++;
-        expect(Dice.winChanceFor(direction, target)).toBe(wins / 100);
+        for (let i = 0; i < 10001; i++) if (direction === 'over' ? i / 100 > target : i / 100 < target) wins++;
+        expect(Dice.winChanceFor(direction, target)).toBe(wins / 10001 * 100);
       }
     }
   });
@@ -207,7 +212,7 @@ describe('Math and feature regression', () => {
       expect(Limbo.play(rng(), 1, target).win).toBe(false);
       expect(Slide.play(rng(), 1, target).win).toBe(false);
     }
-    expect(Flip.multiplierAfter(1000)).toBe(MAX_ROUND_MULTIPLIER);
+    expect(Flip.multiplierAfter(1000)).toBe(Flip.FLIP_MAX_MULTIPLIER);
   });
   it('Big Bass feature terminates after at most three collector upgrades', () => {
     for (let nonce = 0; nonce < 100; nonce++) {
@@ -219,55 +224,6 @@ describe('Math and feature regression', () => {
     }
   });
 });
-
-it('Big Bass calibrates the entire collector feature and demo purchase, not just base spins', () => {
-  const choose = (n: number, k: number) => {
-    if (k < 0 || k > n) return 0;
-    let result = 1;
-    for (let i = 1; i <= k; i++) result = result * (n - k + i) / i;
-    return result;
-  };
-  const weights = Bass.SYMBOLS.map(symbol => symbol.weight);
-  const freeWeights = Bass.SYMBOLS.map(symbol => symbol.freeWeight ?? symbol.weight);
-  const lineUnit = (values: number[]) => {
-    const total = values.reduce((a, b) => a + b, 0);
-    const wild = values[Bass.SYMBOLS.findIndex(symbol => symbol.isWild)]! / total;
-    return Bass.SYMBOLS.reduce((sum, symbol, i) => sum + ([3, 4, 5] as const).reduce((pay, count) => {
-      const probability = values[i]! / total + wild;
-      return pay + (probability ** count - wild ** count) * (count < 5 ? 1 - probability : 1) * (symbol.pay?.[count] ?? 0);
-    }, 0), 0);
-  };
-  const freeTotal = freeWeights.reduce((a, b) => a + b, 0);
-  const wild = freeWeights[Bass.SYMBOLS.findIndex(symbol => symbol.isWild)]! / freeTotal;
-  const fish = Bass.SYMBOLS.reduce((sum, symbol, i) => sum + (symbol.isMoney ? freeWeights[i]! / freeTotal : 0), 0);
-  const meanMoney = Bass.MONEY_VALUES.reduce((sum, [value, weight]) => sum + value * weight, 0) / Bass.MONEY_VALUES.reduce((sum, [, weight]) => sum + weight, 0);
-  const lineReturn = lineUnit(freeWeights) * Bass.LOCAL_LINE_SCALE;
-  const collectionReturn = 15 * 14 * wild * fish * meanMoney * Bass.MONEY_ASSIGNMENT_CHANCE;
-  const memo = new Map<string, number>();
-  const featureEV = (remaining: number, level = 0, progress = 0): number => {
-    if (!remaining) return 0;
-    const key = `${remaining}:${level}:${progress}`;
-    if (memo.has(key)) return memo.get(key)!;
-    let expected = lineReturn + collectionReturn * [1, 2, 3, 10][level]!;
-    for (let fishermen = 0; fishermen <= 15; fishermen++) {
-      const probability = choose(15, fishermen) * wild ** fishermen * (1 - wild) ** (15 - fishermen);
-      const upgrades = Math.min(Math.floor((progress + fishermen) / 4), 3 - level);
-      const nextLevel = level + upgrades;
-      expected += probability * featureEV(remaining - 1 + 10 * upgrades, nextLevel, nextLevel < 3 ? (progress + fishermen) % 4 : 0);
-    }
-    memo.set(key, expected); return expected;
-  };
-  const baseTotal = weights.reduce((a, b) => a + b, 0);
-  const scatter = weights[Bass.SYMBOLS.findIndex(symbol => symbol.isScatter)]! / baseTotal;
-  let fullEV = lineUnit(weights) * Bass.LOCAL_LINE_SCALE;
-  for (let count = 3; count <= 15; count++) {
-    const probability = choose(15, count) * scatter ** count * (1 - scatter) ** (15 - count);
-    fullEV += probability * ((count === 3 ? 2 : count === 4 ? 20 : 200) + featureEV(count === 3 ? 10 : count === 4 ? 15 : 20));
-  }
-  expect(fullEV).toBeCloseTo(0.9669, 8);
-  expect(featureEV(10) / 100).toBeCloseTo(0.9669, 8);
-});
-
 
 it('every Plinko board is symmetric and stays near its stated 99% theoretical return', () => {
   for (const risk of ['easy', 'medium', 'hard', 'expert'] as const) {

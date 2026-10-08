@@ -26,7 +26,8 @@ export function SlotPageLayout({
   accentDeep?: string;
 }) {
   const { balance } = useGame();
-  const containedChrome = !['Sweet Bonanza', 'Gates of Olympus', 'Big Juan'].includes(title ?? '');
+  const integratedCabinet = ['Wanted Dead or a Wild', 'Gates of Olympus', 'Sweet Bonanza', 'Sugar Rush', 'Big Juan', 'Big Bass Bonanza', 'Classic 3-Reel Slot', 'Wolf Gold', "Pharaoh's Gold"].includes(title ?? '');
+  const containedChrome = true;
   // Pre-compute accent-derived rgba values for box-shadows / borders so we
   // don't have to inline regex-pad the accent hex everywhere.
   const accentRgba = useMemo(() => hexToRgba(accent), [accent]);
@@ -49,7 +50,7 @@ export function SlotPageLayout({
   return (
     <div className="fixed inset-0 overflow-hidden bg-[#060311] text-ink flex flex-col">
       {/* Floating slim top bar — overlays on top of the painted scene. */}
-      <header className={`${containedChrome ? 'relative shrink-0 bg-[#0b1018] border-b border-white/10 contained-game-header' : 'absolute top-0 left-0 right-0 bg-gradient-to-b from-black/55 to-transparent'} z-30 flex items-center justify-between game-topbar gap-2 px-3 pt-[max(env(safe-area-inset-top),6px)] pb-1.5`}>
+      <header className={`${containedChrome ? `relative shrink-0 bg-[#0b1018] border-b border-white/10 ${integratedCabinet ? 'frontier-app-header' : 'contained-game-header'}` : 'absolute top-0 left-0 right-0 bg-gradient-to-b from-black/55 to-transparent'} z-30 flex items-center justify-between game-topbar gap-2 px-3 pt-[max(env(safe-area-inset-top),6px)] pb-1.5`}>
         <Link
           to="/"
           aria-label="Back to lobby"
@@ -59,7 +60,7 @@ export function SlotPageLayout({
         </Link>
 
         <div className="min-w-0 flex-1 flex items-center justify-center gap-1.5">
-          {title && (
+          {title && !integratedCabinet && (
             <div
               className="game-chrome-title font-display font-extrabold text-xs sm:text-base truncate min-w-0 mr-1.5"
               title={title}
@@ -90,7 +91,7 @@ export function SlotPageLayout({
           <button
             onClick={() => balance.credit(1000)}
             aria-label="Add 1,000 play money"
-            className="shrink-0 min-h-11 px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider active:scale-95 transition"
+            className="shrink-0 min-w-11 min-h-11 px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider active:scale-95 transition"
             style={{
               background: `linear-gradient(180deg, ${accent}, ${accentDeep})`,
               border: `1px solid ${accentRgba(0.6)}`,

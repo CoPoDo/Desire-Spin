@@ -116,7 +116,7 @@ export function FairnessPanel({ open, onClose }: { open: boolean; onClose: () =>
               For each bet: <code className="font-mono">bytes = HMAC_SHA256(serverSeed, "{`{clientSeed}:{nonce}:{cursor}`}")</code>
             </li>
             <li>Slice each 4 bytes into a uint32 → divide by 2³² → float in [0,1).</li>
-            <li>Engine consumes those floats in a documented order to produce the spin.</li>
+            <li>The matching engine rules revision consumes those floats to produce the result. History preserves earlier results; changed game rules or local weights can produce a different result from the same seeds.</li>
             <li>
               SHA-256 of the revealed local seed must match its earlier displayed hash{' '}
               <code className="font-mono">{shortHash(fairness.hash)}</code>.

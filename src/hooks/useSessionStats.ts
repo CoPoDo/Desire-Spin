@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { loadJson, saveJson } from '../lib/storage';
+import { useCallback, useMemo } from 'react';
+import { useStoredState } from './useStoredState';
 import { isCount, isNonNegativeNumber, isRecord, MAX_MONEY, moneyCents, normalizeMoney } from '../lib/accounting';
 
 const KEY = 'session-stats';
@@ -40,15 +40,7 @@ export function normalizeStats(value: unknown, now = Date.now()): SessionStats {
 }
 
 export function useSessionStats() {
-  const [stats, setStats] = useState(() => normalizeStats(loadJson<unknown>(KEY, null)));
-  const ref = useRef(stats);
-  useEffect(() => { saveJson(KEY, ref.current); }, []);
-
-  const commit = useCallback((next: SessionStats) => {
-    ref.current = next;
-    saveJson(KEY, next);
-    setStats(next);
-  }, []);
+  const [stats, read, commit] = useStoredState(KEY, normalizeStats);
 
   /** One completed round/spin. For free spins pass payout / the base stake as
    *  multiplier; a zero-cost round alone has no meaningful payout/cost ratio. */
@@ -56,7 +48,7 @@ export function useSessionStats() {
     const wagerCents = moneyCents(wagered);
     const wonCents = moneyCents(won);
     if (wagerCents === null || wonCents === null || (multiplier !== undefined && !isNonNegativeNumber(multiplier))) return false;
-    const s = ref.current;
+    const s = read();
     const ratio = multiplier ?? (wagerCents > 0 ? wonCents / wagerCents : 0);
     commit({
       ...s,
@@ -68,7 +60,7 @@ export function useSessionStats() {
       biggestMultiplier: Math.max(s.biggestMultiplier, ratio),
     });
     return true;
-  }, [commit]);
+  }, [commit, read]);
 
   const reset = useCallback(() => commit(blankStats()), [commit]);
 

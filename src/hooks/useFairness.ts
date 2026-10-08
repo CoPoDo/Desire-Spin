@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { loadJson, saveJson } from '../lib/storage';
+import { useCallback, useMemo } from 'react';
+import { useStoredState } from './useStoredState';
 import { isCount, isRecord } from '../lib/accounting';
 import { type Seeds, generateClientSeed, generateServerSeed, sha256Hex } from '../lib/fairness';
 
@@ -38,41 +38,36 @@ export function normalizeFairness(value: unknown): FairnessState {
 }
 
 export function useFairness() {
-  const [state, setState] = useState(() => normalizeFairness(loadJson<unknown>(KEY, null)));
-  const ref = useRef(state);
-  useEffect(() => { saveJson(KEY, ref.current); }, []);
-
-  const commit = useCallback((next: FairnessState) => {
-    ref.current = next;
-    saveJson(KEY, next);
-    setState(next);
-  }, []);
+  const [state, read, commit] = useStoredState(KEY, normalizeFairness);
 
   const setClientSeed = useCallback((clientSeed: string) => {
     const trimmed = clientSeed.trim();
     if (trimmed.length > 1024) return false;
-    commit({ ...ref.current, current: { ...ref.current.current, clientSeed: trimmed || generateClientSeed() } });
+    const current = read();
+    commit({ ...current, current: { ...current.current, clientSeed: trimmed || generateClientSeed() } });
     return true;
-  }, [commit]);
+  }, [commit, read]);
 
-  /** Synchronous snapshot, durably consumed before a game computes its outcome. */
+  /** Consume before computing an outcome; persistence is best-effort when storage is unavailable. */
   const consumeNonce = useCallback((): Seeds => {
-    if (ref.current.current.nonce >= Number.MAX_SAFE_INTEGER - 1) {
+    const current = read();
+    if (current.current.nonce >= Number.MAX_SAFE_INTEGER - 1) {
       throw new Error('This seed has no nonces left. Rotate the local seed to continue.');
     }
-    const snapshot = { ...ref.current.current };
-    commit({ ...ref.current, current: { ...snapshot, nonce: snapshot.nonce + 1 } });
+    const snapshot = { ...current.current };
+    commit({ ...current, current: { ...snapshot, nonce: snapshot.nonce + 1 } });
     return snapshot;
-  }, [commit]);
+  }, [commit, read]);
 
   const rotate = useCallback(() => {
+    const current = read();
     const serverSeed = generateServerSeed();
     commit({
-      current: { serverSeed, clientSeed: ref.current.current.clientSeed, nonce: 0 },
+      current: { serverSeed, clientSeed: current.current.clientSeed, nonce: 0 },
       currentHash: sha256Hex(serverSeed),
-      previous: { ...ref.current.current, revealed: true },
+      previous: { ...current.current, revealed: true },
     });
-  }, [commit]);
+  }, [commit, read]);
 
   const resetSeeds = useCallback(() => commit(makeFresh()), [commit]);
 

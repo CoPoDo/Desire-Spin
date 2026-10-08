@@ -1,0 +1,55 @@
+/* Matching stage hardware for the moonlit wilderness and basalt temple. */
+.line-cabinet-game { --cabinet-ink:#e3d2a4; --cabinet-muted:#b8a27e; --cabinet-edge:#8f7349; --cabinet-deep:#130e08; }
+.line-world-wordmark { margin:0; font:800 clamp(22px,3vw,35px)/.95 Georgia,serif; letter-spacing:.12em; color:var(--cabinet-ink); text-shadow:0 2px 2px #000; }
+.line-world-wordmark span { color:#ebc776; }
+.line-world-wordmark small { display:block; margin-top:8px; font:600 10px/1.1 Georgia,serif; letter-spacing:.18em; color:var(--cabinet-muted); }
+.line-theme-wolf-gold { --cabinet-ink:#e3eced; --cabinet-muted:#a9bdc6; --cabinet-edge:#94a9ae; --cabinet-deep:#0d1922; background:#07151b!important; }
+.line-theme-wolf-gold .wanted-cabinet { width:min(100%,780px,calc((100dvh - 310px)*1.6667)); background:linear-gradient(110deg,#617071,#1b2930 16%,#253a40 80%,#768078); border-color:#9caaa670; }
+.line-theme-wolf-gold .wanted-cabinet > section,.line-theme-wolf-gold .wanted-cabinet > aside { background:#14232b; }
+.line-theme-wolf-gold .line-reel-window { background:#0b1820; border-color:#779198; box-shadow:0 0 0 3px #070f15,0 0 0 4px #87999666,inset 0 0 20px #000; }
+.line-theme-wolf-gold .wanted-world::after { background:linear-gradient(90deg,#08131955,transparent 70%),linear-gradient(0deg,#08131955,transparent 50%); }
+.line-theme-wolf-gold .wanted-round-status { color:#bdced5; }
+.line-theme-pharaoh-gold { --cabinet-ink:#edd7a5; --cabinet-muted:#c1a575; --cabinet-edge:#b38a48; --cabinet-deep:#101b20; background:#07171a!important; }
+.line-theme-pharaoh-gold .wanted-cabinet { width:min(100%,590px,calc(100dvh - 305px)); background:linear-gradient(110deg,#ad8950,#1a292b 14%,#102024 84%,#a68142); border-color:#b79756; }
+.line-theme-pharaoh-gold .wanted-cabinet > section,.line-theme-pharaoh-gold .wanted-cabinet > aside { background:#14292b; }
+.line-theme-pharaoh-gold .line-reel-window { background:linear-gradient(100deg,#101b1e,#173137,#0c1b1e); border-color:#a58549; box-shadow:0 0 0 3px #071516,0 0 0 4px #bd9a5755,inset 0 0 20px #0007; }
+.line-theme-pharaoh-gold .wanted-world::after { background:linear-gradient(90deg,#08151655,transparent 70%),linear-gradient(0deg,#08151655,transparent 50%); }
+.line-theme-pharaoh-gold .wanted-round-status { color:#dfc28b; }
+.line-cabinet-game:not(.line-theme-wanted-wild) .wanted-layout { grid-template-columns:minmax(0,800px) 1fr; padding:12px 4%; }
+.line-cabinet-game:not(.line-theme-wanted-wild) .wanted-cabinet > section > header { height:65px; display:grid; place-items:center; }
+.line-cabinet-game:not(.line-theme-wanted-wild) .wanted-cabinet > aside { padding-bottom:0; }
+.line-cabinet-game:not(.line-theme-wanted-wild) .line-slot-cell { background:transparent; }
+.line-cabinet-game .painted-value { position:absolute; inset:40% 0 auto; text-align:center; font:900 16px monospace; color:#fff5c3; text-shadow:0 2px 2px #33250f; }
+@media(max-width:899px) {
+ .line-cabinet-game:not(.line-theme-wanted-wild) .wanted-layout { display:flex; padding:10px; }
+ .line-theme-wolf-gold .wanted-cabinet { width:min(100%,700px,calc((100dvh - 300px)*1.6667)); }
+ .line-theme-pharaoh-gold .wanted-cabinet { width:min(100%,530px,calc(100dvh - 300px)); }
+ .line-cabinet-game:not(.line-theme-wanted-wild) .wanted-world img { object-position:68% center; }
+ .line-cabinet-game:not(.line-theme-wanted-wild) .wanted-world::after { background:#08151755; }
+}
+@media(max-width:420px) {
+ .line-cabinet-game:not(.line-theme-wanted-wild) .wanted-layout { padding:6px; }
+ .line-cabinet-game:not(.line-theme-wanted-wild) .wanted-cabinet { padding:4px; }
+ .line-cabinet-game:not(.line-theme-wanted-wild) .wanted-cabinet > section { padding:6px 5px 0; }
+ .line-cabinet-game:not(.line-theme-wanted-wild) .wanted-cabinet > aside { padding:0 5px; }
+ .line-cabinet-game:not(.line-theme-wanted-wild) .cabinet-console { grid-template-columns:minmax(118px,1.3fr) minmax(52px,.8fr) 58px; padding:5px 2px; gap:3px; }
+ .line-cabinet-game:not(.line-theme-wanted-wild) .cabinet-spin { width:56px; height:56px; }
+ .line-cabinet-game:not(.line-theme-wanted-wild) .cabinet-bet-value { font-size:11px; min-width:32px; }
+ .line-cabinet-game:not(.line-theme-wanted-wild) .cabinet-toolbar button { font-size:12px; }
+}
+.line-cabinet-game .line-reel-window { position:relative; }
+.wolf-giant-symbol { position:absolute; left:20%; top:5px; bottom:5px; width:60%; background:#0c1b23; z-index:2; pointer-events:none; border:1px solid #829da766; }
+.line-feature-transition { position:absolute; inset:5px; display:grid; gap:6px; pointer-events:none; z-index:4; }
+.line-feature-transition > div { background:#160e0b; transform-origin:center; }
+@media(max-width:420px) { .line-feature-transition { inset:4px; } }
+.line-cabinet-game:not(.line-theme-wanted-wild) .wanted-cabinet > section > header { justify-content:center; text-align:center; }
+.line-theme-wolf-gold .line-reel-window { background-image:linear-gradient(90deg,#18303955,#08171b00 8%,#09171b00 92%,#02080a66); background-size:20% 100%; }
+.line-theme-pharaoh-gold .line-reel-window { background-image:linear-gradient(90deg,#b3944e12,#0a1b1b00 10%,#0a1b1b00 90%,#050d0e77); background-size:33.333% 100%; }
+.line-cabinet-game:not(.line-theme-wanted-wild) .cabinet-toolbar button { font-size:12px; }
+.line-cabinet-game .wanted-round-status { font-size:11px; }
+.pharaoh-wild-label { position:absolute; left:0; right:0; bottom:7%; color:#fae8b0; font:800 clamp(9px,1.4vw,15px)/1 Georgia,serif; letter-spacing:.14em; text-align:center; text-shadow:0 2px 3px #091619,0 0 3px #091619; }
+.line-count-control { flex:1; min-width:0; min-height:44px; display:flex; justify-content:center; align-items:center; gap:4px; font-size:10px; color:var(--cabinet-muted); border-right:1px solid #b99d7333; }
+.line-count-control select { min-height:44px; min-width:52px; background:transparent; color:var(--cabinet-ink); font-size:11px; }
+.line-count-control select option { color:#eed8a5; background:#14292b; }
+.line-count-control select:disabled { opacity:.4; }
+.line-count-control select:focus-visible { outline:2px solid var(--cabinet-ink); }

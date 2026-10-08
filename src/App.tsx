@@ -1,6 +1,7 @@
 import { lazy, Suspense, type ReactNode } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { PlaySessionGuard } from './components/PlaySessionGuard';
 import { ComingSoon } from './components/layout/ComingSoon';
 import { GameProvider } from './components/layout/GameProvider';
 import { Layout } from './components/layout/Layout';
@@ -73,59 +74,61 @@ function SlotRoute({ title, accent, accentDeep, children }: { title: string; acc
 export default function App() {
   return (
     <ErrorBoundary>
-      <GameProvider>
-        <Routes>
-          <Route path="/slots/sweet-bonanza" element={<SlotRoute title="Sweet Bonanza" accent="#ff7ab6" accentDeep="#a8307a"><SweetBonanza /></SlotRoute>} />
-          <Route path="/slots/gates-of-olympus" element={<SlotRoute title="Gates of Olympus" accent="#ffd166" accentDeep="#c8932e"><GatesOfOlympus /></SlotRoute>} />
-          <Route path="/slots/sugar-rush" element={<SlotRoute title="Sugar Rush" accent="#ff7ad9" accentDeep="#c8408a"><SugarRush /></SlotRoute>} />
-          <Route path="/slots/wanted-wild" element={<SlotRoute title="Wanted Dead or a Wild" accent="#e8a449" accentDeep="#7a4a18"><WantedWild /></SlotRoute>} />
-          <Route path="/slots/pharaoh-gold" element={<SlotRoute title="Pharaoh's Gold" accent="#ffd166" accentDeep="#a8761a"><PharaohGold /></SlotRoute>} />
-          <Route path="/slots/wolf-gold" element={<SlotRoute title="Wolf Gold" accent="#a78bfa" accentDeep="#6638c8"><WolfGold /></SlotRoute>} />
-          <Route path="/slots/big-juan" element={<SlotRoute title="Big Juan" accent="#ffd166" accentDeep="#c8932e"><BigJuan /></SlotRoute>} />
-          <Route path="/slots/big-bass-bonanza" element={<Deferred><BigBassGame /></Deferred>} />
+      <PlaySessionGuard>
+        <GameProvider>
+          <Routes>
+            <Route path="/slots/sweet-bonanza" element={<SlotRoute title="Sweet Bonanza" accent="#ff7ab6" accentDeep="#a8307a"><SweetBonanza /></SlotRoute>} />
+            <Route path="/slots/gates-of-olympus" element={<SlotRoute title="Gates of Olympus" accent="#ffd166" accentDeep="#c8932e"><GatesOfOlympus /></SlotRoute>} />
+            <Route path="/slots/sugar-rush" element={<SlotRoute title="Sugar Rush" accent="#ff7ad9" accentDeep="#c8408a"><SugarRush /></SlotRoute>} />
+            <Route path="/slots/wanted-wild" element={<SlotRoute title="Wanted Dead or a Wild" accent="#e8a449" accentDeep="#7a4a18"><WantedWild /></SlotRoute>} />
+            <Route path="/slots/pharaoh-gold" element={<SlotRoute title="Pharaoh's Gold" accent="#ffd166" accentDeep="#a8761a"><PharaohGold /></SlotRoute>} />
+            <Route path="/slots/wolf-gold" element={<SlotRoute title="Wolf Gold" accent="#a78bfa" accentDeep="#6638c8"><WolfGold /></SlotRoute>} />
+            <Route path="/slots/big-juan" element={<SlotRoute title="Big Juan" accent="#ffd166" accentDeep="#c8932e"><BigJuan /></SlotRoute>} />
+            <Route path="/slots/big-bass-bonanza" element={<Deferred><BigBassGame /></Deferred>} />
 
-          <Route path="/originals/dice" element={<Deferred><DiceGame /></Deferred>} />
-          <Route path="/originals/limbo" element={<Deferred><LimboGame /></Deferred>} />
-          <Route path="/originals/mines" element={<Deferred><MinesGame /></Deferred>} />
-          <Route path="/originals/crash" element={<Deferred><CrashGame /></Deferred>} />
-          <Route path="/originals/plinko" element={<Deferred><PlinkoGame /></Deferred>} />
-          <Route path="/originals/wheel" element={<Deferred><WheelGame /></Deferred>} />
-          <Route path="/originals/hilo" element={<Deferred><HiloGame /></Deferred>} />
-          <Route path="/originals/dragon-tower" element={<Deferred><TowerGame /></Deferred>} />
-          <Route path="/originals/keno" element={<Deferred><KenoGame /></Deferred>} />
-          <Route path="/originals/roulette" element={<Deferred><RouletteGame /></Deferred>} />
-          <Route path="/originals/blackjack" element={<Deferred><BlackjackGame /></Deferred>} />
-          <Route path="/originals/baccarat" element={<Deferred><BaccaratGame /></Deferred>} />
-          <Route path="/originals/diamonds" element={<Deferred><DiamondsGame /></Deferred>} />
-          <Route path="/originals/video-poker" element={<Deferred><VideoPokerGame /></Deferred>} />
-          <Route path="/originals/flip" element={<Deferred><CoinFlipGame /></Deferred>} />
-          <Route path="/originals/pump" element={<Deferred><PumpGame /></Deferred>} />
-          <Route path="/originals/three-cups" element={<Deferred><CupsGame /></Deferred>} />
-          <Route path="/originals/classic-slot" element={<Deferred><MiniSlotGame /></Deferred>} />
-          <Route path="/originals/rps" element={<Deferred><RpsGame /></Deferred>} />
-          <Route path="/originals/dragon-tiger" element={<Deferred><DragonTigerGame /></Deferred>} />
-          <Route path="/originals/cases" element={<Deferred><CasesGame /></Deferred>} />
-          <Route path="/originals/sicbo" element={<Deferred><SicBoGame /></Deferred>} />
-          <Route path="/originals/scratch" element={<Deferred><ScratchGame /></Deferred>} />
-          <Route path="/originals/slide" element={<Deferred><SlideGame /></Deferred>} />
-          <Route path="/originals/bingo" element={<Deferred><BingoGame /></Deferred>} />
-          <Route path="/originals/aviator" element={<Deferred><AviatorGame /></Deferred>} />
+            <Route path="/originals/dice" element={<Deferred><DiceGame /></Deferred>} />
+            <Route path="/originals/limbo" element={<Deferred><LimboGame /></Deferred>} />
+            <Route path="/originals/mines" element={<Deferred><MinesGame /></Deferred>} />
+            <Route path="/originals/crash" element={<Deferred><CrashGame /></Deferred>} />
+            <Route path="/originals/plinko" element={<Deferred><PlinkoGame /></Deferred>} />
+            <Route path="/originals/wheel" element={<Deferred><WheelGame /></Deferred>} />
+            <Route path="/originals/hilo" element={<Deferred><HiloGame /></Deferred>} />
+            <Route path="/originals/dragon-tower" element={<Deferred><TowerGame /></Deferred>} />
+            <Route path="/originals/keno" element={<Deferred><KenoGame /></Deferred>} />
+            <Route path="/originals/roulette" element={<Deferred><RouletteGame /></Deferred>} />
+            <Route path="/originals/blackjack" element={<Deferred><BlackjackGame /></Deferred>} />
+            <Route path="/originals/baccarat" element={<Deferred><BaccaratGame /></Deferred>} />
+            <Route path="/originals/diamonds" element={<Deferred><DiamondsGame /></Deferred>} />
+            <Route path="/originals/video-poker" element={<Deferred><VideoPokerGame /></Deferred>} />
+            <Route path="/originals/flip" element={<Deferred><CoinFlipGame /></Deferred>} />
+            <Route path="/originals/pump" element={<Deferred><PumpGame /></Deferred>} />
+            <Route path="/originals/three-cups" element={<Deferred><CupsGame /></Deferred>} />
+            <Route path="/originals/classic-slot" element={<Deferred><MiniSlotGame /></Deferred>} />
+            <Route path="/originals/rps" element={<Deferred><RpsGame /></Deferred>} />
+            <Route path="/originals/dragon-tiger" element={<Deferred><DragonTigerGame /></Deferred>} />
+            <Route path="/originals/cases" element={<Deferred><CasesGame /></Deferred>} />
+            <Route path="/originals/sicbo" element={<Deferred><SicBoGame /></Deferred>} />
+            <Route path="/originals/scratch" element={<Deferred><ScratchGame /></Deferred>} />
+            <Route path="/originals/slide" element={<Deferred><SlideGame /></Deferred>} />
+            <Route path="/originals/bingo" element={<Deferred><BingoGame /></Deferred>} />
+            <Route path="/originals/aviator" element={<Deferred><AviatorGame /></Deferred>} />
 
-          <Route path="/originals/tower" element={<Navigate to="/originals/dragon-tower" replace />} />
-          <Route path="/originals/coin-flip" element={<Navigate to="/originals/flip" replace />} />
-          <Route path="/originals/cups" element={<Navigate to="/originals/three-cups" replace />} />
-          <Route path="/originals/mini-slot" element={<Navigate to="/originals/classic-slot" replace />} />
-          <Route path="/originals/big-bass" element={<Navigate to="/slots/big-bass-bonanza" replace />} />
+            <Route path="/originals/tower" element={<Navigate to="/originals/dragon-tower" replace />} />
+            <Route path="/originals/coin-flip" element={<Navigate to="/originals/flip" replace />} />
+            <Route path="/originals/cups" element={<Navigate to="/originals/three-cups" replace />} />
+            <Route path="/originals/mini-slot" element={<Navigate to="/originals/classic-slot" replace />} />
+            <Route path="/originals/big-bass" element={<Navigate to="/slots/big-bass-bonanza" replace />} />
 
-          <Route path="/" element={<Layout><Home /></Layout>} />
-          <Route path="/casino" element={<Layout><Home /></Layout>} />
-          <Route path="/settings" element={<Layout><Deferred><Settings /></Deferred></Layout>} />
-          <Route path="/sports" element={<Layout><ComingSoon title="Sports" /></Layout>} />
-          <Route path="/live" element={<Layout><ComingSoon title="Live Casino" /></Layout>} />
-          <Route path="/promotions" element={<Layout><ComingSoon title="Promotions" /></Layout>} />
-          <Route path="*" element={<Layout><ComingSoon title="Not found" /></Layout>} />
-        </Routes>
-      </GameProvider>
+            <Route path="/" element={<Layout><Home /></Layout>} />
+            <Route path="/casino" element={<Layout><Home /></Layout>} />
+            <Route path="/settings" element={<Layout><Deferred><Settings /></Deferred></Layout>} />
+            <Route path="/sports" element={<Layout><ComingSoon title="Sports" /></Layout>} />
+            <Route path="/live" element={<Layout><ComingSoon title="Live Casino" /></Layout>} />
+            <Route path="/promotions" element={<Layout><ComingSoon title="Promotions" /></Layout>} />
+            <Route path="*" element={<Layout><ComingSoon title="Not found" /></Layout>} />
+          </Routes>
+        </GameProvider>
+      </PlaySessionGuard>
     </ErrorBoundary>
   );
 }

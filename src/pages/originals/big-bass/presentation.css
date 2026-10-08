@@ -1,0 +1,89 @@
+/* A painted alpine lake, with one continuous weathered timber/brass console. */
+.authored-bass { --cabinet-ink:#f4e1ae; --cabinet-muted:#c9c8a4; --cabinet-edge:#b79861; --cabinet-surface:#274439; --cabinet-deep:#102c29; --cabinet-accent:#e7c474; background:#173d3e; }
+.bass-world::after { background:linear-gradient(90deg,#0926274d,transparent 65%),linear-gradient(0deg,#091d2180,transparent 40%); }
+.bass-layout { padding:12px 5%; }
+.authored-bass .bass-cabinet,.authored-bass.is-free .bass-cabinet { width:min(59%,720px,calc((100dvh - 310px)*1.67)); padding:9px; border:2px solid #947449; border-radius:10px 10px 4px 4px; background:repeating-linear-gradient(3deg,#34564b11 0 2px,#101d1811 3px 5px),linear-gradient(100deg,#546b51,#223e35 16%,#2c4b3e 54%,#172f29 85%,#596a4c); box-shadow:inset 0 0 0 2px #e0c39466,inset 0 0 0 5px #182c2280,0 20px 55px #071a1bbb; }
+.bass-wordmark { height:84px; text-shadow:0 2px 0 #4f3b24,0 4px 4px #0005; }
+.bass-wordmark small { font:600 8px/1.4 sans-serif; letter-spacing:.25em; color:#d3cca9; }
+.bass-wordmark strong { font:900 clamp(33px,4.4vw,53px)/1 Georgia,serif; letter-spacing:.035em; color:#f0d391; }
+.bass-wordmark > span { font:700 12px/1.5 Georgia,serif; letter-spacing:.18em; color:#efe3ba; }
+.bass-wordmark::before,.bass-wordmark::after { content:''; width:10%; height:1px; background:#b29461; box-shadow:0 3px #b2946155; }
+.bass-feature-rail { display:flex; align-items:center; justify-content:space-between; min-height:29px; margin:0 2px 6px; padding:4px 8px; border-block:1px solid #b6996155; font-size:9px; letter-spacing:.12em; line-height:17px; color:#d6cba4; }
+.bass-feature-rail strong { margin-left:3px; color:#ffe7a4; font:700 13px/1 monospace; }
+.bass-reels-frame { position:relative; padding:7px; border:3px solid #ad8b51; border-radius:5px; background:linear-gradient(110deg,#1c4140,#112e30); box-shadow:0 0 0 1px #142820,inset 0 0 0 2px #e1c39355,0 2px 1px #ecd19955; overflow:hidden; }
+.bass-reels { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:3px; }
+.bass-reels > [data-reel-outcome] { border-radius:1px; background:linear-gradient(90deg,#071f2477,#36595155,#16383088); box-shadow:inset 1px 0 #b7b08016,inset -1px 0 #b7b08016; }
+.bass-cell { position:relative; width:100%; height:100%; border-radius:2px; border:1px solid transparent; background:linear-gradient(130deg,#edf3c107,#edf3c100); }
+.bass-cell-win { border-color:#f1cd83b3; background:#ead0872a; box-shadow:inset 0 0 15px #f1cd8333; }
+.bass-money-value { position:absolute; bottom:2%; left:50%; transform:translateX(-50%); padding:2px 6px; min-width:31%; border:1px solid #d5b46c; border-radius:10px; color:#fff1bc; background:#153e30f5; box-shadow:0 2px 4px #0007; font:800 clamp(10px,1.4vw,16px)/1 monospace; text-align:center; white-space:nowrap; }
+.bass-status { height:28px; text-align:center; padding:5px 2px; font-size:11px; }
+.authored-bass .cabinet-console { border-radius:3px; background:linear-gradient(0deg,#092723,#173930); border-color:#c4a05b66; }
+.authored-bass .cabinet-spin { background:radial-gradient(circle at 40% 25%,#edcf87,#aa8b4e 78%); color:#17342a; border-color:#f1d797; box-shadow:0 0 0 2px #84683e,inset 0 0 0 3px #fff2,0 3px 7px #0007; }
+.authored-bass .cabinet-toolbar > button { color:#d5d0af; border-color:#ae94663d; }
+.authored-bass .cabinet-bonus { color:#f4deb0; }
+.authored-bass .cabinet-toolbar button[aria-pressed=true] { background:#c4a96824; color:#ffe5a1; }
+.bass-feature-banner { position:absolute; inset:13% 10%; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#173c30f0; color:#f4dc9d; border:2px solid #d6ba76; border-radius:5px; box-shadow:0 10px 24px #0008; pointer-events:none; }
+.bass-feature-banner > span { font:600 clamp(8px,1.2vw,13px)/1.8 sans-serif; letter-spacing:.18em; }
+.bass-feature-banner > strong { font:900 clamp(36px,6vw,68px)/1.05 Georgia,serif; }
+.bass-footnote { color:#ecdfc5ba; }
+.bass-sheet { display:flex; flex-direction:column; gap:16px; color:#d6daca; font-size:13px; line-height:1.6; }
+.bass-sheet button,.bass-sheet input { min-height:44px; }
+.bass-sheet button { min-width:44px; }
+.bass-sheet button:focus-visible { outline:2px solid #f2dba0; outline-offset:3px; }
+.bass-sheet .bass-sheet-primary,.bass-total-card button { min-height:46px; border:1px solid #d4b777; border-radius:5px; padding:10px 16px; background:linear-gradient(#dcc38c,#ab8b50); color:#172f27; font-weight:800; }
+.bass-sheet button:disabled { opacity:.4; }
+.bass-sheet-note { font-size:11px; color:#a5b4ac; }
+.bass-sheet-actions { display:grid; grid-template-columns:1fr 1.4fr; gap:10px; }
+.bass-sheet-actions > button:first-child { border:1px solid #5e7167; border-radius:5px; }
+.bass-bonus-portrait { width:92px; height:92px; margin:0 auto -10px; }
+.bass-buy-sheet > p { text-align:center; }
+.bass-buy-award { font:800 28px/1.1 Georgia,serif; color:#e9cf93; }
+.bass-buy-sheet dl { display:flex; flex-direction:column; gap:9px; padding:12px; border:1px solid #a68a5244; background:#112f284d; }
+.bass-buy-sheet dl > div { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.bass-buy-sheet dd { font:700 20px/1.2 monospace; color:#f2deb1; }
+.bass-paytable { display:flex; flex-direction:column; gap:4px; }
+.bass-paytable-heading,.bass-paytable-row { display:grid; grid-template-columns:1.5fr repeat(4,1fr); align-items:center; gap:8px; }
+.bass-paytable-heading { font-size:11px; color:#b7c5ba; }
+.bass-paytable-row { min-height:54px; padding:2px 0; border-top:1px solid #a6b49720; }
+.bass-paytable-row > span:not(:first-child) { font:600 12px/1.2 monospace; }
+.bass-paytable-symbol { display:flex; align-items:center; gap:8px; font-size:11px; }
+.bass-paytable-art { display:block; width:47px; height:47px; flex-shrink:0; }
+.bass-total-overlay { position:absolute; inset:0; z-index:20; display:flex; align-items:center; justify-content:center; background:#081b19d9; backdrop-filter:blur(6px); padding:20px; }
+.bass-total-card { width:min(100%,470px); padding:28px 14px; border:2px solid #c4a46a; border-radius:9px; box-shadow:0 20px 70px #0007; background:radial-gradient(ellipse at top,#46664c,#193d31); text-align:center; color:#ecd59d; }
+.bass-total-card > span { font:600 10px/1.2 sans-serif; letter-spacing:.2em; }
+.bass-total-card h2 { font:800 35px/1.3 Georgia,serif; margin-top:8px; }
+.bass-total-card > strong { display:block; font:800 clamp(36px,8vw,68px)/1.35 monospace; color:#fff0b7; }
+.bass-total-card p { font-size:12px; margin-bottom:18px; }
+.bass-total-card button { min-width:140px; }
+@media(max-width:700px) {
+ .bass-layout { padding:8px 6px; }
+ .authored-bass .bass-cabinet,.authored-bass.is-free .bass-cabinet { width:min(100%,480px,calc((100dvh - 294px)*1.67)); padding:6px; }
+ .bass-world > img { object-position:66% center; }
+ .bass-world::after { background:linear-gradient(0deg,#08272780,#123a3122); }
+ .bass-wordmark { height:72px; }
+ .bass-wordmark strong { font-size:37px; }
+ .bass-wordmark small { font-size:7px; letter-spacing:.16em; }
+ .bass-wordmark > span { font-size:10px; }
+ .bass-feature-rail { font-size:8px; letter-spacing:.05em; padding:3px 2px; margin-bottom:4px; min-height:27px; }
+ .bass-feature-rail strong { font-size:11px; }
+ .bass-reels-frame { padding:4px; border-width:2px; }
+ .bass-reels { gap:2px; }
+ .bass-status { font-size:10px; height:27px; }
+ .bass-money-value { font-size:9px; padding:2px 3px; }
+ .bass-feature-banner > strong { font-size:40px; }
+ .bass-feature-banner > span { font-size:8px; }
+ .bass-paytable-symbol > span:last-child { display:none; }
+ .bass-paytable-heading,.bass-paytable-row { grid-template-columns:.8fr repeat(4,1fr); gap:5px; }
+ .bass-paytable-row > span:not(:first-child) { font-size:10px; }
+}
+@media(max-height:560px) and (min-width:701px) {
+ .authored-bass .bass-cabinet,.authored-bass.is-free .bass-cabinet { width:min(60%,calc((100dvh - 258px)*1.67)); padding:5px; }
+ .bass-wordmark { height:47px; }
+ .bass-wordmark strong { font-size:29px; }
+ .bass-wordmark small { display:none; }
+ .bass-wordmark > span { font-size:8px; }
+ .bass-feature-rail { min-height:23px; margin-bottom:3px; padding-block:2px; }
+ .bass-status { height:22px; padding-block:2px; font-size:10px; }
+ .bass-reels-frame { padding:3px; }
+}
+@media(prefers-reduced-motion:reduce) { .authored-bass *,.authored-bass *::before,.authored-bass *::after { animation:none !important; transition:none !important; } }

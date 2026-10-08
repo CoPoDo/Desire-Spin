@@ -9,6 +9,8 @@ import {
   type Bet,
   type Roll,
   ANY_TRIPLE_PAYOUT,
+  COMBINATION_PAYOUT,
+  TWO_DICE_COMBINATIONS,
   ODD_EVEN_PAYOUT,
   SMALL_BIG_PAYOUT,
   SPECIFIC_TRIPLE_PAYOUT,
@@ -30,6 +32,7 @@ function keyOf(bet: Bet): string {
     case 'anyTriple': return 'anyTriple';
     case 'specificTriple': return `triple:${bet.face}`;
     case 'double': return `double:${bet.face}`;
+    case 'combination': return `pair:${bet.faces[0]}:${bet.faces[1]}`;
     case 'total': return `total:${bet.sum}`;
     case 'singleDie': return `single:${bet.face}`;
   }
@@ -46,6 +49,10 @@ function betOf(key: string): Bet {
   }
   if (key.startsWith('double:')) {
     return { kind: 'double', face: parseInt(key.slice(7)) };
+  }
+  if (key.startsWith('pair:')) {
+    const [, first, second] = key.split(':').map(Number);
+    return { kind: 'combination', faces: [first!, second!] };
   }
   // total:N
   return { kind: 'total', sum: parseInt(key.slice(6)) };
@@ -230,7 +237,7 @@ export function SicBoGame() {
         {/* Outside bets: Small / Big / Odd / Even */}
         <div className="rounded-lg bg-stake-card border border-stake-border p-2 space-y-1.5">
           <div className="grid grid-cols-2 gap-1.5">
-            <BetCell
+            <BetCell disabled={busy}
               label="Small"
               sub="4–10"
               payout={SMALL_BIG_PAYOUT}
@@ -238,7 +245,7 @@ export function SicBoGame() {
               onClick={() => placeChip({ kind: 'small' })}
               tone="cyan"
             />
-            <BetCell
+            <BetCell disabled={busy}
               label="Big"
               sub="11–17"
               payout={SMALL_BIG_PAYOUT}
@@ -246,7 +253,7 @@ export function SicBoGame() {
               onClick={() => placeChip({ kind: 'big' })}
               tone="hot"
             />
-            <BetCell
+            <BetCell disabled={busy}
               label="Odd"
               sub=""
               payout={ODD_EVEN_PAYOUT}
@@ -254,7 +261,7 @@ export function SicBoGame() {
               onClick={() => placeChip({ kind: 'odd' })}
               tone="violet"
             />
-            <BetCell
+            <BetCell disabled={busy}
               label="Even"
               sub=""
               payout={ODD_EVEN_PAYOUT}
@@ -274,7 +281,7 @@ export function SicBoGame() {
           </div>
           <div className="grid grid-cols-6 gap-1">
             {[1, 2, 3, 4, 5, 6].map((face) => (
-              <BetCell
+              <BetCell disabled={busy}
                 key={face}
                 label={`${face}`}
                 sub="dice"
@@ -293,7 +300,18 @@ export function SicBoGame() {
           <div className="text-[10px] uppercase tracking-widest text-stake-muted px-1 mb-1">Specific doubles · pays 11× return</div>
           <div className="grid grid-cols-6 gap-1">
             {[1, 2, 3, 4, 5, 6].map((face) => (
-              <BetCell key={face} label={`${face}·${face}`} sub="double" payout={11} chip={chips[keyOf({ kind: 'double', face })]} onClick={() => placeChip({ kind: 'double', face })} tone="cyan" compact />
+              <BetCell disabled={busy} key={face} label={`${face}·${face}`} sub="double" payout={11} chip={chips[keyOf({ kind: 'double', face })]} onClick={() => placeChip({ kind: 'double', face })} tone="cyan" compact />
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-lg bg-stake-card border border-stake-border p-2 space-y-1.5">
+          <div className="text-[10px] uppercase tracking-widest text-stake-muted px-1 mb-1">Two different faces · pays 7× return</div>
+          <div className="grid grid-cols-5 gap-1">
+            {TWO_DICE_COMBINATIONS.map(faces => (
+              <BetCell disabled={busy} key={faces.join('-')} label={`${faces[0]} + ${faces[1]}`} sub="both appear" payout={COMBINATION_PAYOUT}
+                chip={chips[keyOf({ kind: 'combination', faces })]}
+                onClick={() => placeChip({ kind: 'combination', faces })} tone="cyan" compact />
             ))}
           </div>
         </div>
@@ -302,7 +320,7 @@ export function SicBoGame() {
         <div className="rounded-lg bg-stake-card border border-stake-border p-2 space-y-1.5">
           <div className="text-[10px] uppercase tracking-widest text-stake-muted px-1 mb-1">Triples</div>
           <div className="grid grid-cols-7 gap-1">
-            <BetCell
+            <BetCell disabled={busy}
               label="Any"
               sub="3-of-a-kind"
               payout={ANY_TRIPLE_PAYOUT}
@@ -312,7 +330,7 @@ export function SicBoGame() {
               compact
             />
             {[1, 2, 3, 4, 5, 6].map((face) => (
-              <BetCell
+              <BetCell disabled={busy}
                 key={face}
                 label={`${face}·${face}·${face}`}
                 sub=""
@@ -331,7 +349,7 @@ export function SicBoGame() {
           <div className="text-[10px] uppercase tracking-widest text-stake-muted px-1 mb-1">Total Sum</div>
           <div className="grid grid-cols-7 gap-1">
             {Array.from({ length: 14 }, (_, i) => i + 4).map((sum) => (
-              <BetCell
+              <BetCell disabled={busy}
                 key={sum}
                 label={String(sum)}
                 sub={`${(SUM_PAYOUTS[sum] ?? 0).toFixed(0)}×`}
@@ -345,6 +363,8 @@ export function SicBoGame() {
             ))}
           </div>
         </div>
+
+        <p className="text-[10px] leading-relaxed text-stake-muted">Local table variant. All shown payouts include the original chip. Small, Big, Odd and Even lose on triples; total and single-face bets follow their displayed payouts. Different casino tables may offer different odds.</p>
 
         {/* Chip selector */}
         <div className="rounded-xl bg-stake-card border border-stake-border p-2">
@@ -419,6 +439,7 @@ function BetCell({
   tone,
   compact = false,
   hidePayout = false,
+  disabled = false,
 }: {
   label: string;
   sub: string;
@@ -428,11 +449,13 @@ function BetCell({
   tone: 'cyan' | 'hot' | 'violet' | 'gold';
   compact?: boolean;
   hidePayout?: boolean;
+  disabled?: boolean;
 }) {
   const t = TONE[tone]!;
   return (
     <button
       onClick={onClick}
+      disabled={disabled}
       className={`relative rounded-lg flex flex-col items-center justify-center transition active:scale-95 ${
         compact ? 'py-1.5 px-1' : 'py-3 px-2'
       }`}

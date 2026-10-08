@@ -12,6 +12,8 @@ export type GameReferenceManifest = {
   referenceVersion: string;
   auditedAt: string;
   sources: readonly string[];
+  /** Published reference/diagnostic target, never a certification of local math.
+   * Omitted for strategy-, wager- or table-dependent returns. */
   targetRtp?: number;
   mechanics: readonly string[];
   controls: readonly string[];

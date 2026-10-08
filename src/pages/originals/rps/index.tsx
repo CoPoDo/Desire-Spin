@@ -1,297 +1,121 @@
-import { useRoundPlayback } from '../_shared/useRoundPlayback';
 import { useCallback, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
 import { useGame } from '../../../game-context';
 import { useHotkey } from '../../../hooks/useHotkey';
-import { createRng } from '../../../lib/fairness';
-import { fmtCurrency } from '../../../lib/format';
+import { usePersistedBet } from '../../../hooks/usePersistedBet';
+import { fmtCurrency, fmtMultiplier } from '../../../lib/format';
 import { BetInput } from '../_shared/BetInput';
-import {
-  MOVES,
-  MOVE_EMOJI,
-  type Move,
-  type Outcome,
-  WIN_PAYOUT,
-  play,
-} from './engine';
-import { fireConfetti } from '../../../lib/confetti';
+import { useInteractiveRound, useRoundState } from '../_shared/useInteractiveRound';
+import { MOVES, pickOpponent, createRpsRound, advanceRpsRound, cashOutRpsRound, multiplierAfterWins, RPS_MAX_WINS, type Move, type RpsRoundState } from './engine';
 
-type Phase = 'idle' | 'reveal' | 'done';
+type Phase = 'ready' | 'revealing' | 'choosing' | 'done';
+const LETTER: Record<Move, string> = { rock: 'R', paper: 'P', scissors: 'S' };
+const LABEL: Record<Move, string> = { rock: 'Rock', paper: 'Paper', scissors: 'Scissors' };
 
-const OUTCOME_TEXT: Record<Outcome, string> = {
-  win: 'You win',
-  tie: 'Tie · push',
-  loss: 'You lose',
-};
-
+/** One stake and one RNG stream per streak. Pictures never cancel a throw. */
 export function RpsGame() {
-  const { balance, fairness, sound, history, session } = useGame();
-  const [bet, setBet] = useState(1);
-  const [phase, setPhase] = useState<Phase>('idle');
+  const { balance, sound } = useGame();
+  const reduced = useReducedMotion();
+  const round = useInteractiveRound('Rock Paper Scissors');
+  const [bet, setBet] = usePersistedBet('rps', 1);
+  const [state, setState, stateRef] = useRoundState<RpsRoundState | null>(null);
+  const [phase, setPhase, phaseRef] = useRoundState<Phase>('ready');
+  const [busy, setBusy, busyRef] = useRoundState(false);
   const [playerMove, setPlayerMove] = useState<Move | null>(null);
   const [opponentMove, setOpponentMove] = useState<Move | null>(null);
-  const [outcome, setOutcome] = useState<Outcome | null>(null);
-  const { busy, busyRef, setBusy, schedule } = useRoundPlayback();
+  const [throws, setThrows] = useState<{ move: Move; outcome: string }[]>([]);
+  const active = !!state && !state.done;
+  const wins = state?.wins ?? 0;
+  const potential = +((state?.bet ?? bet) * multiplierAfterWins(wins)).toFixed(2);
 
-  const start = useCallback(
-    (move: Move) => {
-      if (busyRef.current) return;
-      if (!balance.canAfford(bet)) return;
-      if (busyRef.current || !balance.debit(bet)) return;
-      setBusy(true);
-      setPlayerMove(move);
-      setOpponentMove(null);
-      setOutcome(null);
-      sound.play('click');
+  round.onLeave.current = (updateView = false) => {
+    const committed = stateRef.current;
+    if (!committed) return round.wager.current?.bet ?? 0;
+    const final = committed.done ? committed : committed.wins > 0 ? cashOutRpsRound(committed) : { ...committed, done: true, payout: committed.bet };
+    stateRef.current = final;
+    if (updateView) { setState(final); setPhase('done'); setBusy(false); }
+    return final.payout;
+  };
 
-      setPhase('reveal');
-      const seeds = fairness.consumeNonce();
-      const rng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
-      const r = play(rng, bet, move);
-    if (r.payout > 0) balance.credit(r.payout);
-      history.record({
-        game: 'RPS',
-        bet,
-        payout: r.payout,
-        multiplier: r.multiplier,
-        serverSeedHash: fairness.hash,
-        clientSeed: seeds.clientSeed,
-        nonce: seeds.nonce,
-      });
-      session.recordSpin(bet, r.payout, false);
-
-      // Rock-paper-scissors-SHOOT cadence — three thuds during the shake
-      // animation matching the 4-bounce rhythm. Real RPS games (and
-      // playground RPS) have audible "rock, paper, scissors" beats so
-      // the silent shake felt under-paced.
-      schedule(() => sound.play('drop'), 100);
-      schedule(() => sound.play('drop'), 380);
-      schedule(() => sound.play('drop'), 660);
-      // Suspense reveal — opponent's hand "shakes" then drops a move
-      schedule(() => {
-        setOpponentMove(r.opponent);
-        setOutcome(r.outcome);
-        setPhase('done');
-        if (r.outcome === 'win') {
-          sound.play('big-win');
-          // Win-celebration chip-shower — RPS was the last Original
-          // without it. Modest count (60 chips) since it's a single
-          // 1.97× win, not a big multiplier game. Colours match the
-          // game's win-state palette (green) plus accent gold + white.
-          fireConfetti({
-            count: 60,
-            colors: ['#00e701', '#ffd166', '#ffffff'],
-          });
-        } else if (r.outcome === 'tie') {
-          sound.play('tick');
-        } else {
-          sound.play('drop');
-        }
-
-        setBusy(false);
-      }, 1100);
-    },
-    [busy, bet, balance, fairness, sound, history, session],
-  );
-
-  const reset = useCallback(() => {
-    setPhase('idle');
-    setPlayerMove(null);
-    setOpponentMove(null);
-    setOutcome(null);
-  }, []);
-
-  // Keyboard shortcuts: R / P / S for the three moves. Resets first
-  // if a previous round is showing so player can chain rounds.
-  const fire = useCallback((m: Move) => {
+  const choose = useCallback((move: Move) => {
     if (busyRef.current) return;
-    if (phase === 'done') reset();
-    start(m);
-  }, [busy, phase, reset, start]);
-  useHotkey('r', () => fire('rock'), true);
-  useHotkey('R', () => fire('rock'), true);
-  useHotkey('p', () => fire('paper'), true);
-  useHotkey('P', () => fire('paper'), true);
-  useHotkey('s', () => fire('scissors'), true);
-  useHotkey('S', () => fire('scissors'), true);
+    let current = stateRef.current;
+    let wager = round.wager.current;
+    if (!current || current.done || !wager || wager.settled) {
+      wager = round.begin(bet);
+      if (!wager) return;
+      current = createRpsRound(wager.bet);
+      setState(current);
+      setThrows([]);
+    }
+    setBusy(true);
+    setPhase('revealing');
+    setPlayerMove(move);
+    setOpponentMove(null);
+    sound.play('click');
+    const opponent = pickOpponent(wager.rng);
+    const next = advanceRpsRound(current, move, opponent);
+    // Synchronous authoritative state survives a departure mid-animation.
+    stateRef.current = next;
+    if (next.done) round.settle(next.payout);
+    round.delay(() => {
+      if (round.wager.current !== wager || phaseRef.current !== 'revealing') return;
+      setState(next);
+      setOpponentMove(opponent);
+      setThrows((previous) => [...previous, { move: opponent, outcome: next.lastResult!.outcome }].slice(-12));
+      setPhase(next.done ? 'done' : 'choosing');
+      setBusy(false);
+      sound.play(next.lastResult?.outcome === 'win' ? 'win' : next.lastResult?.outcome === 'tie' ? 'tick' : 'drop');
+    }, reduced ? 0 : 650);
+  }, [bet, round, reduced, sound, busyRef, phaseRef, stateRef, setState, setBusy, setPhase]);
 
-  const profitOnWin = +(bet * WIN_PAYOUT - bet).toFixed(2);
+  const cashOut = useCallback(() => {
+    const current = stateRef.current;
+    if (busyRef.current || !current || current.done || current.wins === 0) return;
+    const final = cashOutRpsRound(current);
+    if (!round.settle(final.payout)) return;
+    setState(final);
+    setPhase('done');
+    sound.play('win');
+  }, [busyRef, stateRef, round, setState, setPhase, sound]);
 
-  return (
-    <OriginalPageLayout title="Rock Paper Scissors">
-      <div className="flex flex-col p-4 gap-4 max-w-md mx-auto w-full">
-        {/* Status */}
-        <div className="rounded-xl bg-stake-card border border-stake-border p-3 text-center min-h-[60px] flex flex-col items-center justify-center">
-          {phase === 'idle' && (
-            <div className="text-[10px] uppercase tracking-widest text-stake-muted">
-              Pick your move · {WIN_PAYOUT}× on win
-            </div>
-          )}
-          {phase === 'reveal' && (
-            <div className="text-[10px] uppercase tracking-widest text-stake-muted">Revealing…</div>
-          )}
-          {phase === 'done' && outcome && (
-            <div
-              className={`font-mono font-bold text-lg ${
-                outcome === 'win'
-                  ? 'text-stake-green'
-                  : outcome === 'tie'
-                    ? 'text-stake-muted'
-                    : 'text-stake-red'
-              }`}
-            >
-              {OUTCOME_TEXT[outcome]}
-              {outcome === 'win' && ` · +${fmtCurrency(profitOnWin)}`}
-              {outcome === 'loss' && ` · -${fmtCurrency(bet)}`}
-            </div>
-          )}
+  useHotkey('r', () => choose('rock'));
+  useHotkey('p', () => choose('paper'));
+  useHotkey('s', () => choose('scissors'));
+  useHotkey('c', cashOut);
+  useHotkey(' ', cashOut, active && wins > 0);
+
+  const outcome = state?.lastResult?.outcome;
+  const message = busy ? 'Rock. Paper. Scissors…' : phase === 'done'
+    ? state?.payout ? `Cashed out · ${fmtCurrency(state.payout)} credits` : 'Streak ended'
+    : phase === 'choosing' ? outcome === 'tie' ? 'Tie. Your streak stays alive.' : `${wins} ${wins === 1 ? 'win' : 'wins'} · cash out or keep playing`
+    : 'Choose a move to begin';
+
+  return <OriginalPageLayout title="Rock Paper Scissors">
+    <div className="w-full max-w-4xl mx-auto p-4 sm:p-6 space-y-4">
+      <div className="rounded-xl border border-stake-border bg-stake-card overflow-hidden">
+        <div className="flex items-center justify-between gap-4 px-5 py-4 border-b border-stake-border"><span className="text-xs tracking-[.15em] uppercase text-stake-muted">Streak game</span><span className="text-xs text-stake-muted">{wins} / {RPS_MAX_WINS} wins</span></div>
+        <div className="grid grid-cols-[1fr_36px_1fr] items-center max-w-xl mx-auto gap-4 px-6 py-7 sm:py-10">
+          <MoveCard move={playerMove} label="You" active={outcome === 'win' && !busy} />
+          <span className="text-center font-serif italic text-stake-muted">vs</span>
+          <motion.div animate={busy && !reduced ? { y: [0, -7, 0, -7, 0] } : { y: 0 }} transition={{ duration: .6, ease: 'easeInOut' }}><MoveCard move={opponentMove} label="Opponent" active={outcome === 'loss' && !busy} /></motion.div>
         </div>
-
-        {/* Arena — opponent (top) and player (bottom) */}
-        <div className="rounded-lg bg-stake-card border border-stake-border p-6 space-y-4">
-          {/* Opponent */}
-          <div className="text-center">
-            <div className="text-[10px] uppercase tracking-widest text-stake-muted mb-1">Opponent</div>
-            <AnimatePresence mode="wait">
-              {opponentMove === null && phase === 'reveal' ? (
-                <motion.div
-                  key="shake"
-                  className="text-7xl select-none inline-block"
-                  initial={{ opacity: 0, y: -8 }}
-                  animate={{
-                    opacity: 1,
-                    y: 0,
-                    rotate: [0, -22, 22, -22, 22, -22, 22, 0],
-                  }}
-                  transition={{ duration: 1.0, ease: 'easeInOut' }}
-                >
-                  ✊
-                </motion.div>
-              ) : opponentMove ? (
-                <motion.div
-                  key={`opp-${opponentMove}`}
-                  className="text-7xl select-none inline-block"
-                  initial={{ scale: 0.4, opacity: 0, y: -10 }}
-                  animate={{ scale: 1, opacity: 1, y: 0 }}
-                  transition={{ type: 'spring', stiffness: 280, damping: 16 }}
-                  style={{
-                    filter:
-                      outcome === 'loss'
-                        ? 'drop-shadow(0 0 16px rgba(237,65,99,.7))'
-                        : outcome === 'win'
-                          ? 'drop-shadow(0 0 12px rgba(255,255,255,.3)) grayscale(.4)'
-                          : 'drop-shadow(0 4px 8px rgba(0,0,0,.5))',
-                  }}
-                >
-                  {MOVE_EMOJI[opponentMove]}
-                </motion.div>
-              ) : (
-                <div className="text-7xl select-none opacity-40">❔</div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {/* VS divider — coloured ring around "vs" reflects the round
-           *  outcome so the player gets a glance-able win/loss/tie cue
-           *  regardless of the emoji glow on the moves. */}
-          <div className="text-center">
-            <span
-              className="inline-flex items-center justify-center w-9 h-9 rounded-full font-mono font-bold text-xs uppercase tracking-widest"
-              style={{
-                background:
-                  outcome === 'win'
-                    ? 'radial-gradient(circle, rgba(0,231,1,.25), transparent 75%)'
-                    : outcome === 'loss'
-                      ? 'radial-gradient(circle, rgba(237,65,99,.25), transparent 75%)'
-                      : outcome === 'tie'
-                        ? 'radial-gradient(circle, rgba(255,209,102,.18), transparent 75%)'
-                        : 'transparent',
-                border: outcome === 'win'
-                  ? '1px solid rgba(0,231,1,.55)'
-                  : outcome === 'loss'
-                    ? '1px solid rgba(237,65,99,.55)'
-                    : outcome === 'tie'
-                      ? '1px solid rgba(255,209,102,.45)'
-                      : '1px solid rgba(255,255,255,.08)',
-                color:
-                  outcome === 'win'
-                    ? '#00e701'
-                    : outcome === 'loss'
-                      ? '#ed4163'
-                      : outcome === 'tie'
-                        ? '#ffd166'
-                        : '#9aa3b2',
-              }}
-            >
-              vs
-            </span>
-          </div>
-
-          {/* Player */}
-          <div className="text-center">
-            <div className="text-[10px] uppercase tracking-widest text-stake-muted mb-1">You</div>
-            {playerMove ? (
-              <motion.div
-                key={`you-${playerMove}`}
-                className="text-7xl select-none inline-block"
-                initial={{ scale: 0.4, opacity: 0, y: 10 }}
-                animate={{ scale: 1, opacity: 1, y: 0 }}
-                transition={{ type: 'spring', stiffness: 280, damping: 16 }}
-                style={{
-                  filter:
-                    outcome === 'win'
-                      ? 'drop-shadow(0 0 16px rgba(0,231,1,.85))'
-                      : outcome === 'loss'
-                        ? 'drop-shadow(0 0 8px rgba(255,255,255,.2)) grayscale(.4)'
-                        : 'drop-shadow(0 4px 8px rgba(0,0,0,.5))',
-                }}
-              >
-                {MOVE_EMOJI[playerMove]}
-              </motion.div>
-            ) : (
-              <div className="text-7xl select-none opacity-40">❔</div>
-            )}
-          </div>
-        </div>
-
-        {/* Bet + move pickers */}
-        {phase === 'idle' || phase === 'done' ? (
-          <div className="rounded-lg bg-stake-card border border-stake-border p-4 space-y-3">
-            <BetInput bet={bet} onBetChange={setBet} disabled={busy} />
-            <div className="flex justify-between text-xs">
-              <span className="text-stake-muted">Profit on Win</span>
-              <span className="font-mono font-semibold text-stake-green tabular-nums">
-                {fmtCurrency(profitOnWin)}
-              </span>
-            </div>
-            <div>
-              <div className="text-[10px] uppercase tracking-widest text-stake-muted mb-1.5">
-                {phase === 'done' ? 'Play again' : 'Pick your move'}
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                {MOVES.map((m) => (
-                  <button
-                    key={m}
-                    onClick={() => {
-                      if (phase === 'done') reset();
-                      start(m);
-                    }}
-                    disabled={busy || !balance.canAfford(bet)}
-                    className="py-3 rounded-xl bg-stake-input border border-stake-border font-bold text-3xl transition disabled:opacity-50 hover:border-stake-green hover:bg-stake-green/10 active:scale-95"
-                  >
-                    {MOVE_EMOJI[m]}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="rounded-lg bg-stake-card border border-stake-border p-4 text-center text-xs text-stake-muted">
-            Watching the throw…
-          </div>
-        )}
+        <p className="px-4 pb-5 min-h-10 text-center text-sm text-stake-text" role="status" aria-live="polite">{message}</p>
+        <div className="grid grid-cols-2 border-t border-stake-border bg-stake-bg/40"><div className="p-4 text-center border-r border-stake-border"><span className="block text-[10px] uppercase tracking-widest text-stake-muted">Current return</span><strong className="mt-1 block font-mono text-xl text-stake-text">{fmtMultiplier(multiplierAfterWins(wins))}</strong></div><div className="p-4 text-center"><span className="block text-[10px] uppercase tracking-widest text-stake-muted">Next win</span><strong className="mt-1 block font-mono text-xl text-stake-green">{fmtMultiplier(multiplierAfterWins(Math.min(RPS_MAX_WINS, wins + 1)))}</strong></div></div>
       </div>
-    </OriginalPageLayout>
-  );
+      <div className="rounded-xl border border-stake-border bg-stake-card p-4 space-y-4">
+        <BetInput bet={bet} onBetChange={setBet} disabled={active || busy} />
+        <div className="grid grid-cols-3 gap-2">{MOVES.map((move) => <button key={move} aria-label={`Choose ${LABEL[move]}`} onClick={() => choose(move)} disabled={busy || (!active && !balance.canAfford(bet))} className="min-h-14 rounded-lg border border-stake-border bg-stake-input px-2 py-3 font-semibold text-sm text-stake-text hover:border-stake-green transition-colors disabled:opacity-40"><span className="mr-2 font-serif text-lg">{LETTER[move]}</span>{LABEL[move]}</button>)}</div>
+        <button onClick={cashOut} disabled={!active || busy || wins === 0} className="min-h-12 w-full rounded-lg bg-stake-green text-stake-bg font-bold text-sm disabled:opacity-35">Cash out · {fmtCurrency(potential)}</button>
+        {round.error && <p role="alert" className="text-sm text-stake-red">{round.error}</p>}
+      </div>
+      {throws.length > 0 && <div className="flex items-center gap-2 overflow-auto"><span className="text-xs text-stake-muted shrink-0">Throws</span>{throws.map((item, index) => <span key={index} aria-label={`${LABEL[item.move]}, ${item.outcome}`} className={`grid place-items-center w-8 h-8 shrink-0 rounded border font-serif text-sm ${item.outcome === 'win' ? 'border-stake-green text-stake-green' : item.outcome === 'loss' ? 'border-stake-red text-stake-red' : 'border-stake-border text-stake-muted'}`}>{LETTER[item.move]}</span>)}</div>}
+      <p className="text-xs leading-relaxed text-stake-muted">One stake per streak. The first win returns 1.96×; later wins double the return. Ties keep your stake and streak in play. A loss ends the round. Cash out after a win, or reach 20 wins for an automatic cashout. Leaving settles the completed throws, including a throw already revealing. Keyboard: R / P / S to choose, C to cash out.</p>
+    </div>
+  </OriginalPageLayout>;
+}
+
+function MoveCard({ move, label, active }: { move: Move | null; label: string; active: boolean }) {
+  return <div className="text-center"><span className="block mb-3 text-[10px] uppercase tracking-widest text-stake-muted">{label}</span><div className={`mx-auto aspect-[3/4] w-full max-w-36 rounded-lg border-2 shadow-lg flex flex-col items-center justify-center ${active ? 'border-stake-green bg-[#ecf5e9]' : 'border-[#cec9bc] bg-[#e9e5d9]'}`}><span className="font-serif font-bold text-5xl sm:text-6xl text-[#263b36]">{move ? LETTER[move] : '?'}</span><span className="mt-3 text-[10px] uppercase tracking-[.15em] text-[#56615b]">{move ? LABEL[move] : 'Hidden'}</span></div></div>;
 }

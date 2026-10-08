@@ -45,10 +45,12 @@ import {
 import { BigJuanBonusRound } from './BonusRound';
 import { fireConfetti } from '../../../lib/confetti';
 import { SpinReel, type SpinReelHandle } from './SpinReel';
-import { JuanCharacter, type JuanMood } from './JuanCharacter';
+import { type JuanMood } from './JuanCharacter';
 import { animateCountUp, type CountUpHandle } from './winCounter';
 import { useDialogFocus } from './useDialogFocus';
 import './presentation.css';
+import { ArtworkGate } from '../_shared/ArtworkGate';
+import { JUAN_ATLAS, JUAN_WORLD } from './symbols';
 
 type PendingBigJuanSettlement = {
   wagerCost: number;
@@ -78,6 +80,9 @@ function isPendingSettlement(value: unknown): value is PendingBigJuanSettlement 
  * Original art/audio are used; exposed display-loop order is reproduced,
  * while the unpublished server PAR/outcome probabilities are calibrated. */
 export function BigJuan() {
+  return <ArtworkGate assets={[JUAN_ATLAS, JUAN_WORLD]} title="Big Juan"><BigJuanGame /></ArtworkGate>;
+}
+function BigJuanGame() {
   const { balance, fairness, history, sound, session } = useGame();
   const reducedMotion = useReducedMotion();
 
@@ -762,6 +767,8 @@ export function BigJuan() {
     <MotionConfig reducedMotion="user">
     <div className="absolute inset-0 overflow-hidden text-ink flex flex-col big-juan-stage">
       <BigJuanBackdrop />
+      <div className="bj-painted-cabinet">
+        <header className="bj-painted-title"><h1>BIG JUAN</h1><span>40 lines · Wild Switch · Fiesta Respins</span></header>
       {roundError && <p role="alert" className="absolute top-24 left-4 right-4 z-40 rounded-xl bg-black/90 p-3 text-center text-sm">{roundError}</p>}
 
 
@@ -805,7 +812,7 @@ export function BigJuan() {
        *  the footer always has room below on narrow phones.
        *  pt-12 keeps the jackpot ribbon clear; main is flex-1 so it
        *  absorbs slack on tall phones without pushing the footer down. */}
-      <main className="flex-1 min-h-0 flex items-center justify-center pt-[88px] pb-2 px-3 relative">
+      <main className="bj-board-main relative">
         <div className="bj-reels-shell relative w-full max-w-[760px]">
           <div
             className="bj-reel-frame absolute inset-0 rounded-2xl p-3 overflow-hidden"
@@ -879,7 +886,7 @@ export function BigJuan() {
 
         {/* Animated Big Juan mascot beside the reels. Idle bobbing by
          *  default; transitions to cheer/pistols/dance on game events. */}
-        <JuanCharacter mood={juanMood} />
+        <span className="sr-only" aria-hidden="true" data-mood={juanMood} />
 
         {/* Wild Switch banner */}
         {/* Wild Switch banner — flex-centered wrapper so the animated
@@ -956,7 +963,7 @@ export function BigJuan() {
       </main>
 
       <div
-        className="absolute z-30 left-1/2 -translate-x-1/2 bottom-[78px] min-w-[150px] rounded-full border px-4 py-1.5 text-center pointer-events-none"
+        className="bj-win-readout min-w-[150px] px-4 py-1.5 text-center pointer-events-none"
         style={{
           background: 'linear-gradient(180deg, rgba(32,15,5,.92), rgba(8,3,1,.92))',
           borderColor: 'rgba(255,209,102,.7)',
@@ -1059,7 +1066,7 @@ export function BigJuan() {
       {/* Last-win pill */}
       {lastWinPayout > 0 && (
         <div
-          className="absolute z-20 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[11px] font-mono font-bold tabular-nums pointer-events-none"
+          className="bj-legacy-win-detail absolute z-20 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[11px] font-mono font-bold tabular-nums pointer-events-none"
           style={{
             bottom: '112px',
             background: 'rgba(0,0,0,.6)',
@@ -1075,7 +1082,7 @@ export function BigJuan() {
       {/* Active win info badge */}
       {activeWin && (
         <div
-          className="absolute z-20 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[11px] font-mono font-bold tabular-nums pointer-events-none"
+          className="bj-legacy-win-detail absolute z-20 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[11px] font-mono font-bold tabular-nums pointer-events-none"
           style={{
             bottom: '136px',
             background: 'rgba(0,0,0,.65)',
@@ -1088,6 +1095,7 @@ export function BigJuan() {
         </div>
       )}
 
+      </div>
       {/* Bet sheet — coin value × coins per line × 40 */}
       <BetSheet
         open={betSheetOpen}
@@ -1410,7 +1418,7 @@ export function BigJuan() {
                 </div>
               </div>
               <div className="text-[10px] text-ink-mute text-center mb-4 leading-relaxed">
-                Published target RTP 96.53%. The private 4/5 entry weighting is locally calibrated.
+                Play credits only. Entry and symbol probabilities are local; the provider’s published RTP is not reproduced or certified.
               </div>
               <div className="flex gap-2">
                 <button
@@ -1455,7 +1463,7 @@ function renderBigJuanSymbol(symId: string) {
     case 'vihuela':   return <GuitarSvg />;
     case 'hot_sauce': return <HotSauceSvg />;
     case 'chili':     return <ChilliSvg />;
-    case 'pinata':    return <span className="bj-pinata-sway block w-full h-full"><PinataSvg /></span>;
+    case 'pinata':    return <span className="block w-full h-full"><PinataSvg /></span>;
     case 'A':         return <RoyalSvg letter="A"  color="#ff5560" />;
     case 'K':         return <RoyalSvg letter="K"  color="#ffd166" />;
     case 'Q':         return <RoyalSvg letter="Q"  color="#ff7ad9" />;
@@ -1706,7 +1714,7 @@ function Paytable({
               <div className="mt-3 grid grid-cols-3 gap-2 text-center">
                 <Stat label="Grid" value="5×4" color="#fff5c4" />
                 <Stat label="Lines" value={String(PAYLINE_COUNT)} color="#fff5c4" />
-                <Stat label="Buy target" value="96.53%" color="#ff8a8a" />
+                <Stat label="Source buy RTP" value="96.53%" color="#ff8a8a" />
               </div>
             </div>
 
@@ -1902,151 +1910,5 @@ function PayRow({ sym }: { sym: SymbolDef }) {
 // =============================================================================
 
 function BigJuanBackdrop() {
-  return (
-    <div className="absolute inset-0 -z-0 overflow-hidden">
-      <div
-        className="absolute inset-0"
-        style={{
-          background: `
-            radial-gradient(circle at 72% 18%, rgba(255,247,185,.95) 0 5%, rgba(255,193,86,.35) 11%, transparent 24%),
-            linear-gradient(180deg, #65b4c5 0%, #a8d1c2 24%, #e8a95f 47%, #b95a2e 72%, #542315 100%)
-          `,
-        }}
-      />
-      {/* Distant village silhouette */}
-      <svg
-        className="absolute inset-x-0"
-        style={{ top: '32%', height: '5%', width: '100%', opacity: 0.6 }}
-        viewBox="0 0 100 5"
-        preserveAspectRatio="none"
-      >
-        <path
-          d="M 0 5 L 0 3 L 4 3 L 4 1.5 L 8 1.5 L 8 3 L 12 3 L 12 2 L 18 2 L 18 3.4 L 22 3.4 L 22 1.8 L 28 1.8 L 28 3 L 34 3 L 34 2.2 L 40 2.2 L 40 3.4 L 46 3.4 L 46 1.6 L 52 1.6 L 52 3 L 58 3 L 58 2 L 64 2 L 64 3.4 L 70 3.4 L 70 1.8 L 76 1.8 L 76 3 L 82 3 L 82 2.2 L 88 2.2 L 88 3.4 L 94 3.4 L 94 2 L 100 2 L 100 5 Z"
-          fill="#7b351e"
-        />
-      </svg>
-      {/* Spotlight glow */}
-      <div
-        className="absolute inset-0"
-        style={{
-          background: `
-            radial-gradient(40% 30% at 30% 22%, rgba(255,180,100,.32), transparent 70%),
-            radial-gradient(40% 30% at 70% 22%, rgba(255,180,100,.32), transparent 70%),
-            radial-gradient(60% 30% at 50% 60%, rgba(255,209,102,.20), transparent 75%)
-          `,
-          mixBlendMode: 'screen',
-          animation: 'bjSpotlightPulse 3.4s ease-in-out infinite',
-        }}
-      />
-      {/* Stage glow */}
-      <div
-        className="absolute pointer-events-none"
-        style={{
-          left: '50%', top: '46%', transform: 'translate(-50%, -50%)',
-          width: '92%', height: '50%',
-          background: 'radial-gradient(ellipse at center, rgba(255,209,102,.32) 0%, rgba(255,150,80,.18) 40%, transparent 75%)',
-          filter: 'blur(8px)',
-          mixBlendMode: 'screen',
-        }}
-      />
-      {/* String lights */}
-      <svg
-        className="absolute inset-x-0"
-        style={{ top: '12%', height: '4%', width: '100%' }}
-        viewBox="0 0 100 4"
-        preserveAspectRatio="none"
-      >
-        <path d="M 0 1 Q 25 2.4 50 1.6 T 100 1" fill="none" stroke="rgba(0,0,0,.5)" strokeWidth=".15" />
-        {(() => {
-          const colors = ['#ff5560', '#ffd166', '#1fff7a', '#5fb8ff', '#c042b8', '#ffae50'];
-          const N = 22;
-          return Array.from({ length: N }).map((_, i) => {
-            const x = (i + 0.5) * (100 / N);
-            const yWire = x < 50 ? 1 + 1.4 * (1 - Math.abs(x - 25) / 25) : 1 + 1.4 * (1 - Math.abs(x - 75) / 25);
-            const color = colors[i % colors.length]!;
-            return (
-              <g key={i}>
-                <line x1={x} y1={yWire} x2={x} y2={yWire + 0.3} stroke="#222" strokeWidth=".1" />
-                <ellipse
-                  cx={x} cy={yWire + 0.7} rx="0.35" ry="0.5"
-                  fill={color} opacity={0.9}
-                  style={{
-                    filter: `drop-shadow(0 0 1.2px ${color})`,
-                    animation: `bjBulbTwinkle 1.${(i % 9) + 1}s ease-in-out infinite`,
-                    animationDelay: `${(i * 0.13).toFixed(2)}s`,
-                  }}
-                />
-              </g>
-            );
-          });
-        })()}
-      </svg>
-      {/* Adobe walls left + right */}
-      <div className="absolute" style={{ left: 0, top: '14%', bottom: '12%', width: '4%', background: 'linear-gradient(90deg, rgba(60,16,8,.85), rgba(120,40,16,.5) 60%, transparent 100%)' }} />
-      <div className="absolute" style={{ right: 0, top: '14%', bottom: '12%', width: '4%', background: 'linear-gradient(270deg, rgba(60,16,8,.85), rgba(120,40,16,.5) 60%, transparent 100%)' }} />
-      {/* Papel picado bunting */}
-      <svg
-        className="absolute inset-x-0"
-        style={{ top: '3%', height: '7%', width: '100%', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,.4))', opacity: 0.92 }}
-        viewBox="0 0 100 7"
-        preserveAspectRatio="none"
-      >
-        <path d="M 0 1 Q 25 2.4 50 1.4 T 100 1" fill="none" stroke="rgba(0,0,0,.6)" strokeWidth=".15" />
-        {(() => {
-          const colors = ['#ff5560', '#1fff7a', '#5fb8ff', '#ffd166', '#c042b8', '#ffae50'];
-          const N = 16;
-          return Array.from({ length: N }).map((_, i) => {
-            const x = (i + 0.5) * (100 / N);
-            const yTop = x < 50 ? 1 + 1.4 * (1 - Math.abs(x - 25) / 25) : 1 + 1.4 * (1 - Math.abs(x - 75) / 25);
-            const w = 100 / N - 0.6;
-            const color = colors[i % colors.length]!;
-            const tipY = yTop + 4;
-            const cx = x;
-            const cy = yTop + 2;
-            return (
-              <g key={i}>
-                <path
-                  d={`M ${cx - w / 2} ${yTop} L ${cx + w / 2} ${yTop} L ${cx} ${tipY} Z`}
-                  fill={color} stroke="rgba(0,0,0,.45)" strokeWidth=".08" opacity=".92"
-                />
-                <path d={`M ${cx} ${cy - 0.55} L ${cx + 0.45} ${cy} L ${cx} ${cy + 0.55} L ${cx - 0.45} ${cy} Z`} fill="rgba(0,0,0,.35)" />
-                <circle cx={cx - 0.85} cy={cy + 0.2} r=".16" fill="rgba(0,0,0,.3)" />
-                <circle cx={cx + 0.85} cy={cy + 0.2} r=".16" fill="rgba(0,0,0,.3)" />
-                <path d={`M ${cx - w / 2 + 0.1} ${yTop + 0.15} L ${cx} ${tipY - 0.2}`} stroke="rgba(255,255,255,.35)" strokeWidth=".1" />
-              </g>
-            );
-          });
-        })()}
-      </svg>
-      {/* Floating confetti sparks */}
-      {[
-        { left: '8%',  size: 5, dur: 8,  delay: 0,    color: '#ff5560' },
-        { left: '18%', size: 4, dur: 10, delay: 2.4,  color: '#1fff7a' },
-        { left: '32%', size: 6, dur: 9,  delay: 4.0,  color: '#ffd166' },
-        { left: '46%', size: 4, dur: 11, delay: 1.2,  color: '#5fb8ff' },
-        { left: '58%', size: 5, dur: 8.5, delay: 5.6, color: '#c042b8' },
-        { left: '72%', size: 4, dur: 9.5, delay: 0.8, color: '#ff5560' },
-        { left: '84%', size: 6, dur: 10.5, delay: 3.6, color: '#ffd166' },
-        { left: '92%', size: 4, dur: 8,  delay: 6.4,  color: '#1fff7a' },
-      ].map((c, i) => (
-        <div
-          key={i}
-          className="absolute"
-          style={{
-            left: c.left, bottom: '-10%',
-            width: `${c.size}px`, height: `${c.size * 1.8}px`,
-            background: c.color, borderRadius: '1px',
-            boxShadow: `0 0 4px ${c.color}aa`,
-            animation: `bigJuanConfetti ${c.dur}s linear ${c.delay}s infinite`,
-            mixBlendMode: 'screen',
-          }}
-        />
-      ))}
-      {/* Vignette */}
-      <div
-        className="absolute inset-0"
-        style={{ background: 'radial-gradient(80% 80% at 50% 50%, transparent 60%, rgba(0,0,0,.6) 100%)' }}
-      />
-    </div>
-  );
+  return <div className="bj-painted-world" aria-hidden="true"><img src={JUAN_WORLD} alt="" draggable={false} /></div>;
 }

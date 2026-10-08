@@ -1,0 +1,130 @@
+{
+  "source": "https://www.pragmaticplay.com/en/games/sugar-rush/",
+  "capturedAt": "2026-10-08",
+  "referenceGame": "vs20sugarrush",
+  "method": "Original provider demo help pages1\u20133, visible at2.00totalbet; divide currency awards by2",
+  "payingSymbolCount": 7,
+  "sizes": [
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+  ],
+  "localArtAliases": {
+    "donut": [
+      1,
+      1.5,
+      1.75,
+      2,
+      2.5,
+      5,
+      7.5,
+      15,
+      35,
+      70,
+      150
+    ],
+    "cupcake": [
+      0.75,
+      1,
+      1.25,
+      1.5,
+      2,
+      4,
+      6,
+      12.5,
+      30,
+      60,
+      100
+    ],
+    "popsicle": [
+      0.5,
+      0.75,
+      1,
+      1.25,
+      1.5,
+      3,
+      4.5,
+      10,
+      20,
+      40,
+      60
+    ],
+    "gingerb": [
+      0.4,
+      0.5,
+      0.75,
+      1,
+      1.25,
+      2,
+      3,
+      5,
+      10,
+      20,
+      40
+    ],
+    "jellybean": [
+      0.3,
+      0.4,
+      0.5,
+      0.75,
+      1,
+      1.5,
+      2.5,
+      3.5,
+      8,
+      15,
+      30
+    ],
+    "gum": [
+      0.25,
+      0.3,
+      0.4,
+      0.5,
+      0.75,
+      1.25,
+      2,
+      3,
+      6,
+      12,
+      25
+    ],
+    "mint": [
+      0.2,
+      0.25,
+      0.3,
+      0.4,
+      0.5,
+      1,
+      1.5,
+      2.5,
+      5,
+      10,
+      20
+    ]
+  },
+  "buyCostMultiplier": 100,
+  "buyScatterCounts": [
+    3,
+    4,
+    5,
+    6,
+    7
+  ],
+  "scatterSpins": [
+    10,
+    12,
+    15,
+    20,
+    30
+  ],
+  "spotCap": 128,
+  "maxWin": 5000
+}

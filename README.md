@@ -2,7 +2,7 @@
 
 A private, client-side, play-money recreation of modern slots, Stake Originals, and canonical casino games. There are no accounts, deposits, withdrawals, cryptocurrency, or real multiplayer.
 
-The lobby contains **34 retained games**; five unsupported prototypes and all of their routes/assets were removed. See the dated [fidelity audit](docs/FIDELITY_AUDIT.md) for the reference and implementation status of every retained title.
+The lobby contains **34 retained games**; five unsupported prototypes and all of their routes/assets were removed. See the [current 34-game mechanics audit](docs/MECHANICS_AUDIT_2026-10-08.md) for source-backed rules, implementation status and explicit limits. The [local probability audit](docs/SLOT_PROBABILITY_AUDIT_2026-10-08.md) reports independent sampling without claiming provider certification.
 
 ## Run locally
 
@@ -16,7 +16,7 @@ npm run check
 
 The starting balance is 1,000 play-money credits and can be refilled freely.
 
-See the [October quality-overhaul notes](docs/QUALITY_OVERHAUL.md) for verified fixes and remaining limits.
+See the [art, motion and rules release](docs/ART_MOTION_RULES_RELEASE_2026-10-08.md) for the latest changes, and [cross-tab play](docs/CROSS_TAB_PLAY.md) for saved-state and browser compatibility.
 
 ## Architecture
 

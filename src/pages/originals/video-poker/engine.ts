@@ -9,10 +9,10 @@ import type { Rng } from '../../../lib/fairness';
  *    3. Discarded cards replaced from the deck
  *    4. Final hand evaluated against the paytable
  *
- *  Paytable (Jacks or Better, 9/6 — full pay):
+ *  Paytable (Stake Originals Jacks or Better, not generic 9/6):
  *    Royal Flush    800×
- *    Straight Flush  50×
- *    Four of a Kind  25×
+ *    Straight Flush  60×
+ *    Four of a Kind  22×
  *    Full House       9×
  *    Flush            6×
  *    Straight         4×
@@ -21,7 +21,8 @@ import type { Rng } from '../../../lib/fairness';
  *    Jacks or Better  1×
  *    All else         0
  *
- *  RTP: ~99.54% with optimal strategy. */
+ *  Source: https://stake.com/casino/games/video-poker .
+ * Fixed total-bet multipliers; no separate max-coin Royal condition. */
 
 export const SUITS = ['♠', '♥', '♦', '♣'] as const;
 export type Suit = typeof SUITS[number];
@@ -67,8 +68,8 @@ export type HandRank =
 
 const PAY: Record<HandRank, number> = {
   'royal-flush':     800,
-  'straight-flush':   50,
-  'four-of-a-kind':   25,
+  'straight-flush':   60,
+  'four-of-a-kind':   22,
   'full-house':        9,
   'flush':             6,
   'straight':          4,

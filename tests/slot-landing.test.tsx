@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { act, cleanup, fireEvent, render } from '@testing-library/react';
+import { act, cleanup, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SpinReel } from '../src/pages/slots/_shared/SpinReel';
 import { Grid as SlotGrid } from '../src/pages/slots/_shared/Grid';
@@ -22,11 +22,6 @@ vi.mock('framer-motion', async () => {
       return cache.get(tag);
     } }) };
 });
-const finishTransition = (element: Element) => {
-  const event = new Event('transitionend', { bubbles: true });
-  Object.defineProperty(event, 'propertyName', { value: 'transform' });
-  fireEvent(element, event);
-};
 const renderCell = ({ symbolId, multiplier, cellKey }: { symbolId: string; multiplier?: number; cellKey: string }) => <span data-art={cellKey}>{symbolId}{multiplier ? ` ${multiplier}×` : ''}</span>;
 
 beforeEach(() => {
@@ -37,7 +32,7 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.useRealTimers(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
 describe('landed symbols remain the actual result', () => {
-  it('preserves the exact landed artwork, key, and multiplier through reel-to-grid handoff', () => {
+  it('preserves the exact landed artwork, key, and multiplier through reel-to-grid handoff', async () => {
     const finalGrid: Grid = Array.from({ length: 6 }, (_, col) => Array.from({ length: 5 }, (_, row) => ({ key: `outcome-${col}-${row}`, symbolId: col === 2 && row === 3 ? '__mult__' : ['crown', 'ring', 'gem-red'][(col + row) % 3]!, ...(col === 2 && row === 3 ? { multiplier: 250 } : {}) })));
     function Landing() {
       const [spinning, setSpinning] = useState(true);
@@ -47,8 +42,7 @@ describe('landed symbols remain the actual result', () => {
     const landed = new Map([...container.querySelectorAll<HTMLElement>('[data-reel-final]')].map((node) => [node.dataset.reelFinal!, { symbol: node.dataset.symbol, multiplier: node.dataset.multiplier, art: node.innerHTML }]));
     expect(landed.size).toBe(30);
     expect(landed.get('outcome-2-3')?.art).toContain('250×');
-    const strip = container.querySelector('[data-spin-reel-col="5"] > div')!;
-    finishTransition(strip);
+    await act(async () => { await vi.advanceTimersByTimeAsync(1400); });
     const resting = [...container.querySelectorAll<HTMLElement>('[data-slot-cell-key]')];
     expect(resting).toHaveLength(30);
     for (const node of resting) expect({ symbol: node.dataset.symbol, multiplier: node.dataset.multiplier, art: node.innerHTML }).toEqual(landed.get(node.dataset.slotCellKey!));
@@ -123,7 +117,6 @@ describe('landed symbols remain the actual result', () => {
     const done = vi.fn();
     const grid: Grid = Array.from({ length: 6 }, (_, col) => Array.from({ length: 5 }, (_, row) => ({ key: `${col}-${row}`, symbolId: 'crown' })));
     const view = render(<SpinReel cfg={gatesOfOlympusConfig} finalGrid={grid} renderCell={renderCell} durationMs={500} staggerMs={100} onComplete={done} />);
-    finishTransition(view.container.querySelector('[data-spin-reel-col="5"] > div')!);
     await act(async () => { await vi.advanceTimersByTimeAsync(5000); });
     expect(done).toHaveBeenCalledTimes(1);
     view.unmount();

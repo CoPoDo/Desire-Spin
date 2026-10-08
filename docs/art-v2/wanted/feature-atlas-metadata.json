@@ -1,0 +1,270 @@
+{
+  "width": 2172,
+  "height": 724,
+  "grid": [
+    4,
+    1
+  ],
+  "alphaZeroPct": 57.7,
+  "alphaRange": [
+    0,
+    255
+  ],
+  "alphaByteIdentical": true,
+  "visibleRgbByteIdentical": true,
+  "assetPath": "/art-v2/wanted/feature-atlas.webp",
+  "symbols": [
+    {
+      "name": "skull",
+      "col": 0,
+      "row": 0,
+      "sourceRegion": [
+        0,
+        0,
+        543,
+        724
+      ],
+      "bboxByAlphaThresholdAbsolute": {
+        "1": [
+          29,
+          113,
+          537,
+          605
+        ],
+        "2": [
+          29,
+          113,
+          537,
+          605
+        ],
+        "4": [
+          29,
+          115,
+          537,
+          603
+        ],
+        "8": [
+          31,
+          115,
+          535,
+          603
+        ],
+        "16": [
+          31,
+          115,
+          535,
+          603
+        ],
+        "32": [
+          31,
+          115,
+          535,
+          603
+        ],
+        "64": [
+          31,
+          115,
+          535,
+          603
+        ]
+      },
+      "recommendedPaddedBboxAbsolute": [
+        23,
+        107,
+        543,
+        611
+      ],
+      "aspectRatio": 1.0317460317460319,
+      "touchesRegionEdge": false
+    },
+    {
+      "name": "train",
+      "col": 1,
+      "row": 0,
+      "sourceRegion": [
+        543,
+        0,
+        1086,
+        724
+      ],
+      "bboxByAlphaThresholdAbsolute": {
+        "1": [
+          563,
+          97,
+          1064,
+          619
+        ],
+        "2": [
+          563,
+          97,
+          1064,
+          619
+        ],
+        "4": [
+          563,
+          99,
+          1064,
+          617
+        ],
+        "8": [
+          565,
+          99,
+          1062,
+          617
+        ],
+        "16": [
+          565,
+          99,
+          1062,
+          617
+        ],
+        "32": [
+          565,
+          99,
+          1062,
+          617
+        ],
+        "64": [
+          565,
+          100,
+          1062,
+          616
+        ]
+      },
+      "recommendedPaddedBboxAbsolute": [
+        557,
+        91,
+        1070,
+        625
+      ],
+      "aspectRatio": 0.9606741573033708,
+      "touchesRegionEdge": false
+    },
+    {
+      "name": "duel",
+      "col": 2,
+      "row": 0,
+      "sourceRegion": [
+        1086,
+        0,
+        1629,
+        724
+      ],
+      "bboxByAlphaThresholdAbsolute": {
+        "1": [
+          1111,
+          114,
+          1602,
+          621
+        ],
+        "2": [
+          1112,
+          114,
+          1601,
+          619
+        ],
+        "4": [
+          1112,
+          116,
+          1601,
+          619
+        ],
+        "8": [
+          1113,
+          116,
+          1599,
+          619
+        ],
+        "16": [
+          1114,
+          116,
+          1599,
+          618
+        ],
+        "32": [
+          1114,
+          116,
+          1599,
+          618
+        ],
+        "64": [
+          1114,
+          117,
+          1599,
+          618
+        ]
+      },
+      "recommendedPaddedBboxAbsolute": [
+        1105,
+        108,
+        1607,
+        627
+      ],
+      "aspectRatio": 0.9672447013487476,
+      "touchesRegionEdge": false
+    },
+    {
+      "name": "dead",
+      "col": 3,
+      "row": 0,
+      "sourceRegion": [
+        1629,
+        0,
+        2172,
+        724
+      ],
+      "bboxByAlphaThresholdAbsolute": {
+        "1": [
+          1660,
+          97,
+          2139,
+          625
+        ],
+        "2": [
+          1660,
+          97,
+          2139,
+          625
+        ],
+        "4": [
+          1661,
+          99,
+          2139,
+          624
+        ],
+        "8": [
+          1662,
+          100,
+          2137,
+          623
+        ],
+        "16": [
+          1662,
+          100,
+          2137,
+          623
+        ],
+        "32": [
+          1662,
+          100,
+          2137,
+          622
+        ],
+        "64": [
+          1663,
+          100,
+          2136,
+          622
+        ]
+      },
+      "recommendedPaddedBboxAbsolute": [
+        1654,
+        92,
+        2145,
+        631
+      ],
+      "aspectRatio": 0.9109461966604824,
+      "touchesRegionEdge": false
+    }
+  ]
+}

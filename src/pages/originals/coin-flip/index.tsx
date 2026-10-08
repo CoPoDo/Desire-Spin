@@ -1,4 +1,3 @@
-import { MAX_ROUND_MULTIPLIER } from '../../../lib/accounting';
 import { useCallback, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useHotkey } from '../../../hooks/useHotkey';
@@ -7,7 +6,7 @@ import { useGame } from '../../../game-context';
 import { useInteractiveRound, useRoundState } from '../_shared/useInteractiveRound';
 import { fmtCurrency, fmtMultiplier } from '../../../lib/format';
 import { BetInput } from '../_shared/BetInput';
-import { type Side, flip, multiplierAfter } from './engine';
+import { type Side, flip, multiplierAfter, MAX_FLIPS, FLIP_MAX_MULTIPLIER } from './engine';
 import { fireConfetti } from '../../../lib/confetti';
 
 type Phase = 'idle' | 'choosing' | 'flipping' | 'won' | 'lost';
@@ -47,7 +46,7 @@ export function CoinFlipGame() {
     // Commit the decision before animation; navigation cannot cancel a loss.
     if (won) {
       streakRef.current += 1;
-      if (multiplierAfter(streakRef.current) >= MAX_ROUND_MULTIPLIER) round.settle(wager.bet * MAX_ROUND_MULTIPLIER);
+      if (streakRef.current >= MAX_FLIPS) round.settle(wager.bet * FLIP_MAX_MULTIPLIER);
     } else round.settle(0);
     round.delay(() => {
       if (round.wager.current !== wager || phaseRef.current !== 'flipping') return;
@@ -96,7 +95,7 @@ export function CoinFlipGame() {
     <OriginalPageLayout title="Flip">
       {round.error && <p role="alert" className="p-3 text-sm text-stake-red">{round.error}</p>}
       <div className="flex flex-col p-4 gap-4 max-w-md mx-auto w-full">
-        <p className="text-[11px] text-stake-muted">Leaving cashes out your completed flips. Each successful flip multiplies your return by 1.98; the 1% edge compounds with each flip. The local simulation automatically cashes out at 10,000,000×.</p>
+        <p className="text-[11px] text-stake-muted">Leaving cashes out your completed flips. The first successful flip returns 1.96×; each later success doubles it. One 2% edge applies to the round. Twenty correct flips automatically cash out at 1,027,604.48×.</p>
         {/* Status */}
         <div className="rounded-lg bg-stake-card border border-stake-border p-4 text-center min-h-[200px] flex flex-col items-center justify-center gap-3">
           <AnimatePresence mode="wait">

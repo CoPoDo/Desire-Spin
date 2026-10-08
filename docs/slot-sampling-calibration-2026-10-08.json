@@ -1,0 +1,1032 @@
+{
+  "generatedAt": "2026-10-08T09:02:19.802Z",
+  "revision": "ed1f369772449b8d86690470e8ea29ac2a026e42",
+  "sourceHashes": {
+    "src/pages/slots/_shared/lineEngine.ts": "7ce7e88e46d53ae379e956b3e2b7c8f07d735ad6fdac6727d7ec921c8ea928cf",
+    "src/pages/slots/wanted-wild/index.tsx": "a06a42da0deeb6cc6f6ee71b7de62274720842069c626d91873657cc1f0fad01",
+    "src/pages/slots/wolf-gold/index.tsx": "fa0d3dcf7cda76339721d96119f049b6db11f2649983fa2e9386022c5725984d",
+    "src/pages/slots/sugar-rush/engine.ts": "fd9be7cb95c275272036d9eb8098f5eb4064e166fc8f1e85ecac9f3871d10d33",
+    "src/pages/slots/big-juan/engine.ts": "9c5205f9cf3766122401940d4c48d0fff022f0e48f1d75e8654d5a6a0255317b",
+    "src/pages/originals/big-bass/engine.ts": "0bbc036ad799e9b47f1af5e241a54ee3ee52304b1c0476a93b9adb362c503392"
+  },
+  "methodology": {
+    "baseRounds": 50000,
+    "buyRounds": 10000,
+    "seeds": [
+      98127,
+      45219,
+      73901
+    ],
+    "rng": "mulberry32",
+    "only": [
+      "wanted",
+      "wolf",
+      "sugar",
+      "juan"
+    ],
+    "baseBet": 1,
+    "fullBaseCyclesIncludeTriggeredFeatures": true,
+    "conditionalFreeSpinIsNotRTP": true,
+    "certifiedProviderProbabilities": false,
+    "normalIntervalsMayMissUnsampledRareTails": true
+  },
+  "results": [
+    {
+      "scenario": "wanted-base",
+      "kind": "base",
+      "seed": 98127,
+      "rounds": 50000,
+      "cost": 1,
+      "meanPayout": 1.0144519999999926,
+      "returnFraction": 1.0144519999999926,
+      "standardError": 0.06741998460308632,
+      "approximate95Interval": [
+        0.8823088301779434,
+        1.1465951698220418
+      ],
+      "positivePayoutFraction": 0.26008,
+      "recoveredCostFraction": 0.08216,
+      "payoutQuantiles": {
+        "p50": 0,
+        "p90": 0.5,
+        "p99": 16.1,
+        "max": 1880
+      },
+      "triggers": 37,
+      "caps": 0,
+      "meanAwardedFreeSpins": 0.0074
+    },
+    {
+      "scenario": "wanted-base",
+      "kind": "base",
+      "seed": 45219,
+      "rounds": 50000,
+      "cost": 1,
+      "meanPayout": 1.032501999999995,
+      "returnFraction": 1.032501999999995,
+      "standardError": 0.069085853758231,
+      "approximate95Interval": [
+        0.8970937266338621,
+        1.1679102733661277
+      ],
+      "positivePayoutFraction": 0.259,
+      "recoveredCostFraction": 0.08208,
+      "payoutQuantiles": {
+        "p50": 0,
+        "p90": 0.5,
+        "p99": 16.5,
+        "max": 2184
+      },
+      "triggers": 60,
+      "caps": 0,
+      "meanAwardedFreeSpins": 0.012
+    },
+    {
+      "scenario": "wanted-base",
+      "kind": "base",
+      "seed": 73901,
+      "rounds": 50000,
+      "cost": 1,
+      "meanPayout": 0.9215820000000007,
+      "returnFraction": 0.9215820000000007,
+      "standardError": 0.06618204585542373,
+      "approximate95Interval": [
+        0.7918651901233702,
+        1.0512988098766312
+      ],
+      "positivePayoutFraction": 0.25642,
+      "recoveredCostFraction": 0.07944,
+      "payoutQuantiles": {
+        "p50": 0,
+        "p90": 0.5,
+        "p99": 16,
+        "max": 2139
+      },
+      "triggers": 36,
+      "caps": 0,
+      "meanAwardedFreeSpins": 0.0072
+    },
+    {
+      "scenario": "wanted-train-robbery",
+      "kind": "buy",
+      "seed": 98127,
+      "rounds": 10000,
+      "cost": 80,
+      "meanPayout": 77.79393999999992,
+      "returnFraction": 0.972424249999999,
+      "standardError": 0.010224834828784377,
+      "approximate95Interval": [
+        0.9523835737355816,
+        0.9924649262644164
+      ],
+      "positivePayoutFraction": 0.9998,
+      "recoveredCostFraction": 0.3362,
+      "payoutQuantiles": {
+        "p50": 51.8,
+        "p90": 175,
+        "p99": 397.3,
+        "max": 809.4
+      },
+      "triggers": 0,
+      "caps": 0,
+      "meanAwardedFreeSpins": 10,
+      "noTrainWildsFraction": 0
+    },
+    {
+      "scenario": "wanted-train-robbery",
+      "kind": "buy",
+      "seed": 45219,
+      "rounds": 10000,
+      "cost": 80,
+      "meanPayout": 77.44340999999999,
+      "returnFraction": 0.9680426249999998,
+      "standardError": 0.010103120440027343,
+      "approximate95Interval": [
+        0.9482405089375462,
+        0.9878447410624535
+      ],
+      "positivePayoutFraction": 1,
+      "recoveredCostFraction": 0.3348,
+      "payoutQuantiles": {
+        "p50": 51.5,
+        "p90": 177.5,
+        "p99": 392.3,
+        "max": 773.5
+      },
+      "triggers": 0,
+      "caps": 0,
+      "meanAwardedFreeSpins": 10,
+      "noTrainWildsFraction": 0
+    },
+    {
+      "scenario": "wanted-train-robbery",
+      "kind": "buy",
+      "seed": 73901,
+      "rounds": 10000,
+      "cost": 80,
+      "meanPayout": 78.25604000000033,
+      "returnFraction": 0.978200500000004,
+      "standardError": 0.010340709330453151,
+      "approximate95Interval": [
+        0.9579327097123158,
+        0.9984682902876922
+      ],
+      "positivePayoutFraction": 0.9999,
+      "recoveredCostFraction": 0.3391,
+      "payoutQuantiles": {
+        "p50": 51.5,
+        "p90": 177.9,
+        "p99": 402.6,
+        "max": 787.9
+      },
+      "triggers": 0,
+      "caps": 0,
+      "meanAwardedFreeSpins": 10,
+      "noTrainWildsFraction": 0
+    },
+    {
+      "scenario": "wanted-duel-at-dawn",
+      "kind": "buy",
+      "seed": 98127,
+      "rounds": 10000,
+      "cost": 200,
+      "meanPayout": 190.07560000000024,
+      "returnFraction": 0.9503780000000012,
+      "standardError": 0.02691073344483671,
+      "approximate95Interval": [
+        0.8976329624481212,
+        1.0031230375518811
+      ],
+      "positivePayoutFraction": 0.9985,
+      "recoveredCostFraction": 0.2012,
+      "payoutQuantiles": {
+        "p50": 56.4,
+        "p90": 427.7,
+        "p99": 2412.8,
+        "max": 12500
+      },
+      "triggers": 0,
+      "caps": 1,
+      "meanAwardedFreeSpins": 10
+    },
+    {
+      "scenario": "wanted-duel-at-dawn",
+      "kind": "buy",
+      "seed": 45219,
+      "rounds": 10000,
+      "cost": 200,
+      "meanPayout": 186.19136000000054,
+      "returnFraction": 0.9309568000000027,
+      "standardError": 0.026119589357380693,
+      "approximate95Interval": [
+        0.8797624048595365,
+        0.9821511951404689
+      ],
+      "positivePayoutFraction": 0.9982,
+      "recoveredCostFraction": 0.2022,
+      "payoutQuantiles": {
+        "p50": 54.7,
+        "p90": 426.4,
+        "p99": 2322.8,
+        "max": 12500
+      },
+      "triggers": 0,
+      "caps": 2,
+      "meanAwardedFreeSpins": 10
+    },
+    {
+      "scenario": "wanted-duel-at-dawn",
+      "kind": "buy",
+      "seed": 73901,
+      "rounds": 10000,
+      "cost": 200,
+      "meanPayout": 197.07665000000003,
+      "returnFraction": 0.9853832500000002,
+      "standardError": 0.02977166856307095,
+      "approximate95Interval": [
+        0.9270307796163811,
+        1.0437357203836193
+      ],
+      "positivePayoutFraction": 0.9979,
+      "recoveredCostFraction": 0.2079,
+      "payoutQuantiles": {
+        "p50": 57.6,
+        "p90": 439.9,
+        "p99": 2348.1,
+        "max": 12500
+      },
+      "triggers": 0,
+      "caps": 4,
+      "meanAwardedFreeSpins": 10
+    },
+    {
+      "scenario": "wanted-dead-mans-hand",
+      "kind": "buy",
+      "seed": 98127,
+      "rounds": 10000,
+      "cost": 400,
+      "meanPayout": 415.6739999999992,
+      "returnFraction": 1.039184999999998,
+      "standardError": 0.04095417146460518,
+      "approximate95Interval": [
+        0.9589148239293719,
+        1.1194551760706242
+      ],
+      "positivePayoutFraction": 0.8323,
+      "recoveredCostFraction": 0.1155,
+      "payoutQuantiles": {
+        "p50": 3.3,
+        "p90": 536,
+        "p99": 10402.3,
+        "max": 12500
+      },
+      "triggers": 0,
+      "caps": 41,
+      "meanAwardedFreeSpins": 3
+    },
+    {
+      "scenario": "wanted-dead-mans-hand",
+      "kind": "buy",
+      "seed": 45219,
+      "rounds": 10000,
+      "cost": 400,
+      "meanPayout": 372.85640999999896,
+      "returnFraction": 0.9321410249999974,
+      "standardError": 0.03683550861124073,
+      "approximate95Interval": [
+        0.8599434281219656,
+        1.0043386218780292
+      ],
+      "positivePayoutFraction": 0.8373,
+      "recoveredCostFraction": 0.1158,
+      "payoutQuantiles": {
+        "p50": 3.5,
+        "p90": 538,
+        "p99": 9258.6,
+        "max": 12500
+      },
+      "triggers": 0,
+      "caps": 29,
+      "meanAwardedFreeSpins": 3
+    },
+    {
+      "scenario": "wanted-dead-mans-hand",
+      "kind": "buy",
+      "seed": 73901,
+      "rounds": 10000,
+      "cost": 400,
+      "meanPayout": 374.59284000000156,
+      "returnFraction": 0.9364821000000039,
+      "standardError": 0.03736959836790697,
+      "approximate95Interval": [
+        0.8632376871989063,
+        1.0097265128011015
+      ],
+      "positivePayoutFraction": 0.8323,
+      "recoveredCostFraction": 0.1138,
+      "payoutQuantiles": {
+        "p50": 3.6,
+        "p90": 527,
+        "p99": 9365.1,
+        "max": 12500
+      },
+      "triggers": 0,
+      "caps": 26,
+      "meanAwardedFreeSpins": 3
+    },
+    {
+      "scenario": "wolf-base",
+      "kind": "base",
+      "seed": 98127,
+      "rounds": 50000,
+      "cost": 1,
+      "meanPayout": 0.9963520000000017,
+      "returnFraction": 0.9963520000000017,
+      "standardError": 0.07002825136301519,
+      "approximate95Interval": [
+        0.8590966273284919,
+        1.1336073726715115
+      ],
+      "positivePayoutFraction": 0.33166,
+      "recoveredCostFraction": 0.11756,
+      "payoutQuantiles": {
+        "p50": 0,
+        "p90": 1.2,
+        "p99": 9.2,
+        "max": 1136.4
+      },
+      "triggers": 329,
+      "caps": 0,
+      "meanAwardedFreeSpins": 0.0329
+    },
+    {
+      "scenario": "wolf-base",
+      "kind": "base",
+      "seed": 45219,
+      "rounds": 50000,
+      "cost": 1,
+      "meanPayout": 0.8679479999999973,
+      "returnFraction": 0.8679479999999973,
+      "standardError": 0.05535272809786399,
+      "approximate95Interval": [
+        0.7594566529281839,
+        0.9764393470718107
+      ],
+      "positivePayoutFraction": 0.3286,
+      "recoveredCostFraction": 0.11534,
+      "payoutQuantiles": {
+        "p50": 0,
+        "p90": 1,
+        "p99": 8.6,
+        "max": 1100.2
+      },
+      "triggers": 304,
+      "caps": 0,
+      "meanAwardedFreeSpins": 0.0304
+    },
+    {
+      "scenario": "wolf-base",
+      "kind": "base",
+      "seed": 73901,
+      "rounds": 50000,
+      "cost": 1,
+      "meanPayout": 0.9922679999999965,
+      "returnFraction": 0.9922679999999965,
+      "standardError": 0.07481071902606667,
+      "approximate95Interval": [
+        0.8456389907089058,
+        1.138897009291087
+      ],
+      "positivePayoutFraction": 0.33232,
+      "recoveredCostFraction": 0.11734,
+      "payoutQuantiles": {
+        "p50": 0,
+        "p90": 1,
+        "p99": 8.8,
+        "max": 1168.4
+      },
+      "triggers": 316,
+      "caps": 0,
+      "meanAwardedFreeSpins": 0.0316
+    },
+    {
+      "scenario": "wolf-free-spin",
+      "kind": "conditional-free-spin",
+      "seed": 98127,
+      "rounds": 50000,
+      "cost": 1,
+      "meanPayout": 12.998547999999895,
+      "returnFraction": 12.998547999999895,
+      "standardError": 0.2667906427721462,
+      "approximate95Interval": [
+        12.475638340166489,
+        13.5214576598333
+      ],
+      "positivePayoutFraction": 0.41672,
+      "recoveredCostFraction": 0.41672,
+      "payoutQuantiles": {
+        "p50": 0,
+        "p90": 36,
+        "p99": 107.6,
+        "max": 1207
+      },
+      "triggers": 2,
+      "caps": 0,
+      "meanAwardedFreeSpins": 0.00012
+    },
+    {
+      "scenario": "wolf-free-spin",
+      "kind": "conditional-free-spin",
+      "seed": 45219,
+      "rounds": 50000,
+      "cost": 1,
+      "meanPayout": 12.943611999999987,
+      "returnFraction": 12.943611999999987,
+      "standardError": 0.2567259517465165,
+      "approximate95Interval": [
+        12.440429134576815,
+        13.44679486542316
+      ],
+      "positivePayoutFraction": 0.42074,
+      "recoveredCostFraction": 0.42074,
+      "payoutQuantiles": {
+        "p50": 0,
+        "p90": 36,
+        "p99": 108,
+        "max": 1179
+      },
+      "triggers": 0,
+      "caps": 0,
+      "meanAwardedFreeSpins": 0
+    },
+    {
+      "scenario": "wolf-free-spin",
+      "kind": "conditional-free-spin",
+      "seed": 73901,
+      "rounds": 50000,
+      "cost": 1,
+      "meanPayout": 13.006484000000064,
+      "returnFraction": 13.006484000000064,
+      "standardError": 0.26409036217465914,
+      "approximate95Interval": [
+        12.488866890137732,
+        13.524101109862396
+      ],
+      "positivePayoutFraction": 0.4184,
+      "recoveredCostFraction": 0.4184,
+      "payoutQuantiles": {
+        "p50": 0,
+        "p90": 36,
+        "p99": 108,
+        "max": 1187
+      },
+      "triggers": 0,
+      "caps": 0,
+      "meanAwardedFreeSpins": 0
+    },
+    {
+      "scenario": "sugar-base",
+      "kind": "base",
+      "seed": 98127,
+      "rounds": 50000,
+      "cost": 1,
+      "meanPayout": 1.359240999999985,
+      "returnFraction": 1.359240999999985,
+      "standardError": 0.17027978649032957,
+      "approximate95Interval": [
+        1.025492618478939,
+        1.692989381521031
+      ],
+      "positivePayoutFraction": 0.39452,
+      "recoveredCostFraction": 0.0888,
+      "payoutQuantiles": {
+        "p50": 0,
+        "p90": 0.75,
+        "p99": 9.9,
+        "max": 5000
+      },
+      "triggers": 496,
+      "caps": 1,
+      "meanAwardedFreeSpins": 0.11348
+    },
+    {
+      "scenario": "sugar-base",
+      "kind": "base",
+      "seed": 45219,
+      "rounds": 50000,
+      "cost": 1,
+      "meanPayout": 0.9205109999999956,
+      "returnFraction": 0.9205109999999956,
+      "standardError": 0.09341987555354866,
+      "approximate95Interval": [
+        0.7374080439150402,
+        1.103613956084951
+      ],
+      "positivePayoutFraction": 0.39278,
+      "recoveredCostFraction": 0.08734,
+      "payoutQuantiles": {
+        "p50": 0,
+        "p90": 0.75,
+        "p99": 9.45,
+        "max": 4044.95
+      },
+      "triggers": 492,
+      "caps": 0,
+      "meanAwardedFreeSpins": 0.10982
+    },
+    {
+      "scenario": "sugar-base",
+      "kind": "base",
+      "seed": 73901,
+      "rounds": 50000,
+      "cost": 1,
+      "meanPayout": 1.0865589999999914,
+      "returnFraction": 1.0865589999999914,
+      "standardError": 0.10082415144190732,
+      "approximate95Interval": [
+        0.8889436631738531,
+        1.2841743368261298
+      ],
+      "positivePayoutFraction": 0.39116,
+      "recoveredCostFraction": 0.08712,
+      "payoutQuantiles": {
+        "p50": 0,
+        "p90": 0.75,
+        "p99": 9.85,
+        "max": 2548.3
+      },
+      "triggers": 502,
+      "caps": 0,
+      "meanAwardedFreeSpins": 0.11278
+    },
+    {
+      "scenario": "sugar-buy",
+      "kind": "buy",
+      "seed": 98127,
+      "rounds": 10000,
+      "cost": 100,
+      "meanPayout": 88.17895000000006,
+      "returnFraction": 0.8817895000000006,
+      "standardError": 0.028128230732137886,
+      "approximate95Interval": [
+        0.8266581677650103,
+        0.9369208322349908
+      ],
+      "positivePayoutFraction": 0.9995,
+      "recoveredCostFraction": 0.165,
+      "payoutQuantiles": {
+        "p50": 24.55,
+        "p90": 171.35,
+        "p99": 1169.85,
+        "max": 5000
+      },
+      "triggers": 10000,
+      "caps": 11,
+      "meanAwardedFreeSpins": 11.8282
+    },
+    {
+      "scenario": "sugar-buy",
+      "kind": "buy",
+      "seed": 45219,
+      "rounds": 10000,
+      "cost": 100,
+      "meanPayout": 97.48884999999967,
+      "returnFraction": 0.9748884999999967,
+      "standardError": 0.03144915239152537,
+      "approximate95Interval": [
+        0.913248161312607,
+        1.0365288386873865
+      ],
+      "positivePayoutFraction": 0.9997,
+      "recoveredCostFraction": 0.1671,
+      "payoutQuantiles": {
+        "p50": 24.75,
+        "p90": 184.45,
+        "p99": 1366.75,
+        "max": 5000
+      },
+      "triggers": 10000,
+      "caps": 10,
+      "meanAwardedFreeSpins": 11.8048
+    },
+    {
+      "scenario": "sugar-buy",
+      "kind": "buy",
+      "seed": 73901,
+      "rounds": 10000,
+      "cost": 100,
+      "meanPayout": 91.9493200000002,
+      "returnFraction": 0.919493200000002,
+      "standardError": 0.02935412762383223,
+      "approximate95Interval": [
+        0.8619591098572909,
+        0.9770272901427132
+      ],
+      "positivePayoutFraction": 0.9999,
+      "recoveredCostFraction": 0.168,
+      "payoutQuantiles": {
+        "p50": 24.85,
+        "p90": 178.1,
+        "p99": 1101.6,
+        "max": 5000
+      },
+      "triggers": 10000,
+      "caps": 12,
+      "meanAwardedFreeSpins": 11.9143
+    },
+    {
+      "scenario": "big-juan-base",
+      "kind": "base",
+      "seed": 98127,
+      "rounds": 50000,
+      "cost": 1,
+      "meanPayout": 0.9168175000000085,
+      "returnFraction": 0.9168175000000085,
+      "standardError": 0.028580566503474052,
+      "approximate95Interval": [
+        0.8607995896531994,
+        0.9728354103468176
+      ],
+      "positivePayoutFraction": 0.48416,
+      "recoveredCostFraction": 0.19192,
+      "payoutQuantiles": {
+        "p50": 0,
+        "p90": 1.625,
+        "p99": 9.25,
+        "max": 557.75
+      },
+      "triggers": 214,
+      "caps": 0,
+      "meanAwardedFreeSpins": 0
+    },
+    {
+      "scenario": "big-juan-base",
+      "kind": "base",
+      "seed": 45219,
+      "rounds": 50000,
+      "cost": 1,
+      "meanPayout": 0.9560649999999994,
+      "returnFraction": 0.9560649999999994,
+      "standardError": 0.030107482434196732,
+      "approximate95Interval": [
+        0.8970543344289738,
+        1.015075665571025
+      ],
+      "positivePayoutFraction": 0.4811,
+      "recoveredCostFraction": 0.1915,
+      "payoutQuantiles": {
+        "p50": 0,
+        "p90": 1.625,
+        "p99": 9.125,
+        "max": 462.5
+      },
+      "triggers": 235,
+      "caps": 0,
+      "meanAwardedFreeSpins": 0
+    },
+    {
+      "scenario": "big-juan-base",
+      "kind": "base",
+      "seed": 73901,
+      "rounds": 50000,
+      "cost": 1,
+      "meanPayout": 0.9539700000000019,
+      "returnFraction": 0.9539700000000019,
+      "standardError": 0.028852923805157873,
+      "approximate95Interval": [
+        0.8974182693418924,
+        1.0105217306581114
+      ],
+      "positivePayoutFraction": 0.48008,
+      "recoveredCostFraction": 0.18904,
+      "payoutQuantiles": {
+        "p50": 0,
+        "p90": 1.625,
+        "p99": 9.5,
+        "max": 356
+      },
+      "triggers": 238,
+      "caps": 0,
+      "meanAwardedFreeSpins": 0
+    },
+    {
+      "scenario": "big-juan-buy",
+      "kind": "buy",
+      "seed": 98127,
+      "rounds": 10000,
+      "cost": 100,
+      "meanPayout": 96.06760000000052,
+      "returnFraction": 0.9606760000000052,
+      "standardError": 0.008835443554722157,
+      "approximate95Interval": [
+        0.9433585306327498,
+        0.9779934693672606
+      ],
+      "positivePayoutFraction": 1,
+      "recoveredCostFraction": 0.3349,
+      "payoutQuantiles": {
+        "p50": 72,
+        "p90": 190.5,
+        "p99": 434,
+        "max": 1595
+      },
+      "triggers": 0,
+      "caps": 0,
+      "meanAwardedFreeSpins": 0
+    },
+    {
+      "scenario": "big-juan-buy",
+      "kind": "buy",
+      "seed": 45219,
+      "rounds": 10000,
+      "cost": 100,
+      "meanPayout": 96.88065000000007,
+      "returnFraction": 0.9688065000000008,
+      "standardError": 0.009062945272011475,
+      "approximate95Interval": [
+        0.9510431272668582,
+        0.9865698727331433
+      ],
+      "positivePayoutFraction": 1,
+      "recoveredCostFraction": 0.3343,
+      "payoutQuantiles": {
+        "p50": 73,
+        "p90": 192,
+        "p99": 453,
+        "max": 1625
+      },
+      "triggers": 0,
+      "caps": 0,
+      "meanAwardedFreeSpins": 0
+    },
+    {
+      "scenario": "big-juan-buy",
+      "kind": "buy",
+      "seed": 73901,
+      "rounds": 10000,
+      "cost": 100,
+      "meanPayout": 95.57440000000042,
+      "returnFraction": 0.9557440000000043,
+      "standardError": 0.009021728288112547,
+      "approximate95Interval": [
+        0.9380614125553036,
+        0.9734265874447049
+      ],
+      "positivePayoutFraction": 1,
+      "recoveredCostFraction": 0.328,
+      "payoutQuantiles": {
+        "p50": 71.5,
+        "p90": 186.5,
+        "p99": 426.5,
+        "max": 1731
+      },
+      "triggers": 0,
+      "caps": 0,
+      "meanAwardedFreeSpins": 0
+    }
+  ],
+  "pooled": [
+    {
+      "scenario": "wanted-base",
+      "kind": "base",
+      "rounds": 150000,
+      "cost": 1,
+      "meanPayout": 0.9895119999999912,
+      "returnFraction": 0.9895119999999912,
+      "standardError": 0.039013290832630665,
+      "approximate95Interval": [
+        0.9130459499680351,
+        1.0659780500319473
+      ],
+      "positivePayoutFraction": 0.2585,
+      "recoveredCostFraction": 0.08122666666666667,
+      "payoutQuantiles": {
+        "p50": 0,
+        "p90": 0.5,
+        "p99": 16.2,
+        "max": 2184
+      },
+      "triggers": 133,
+      "caps": 0,
+      "elapsedSeconds": 6.492535422
+    },
+    {
+      "scenario": "wanted-train-robbery",
+      "kind": "buy",
+      "rounds": 30000,
+      "cost": 80,
+      "meanPayout": 77.83112999999994,
+      "returnFraction": 0.9728891249999994,
+      "standardError": 0.005902305077036663,
+      "approximate95Interval": [
+        0.9613206070490075,
+        0.9844576429509913
+      ],
+      "positivePayoutFraction": 0.9999,
+      "recoveredCostFraction": 0.3367,
+      "payoutQuantiles": {
+        "p50": 51.5,
+        "p90": 176.9,
+        "p99": 397.7,
+        "max": 809.4
+      },
+      "triggers": 0,
+      "caps": 0,
+      "elapsedSeconds": 9.962817997000002
+    },
+    {
+      "scenario": "wanted-duel-at-dawn",
+      "kind": "buy",
+      "rounds": 30000,
+      "cost": 200,
+      "meanPayout": 191.11453666666685,
+      "returnFraction": 0.9555726833333342,
+      "standardError": 0.01596096655336472,
+      "approximate95Interval": [
+        0.9242891888887393,
+        0.9868561777779291
+      ],
+      "positivePayoutFraction": 0.9982,
+      "recoveredCostFraction": 0.20376666666666668,
+      "payoutQuantiles": {
+        "p50": 56.2,
+        "p90": 431.9,
+        "p99": 2358.1,
+        "max": 12500
+      },
+      "triggers": 0,
+      "caps": 7,
+      "elapsedSeconds": 11.751694385999999
+    },
+    {
+      "scenario": "wanted-dead-mans-hand",
+      "kind": "buy",
+      "rounds": 30000,
+      "cost": 400,
+      "meanPayout": 387.70775000000043,
+      "returnFraction": 0.9692693750000011,
+      "standardError": 0.022188647124308836,
+      "approximate95Interval": [
+        0.9257796266363558,
+        1.0127591233636464
+      ],
+      "positivePayoutFraction": 0.8339666666666666,
+      "recoveredCostFraction": 0.11503333333333333,
+      "payoutQuantiles": {
+        "p50": 3.5,
+        "p90": 534.6,
+        "p99": 9674.6,
+        "max": 12500
+      },
+      "triggers": 0,
+      "caps": 96,
+      "elapsedSeconds": 3.1744037720000016
+    },
+    {
+      "scenario": "wolf-base",
+      "kind": "base",
+      "rounds": 150000,
+      "cost": 1,
+      "meanPayout": 0.9521893333333362,
+      "returnFraction": 0.9521893333333362,
+      "standardError": 0.03882232516762149,
+      "approximate95Interval": [
+        0.8760975760047981,
+        1.0282810906618742
+      ],
+      "positivePayoutFraction": 0.33086,
+      "recoveredCostFraction": 0.11674666666666667,
+      "payoutQuantiles": {
+        "p50": 0,
+        "p90": 1,
+        "p99": 8.8,
+        "max": 1168.4
+      },
+      "triggers": 949,
+      "caps": 0,
+      "elapsedSeconds": 4.180242404000004
+    },
+    {
+      "scenario": "wolf-free-spin",
+      "kind": "conditional-free-spin",
+      "rounds": 150000,
+      "cost": 1,
+      "meanPayout": 12.982881333333221,
+      "returnFraction": 12.982881333333221,
+      "standardError": 0.15159392758148016,
+      "approximate95Interval": [
+        12.68575723527352,
+        13.280005431392922
+      ],
+      "positivePayoutFraction": 0.41862,
+      "recoveredCostFraction": 0.41862,
+      "payoutQuantiles": {
+        "p50": 0,
+        "p90": 36,
+        "p99": 108,
+        "max": 1207
+      },
+      "triggers": 2,
+      "caps": 0,
+      "elapsedSeconds": 3.753831809999996
+    },
+    {
+      "scenario": "sugar-base",
+      "kind": "base",
+      "rounds": 150000,
+      "cost": 1,
+      "meanPayout": 1.1221036666666393,
+      "returnFraction": 1.1221036666666393,
+      "standardError": 0.07294542297328194,
+      "approximate95Interval": [
+        0.9791306376390068,
+        1.2650766956942718
+      ],
+      "positivePayoutFraction": 0.39282,
+      "recoveredCostFraction": 0.08775333333333334,
+      "payoutQuantiles": {
+        "p50": 0,
+        "p90": 0.75,
+        "p99": 9.8,
+        "max": 5000
+      },
+      "triggers": 1490,
+      "caps": 1,
+      "elapsedSeconds": 4.936855886999998
+    },
+    {
+      "scenario": "sugar-buy",
+      "kind": "buy",
+      "rounds": 30000,
+      "cost": 100,
+      "meanPayout": 92.5390400000001,
+      "returnFraction": 0.925390400000001,
+      "standardError": 0.017134026665226662,
+      "approximate95Interval": [
+        0.8918077077361567,
+        0.9589730922638452
+      ],
+      "positivePayoutFraction": 0.9997,
+      "recoveredCostFraction": 0.1667,
+      "payoutQuantiles": {
+        "p50": 24.7,
+        "p90": 177.4,
+        "p99": 1251.8,
+        "max": 5000
+      },
+      "triggers": 30000,
+      "caps": 33,
+      "elapsedSeconds": 11.578297624
+    },
+    {
+      "scenario": "big-juan-base",
+      "kind": "base",
+      "rounds": 150000,
+      "cost": 1,
+      "meanPayout": 0.9422841666666674,
+      "returnFraction": 0.9422841666666674,
+      "standardError": 0.016851593776513754,
+      "approximate95Interval": [
+        0.9092550428647004,
+        0.9753132904686344
+      ],
+      "positivePayoutFraction": 0.48178,
+      "recoveredCostFraction": 0.19082,
+      "payoutQuantiles": {
+        "p50": 0,
+        "p90": 1.625,
+        "p99": 9.25,
+        "max": 557.75
+      },
+      "triggers": 687,
+      "caps": 0,
+      "elapsedSeconds": 3.4699433789999965
+    },
+    {
+      "scenario": "big-juan-buy",
+      "kind": "buy",
+      "rounds": 30000,
+      "cost": 100,
+      "meanPayout": 96.17421666666667,
+      "returnFraction": 0.9617421666666667,
+      "standardError": 0.005181014664463556,
+      "approximate95Interval": [
+        0.9515873779243181,
+        0.9718969554090152
+      ],
+      "positivePayoutFraction": 1,
+      "recoveredCostFraction": 0.3324,
+      "payoutQuantiles": {
+        "p50": 72,
+        "p90": 189.5,
+        "p99": 439.5,
+        "max": 1731
+      },
+      "triggers": 0,
+      "caps": 0,
+      "elapsedSeconds": 0.48125169099999765
+    }
+  ],
+  "phase": "calibration",
+  "calibrationNote": "Candidate used before final Sugar base scatter .515 and free mint19.65 adjustment. Distinct holdout seeds are evaluated afterward, without retuning on holdout."
+}

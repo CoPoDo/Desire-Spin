@@ -133,10 +133,9 @@ export function BaccaratGame() {
           <BetButton label="Tie" mult="9×" tone="gold" amount={bets.tie} onClick={() => place('tie')} />
           <BetButton label="Banker" mult="1.95×" tone="hot" amount={bets.banker} onClick={() => place('banker')} />
         </div>
-        {/* Pair side bets — real Baccarat staple. Each pays 11:1 (12×
-            returned) when the first two cards of the named side match
-            in rank. ~7.7% probability per pair, ~92.3% RTP — a high-
-            variance side spice for players who want the lottery shot. */}
+        <p className="text-[11px] text-stake-muted text-center">Punto Banco · Banker wins include a 5% commission. Player and Banker bets push on a tie. All multipliers include the stake.</p>
+        {/* Canonical live-Baccarat extension; not a Stake Originals feature. */}
+        <p className="text-[11px] text-stake-muted text-center">Optional live-Baccarat pair bets: the first two cards must match in rank. These side bets pay independently of the main result.</p>
         <div className="grid grid-cols-2 gap-2">
           <BetButton label="Player Pair" mult="12×" tone="cyan" amount={bets.playerPair} onClick={() => place('playerPair')} compact />
           <BetButton label="Banker Pair" mult="12×" tone="hot" amount={bets.bankerPair} onClick={() => place('bankerPair')} compact />

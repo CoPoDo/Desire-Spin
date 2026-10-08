@@ -53,9 +53,8 @@ export type MultiplierLanding = {
 /** Frames the renderer plays in order. */
 export type Frame =
   | { kind: 'initialDrop'; grid: Grid }
-  /** Lightning Strike (real Olympus): Zeus appears, raises arm, lightning slams
-      a batch of multiplier orbs onto the board before the first win-check.
-      Visually distinct from normal multiplier drops during tumbles. */
+  /** Legacy cosmetic frame retained for playback compatibility. Original Gates
+      has no separate lightning outcome; its engine emits multipliersLanded. */
   | { kind: 'lightningStrike'; landings: MultiplierLanding[]; grid: Grid }
   | { kind: 'multipliersLanded'; landings: MultiplierLanding[]; grid: Grid }
   | {
@@ -85,6 +84,8 @@ export type SpinResult = {
   totalPayout: number;
   /** True if free-spin trigger fired during this base spin. */
   triggeredFreeSpins: boolean;
+  /** Gates carries this multiplier across winning free spins only. */
+  featureMultiplier?: number;
   /** Free-spins awarded (>=10 if triggered, +5 per retrigger). */
   freeSpinsAwarded: number;
 };
@@ -144,9 +145,11 @@ export type SlotConfig = {
   /** Multiplier table for free spins. */
   multiplierTableFree: MultiplierTable;
   /** Multiplier symbols are summed after the complete free-spin tumble. */
-  multiplierFreeMode: 'sum-at-end';
+  multiplierFreeMode: 'sum-at-end' | 'accumulate-on-win';
   /** Buy bonus cost (multiple of bet). */
   buyBonusCost: number;
+  /** Publicly specified guaranteed-scatter entry spin for a purchase. */
+  buyTriggerScatters?: number;
   /** Ante bet adjustments. */
   ante: { betMultiplier: number; scatterWeightBoost: number };
   /** Theme metadata (gradient, accent) — used by render layer. */

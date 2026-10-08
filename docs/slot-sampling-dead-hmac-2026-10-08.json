@@ -1,0 +1,137 @@
+{
+  "phase": "production-rng-tail-check",
+  "sourceChangedDuringRun": [],
+  "generatedAt": "2026-10-08T09:15:53.274Z",
+  "revision": "ed1f369772449b8d86690470e8ea29ac2a026e42",
+  "sourceHashes": {
+    "src/pages/slots/_shared/lineEngine.ts": "de528e5723440c277af4c65f12f2502d7df4cd088a719743b9deb0098460e902",
+    "src/pages/slots/wanted-wild/index.tsx": "e2956b27eadf5c1bbc007b0cd8ebabd5e658002a1f1fdc533d8829630437c86c",
+    "src/lib/fairness.ts": "48aa72ab8d8e287d4cb3ba0da9de252c7dd0cd5fb7aa990703aa74bee324259d",
+    "src/lib/sha256.ts": "990d6d46eccb37fc9bec5c3da3f7cd4627c1a85b3d86d12b2078db5541af3aae",
+    "tests/slot-sampling-math.ts": "b6740f614dc352f06b550047922da069d5282394a9440550b759ad8268e34afa"
+  },
+  "methodology": {
+    "baseRounds": 2,
+    "buyRounds": 10000,
+    "seeds": [
+      524287,
+      786433,
+      999983
+    ],
+    "rng": "hmac",
+    "only": [
+      "wanted"
+    ],
+    "scenarios": [
+      "wanted-dead-mans-hand"
+    ],
+    "baseBet": 1,
+    "fullBaseCyclesIncludeTriggeredFeatures": true,
+    "conditionalFreeSpinIsNotRTP": true,
+    "certifiedProviderProbabilities": false,
+    "normalIntervalsMayMissUnsampledRareTails": true
+  },
+  "results": [
+    {
+      "scenario": "wanted-dead-mans-hand",
+      "kind": "buy",
+      "seed": 524287,
+      "rounds": 10000,
+      "cost": 400,
+      "meanPayout": 382.7637200000008,
+      "returnFraction": 0.956909300000002,
+      "standardError": 0.03815125159638849,
+      "approximate95Interval": [
+        0.8821328468710805,
+        1.0316857531289234
+      ],
+      "positivePayoutFraction": 0.8337,
+      "recoveredCostFraction": 0.1134,
+      "payoutQuantiles": {
+        "p50": 3.6,
+        "p90": 514.5,
+        "p99": 9659.6,
+        "max": 12500
+      },
+      "triggers": 0,
+      "caps": 35,
+      "meanAwardedFreeSpins": 3
+    },
+    {
+      "scenario": "wanted-dead-mans-hand",
+      "kind": "buy",
+      "seed": 786433,
+      "rounds": 10000,
+      "cost": 400,
+      "meanPayout": 352.1282700000009,
+      "returnFraction": 0.8803206750000022,
+      "standardError": 0.03600196206723872,
+      "approximate95Interval": [
+        0.8097568293482144,
+        0.9508845206517901
+      ],
+      "positivePayoutFraction": 0.8283,
+      "recoveredCostFraction": 0.1098,
+      "payoutQuantiles": {
+        "p50": 3.2,
+        "p90": 486,
+        "p99": 9453.6,
+        "max": 12500
+      },
+      "triggers": 0,
+      "caps": 28,
+      "meanAwardedFreeSpins": 3
+    },
+    {
+      "scenario": "wanted-dead-mans-hand",
+      "kind": "buy",
+      "seed": 999983,
+      "rounds": 10000,
+      "cost": 400,
+      "meanPayout": 381.3150799999995,
+      "returnFraction": 0.9532876999999987,
+      "standardError": 0.03862001721301185,
+      "approximate95Interval": [
+        0.8775924662624955,
+        1.028982933737502
+      ],
+      "positivePayoutFraction": 0.8308,
+      "recoveredCostFraction": 0.1087,
+      "payoutQuantiles": {
+        "p50": 3.3,
+        "p90": 488,
+        "p99": 9890,
+        "max": 12500
+      },
+      "triggers": 0,
+      "caps": 45,
+      "meanAwardedFreeSpins": 3
+    }
+  ],
+  "pooled": [
+    {
+      "scenario": "wanted-dead-mans-hand",
+      "kind": "buy",
+      "rounds": 30000,
+      "cost": 400,
+      "meanPayout": 372.06902333333034,
+      "returnFraction": 0.9301725583333258,
+      "standardError": 0.02171342534850868,
+      "approximate95Interval": [
+        0.8876142446502487,
+        0.9727308720164028
+      ],
+      "positivePayoutFraction": 0.8309333333333333,
+      "recoveredCostFraction": 0.11063333333333333,
+      "payoutQuantiles": {
+        "p50": 3.4,
+        "p90": 496,
+        "p99": 9708.3,
+        "max": 12500
+      },
+      "triggers": 0,
+      "caps": 108,
+      "elapsedSeconds": 20.982614611
+    }
+  ]
+}

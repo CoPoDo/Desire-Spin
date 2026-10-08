@@ -1,70 +1,101 @@
-import { ReelStrip } from '../_shared/ReelStrip';
-import { useRoundPlayback } from '../_shared/useRoundPlayback';
 import { useCallback, useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { SlotPageLayout } from '../../../components/layout/SlotPageLayout';
+import { Modal } from '../../../components/ui/Modal';
+import { CountUp } from '../../../components/ui/CountUp';
 import { useGame } from '../../../game-context';
 import { useHotkey } from '../../../hooks/useHotkey';
+import { MAX_STAKE } from '../../../lib/accounting';
 import { createRng } from '../../../lib/fairness';
 import { fmtCurrency, fmtMultiplier } from '../../../lib/format';
-import { BetInput } from '../_shared/BetInput';
-import {
-  AutoConfigFields,
-  AutoProgressDisplay,
-  ManualAutoTabs,
-  type AutoConfig,
-  type Mode,
-  useAutoBetRunner,
-} from '../_shared/AutoBetController';
-import { SYMBOLS, PAYLINES, LOCAL_LINE_SCALE, type BassResult, planRound, symbolById } from './engine';
 import { fireConfetti } from '../../../lib/confetti';
-import { CountUp } from '../../../components/ui/CountUp';
+import { BetInput } from '../_shared/BetInput';
+import { ReelStrip } from '../_shared/ReelStrip';
+import { useRoundPlayback } from '../_shared/useRoundPlayback';
+import { AutoConfigFields, AutoProgressDisplay, type AutoConfig, useAutoBetRunner } from '../_shared/AutoBetController';
+import { ArtworkGate } from '../../slots/_shared/ArtworkGate';
+import { CabinetControls } from '../../slots/_shared/CabinetControls';
+import { SYMBOLS, PAYLINES, MAX_WIN_MULTIPLIER, type BassResult, planRound } from './engine';
+import { BASS_ASSETS, BASS_LABELS, BASS_WORLD, BassSymbol } from './Art';
+import '../../slots/_shared/authored-cabinets.css';
+import './presentation.css';
+
+const BUY_BONUS_MULT = 100;
+const REEL_POOL = SYMBOLS.filter((symbol) => !symbol.isWild).map((symbol) => symbol.id);
 
 export function BigBassGame() {
+  return <SlotPageLayout title="Big Bass Bonanza" accent="#d6b76e" accentDeep="#95763c">
+    <ArtworkGate assets={BASS_ASSETS} title="Big Bass Bonanza"><BassCabinet /></ArtworkGate>
+  </SlotPageLayout>;
+}
+
+function BassCabinet() {
   const { balance, fairness, sound, history, session } = useGame();
+  const reduceMotion = useReducedMotion();
   const [bet, setBet] = useState(1);
-  const [mode, setMode] = useState<Mode>('manual');
+  const [turbo, setTurbo] = useState(false);
   const [autoConfig, setAutoConfig] = useState<AutoConfig>({ count: 10, stopOnProfit: 0, stopOnLoss: 0 });
   const [autoActive, setAutoActive] = useState(false);
+  const [sheet, setSheet] = useState<'bet' | 'auto' | 'info' | 'buy' | null>(null);
   const { busy, busyRef, setBusy, wait } = useRoundPlayback();
   const skipRef = useRef(false);
+  const wakePlayback = useRef<(() => void) | null>(null);
   const [reelRound, setReelRound] = useState(0);
   const [fastReveal, setFastReveal] = useState(false);
   const [reels, setReels] = useState<string[]>([
-    'anchor', 'tackle', 'ace', 'king', 'queen',
-    'jack', 'smallfish', 'bigbass', 'truck', 'anchor',
-    'queen', 'king', 'tackle', 'ace', 'jack',
+    'floater', 'rod', 'ace', 'king', 'queen',
+    'jack', 'ten', 'bigbass', 'tacklebox', 'dragonfly',
+    'queen', 'king', 'rod', 'ace', 'jack',
   ]);
+  const [landingResult, setLandingResult] = useState<BassResult | null>(null);
   const [lastResult, setLastResult] = useState<BassResult | null>(null);
-  /** Free-spins state. Triggered by 3+ scatters on the main spin.
-   *  Real Pragmatic Big Bass: 3 = 10 FS, 4 = 15, 5 = 20. During FS,
-   *  bass symbols carry money values that the fisherman scatter
-   *  COLLECTS when he appears — the iconic mechanic. */
+  const [roundWin, setRoundWin] = useState(0);
   const [freeSpinsRemaining, setFreeSpinsRemaining] = useState(0);
   const [freeSpinsWon, setFreeSpinsWon] = useState(0);
+  const [collectorMultiplier, setCollectorMultiplier] = useState(1);
+  const [collectedWilds, setCollectedWilds] = useState(0);
   const [showFsBanner, setShowFsBanner] = useState<{ count: number } | null>(null);
-  const [showBuyConfirm, setShowBuyConfirm] = useState(false);
-  /** End-of-FS "TOTAL WIN" reveal overlay. Shown after the last FS
-   *  spin resolves. Real Pragmatic Big Bass uses this beat to anchor
-   *  the bonus result before returning to the base game. */
   const [fsTotalReveal, setFsTotalReveal] = useState<{ amount: number; bet: number } | null>(null);
   const stateRef = useRef({ bet });
   stateRef.current = { bet };
-
-  /** Local demo shortcut: 100× stake for the 10-spin entry tier. */
-  const BUY_BONUS_MULT = 100;
   const buyBonusCost = +(bet * BUY_BONUS_MULT).toFixed(2);
 
-  const pause = useCallback((ms: number) => wait(skipRef.current ? 0 : ms), [wait]);
+  // A skip wakes cosmetic playback only. The prepared round is already settled.
+  const pause = useCallback((ms: number) => new Promise<boolean>((resolve) => {
+    const wake = () => resolve(true);
+    wakePlayback.current = wake;
+    void wait(skipRef.current || reduceMotion ? 0 : turbo ? ms * 0.34 : ms).then((alive) => {
+      if (wakePlayback.current === wake) wakePlayback.current = null;
+      resolve(alive);
+    });
+  }), [wait, reduceMotion, turbo]);
+  const requestSkip = useCallback(() => {
+    skipRef.current = true;
+    setFastReveal(true);
+    wakePlayback.current?.();
+    wakePlayback.current = null;
+  }, []);
 
   const revealReels = useCallback(async (result: BassResult) => {
     setLastResult(null);
+    setLandingResult(result);
     setReels(result.reels);
     setReelRound((id) => id + 1);
-    // The destination symbols are already inside each rolling strip.
-    // No whole-board replacement occurs after the stopping animation.
+    // Both the symbols and money values are in the actual landing cells before
+    // the strip starts. Only the win highlight is added after stopping.
     if (!(await pause(1320))) return false;
     setLastResult(result);
+    if (result.extraFish?.length) {
+      // The random fish arrive only after the actual reel landing. They collect
+      // money without re-evaluating or fabricating new payline wins.
+      if (!(await pause(300))) return false;
+      const finalReels = [...result.reels];
+      const finalMoney = [...result.moneyValues];
+      for (const fish of result.extraFish) { finalReels[fish.position] = 'bigbass'; finalMoney[fish.position] = fish.value; }
+      setReels(finalReels);
+      setLandingResult({ ...result, moneyValues: finalMoney });
+      if (!(await pause(500))) return false;
+    }
     if (!skipRef.current) sound.play('drop');
     return pause(150);
   }, [sound, pause]);
@@ -73,7 +104,7 @@ export function BigBassGame() {
     const b = stateRef.current.bet;
     const cost = +(b * (buy ? BUY_BONUS_MULT : 1)).toFixed(2);
     if (busyRef.current || !balance.debit(cost)) return null;
-    setBusy(true); skipRef.current = false; setFastReveal(false); setShowBuyConfirm(false);
+    setBusy(true); skipRef.current = false; setFastReveal(false); setSheet(null);
     const seeds = fairness.consumeNonce();
     const rng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
     const planned = planRound(rng, b, buy);
@@ -83,15 +114,16 @@ export function BigBassGame() {
       serverSeedHash: fairness.hash, clientSeed: seeds.clientSeed, nonce: seeds.nonce });
     session.recordSpin(cost, planned.totalPayout, planned.bonusAward > 0, planned.totalPayout / b);
     sound.play('click');
-    setFreeSpinsWon(0); setFreeSpinsRemaining(planned.bonusAward);
+    setRoundWin(0); setFreeSpinsWon(0); setCollectorMultiplier(1); setCollectedWilds(0); setFreeSpinsRemaining(planned.bonusAward);
     if (planned.base && !(await revealReels(planned.base))) return planned.totalPayout - cost;
     if (planned.bonusAward > 0) {
       setShowFsBanner({ count: planned.bonusAward }); sound.play('free-spins-trigger');
       if (!(await pause(1400))) return planned.totalPayout - cost;
       setShowFsBanner(null);
       for (const frame of planned.feature) {
+        setCollectorMultiplier(frame.collectorMultiplier);
         if (!(await revealReels(frame.result))) return planned.totalPayout - cost;
-        setFreeSpinsRemaining(frame.remaining); setFreeSpinsWon(frame.runningWin);
+        setFreeSpinsRemaining(frame.remaining); setFreeSpinsWon(frame.runningWin); setCollectedWilds(frame.collectedWilds ?? 0);
         if (!skipRef.current) sound.play(frame.result.collectedMultiplier > 0 ? 'big-win' : frame.result.payout > 0 ? 'win' : 'drop');
         if (frame.addedSpins > 0) {
           setShowFsBanner({ count: frame.addedSpins });
@@ -101,442 +133,118 @@ export function BigBassGame() {
         if (!(await pause(250))) return planned.totalPayout - cost;
       }
       const featureWin = planned.feature[planned.feature.length - 1]?.runningWin ?? 0;
-      setFsTotalReveal({ amount: featureWin, bet: b });
-      if (!(await pause(2400))) return planned.totalPayout - cost;
-      setFsTotalReveal(null);
+      if (!skipRef.current) {
+        setFsTotalReveal({ amount: featureWin, bet: b });
+        if (!(await pause(2400))) return planned.totalPayout - cost;
+        setFsTotalReveal(null);
+      }
     }
+    // Keep the last prepared strip visible through its shortened final stop.
+    if (skipRef.current && !reduceMotion && !(await wait(100))) return planned.totalPayout - cost;
     if (planned.totalPayout > 0) {
       sound.play(planned.totalPayout >= b * 100 ? 'mega-win' : planned.totalPayout >= b * 10 ? 'big-win' : 'win');
-      if (planned.totalPayout >= b * 10) fireConfetti({ count: 80 });
+      if (planned.totalPayout >= b * 10 && !reduceMotion && !skipRef.current) fireConfetti({ count: 80 });
     } else sound.play('drop');
-    setFreeSpinsRemaining(0); setBusy(false);
+    setRoundWin(planned.totalPayout); setFreeSpinsRemaining(0); setBusy(false);
     return +(planned.totalPayout - cost).toFixed(2);
-  }, [balance, fairness, history, session, sound, busyRef, setBusy, revealReels, pause]);
+  }, [balance, fairness, history, session, sound, busyRef, setBusy, revealReels, pause, reduceMotion, wait]);
 
   const playOnce = useCallback(() => runRound(false), [runRound]);
-  const buyFreeSpins = useCallback(() => runRound(true), [runRound]);
-
-  const progress = useAutoBetRunner({
-    active: autoActive,
-    config: autoConfig,
-    intervalMs: 350,
-    runOnce: playOnce,
-    onStop: () => setAutoActive(false),
-  });
-
-  // Space-to-cast hotkey. Skips while busy or while a free-spins
-  // round is running (FS auto-advances; user shouldn't interrupt).
-  useHotkey(' ', () => {
-    if (mode !== 'manual') return;
-    if (busyRef.current || freeSpinsRemaining > 0 || balance.balance < bet) return;
-    void playOnce();
-  }, mode === 'manual');
+  const progress = useAutoBetRunner({ active: autoActive, config: autoConfig, intervalMs: 350, runOnce: playOnce, onStop: () => setAutoActive(false) });
+  const spinHotkey = () => {
+    if (busyRef.current) { requestSkip(); return; }
+    if (balance.balance >= bet && bet > 0) void playOnce();
+  };
+  useHotkey(' ', spinHotkey, !autoActive && sheet === null);
+  useHotkey('Enter', spinHotkey, !autoActive && sheet === null);
 
   const inFs = freeSpinsRemaining > 0;
+  const controlsDisabled = busy || autoActive;
+  const status = showFsBanner ? `+${showFsBanner.count} free spins awarded`
+    : lastResult?.capped ? `${MAX_WIN_MULTIPLIER.toLocaleString()}× round limit reached · remaining spins forfeited`
+    : busy && !lastResult ? inFs ? 'Fishing the bonus waters…' : 'Casting the reels…'
+    : !busy && freeSpinsWon > 0 ? `Fishing trip complete · ${fmtCurrency(freeSpinsWon)} won`
+    : lastResult?.collectedMultiplier ? `Fisherman collects ${fmtMultiplier(lastResult.collectedMultiplier)}`
+    : lastResult?.payout ? lastResult.winningLines.length > 0
+      ? `${lastResult.winningLines.length} winning ${lastResult.winningLines.length === 1 ? 'line' : 'lines'} · ${fmtCurrency(lastResult.payout)}`
+      : `${lastResult.scatterCount} boat scatters · ${fmtCurrency(lastResult.payout)}`
+    : lastResult ? 'No catch this time. Cast again.' : '3 boat scatters open the fishing bonus';
 
-  return (
-    <OriginalPageLayout title="Big Bass Bonanza">
-      <div className="max-w-md mx-auto px-4 pt-3 text-[11px] text-stake-muted">
-        Local reel weights and demo bonus buy. Full round winnings settle before playback, including on departure.
-        {busy && <button className="block mt-2 rounded border border-stake-border px-3 py-2 text-stake-text" onClick={() => { skipRef.current = true; setFastReveal(true); }}>Skip reveal</button>}
+  return <div className={`authored-game authored-bass ${inFs ? 'is-free' : ''}`} data-reduced-motion={!!reduceMotion}>
+    <div className="authored-world bass-world" aria-hidden="true"><img src={BASS_WORLD} alt="" /></div>
+    <div className="authored-layout bass-layout">
+      <section className="authored-cabinet bass-cabinet" aria-label="Big Bass Bonanza cabinet">
+        <h1 className="authored-wordmark bass-wordmark"><small>CAST A LITTLE · CATCH A LOT</small><strong>BIG BASS</strong><span>B O N A N Z A</span></h1>
+        <div className="bass-feature-rail" aria-live="polite">
+          {inFs ? <><span>Free spins <strong>{freeSpinsRemaining}</strong></span><span>Collector <strong>{collectorMultiplier}×</strong> · {Math.min(collectedWilds, 12)}/12 wilds</span><span>Bonus win <strong>{fmtCurrency(freeSpinsWon)}</strong></span></>
+            : <><span>5 REELS · 10 LINES</span><span>THE LAKE IS CALLING</span></>}
+        </div>
+        <div className="bass-reels-frame">
+          <div className="bass-reels">
+            {Array.from({ length: 5 }, (_, reel) => <ReelStrip key={reel} reel={reel} roundId={reelRound}
+              symbols={[reels[reel]!, reels[5 + reel]!, reels[10 + reel]!]}
+              pool={REEL_POOL} duration={reduceMotion ? 0 : fastReveal ? 0.08 : (0.8 + reel * 0.13) * (turbo ? 0.34 : 1)}
+              renderSymbol={(symbol, row) => {
+                const index = row === null ? -1 : row * 5 + reel;
+                // A documented end-of-spin fish event can transform a landing
+                // cell after the immutable reel strip has finished travelling.
+                const displayedSymbol = index >= 0 ? reels[index]! : symbol;
+                const highlight = !!lastResult && index >= 0 && (lastResult.winningPositions.includes(index) || (displayedSymbol === 'scatter' && lastResult.scatterCount >= 3));
+                const money = index >= 0 ? landingResult?.moneyValues[index] ?? 0 : 0;
+                return <div className={`bass-cell ${highlight ? 'bass-cell-win' : ''}`} data-bass-symbol={displayedSymbol} data-landing={row === null ? undefined : row}>
+                  <BassSymbol id={displayedSymbol} money={money} />
+                </div>;
+              }} />)}
+          </div>
+          <AnimatePresence>{showFsBanner && !fastReveal && <motion.div className="bass-feature-banner" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: reduceMotion ? 0 : .18 }}>
+            <span>BACK ON THE WATER</span><strong>+{showFsBanner.count}</strong><span>FREE SPINS</span>
+          </motion.div>}</AnimatePresence>
+        </div>
+        <p className="authored-status bass-status" role="status">{status}</p>
+        <CabinetControls bet={bet} win={inFs ? freeSpinsWon : roundWin} busy={busy}
+          controlsDisabled={controlsDisabled} spinDisabled={!busy && !autoActive && (bet <= 0 || balance.balance < bet)}
+          onSpin={() => { if (autoActive) setAutoActive(false); else if (busyRef.current) requestSkip(); else void playOnce(); }}
+          spinLabel={autoActive ? 'Stop autoplay' : busy ? 'Skip reveal' : 'Cast reels'}
+          onDecrease={() => setBet((value) => Math.max(.01, +(value / 2).toFixed(2)))}
+          onIncrease={() => setBet((value) => Math.min(MAX_STAKE, balance.balance, +(value * 2).toFixed(2)))}
+          decreaseDisabled={bet <= .01} increaseDisabled={bet >= MAX_STAKE || bet >= balance.balance}
+          onBet={() => setSheet('bet')}
+          toolbar={<>
+            <button disabled={controlsDisabled || bet <= 0 || balance.balance < buyBonusCost} className="cabinet-bonus" onClick={() => setSheet('buy')} aria-label="Buy Free Spins"><span>DEMO BONUS</span><strong>{fmtCurrency(buyBonusCost)}</strong></button>
+            <button aria-label="Autoplay settings" aria-pressed={autoActive} disabled={busy && !autoActive} onClick={() => { if (autoActive) setAutoActive(false); else setSheet('auto'); }}>{autoActive ? `Stop · ${progress.completed}` : 'Autoplay'}</button>
+            <button aria-label="Turbo" aria-pressed={turbo} disabled={controlsDisabled} onClick={() => setTurbo((value) => !value)}>Turbo {turbo ? 'on' : 'off'}</button>
+            <button aria-label="Paytable and rules" disabled={controlsDisabled} onClick={() => setSheet('info')}>Paytable</button>
+          </>} />
+      </section>
+    </div>
+    <p className="authored-footnote bass-footnote">Original artwork · Local reel weights · Play money</p>
+
+    <Modal open={sheet === 'bet'} onClose={() => setSheet(null)} title="Bet settings" width="sm"><div className="bass-sheet"><BetInput bet={bet} onBetChange={setBet} disabled={controlsDisabled} /><button className="bass-sheet-primary" onClick={() => setSheet(null)}>Done</button></div></Modal>
+    <Modal open={sheet === 'auto'} onClose={() => setSheet(null)} title="Autoplay settings" width="sm"><div className="bass-sheet">
+      <AutoConfigFields config={autoConfig} onChange={setAutoConfig} disabled={autoActive} />
+      {(progress.completed > 0 || progress.stopReason) && <AutoProgressDisplay progress={progress} config={autoConfig} />}
+      <button className="bass-sheet-primary" disabled={busy || bet <= 0 || balance.balance < bet} onClick={() => { setSheet(null); setAutoActive(true); }}>Start Autobet</button>
+    </div></Modal>
+    <Modal open={sheet === 'buy'} onClose={() => setSheet(null)} title="Buy Free Spins" width="sm"><div className="bass-sheet bass-buy-sheet">
+      <div className="bass-bonus-portrait"><BassSymbol id="fisherman" /></div>
+      <p className="bass-buy-award">10 free spins</p><p>Fish carry money values. A fisherman collects the fish on the screen.</p>
+      <dl><div><dt>Current bet</dt><dd>{fmtCurrency(bet)}</dd></div><div><dt>Total cost · {BUY_BONUS_MULT}× bet</dt><dd>{fmtCurrency(buyBonusCost)}</dd></div></dl>
+      <p className="bass-sheet-note">Local demo shortcut, using local reel weights. The original game has no bonus buy. Play-money credits only.</p>
+      <div className="bass-sheet-actions"><button onClick={() => setSheet(null)}>Cancel</button><button className="bass-sheet-primary" disabled={busy || autoActive || bet <= 0 || balance.balance < buyBonusCost} onClick={() => void runRound(true)}>Confirm · {fmtCurrency(buyBonusCost)}</button></div>
+    </div></Modal>
+    <Modal open={sheet === 'info'} onClose={() => setSheet(null)} title="Paytable and rules" width="lg"><div className="bass-sheet">
+      <p>Five reels, three rows and ten fixed paylines. Matching symbols pay left to right from the first reel. The fisherman is wild during free spins. Space or Enter casts or skips the reveal.</p>
+      <div className="bass-paytable"><div className="bass-paytable-heading"><span>Symbol</span><span>2</span><span>3</span><span>4</span><span>5</span></div>
+        {SYMBOLS.filter((symbol) => symbol.pay).map((symbol) => <div className="bass-paytable-row" key={symbol.id}><span className="bass-paytable-symbol"><span className="bass-paytable-art"><BassSymbol id={symbol.id} /></span><span>{BASS_LABELS[symbol.id]}</span></span>{([2, 3, 4, 5] as const).map((count) => <span key={count}>{symbol.pay?.[count] ? `${(symbol.pay[count]! / PAYLINES.length).toFixed(2)}×` : '–'}</span>)}</div>)}
       </div>
-      <div className="grid grid-cols-1 p-4 gap-4 max-w-5xl mx-auto w-full lg:grid-cols-[minmax(0,620px)_320px] lg:items-start lg:justify-center">
-        {/* Buy Free Spins confirmation dialog */}
-        <AnimatePresence>
-          {showBuyConfirm && (
-            <>
-              <motion.button
-                aria-label="Cancel buy bonus"
-                onClick={() => setShowBuyConfirm(false)}
-                className="fixed inset-0 z-[140] bg-black/75 backdrop-blur-sm"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-              />
-              <motion.div
-                role="dialog"
-                aria-modal="true"
-                className="fixed inset-x-4 top-1/2 -translate-y-1/2 z-[145] max-w-sm mx-auto rounded-3xl max-h-[calc(100dvh-1.5rem)] overflow-y-auto p-5"
-                style={{
-                  background:
-                    'radial-gradient(ellipse at 50% 0%, rgba(95,184,255,.4), rgba(15,40,70,.96) 70%), linear-gradient(180deg, rgba(95,184,255,.2) 0%, rgba(8,20,40,.95) 60%, rgba(4,12,24,1) 100%)',
-                  border: '2px solid #ffd166',
-                  boxShadow: 'inset 0 1px 0 rgba(255,209,102,.55), 0 0 60px rgba(95,184,255,.4), 0 24px 80px rgba(0,0,0,.7)',
-                }}
-                initial={{ opacity: 0, scale: 0.7, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.85 }}
-                transition={{ type: 'spring', stiffness: 260, damping: 22 }}
-              >
-                <div
-                  className="font-serif italic font-bold text-center mb-1"
-                  style={{
-                    fontSize: 'clamp(22px, 6vw, 32px)',
-                    background: 'linear-gradient(180deg, #ffffff 0%, #fff5dc 30%, #ffd166 65%, rgba(0,0,0,.55) 100%)',
-                    WebkitBackgroundClip: 'text',
-                    backgroundClip: 'text',
-                    color: 'transparent',
-                    filter: 'drop-shadow(0 0 18px rgba(255,209,102,.7)) drop-shadow(0 4px 6px rgba(0,0,0,.6))',
-                  }}
-                >
-                  Buy Free Spins
-                </div>
-                <div className="text-[10px] uppercase tracking-[0.3em] text-center mb-4" style={{ color: '#fff5dc' }}>
-                  Skip the wait. Enter the bonus.
-                </div>
-                <div className="rounded-xl bg-black/40 border border-[#ffd166]/40 p-4 mb-4 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-stake-muted uppercase tracking-wider">You Get</span>
-                    <span className="font-serif italic font-bold text-2xl text-[#ffd166]" style={{ textShadow: '0 0 12px rgba(255,209,102,.7)' }}>
-                      10 Free Spins
-                    </span>
-                  </div>
-                  <div className="border-t border-[#ffd166]/20" />
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-stake-muted uppercase tracking-wider">Cost</span>
-                    <span className="font-mono font-bold text-2xl text-stake-text">{fmtCurrency(buyBonusCost)}</span>
-                  </div>
-                  <div className="text-[10px] text-stake-muted">
-                    {BUY_BONUS_MULT}× your current bet ({fmtCurrency(bet)})
-                  </div>
-                </div>
-                <p className="text-[11px] text-stake-muted mb-4 leading-relaxed">
-                  Free spins feature money symbols collected by the fisherman 🚤.
-                  Big variance — average return ≈ {fmtCurrency(buyBonusCost * 0.95)}.
-                </p>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setShowBuyConfirm(false)}
-                    className="flex-1 py-3 rounded-xl bg-stake-panel border border-stake-border text-stake-muted font-semibold transition active:scale-95"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    disabled={balance.balance < buyBonusCost}
-                    onClick={() => void buyFreeSpins()}
-                    className="flex-1 py-3 rounded-xl font-bold disabled:opacity-50"
-                    style={{
-                      background: 'linear-gradient(180deg, #ffd166 0%, #c89832 60%, #6a4410 100%)',
-                      color: '#0a1018',
-                      border: '1.5px solid #fff5c4',
-                      boxShadow: '0 0 14px rgba(255,209,102,.5), inset 0 1px 0 rgba(255,255,255,.25)',
-                      textShadow: '0 1px 0 rgba(255,255,255,.4)',
-                    }}
-                  >
-                    Confirm
-                  </button>
-                </div>
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
-
-        {/* Free-spins banner (overlay during trigger / retrigger) */}
-        <AnimatePresence>
-          {showFsBanner && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.6 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ type: 'spring', stiffness: 240, damping: 18 }}
-              className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
-            >
-              <div
-                className="px-6 py-4 rounded-lg text-center"
-                style={{
-                  background: 'radial-gradient(ellipse at center, rgba(95,184,255,.95), rgba(10,58,94,.95))',
-                  border: '2px solid #ffd166',
-                  boxShadow: '0 0 48px rgba(255,209,102,.7), 0 16px 32px rgba(0,0,0,.6)',
-                }}
-              >
-                <div className="text-[10px] uppercase tracking-[0.4em] text-[#fff5dc] mb-1">
-                  Free Spins
-                </div>
-                <div
-                  className="font-display font-extrabold text-5xl text-white"
-                  style={{ textShadow: '0 0 24px rgba(255,209,102,.9), 0 4px 8px rgba(0,0,0,.6)' }}
-                >
-                  +{showFsBanner.count}
-                </div>
-                <div className="text-xs text-[#fff5dc] mt-1">🚤 Fisherman triggered</div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <div className="flex min-w-0 flex-col gap-3">
-        {/* FS counter (shown while FS active) */}
-        {inFs && (
-          <div
-            className="rounded-xl border p-3 flex items-center justify-between"
-            style={{
-              background: 'linear-gradient(180deg, rgba(95,184,255,.18), rgba(10,58,94,.4))',
-              borderColor: 'rgba(255,209,102,.5)',
-              boxShadow: '0 0 18px rgba(255,209,102,.25), inset 0 1px 0 rgba(255,255,255,.08)',
-            }}
-          >
-            <div>
-              <div className="text-[10px] uppercase tracking-widest text-[#fff5dc]">Free Spins</div>
-              <div className="font-mono font-bold text-2xl text-[#ffd166] tabular-nums leading-none mt-0.5">
-                {freeSpinsRemaining}
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="text-[10px] uppercase tracking-widest text-[#fff5dc]">FS Won</div>
-              <div className="font-mono font-bold text-lg text-stake-green tabular-nums leading-none mt-0.5">
-                {fmtCurrency(freeSpinsWon)}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Reels */}
-        <div
-          className="rounded-lg border border-stake-border p-3 sm:p-4 relative"
-          style={{
-            background:
-              'linear-gradient(180deg, #0a3a5e 0%, #062236 60%, #02101e 100%), radial-gradient(60% 100% at 50% 0%, rgba(95,184,255,.12), transparent 70%)',
-            boxShadow:
-              'inset 0 1px 0 rgba(95,184,255,.15), inset 0 -8px 18px rgba(0,0,0,.5), 0 6px 18px rgba(0,0,0,.4)',
-          }}
-        >
-          <div className="grid grid-cols-5 gap-1 sm:gap-1.5">
-            {Array.from({ length: 5 }, (_, reel) => (
-              <ReelStrip key={reel} reel={reel} roundId={reelRound}
-                symbols={[reels[reel]!, reels[5 + reel]!, reels[10 + reel]!]}
-                pool={SYMBOLS.filter((symbol) => !symbol.isWild).map((symbol) => symbol.id)}
-                duration={fastReveal ? 0.08 : 0.8 + reel * 0.13}
-                renderSymbol={(symbol, row) => {
-                  const meta = symbolById(symbol);
-                  const index = row === null ? -1 : row * 5 + reel;
-                  const highlight = !!lastResult && index >= 0 &&
-                    (lastResult.winningPositions.includes(index) || (symbol === 'scatter' && lastResult.scatterCount >= 3));
-                  const money = index >= 0 ? lastResult?.moneyValues[index] ?? 0 : 0;
-                  return (
-                    <div className="relative w-full h-full rounded flex items-center justify-center text-3xl sm:text-4xl"
-                      style={{ background: highlight ? `${meta?.color}25` : 'rgba(255,255,255,.025)',
-                        border: `1px solid ${highlight ? meta?.color : 'rgba(255,255,255,.07)'}`,
-                        boxShadow: highlight ? `inset 0 0 16px ${meta?.color}30` : undefined }}>
-                      <span>{meta?.emoji ?? symbol}</span>
-                      {money > 0 && <span className="absolute bottom-0.5 right-0.5 rounded bg-accent-gold px-1 text-[9px] leading-4 font-mono font-bold text-stake-bg">{money}×</span>}
-                    </div>
-                  );
-                }} />
-            ))}
-          </div>
-          {/* "COLLECT!" overlay when fisherman snags money on a FS round */}
-          <AnimatePresence>
-            {lastResult && lastResult.collectedMultiplier > 0 && (
-              <motion.div
-                className="absolute inset-0 flex items-center justify-center pointer-events-none"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: [0, 1, 1, 0] }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 1.4, times: [0, 0.15, 0.7, 1] }}
-              >
-                <div
-                  className="font-display font-extrabold text-3xl px-4 py-2 rounded-xl"
-                  style={{
-                    color: '#fff',
-                    background: 'rgba(255,209,102,.35)',
-                    border: '2px solid #ffd166',
-                    textShadow: '0 0 16px rgba(255,209,102,.95), 0 2px 6px rgba(0,0,0,.7)',
-                    boxShadow: '0 0 24px rgba(255,209,102,.65)',
-                  }}
-                >
-                  COLLECT · +{lastResult.collectedMultiplier}×
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        {/* Outcome */}
-        <div className="rounded-xl bg-stake-card border border-stake-border p-3 text-center min-h-[60px] flex flex-col items-center justify-center">
-          {lastResult ? (
-            <>
-              {lastResult.lineSymbol ? (
-                <div className="text-[10px] uppercase tracking-widest text-stake-muted">
-                  {lastResult.lineLength}× {symbolById(lastResult.lineSymbol)?.emoji} · line
-                  {lastResult.scatterCount >= 3
-                    ? ` + ${lastResult.scatterCount}× 🚤`
-                    : ''}
-                  {lastResult.collectedMultiplier > 0 ? ` · COLLECT +${lastResult.collectedMultiplier}×` : ''}
-                </div>
-              ) : lastResult.scatterCount >= 3 ? (
-                <div className="text-[10px] uppercase tracking-widest text-stake-muted">
-                  {lastResult.scatterCount}× scatter 🚤
-                  {lastResult.collectedMultiplier > 0 ? ` · COLLECT +${lastResult.collectedMultiplier}×` : ''}
-                </div>
-              ) : lastResult.collectedMultiplier > 0 ? (
-                <div className="text-[10px] uppercase tracking-widest text-stake-muted">
-                  Fisherman snagged +{lastResult.collectedMultiplier}×
-                </div>
-              ) : (
-                <div className="text-[10px] uppercase tracking-widest text-stake-muted">
-                  No catch
-                </div>
-              )}
-              <div
-                className={`font-mono font-bold text-lg mt-0.5 tabular-nums ${
-                  lastResult.multiplier >= 100
-                    ? 'text-accent-gold'
-                    : lastResult.multiplier >= 10
-                      ? 'text-stake-green'
-                      : lastResult.multiplier > 0
-                        ? 'text-accent-cyan'
-                        : 'text-stake-muted'
-                }`}
-              >
-                {lastResult.multiplier > 0
-                  ? `${fmtMultiplier(lastResult.multiplier)} = ${fmtCurrency(lastResult.payout)}`
-                  : '— no win —'}
-              </div>
-            </>
-          ) : (
-            <div className="text-[10px] uppercase tracking-widest text-stake-muted">
-              Cast & spin · 3+ 🚤 triggers free spins
-            </div>
-          )}
-        </div>
-
-        {/* Paytable summary */}
-        <div className="rounded-xl bg-stake-card border border-stake-border p-2">
-          <div className="text-[10px] uppercase tracking-widest text-stake-muted mb-1.5 px-1">
-            Per-line returns · 5 matching · 3+ 🚤 = free spins
-          </div>
-          <div className="grid grid-cols-5 gap-1">
-            {SYMBOLS.filter((s) => !s.isScatter && s.pay && s.pay[5] >= 50).map((s) => (
-              <div key={s.id} className="text-center">
-                <div className="text-2xl">{s.emoji}</div>
-                <div
-                  className="text-[10px] font-mono font-bold tabular-nums"
-                  style={{ color: s.color }}
-                >
-                  {(s.pay![5] / PAYLINES.length * LOCAL_LINE_SCALE).toFixed(2)}×
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-        </div>
-
-        {/* Controls */}
-        <div className="order-first rounded-lg bg-stake-card border border-stake-border p-4 space-y-3 lg:order-none">
-          <ManualAutoTabs mode={mode} onChange={setMode} disabled={autoActive || busy || inFs} />
-          <BetInput bet={bet} onBetChange={setBet} disabled={autoActive || busy || inFs} />
-          {mode === 'auto' && (
-            <>
-              <AutoConfigFields config={autoConfig} onChange={setAutoConfig} disabled={autoActive} />
-              {(autoActive || progress.stopReason) && <AutoProgressDisplay progress={progress} config={autoConfig} />}
-            </>
-          )}
-          {mode === 'manual' ? (
-            <>
-              <button
-                onClick={() => void playOnce()}
-                disabled={busy || inFs || balance.balance < bet || bet <= 0}
-                className="w-full py-3.5 rounded-xl bg-stake-green text-stake-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
-              >
-                {inFs ? 'Free spins running…' : busy ? 'Reeling…' : `Cast · ${fmtCurrency(bet)}`}
-              </button>
-              {/* Buy Free Spins — pay 100× bet to skip directly into the
-                  10-FS round. This is a local demo shortcut. Confirmation modal to prevent accidental
-                  hundred-stake fat-finger taps. */}
-              <button
-                onClick={() => setShowBuyConfirm(true)}
-                disabled={busy || inFs || balance.balance < buyBonusCost}
-                className="w-full py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
-                style={{
-                  background: 'linear-gradient(180deg, #ffd166 0%, #c89832 60%, #6a4410 100%)',
-                  color: '#0a1018',
-                  border: '1px solid #fff5c4',
-                  boxShadow: '0 0 14px rgba(255,209,102,.4)',
-                }}
-              >
-                Demo Bonus · {fmtCurrency(buyBonusCost)}
-              </button>
-            </>
-          ) : (
-            <button
-              onClick={() => setAutoActive((a) => !a)}
-              disabled={!autoActive && (busy || balance.balance < bet || bet <= 0 || inFs)}
-              className={`w-full py-3.5 rounded-xl font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99] ${
-                autoActive ? 'bg-stake-red text-white' : 'bg-stake-green text-stake-bg'
-              }`}
-            >
-              {autoActive ? 'Stop Autobet' : 'Start Autobet'}
-            </button>
-          )}
-        </div>
-      </div>
-      {/* Free spins outro — "TOTAL WIN" reveal with tier-scaled
-          count-up. Matches real Pragmatic Big Bass's bonus outro. */}
-      <AnimatePresence>
-        {fsTotalReveal && (
-          <motion.div
-            className="fixed inset-0 z-[180] flex flex-col items-center justify-center pointer-events-none"
-            style={{
-              background: 'radial-gradient(ellipse at center, rgba(95,184,255,.45), rgba(0,0,0,.92) 70%)',
-              backdropFilter: 'blur(6px)',
-              WebkitBackdropFilter: 'blur(6px)',
-            }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.32 }}
-          >
-            <motion.div
-              className="text-[11px] uppercase tracking-[0.4em] mb-2"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              style={{ color: '#fff5dc' }}
-            >
-              Free Spins · 🚤 Complete
-            </motion.div>
-            <motion.div
-              className="font-display font-extrabold uppercase tracking-[0.3em] mb-3"
-              initial={{ scale: 0.4, y: 30, opacity: 0 }}
-              animate={{ scale: 1, y: 0, opacity: 1 }}
-              transition={{ type: 'spring', stiffness: 240, damping: 18 }}
-              style={{
-                fontSize: 'clamp(28px, 9vw, 48px)',
-                color: '#ffd166',
-                textShadow: '0 0 24px rgba(255,209,102,.9), 0 0 56px rgba(95,184,255,.5)',
-              }}
-            >
-              Total Win
-            </motion.div>
-            <motion.div
-              className="font-mono font-extrabold tabular-nums"
-              initial={{ scale: 0.6, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.15, type: 'spring', stiffness: 240, damping: 16 }}
-              style={{
-                fontSize: 'clamp(48px, 16vw, 96px)',
-                color: '#ffffff',
-                textShadow: '0 0 32px rgba(255,209,102,.95), 0 0 60px rgba(95,184,255,.6)',
-              }}
-            >
-              <CountUp
-                value={fsTotalReveal.amount}
-                duration={1800 + Math.min(2000, fsTotalReveal.amount / fsTotalReveal.bet * 25)}
-                format={(n) => fmtCurrency(n)}
-              />
-            </motion.div>
-            <motion.div
-              className="text-xs uppercase tracking-[0.4em] mt-4 opacity-70"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.7 }}
-              transition={{ delay: 0.6 }}
-              style={{ color: '#ffd166' }}
-            >
-              {(fsTotalReveal.amount / Math.max(fsTotalReveal.bet, 0.01)).toFixed(2)}× your bet
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </OriginalPageLayout>
-  );
+      <p>Returns shown are per winning line as a multiple of the total bet. The published paytable is used unchanged; reel weights, fish-value frequencies and random extra-fish frequency are local approximations.</p>
+      <p>3, 4 or 5 boat scatters award 10, 15 or 20 free spins, with no separate scatter payout. Every fish carries a 2×–2,000× money value. Each fisherman collects every fish in free spins. The 4th, 8th and 12th fishermen queue ten more spins at 2×, 3× and 10×; each new multiplier starts after the preceding batch ends. With exactly one fisherman, extra fish can randomly appear after the reels stop.</p>
+      <p>The whole round is capped at {MAX_WIN_MULTIPLIER.toLocaleString()}× the bet. Reaching the cap ends the feature and forfeits remaining spins.</p>
+      <p className="bass-sheet-note">All winnings for a prepared round settle before animation, including if you leave. Turbo and Skip change playback only. Bonus Buy is a local 100× demo shortcut.</p>
+      <button className="bass-sheet-primary" onClick={() => setSheet(null)}>Back to the lake</button>
+    </div></Modal>
+    <AnimatePresence>{fsTotalReveal && <motion.div className="bass-total-overlay" role="status" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: reduceMotion ? 0 : .2 }}>
+      <div className="bass-total-card"><span>FISHING TRIP COMPLETE</span><h2>Total win</h2><strong><CountUp value={fsTotalReveal.amount} duration={reduceMotion || turbo ? 0 : 1800} format={fmtCurrency} /></strong><p>{fmtMultiplier(fsTotalReveal.amount / fsTotalReveal.bet)} your bet</p><button onClick={requestSkip}>Continue</button></div>
+    </motion.div>}</AnimatePresence>
+  </div>;
 }

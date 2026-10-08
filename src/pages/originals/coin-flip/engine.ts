@@ -1,22 +1,13 @@
-import { MAX_ROUND_MULTIPLIER } from '../../../lib/accounting';
 import type { Rng } from '../../../lib/fairness';
 
-/** Flip — Stake-style streak coin game.
- *
- *  Player picks Heads or Tails. RNG flips a coin. Each correct call
- *  doubles the multiplier (slightly less than 2× to bake in the 1%
- *  house edge per flip). Player can cash out at any time.
- *
- *  Per-flip multiplier: 1.98× (= 2 × 0.99). Streak of N → 1.98^N.
- *  This matches the "Stake Plinko + Crash style coin streak" math. */
-
+/** Stake Flip: one 2% house edge across a maximum twenty-flip round.
+ * Source: https://stake.com/casino/games/flip (98%, 1,027,604.48x ceiling). */
 export type Side = 'heads' | 'tails';
-
-const HOUSE_EDGE = 0.01;
-const PER_FLIP = 2 * (1 - HOUSE_EDGE); // 1.98
-
+export const MAX_FLIPS = 20;
+export const FLIP_MAX_MULTIPLIER = .98 * 2 ** MAX_FLIPS;
 export function multiplierAfter(streak: number): number {
-  return +Math.min(MAX_ROUND_MULTIPLIER, Math.pow(PER_FLIP, Math.max(0, Math.floor(streak)))).toFixed(4);
+  const flips = Math.max(0, Math.min(MAX_FLIPS, Math.floor(streak)));
+  return flips === 0 ? 1 : +(.98 * 2 ** flips).toFixed(4);
 }
 
 export function flip(rng: Rng): Side {

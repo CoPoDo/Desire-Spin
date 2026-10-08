@@ -9,6 +9,8 @@ import { SugarRushArt } from './slots/sugar-rush/Art';
 import { WantedWildArt } from './slots/wanted-wild/Art';
 import { PharaohGoldArt } from './slots/pharaoh-gold/Art';
 import { WolfGoldArt } from './slots/wolf-gold/Art';
+import { BigBassArt } from './originals/big-bass/Art';
+import { ClassicSlotArt } from './originals/mini-slot/Art';
 import { BigJuanArt } from './slots/big-juan/Art';
 
 type Game = {
@@ -25,7 +27,7 @@ type Game = {
 
 export const GAMES: Game[] = [
   // --- Slots ---
-  { to: '/slots/sweet-bonanza',    title: 'Sweet Bonanza',          subtitle: '6×5 tumble · 21,175× max',        badge: 'HOT', bg: 'linear-gradient(180deg, #2a1148 0%, #160628 100%)', art: <BonanzaArt />,    category: 'slot', searchTags: ['fruit', 'candy', 'pragmatic', 'tumble', 'pink'] },
+  { to: '/slots/sweet-bonanza',    title: 'Sweet Bonanza',          subtitle: '6×5 tumble · 21,100× max',        badge: 'HOT', bg: 'linear-gradient(180deg, #2a1148 0%, #160628 100%)', art: <BonanzaArt />,    category: 'slot', searchTags: ['fruit', 'candy', 'pragmatic', 'tumble', 'pink'] },
   { to: '/slots/gates-of-olympus', title: 'Gates of Olympus',       subtitle: 'Tumble · 5,000× max',            badge: 'NEW', bg: 'linear-gradient(180deg, #0a1530 0%, #070d20 100%)', art: <OlympusArt />,    category: 'slot', searchTags: ['zeus', 'greek', 'pragmatic', 'tumble', 'gold', 'olympus'] },
   { to: '/slots/sugar-rush',       title: 'Sugar Rush',             subtitle: '7×7 clusters · multiplier spots',badge: 'NEW', bg: 'linear-gradient(180deg, #ff7ad9 0%, #5a1c70 100%)', art: <SugarRushArt />,  category: 'slot', searchTags: ['candy', 'sweet', 'sugar', 'cluster', 'pragmatic'] },
   { to: '/slots/wanted-wild',      title: 'Wanted Dead or a Wild',  subtitle: '5×5 · 15 paylines · DuelReels',  badge: 'NEW', bg: 'linear-gradient(180deg, #d8442a 0%, #2a0810 100%)', art: <WantedWildArt />, category: 'slot', searchTags: ['western', 'hacksaw', 'wanted', 'wild west'] },
@@ -51,13 +53,13 @@ export const GAMES: Game[] = [
   { to: '/originals/flip',          title: 'Flip',                  subtitle: 'Streak the coin',           badge: 'LIVE', art: <PlaceholderArt label="🪙" tone="#3a3010" />, category: 'original', searchTags: ['coin', 'heads tails', 'streak'] },
   { to: '/originals/pump',          title: 'Pump',                  subtitle: 'Inflate before pop',        badge: 'LIVE', art: <PlaceholderArt label="🎈" tone="#3a1a3a" />, category: 'original', searchTags: ['stake', 'balloon'] },
   { to: '/originals/three-cups',    title: 'Three Cups',            subtitle: 'Find the ball',             badge: 'LIVE', art: <PlaceholderArt label="🥤" tone="#102b3a" />, category: 'original', searchTags: ['shell', 'guess'] },
-  { to: '/originals/classic-slot',  title: 'Classic 3-Reel Slot',   subtitle: 'Single-line fruit machine', badge: 'LIVE', art: <PlaceholderArt label="🎰" tone="#3a2010" />, category: 'original', searchTags: ['slot', 'classic', 'fruit'] },
+  { to: '/originals/classic-slot',  title: 'Classic 3-Reel Slot',   subtitle: 'Single-line fruit machine', badge: 'LIVE', art: <ClassicSlotArt />, category: 'original', searchTags: ['slot', 'classic', 'fruit'] },
   { to: '/originals/rps',           title: 'Rock Paper Scissors',   subtitle: 'Beat the opponent',         badge: 'LIVE', art: <PlaceholderArt label="✊" tone="#3a1a3a" />, category: 'original', searchTags: ['rps', 'classic'] },
   { to: '/originals/dragon-tiger',  title: 'Dragon Tiger',          subtitle: 'High card wins',            badge: 'LIVE', art: <PlaceholderArt label="🐉" tone="#3a1010" />, category: 'original', searchTags: ['cards', 'asian', 'table'] },
   { to: '/originals/cases',         title: 'Cases',                 subtitle: 'Open the crate',            badge: 'LIVE', art: <PlaceholderArt label="📦" tone="#3a2010" />, category: 'original', searchTags: ['crate', 'csgo'] },
   { to: '/originals/sicbo',         title: 'Sic Bo',                subtitle: 'Three dice',                badge: 'LIVE', art: <PlaceholderArt label="🎲" tone="#1a3a1a" />, category: 'original', searchTags: ['dice', 'asian', 'table'] },
   { to: '/originals/scratch',       title: 'Scratch Card',          subtitle: 'Match 3 to win',            badge: 'LIVE', art: <PlaceholderArt label="🎟️" tone="#2a3a10" />, category: 'original', searchTags: ['scratch', 'lottery'] },
-  { to: '/slots/big-bass-bonanza',  title: 'Big Bass Bonanza',      subtitle: '5×3 · fisherman collects',  badge: 'NEW', art: <PlaceholderArt label="🐟" tone="#10303a" />, category: 'slot', searchTags: ['fish', 'fishing', 'pragmatic', 'slot'] },
+  { to: '/slots/big-bass-bonanza',  title: 'Big Bass Bonanza',      subtitle: '5×3 · fisherman collects',  badge: 'NEW', art: <BigBassArt />, category: 'slot', searchTags: ['fish', 'fishing', 'pragmatic', 'slot'] },
   { to: '/originals/slide',         title: 'Slide',                 subtitle: 'Local multiplier slide',     badge: 'LIVE', art: <PlaceholderArt label="📈" tone="#1a3a30" />, category: 'original', searchTags: ['multiplier'] },
   { to: '/originals/bingo',         title: 'Bingo',                 subtitle: '5×5 lines + draws',         badge: 'LIVE', art: <PlaceholderArt label="🎱" tone="#3a1030" />, category: 'original', searchTags: ['bingo', 'numbers', 'lines'] },
   { to: '/originals/aviator',       title: 'Aviator',               subtitle: 'Plane crashes when?',       badge: 'LIVE', art: <PlaceholderArt label="✈️" tone="#1a3a5a" />, category: 'original', searchTags: ['plane', 'crash', 'spribe'] },

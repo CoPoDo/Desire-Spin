@@ -25,10 +25,10 @@ describe('fidelity registry', () => {
 });
 
 describe('corrected rules', () => {
-  it('Cases has four risk pools at 98% RTP and a 10,000x prize', () => {
+  it('Cases has four source-backed risk pools at98% RTP and distinct maxima', () => {
     for (const risk of ['easy', 'medium', 'hard', 'expert'] as CaseRisk[]) {
       expect(caseRtp(risk)).toBeCloseTo(0.98, 8);
-      expect(CASE_POOLS[risk].some((prize) => prize.multiplier === 10000)).toBe(true);
+      expect(Math.max(...CASE_POOLS[risk].map((prize) => prize.multiplier))).toBe({easy:23,medium:115,hard:1000,expert:10000}[risk]);
     }
   });
 

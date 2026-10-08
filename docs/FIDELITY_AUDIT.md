@@ -1,5 +1,7 @@
 # Desire Spin fidelity audit
 
+> This historical inventory is superseded where noted by the [October 2026 mechanics audit](MECHANICS_AUDIT_2026-10-08.md), which records current rules and source uncertainty, and the [local probability audit](SLOT_PROBABILITY_AUDIT_2026-10-08.md).
+
 Audit date: **2026-07-22**
 Reference policy: official provider rules first, official Stake game material second, documented canonical rules for generic table/instant games. Proprietary reel strips and PAR sheets are never represented as known when they are unavailable.
 
@@ -41,7 +43,7 @@ Status legend: **Rebuilt** = critical structural mismatch corrected; **Verified*
 | Pump | Difficulty-based progressive cashout | Exact current curve capture remains | Calibrated |
 | Rock Paper Scissors | Win/push/loss resolution | Minimal reference-style interaction | Verified |
 | Cases | Prior single prize pool lacked reference modes | Four 98% pools—Easy, Medium, Hard, Expert—with 10,000× maximum and reel presentation | Rebuilt/Calibrated |
-| Slide | 0.99/u multiplier distribution | Shared-looking local round presentation | Verified/Local simulation |
+| Slide | 2% edge, 32-bit +1-denominator conversion | Independent multi-target local rounds; no hosted player/hash-chain service | Source-backed local simulation |
 
 ## Canonical games
 

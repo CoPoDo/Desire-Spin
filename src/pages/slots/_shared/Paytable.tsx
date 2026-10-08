@@ -118,10 +118,8 @@ function RulesTab({ cfg }: { cfg: SlotConfig }) {
         chains.
       </Section>
       <Section title="Multiplier Symbols" accent={accent}>
-        {cfg.multiplierBaseMode === 'disabled' ? 'Multiplier symbols appear only during free spins in this game. ' : 'Multiplier symbols can appear in base play; the sum visible on a winning grid multiplies that chain. '}
-        In free spins, every
-        multiplier that lands sticks on the grid; at the end of each spin, all multiplier
-        values sum together and apply to that spin's total win.
+        {cfg.multiplierBaseMode === 'disabled' ? 'Multiplier symbols appear only during free spins in this game. ' : 'Multiplier symbols can appear in base play; their final sum multiplies the complete winning tumble sequence. '}
+        {cfg.multiplierFreeMode === 'accumulate-on-win' ? 'During free spins, multiplier symbols on winning spins add to a running feature total. That total applies only when a new multiplier lands on a winning spin.' : 'In free spins, multiplier symbols remain for the tumble sequence; their final sum multiplies that spin’s total win.'}
       </Section>
       {isOlympus && (
         <Section title="Lightning Strike" accent={accent}>
@@ -175,8 +173,7 @@ function FeaturesTab({ cfg }: { cfg: SlotConfig }) {
       <Section title="Free Spins" accent={accent}>
         Land {cfg.scatterTriggerCount}+ scatters anywhere to trigger {' '}
         <strong style={glowStyle}>{cfg.freeSpinsAwardOnTrigger} free spins</strong>.
-        During free spins, multiplier orbs persist on the grid and sum together to multiply
-        the spin's total win.
+        {cfg.multiplierFreeMode === 'accumulate-on-win' ? ' Winning multiplier symbols add to a feature total. It applies to a spin only when a new multiplier lands with a win.' : ' Multiplier symbols stay for the tumble sequence and their sum multiplies that spin’s total win.'}
       </Section>
       <Section title="Retrigger" accent={accent}>
         {cfg.scatterRetriggerCount}+ scatters during free spins awards an additional {' '}

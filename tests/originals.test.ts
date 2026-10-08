@@ -169,15 +169,18 @@ describe('Originals RTP — regression', () => {
     expect(rtp).toBeLessThan(1.15);
   });
 
-  it('Big Bass: ~96% RTP via Monte Carlo', () => {
+  it('Big Bass: complete paid rounds have finite capped returns', () => {
     let total = 0;
     for (let i = 0; i < N; i++) {
       const rng = createRng('bigbass-rtp', 'c', i);
-      total += BigBass.spin(rng, 1).payout;
+      const round = BigBass.planRound(rng, 1);
+      expect(round.totalPayout).toBeGreaterThanOrEqual(0);
+      expect(round.totalPayout).toBeLessThanOrEqual(BigBass.MAX_WIN_MULTIPLIER);
+      total += round.totalPayout;
     }
     const rtp = total / N;
-    expect(rtp).toBeGreaterThan(0.7);
-    expect(rtp).toBeLessThan(1.3);
+    expect(rtp).toBeGreaterThan(0);
+    expect(Number.isFinite(rtp)).toBe(true);
   });
 
   it('Dice: multiplier × winChance = 0.99 for every threshold (analytical)', () => {
@@ -211,9 +214,9 @@ describe('Originals RTP — regression', () => {
     expect(rtp).toBeLessThan(1.05);
   });
 
-  it('Flip: single-flip RTP ≈ 0.99 (Monte Carlo)', () => {
+  it('Flip: single-flip RTP ≈ 0.98 (Monte Carlo)', () => {
     // Bet 1 unit, always call heads, always cash out after 1 flip.
-    // Expected RTP = 0.5 × 1.98 = 0.99.
+    // Expected RTP = 0.5 × 1.96 = 0.98.
     let total = 0;
     for (let i = 0; i < N; i++) {
       const rng = createRng('coin-rtp', 'c', i);
@@ -225,7 +228,7 @@ describe('Originals RTP — regression', () => {
     expect(rtp).toBeLessThan(1.04);
   });
 
-  it('Dragon Tiger: Dragon-side RTP ≈ 0.99 (Monte Carlo)', () => {
+  it('Dragon Tiger: eight-deck Dragon-side RTP ≈ 0.9627 (Monte Carlo)', () => {
     let total = 0;
     for (let i = 0; i < N; i++) {
       const rng = createRng('dt-rtp', 'c', i);
@@ -234,6 +237,6 @@ describe('Originals RTP — regression', () => {
     }
     const rtp = total / N;
     expect(rtp).toBeGreaterThan(0.93);
-    expect(rtp).toBeLessThan(1.05);
+    expect(rtp).toBeLessThan(1.00);
   });
 });

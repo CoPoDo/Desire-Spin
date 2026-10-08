@@ -1,7 +1,7 @@
 import type { Rng } from '../../../lib/fairness';
 
 /** Dice game (Stake-style):
- *  - RNG produces a roll in [0, 100) with 2 decimal precision
+ *  - RNG produces a roll in [0, 100] with 2 decimal precision
  *  - Player chooses a direction (over | under) and a target threshold
  *  - Win if roll satisfies the direction relative to target
  *  - Multiplier = 99 / winChance% (1% house edge, matches Stake's 0.99 RTP)
@@ -19,23 +19,19 @@ export type DiceRoll = {
 
 const HOUSE_EDGE = 0.01; // 1% — matches Stake's 99% RTP on Dice.
 
-/** 0 to 99.99 inclusive on each end */
+/** 10,001 equally likely hundredths, including both 0.00 and 100.00. */
 export function rollDice(rng: Rng): number {
-  // One uniform draw in 0..9999, expressed in hundredths.
-  // This matches Stake's documented dice roll math (4-decimal precision
-  // expressed as 2-decimal display).
-  const v = rng.nextInt(10000);
-  return Math.round(v / 100 * 100) / 100; // 2-decimal precision
+  return rng.nextInt(10001) / 100;
 }
 
 export function winChanceFor(direction: DiceDirection, target: number): number {
   if (!Number.isFinite(target)) return 0;
-  // Strict comparisons against 10,000 equally likely hundredth values.
+  // Strict comparisons against 10,001 equally likely hundredth values.
   // In particular, 50.00 is not a winning roll for "over 50".
   const points = direction === 'over'
-    ? 9999 - Math.floor(target * 100 + 1e-9)
+    ? 10000 - Math.floor(target * 100 + 1e-9)
     : Math.ceil(target * 100 - 1e-9);
-  return Math.max(0, Math.min(10000, points)) / 100;
+  return Math.max(0, Math.min(10001, points)) / 10001 * 100;
 }
 
 export function multiplierFor(direction: DiceDirection, target: number): number {

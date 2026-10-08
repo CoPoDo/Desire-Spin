@@ -1,7 +1,11 @@
 import { ReelStrip } from '../_shared/ReelStrip';
 import { useRoundPlayback } from '../_shared/useRoundPlayback';
 import { useCallback, useRef, useState } from 'react';
-import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
+import { SlotPageLayout } from '../../../components/layout/SlotPageLayout';
+import { useReducedMotion } from 'framer-motion';
+import { ArtworkGate } from '../../slots/_shared/ArtworkGate';
+import { CLASSIC_ATLAS, CLASSIC_SYMBOL_NAMES, ClassicSymbol } from './Art';
+import { SpinArrowIcon } from '../../../components/ui/icons';
 import { useGame } from '../../../game-context';
 import { useHotkey } from '../../../hooks/useHotkey';
 import { createRng } from '../../../lib/fairness';
@@ -15,12 +19,26 @@ import {
   type Mode,
   useAutoBetRunner,
 } from '../_shared/AutoBetController';
-import { SYMBOLS, type SymbolId, spin, symbolMeta } from './engine';
+import { SYMBOLS, type SymbolId, spin } from './engine';
 import { fireConfetti } from '../../../lib/confetti';
 
 export function MiniSlotGame() {
+  return <SlotPageLayout title="Classic 3-Reel Slot" accent="#ead3a0" accentDeep="#977443">
+    <ArtworkGate assets={[CLASSIC_ATLAS]} title="Classic 3-Reel Slot"><ClassicCabinet /></ArtworkGate>
+  </SlotPageLayout>;
+}
+
+export function classicReelTiming(turbo: boolean, reducedMotion: boolean) {
+  const durations = [0.76, 0.94, 1.12].map(value => reducedMotion ? 0 : turbo ? value * 0.38 : value);
+  return { durations, settleMs: reducedMotion ? 0 : Math.ceil(durations[2]! * 1000) };
+}
+
+function ClassicCabinet() {
   const { balance, fairness, sound, history, session } = useGame();
   const [bet, setBet] = useState(1);
+  const [turbo, setTurbo] = useState(false);
+  const reducedMotion = !!useReducedMotion();
+  const [reelTiming, setReelTiming] = useState(() => classicReelTiming(false, reducedMotion));
   const [mode, setMode] = useState<Mode>('manual');
   const [autoConfig, setAutoConfig] = useState<AutoConfig>({ count: 10, stopOnProfit: 0, stopOnLoss: 0 });
   const [autoActive, setAutoActive] = useState(false);
@@ -29,11 +47,12 @@ export function MiniSlotGame() {
   const [winning, setWinning] = useState<boolean[]>([false, false, false]);
   const [reelRound, setReelRound] = useState(0);
   const [lastOutcome, setLastOutcome] = useState<{ outcome: string; payout: number; mult: number } | null>(null);
-  const stateRef = useRef({ bet });
-  stateRef.current = { bet };
+  const stateRef = useRef({ bet, turbo, reducedMotion });
+  stateRef.current = { bet, turbo, reducedMotion };
 
   const playOnce = useCallback(async (): Promise<number | null> => {
-    const { bet: b } = stateRef.current;
+    const { bet: b, turbo: roundTurbo, reducedMotion: roundReduced } = stateRef.current;
+    const timing = classicReelTiming(roundTurbo, roundReduced);
     if (!balance.canAfford(b)) return null;
     if (busyRef.current || !balance.debit(b)) return null;
     setBusy(true);
@@ -56,9 +75,9 @@ export function MiniSlotGame() {
 
 
     setWinning([false, false, false]); setLastOutcome(null);
-    setReels(r.reels); setReelRound((id) => id + 1);
+    setReelTiming(timing); setReels(r.reels); setReelRound((id) => id + 1);
     // The last symbol is physically part of each moving strip.
-    if (!(await wait(1120))) return null;
+    if (!(await wait(timing.settleMs))) return null;
     sound.play('drop');
     // Highlight winning cells
     if (r.multiplier > 0) {
@@ -70,13 +89,14 @@ export function MiniSlotGame() {
       sound.play(r.multiplier >= 100 ? 'mega-win' : r.multiplier >= 10 ? 'big-win' : 'win');
       // Confetti shower for 3-of-a-kind wins (audit's signature
       // big-win flourish, ported from House Edge in lib/confetti).
-      if (r.multiplier >= 10) {
+      if (r.multiplier >= 10 && !roundReduced) {
         fireConfetti({ count: r.multiplier >= 100 ? 120 : 70 });
       }
     } else {
       sound.play('drop');
     }
-    setLastOutcome({ outcome: r.outcome, payout: r.payout, mult: r.multiplier });
+    const outcome = r.multiplier > 0 ? r.reels.every(id => id === r.reels[0]) ? `Three ${CLASSIC_SYMBOL_NAMES[r.reels[0]!]}` : 'Two Cherries' : 'No win';
+    setLastOutcome({ outcome, payout: r.payout, mult: r.multiplier });
 
     setBusy(false);
     return r.payout - b;
@@ -93,90 +113,67 @@ export function MiniSlotGame() {
   useHotkey(' ', () => { if (mode === 'manual') void playOnce(); }, !autoActive);
 
   return (
-    <OriginalPageLayout title="Classic 3-Reel Slot">
-      <div className="flex flex-col p-4 gap-4 max-w-md mx-auto w-full">
-        {/* Reels */}
-        <div className="rounded-lg bg-stake-card border border-stake-border p-4">
-          <div className="grid grid-cols-3 gap-2 sm:gap-3">
+    <div className="classic-stage">
+      <section className="classic-cabinet" aria-label="Classic three-reel cabinet" data-turbo={turbo} data-reduced-motion={reducedMotion}>
+        <header className="classic-marquee">
+          <span className="classic-eyebrow">THE ORIGINAL FRUIT MACHINE</span>
+          <h1>CLASSIC <span>3 REEL</span></h1>
+          <div className="classic-marquee-rule"><i /> ONE LINE. TIMELESS PLAY. <i /></div>
+        </header>
+
+        <div className="classic-paytable" aria-label="Three-of-a-kind payouts">
+          {SYMBOLS.map(symbol => <div key={symbol.id} className="classic-paytable-item" aria-label={`Three ${CLASSIC_SYMBOL_NAMES[symbol.id]} pays ${symbol.mult} times your bet`}>
+            <div className="classic-paytable-symbol"><ClassicSymbol id={symbol.id} /></div>
+            <strong>{symbol.mult}<small>×</small></strong>
+          </div>)}
+        </div>
+
+        <div className="classic-reel-bezel">
+          <span className="classic-line-arrow classic-line-arrow-left" aria-hidden="true" />
+          <div className="classic-reel-grid">
             {reels.map((symbol, reel) => (
               <ReelStrip key={reel} reel={reel} roundId={reelRound} symbols={[symbol]}
-                pool={SYMBOLS.map((item) => item.id)} duration={0.76 + reel * 0.18}
+                pool={SYMBOLS.map(item => item.id)} duration={reelTiming.durations[reel]!}
                 renderSymbol={(id, row) => (
-                  <div className={`w-full h-full rounded-lg flex items-center justify-center text-5xl sm:text-6xl border ${row !== null && winning[reel] ? 'border-stake-green bg-stake-green/15' : 'border-stake-border bg-stake-bg'}`}>
-                    {symbolMeta(id as SymbolId).emoji}
+                  <div className={`classic-reel-cell${row !== null && winning[reel] ? ' classic-reel-cell-winning' : ''}`} data-result-symbol={row !== null ? id : undefined}>
+                    <ClassicSymbol id={id as SymbolId} />
                   </div>
                 )} />
             ))}
           </div>
+          <span className="classic-line-arrow classic-line-arrow-right" aria-hidden="true" />
+          <div className="classic-reel-glass" aria-hidden="true" />
         </div>
 
-        {/* Outcome */}
-        <div className="rounded-xl bg-stake-card border border-stake-border p-3 text-center min-h-[60px] flex flex-col items-center justify-center">
-          {lastOutcome ? (
-            <>
-              <div className="text-[10px] uppercase tracking-widest text-stake-muted">
-                {lastOutcome.outcome}
-              </div>
-              <div className={`font-mono font-bold text-lg mt-0.5 tabular-nums ${
-                lastOutcome.mult >= 100 ? 'text-accent-gold' :
-                lastOutcome.mult >= 10 ? 'text-stake-green' :
-                lastOutcome.mult > 0 ? 'text-accent-cyan' : 'text-stake-muted'
-              }`}>
-                {lastOutcome.mult > 0 ? `${lastOutcome.mult}× = ${fmtCurrency(lastOutcome.payout)}` : '— no win —'}
-              </div>
-            </>
-          ) : (
-            <div className="text-[10px] uppercase tracking-widest text-stake-muted">Spin to play</div>
-          )}
+        <div className="classic-result" role="status" aria-live="polite" aria-atomic="true">
+          {lastOutcome ? <><span>{lastOutcome.outcome}</span><strong className={lastOutcome.mult > 0 ? 'classic-win-value' : ''}>{lastOutcome.mult > 0 ? `${lastOutcome.mult}× = ${fmtCurrency(lastOutcome.payout)}` : 'Spin again'}</strong></>
+            : <><span>{busy ? 'REELS IN MOTION' : 'SINGLE PAYLINE'}</span><strong>{busy ? 'Good luck' : 'Match three to win'}</strong></>}
         </div>
 
-        {/* Paytable */}
-        <div className="rounded-xl bg-stake-card border border-stake-border p-3">
-          <div className="text-[10px] uppercase tracking-widest text-stake-muted mb-1.5 px-1">3-of-a-kind pays</div>
-          <div className="grid grid-cols-5 gap-1">
-            {SYMBOLS.map((s) => (
-              <div key={s.id} className="text-center">
-                <div className="text-2xl">{s.emoji}</div>
-                <div className="text-[10px] font-mono font-bold tabular-nums text-stake-muted">
-                  {s.mult}×
-                </div>
-              </div>
-            ))}
+        <div className="classic-control-rail">
+          <div className="classic-mode-row">
+            <ManualAutoTabs mode={mode} onChange={setMode} disabled={autoActive || busy} />
+            <button className="classic-turbo" aria-label="Turbo" aria-pressed={turbo} onClick={() => setTurbo(value => !value)} disabled={autoActive || busy}>Turbo</button>
           </div>
-          <div className="mt-1.5 text-[10px] text-stake-muted text-center">+ any 2× 🍒 pays 2×</div>
-        </div>
-
-        {/* Controls */}
-        <div className="rounded-lg bg-stake-card border border-stake-border p-4 space-y-3">
-          <ManualAutoTabs mode={mode} onChange={setMode} disabled={autoActive || busy} />
           <BetInput bet={bet} onBetChange={setBet} disabled={autoActive || busy} />
           {mode === 'auto' && (
-            <>
+            <div className="classic-auto-fields">
               <AutoConfigFields config={autoConfig} onChange={setAutoConfig} disabled={autoActive} />
               {(autoActive || progress.stopReason) && <AutoProgressDisplay progress={progress} config={autoConfig} />}
-            </>
+            </div>
           )}
           {mode === 'manual' ? (
-            <button
-              onClick={() => void playOnce()}
-              disabled={busy || !balance.canAfford(bet)}
-              className="w-full py-3.5 rounded-xl bg-stake-green text-stake-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
-            >
-              {busy ? 'Spinning…' : `Spin · ${fmtCurrency(bet)}`}
+            <button onClick={() => void playOnce()} disabled={busy || !balance.canAfford(bet)} className="classic-spin-button">
+              <SpinArrowIcon size={22} /><span>{busy ? 'Spinning…' : `Spin · ${fmtCurrency(bet)}`}</span>
             </button>
           ) : (
-            <button
-              onClick={() => setAutoActive((a) => !a)}
-              disabled={!autoActive && (busy || !balance.canAfford(bet))}
-              className={`w-full py-3.5 rounded-xl font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99] ${
-                autoActive ? 'bg-stake-red text-white' : 'bg-stake-green text-stake-bg'
-              }`}
-            >
-              {autoActive ? 'Stop Autobet' : 'Start Autobet'}
+            <button onClick={() => setAutoActive(value => !value)} disabled={!autoActive && (busy || !balance.canAfford(bet))} className={`classic-spin-button${autoActive ? ' classic-stop-button' : ''}`}>
+              <span>{autoActive ? 'Stop Autobet' : 'Start Autobet'}</span>
             </button>
           )}
         </div>
-      </div>
-    </OriginalPageLayout>
+        <footer className="classic-footer"><span>Any two cherries pay 2×</span><span>PLAY CREDITS</span></footer>
+      </section>
+    </div>
   );
 }

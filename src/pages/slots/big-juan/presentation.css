@@ -54,3 +54,53 @@
   .bj-bonus-round .bj-feature-grid { max-width: 210px; }
   .bj-bonus-round .bj-feature-fourth { height: 190px !important; }
 }
+/* Original painted fiesta world with one contiguous turquoise/brass cabinet. */
+.big-juan-stage { align-items: flex-start; justify-content: center; padding: 12px clamp(12px,5vw,72px); background: #27180f; }
+.bj-painted-world { position: absolute; inset: 0; pointer-events: none; }
+.bj-painted-world img { width: 100%; height: 100%; object-fit: cover; object-position: center; }
+.bj-painted-world::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg,#17140ed9,#17140e22 65%,transparent),linear-gradient(0deg,#170e0855,transparent 60%); }
+.bj-painted-cabinet { position: relative; z-index: 1; display: flex; flex-direction: column; width: min(680px,calc((100dvh - 280px) * 1.18),calc(100vw - 24px)); max-height: 100%; padding: 6px; border: 1px solid #dab66a; border-radius: 9px; background: linear-gradient(95deg,#44665a,#1d382f 20%,#17332e 70%,#415e4d); box-shadow: 0 20px 55px #0008,inset 0 0 0 3px #162b22, inset 0 0 0 4px #c4974755; }
+.bj-painted-title { padding: 8px 8px 6px; text-align: center; color: #f6e2b0; }
+.bj-painted-title h1 { font: 900 clamp(25px,3vw,37px)/.9 Georgia,serif; letter-spacing: .08em; text-shadow: 0 2px 0 #653023,0 3px 4px #0008; }
+.bj-painted-title span { display: block; margin-top: 6px; font-size: 9px; letter-spacing: .12em; color: #c5bc9a; }
+.bj-painted-cabinet .bj-jackpot-ribbon { position: relative; left: auto; top: auto; transform: none; width: 100%; display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); padding: 4px 8px; gap: 6px; }
+.bj-painted-cabinet .bj-jackpot-tier { min-width: 0 !important; background: #0c211dd9 !important; border: 1px solid #b7924b55 !important; box-shadow: none !important; border-radius: 3px; padding: 5px 2px; }
+.bj-painted-cabinet .bj-jackpot-tier > span:first-child { font-size: 9px; letter-spacing: .08em; text-shadow: none !important; }
+.bj-painted-cabinet .bj-jackpot-tier > span:last-child { font-size: 11px; text-shadow: none !important; }
+.bj-painted-cabinet .bj-board-main { padding: 8px 9px; flex: none; }
+.bj-painted-cabinet .bj-reels-shell { width: 100%; max-width: 100%; aspect-ratio: 1.25; }
+.bj-painted-cabinet .bj-reel-frame { border: 1px solid #d5af6555 !important; border-radius: 3px; background: #0c201b !important; box-shadow: inset 0 0 24px #0008,0 0 0 3px #101b14 !important; }
+.bj-painted-cabinet .bj-reel-bank { inset: 7px; gap: 5px; }
+.bj-painted-cabinet .bj-spin-cell { border: 0; border-radius: 2px; background: #d5c58b08; box-shadow: none; padding: 1px; }
+.bj-painted-cabinet .bj-spin-cell::before { display: none; }
+.bj-painted-cabinet .bj-spin-glyph { width: 96%; height: 96%; }
+.bj-painted-cabinet .bj-win-readout { height: 29px; background: #0e211aba !important; border: 0 !important; border-top: 1px solid #ceab6444 !important; border-bottom: 1px solid #ceab6433 !important; box-shadow: none !important; }
+.bj-painted-cabinet .bj-controls { min-height: 77px; padding: 7px 8px; gap: 7px; }
+.bj-painted-cabinet .bj-controls > button { border-radius: 5px; background: #132c24 !important; border: 1px solid #bb964d66 !important; box-shadow: none; min-height: 44px; }
+.bj-painted-cabinet .bj-controls > button:nth-child(4) { border-radius: 50%; width: 64px; height: 64px; min-height: 64px; border: 3px solid #ebd69d !important; background: radial-gradient(circle at 30% 15%,#e0b65e,#aa7c30 65%,#583c18) !important; color: #211a0d !important; }
+.bj-painted-cabinet .bj-controls > button span { font-size: 10px; }
+.bj-painted-cabinet .spin-btn-idle { animation: none; }
+.bj-painted-cabinet .bj-legacy-win-detail { display: none; }
+.bj-painted-cabinet .bj-cell-winning { animation-iteration-count: 1 !important; }
+.bj-bonus-round { background: linear-gradient(#0a211be8,#0e231eee),url('/art-v2/juan/fiesta-world.webp') center/cover !important; }
+.juan-lobby-art { position: absolute; inset: 0; background: #1d3024; }
+.juan-lobby-art img { width: 100%; height: 100%; object-fit: cover; object-position: 89% center; }
+.juan-lobby-art::after { content: ''; position: absolute; inset: 0; background: linear-gradient(#120b0522,#120b0566 30%,#120b05); }
+.juan-lobby-art > div { position: absolute; z-index: 1; top: 12%; width: 100%; text-align: center; color: #ffe5a7; font: 900 clamp(18px,3vw,35px)/1 Georgia,serif; letter-spacing: .04em; text-shadow: 0 2px 4px #3d1b0c; }
+@media (max-width: 899px) { .big-juan-stage { align-items: center; padding: 8px; } .bj-painted-world img { object-position: 69% center; } }
+@media (max-width: 420px) {
+  .bj-painted-cabinet { width: min(calc(100vw - 12px),calc((100dvh - 304px) * 1.18)); padding: 5px; }
+  .bj-painted-cabinet .bj-controls { display: grid; grid-template-columns: repeat(6,minmax(0,1fr)); gap: 4px; min-height: 108px; }
+  .bj-painted-cabinet .bj-controls > button { width: 100% !important; grid-column: span 2; min-height: 44px; padding: 2px 4px; }
+  .bj-painted-cabinet .bj-controls > button:first-child { grid-column: 1 / span 2; grid-row: 1; align-items: center; }
+  .bj-painted-cabinet .bj-controls > button:nth-child(2) { grid-column: 5 / span 2; grid-row: 1; }
+  .bj-painted-cabinet .bj-controls > button:nth-child(4) { grid-column: 3 / span 2; grid-row: 1; width: 56px !important; height: 56px; min-height: 56px; justify-self: center; }
+  .bj-painted-cabinet .bj-controls > button:nth-child(3) { grid-column: 1 / span 2; grid-row: 2; }
+  .bj-painted-cabinet .bj-controls > button:nth-child(5) { grid-column: 3 / span 2; grid-row: 2; }
+  .bj-painted-cabinet .bj-controls > button:nth-child(6) { grid-column: 5 / span 2; grid-row: 2; }
+}
+.bj-painted-cabinet .bj-reels-shell,.bj-painted-cabinet .bj-jackpot-ribbon { margin-left:0; }
+.bj-painted-cabinet .bj-reel-frame::before { display:none; }
+.bj-painted-cabinet .spin-reel { border-radius:2px; background:linear-gradient(90deg,#e7d8a8,#f1e6c1 50%,#ded0a3); }
+.bj-painted-cabinet .bj-painted-title span { font-size:10px; }
+.big-juan-stage .bj-intro { background:linear-gradient(90deg,#10291ef2,#10291ed9),url('/art-v2/juan/fiesta-world.webp') center/cover!important; }

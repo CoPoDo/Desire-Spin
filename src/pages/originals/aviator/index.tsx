@@ -442,14 +442,14 @@ function SlotPanel({
             type="number"
             inputMode="decimal"
             min={1.01}
-            max={100000}
+            max={25000}
             aria-label={`${label} auto cashout multiplier`}
             step={0.01}
             value={slot.autoCashout}
             disabled={!editable}
             onChange={(e) => {
               const v = parseFloat(e.target.value);
-              if (Number.isFinite(v)) onChange({ ...slot, autoCashout: Math.min(100000, +Math.max(1.01, v).toFixed(2)) });
+              if (Number.isFinite(v)) onChange({ ...slot, autoCashout: Math.min(25000, +Math.max(1.01, v).toFixed(2)) });
             }}
             className="font-mono font-semibold text-xs tabular-nums bg-stake-input border border-stake-border rounded px-2 py-1 w-20 text-right outline-none focus:border-stake-green/60 disabled:opacity-50"
           />

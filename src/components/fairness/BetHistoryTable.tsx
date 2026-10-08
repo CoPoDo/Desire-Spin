@@ -24,7 +24,7 @@ export function BetHistoryTable({ open, onClose }: { open: boolean; onClose: () 
             <tbody>
               {history.history.map((b) => (
                 <tr key={b.id} className="border-t border-edge">
-                  <td className="px-2 py-2">{b.game}</td>
+                  <td className="px-2 py-2">{b.game}<span className="block mt-1 text-[10px] text-ink-mute">{b.rulesVersion ? `Rules ${b.rulesVersion}` : "Earlier rules revision"}</span></td>
                   <td className="px-2 py-2 text-right font-mono">{fmtCurrency(b.bet)}</td>
                   <td
                     className={
