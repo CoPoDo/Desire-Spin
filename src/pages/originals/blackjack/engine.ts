@@ -7,8 +7,11 @@ import type { Rng } from '../../../lib/fairness';
  *  - Blackjack pays 3:2 (1.5× profit, 2.5× total return)
  *  - Player may Hit / Stand / Double on 2 cards, Split on equal-rank pairs
  *  - Split allows up to 4 hands total. Each split hand can hit/double.
+ *  - Dealer Ace offers insurance before the hole card is checked: 2:1 profit
  *  - Standard ace soft/hard handling
- *  - ~99.5% RTP with basic strategy */
+ * Public rules: https://stake.com/casino/games/blackjack . Split limits and
+ * cent-denominated insurance rounding are this local table's rules; the
+ * published provider RTP is not a measured RTP for this implementation. */
 
 export const SUITS = ['♠', '♥', '♦', '♣'] as const;
 export type Suit = typeof SUITS[number];
@@ -75,9 +78,12 @@ export type RoundState = {
   activeIdx: number;    // which hand the player is currently acting on
   dealer: Card[];
   initialBet: number;   // the original bet placed, used to compute split costs
-  phase: 'player' | 'dealer' | 'done';
-  outcome: Outcome | null; // SUMMARY outcome: 'player-win' if any hand won, etc.
-  payout: number;       // sum across all hands
+  phase: 'insurance' | 'player' | 'dealer' | 'done';
+  /** Optional for compatibility with older round fixtures. Included in the
+   * one round ledger, never paid separately from the main hands. */
+  insurance?: { bet: number; payout: number };
+  outcome: Outcome | null; // summary based on total return vs total stake
+  payout: number;       // sum across all hands plus insurance return
 };
 
 function makeHand(cards: Card[], bet: number, opts: { fromSplit?: boolean; done?: boolean } = {}): Hand {
@@ -87,8 +93,6 @@ function makeHand(cards: Card[], bet: number, opts: { fromSplit?: boolean; done?
 export function dealRound(rng: Rng, bet: number): RoundState {
   const player: Card[] = [drawCard(rng), drawCard(rng)];
   const dealer: Card[] = [drawCard(rng), drawCard(rng)];
-  const playerHand = handValue(player);
-  const dealerHand = handValue(dealer);
   const hand = makeHand(player, bet);
   const base: RoundState = {
     hands: [hand],
@@ -99,32 +103,68 @@ export function dealRound(rng: Rng, bet: number): RoundState {
     outcome: null,
     payout: 0,
   };
-  // Immediate resolutions on dealt blackjacks
+  // The Ace upcard offers a choice even when either hand has a natural.
+  // Do not inspect/reveal the hole card in the view before that choice.
+  if (dealer[0]!.rank === 1) return { ...base, phase: 'insurance' };
+  return resolveOpening(base);
+}
+
+/** A cent-based table cannot debit half a cent. Round DOWN, never above
+ * half the initial wager. At a one-cent stake only declining is available. */
+export function insuranceCost(state: RoundState): number {
+  return Math.floor(Math.round(state.initialBet * 100) / 2) / 100;
+}
+
+export function roundStake(state: RoundState): number {
+  return +(state.hands.reduce((sum, hand) => sum + hand.bet, 0) + (state.insurance?.bet ?? 0)).toFixed(2);
+}
+
+/** Resolve the insurance choice exactly once. The caller must first debit
+ * insuranceCost when accepting. No RNG is consumed by peeking. */
+export function chooseInsurance(state: RoundState, accept: boolean): RoundState {
+  if (state.phase !== 'insurance') return state;
+  const cost = insuranceCost(state);
+  if (accept && cost <= 0) return state;
+  const insurance = accept ? {
+    bet: cost,
+    payout: handValue(state.dealer).blackjack ? +(cost * 3).toFixed(2) : 0,
+  } : undefined;
+  return resolveOpening({ ...state, phase: 'player', insurance });
+}
+
+function resolveOpening(base: RoundState): RoundState {
+  const hand = base.hands[0]!;
+  const bet = hand.bet;
+  const playerHand = handValue(hand.cards);
+  const dealerHand = handValue(base.dealer);
+  let outcome: Outcome | null = null;
+  let payout = 0;
   if (playerHand.blackjack && dealerHand.blackjack) {
-    hand.done = true;
-    hand.outcome = 'push';
-    hand.payout = bet;
-    return { ...base, phase: 'done', outcome: 'push', payout: bet };
+    outcome = 'push';
+    payout = bet;
+  } else if (playerHand.blackjack) {
+    outcome = 'player-blackjack';
+    payout = +(bet * 2.5).toFixed(2);
+  } else if (dealerHand.blackjack) {
+    outcome = 'dealer-win';
   }
-  if (playerHand.blackjack) {
-    hand.done = true;
-    hand.outcome = 'player-blackjack';
-    hand.payout = +(bet * 2.5).toFixed(2);
-    return { ...base, phase: 'done', outcome: 'player-blackjack', payout: hand.payout };
-  }
-  if (dealerHand.blackjack) {
-    hand.done = true;
-    hand.outcome = 'dealer-win';
-    hand.payout = 0;
-    return { ...base, phase: 'done', outcome: 'dealer-win', payout: 0 };
-  }
-  return base;
+  if (!outcome) return base;
+  const totalPayout = +(payout + (base.insurance?.payout ?? 0)).toFixed(2);
+  const profit = +(totalPayout - roundStake(base)).toFixed(2);
+  return {
+    ...base,
+    hands: [{ ...hand, done: true, outcome, payout }],
+    phase: 'done',
+    outcome: playerHand.blackjack && (!dealerHand.blackjack || profit > 0)
+      ? 'player-blackjack' : profit > 0 ? 'player-win' : profit === 0 ? 'push' : 'dealer-win',
+    payout: totalPayout,
+  };
 }
 
 /** True if the active hand can split: 2 cards of the same rank, fewer
  *  than MAX_SPLITS splits have happened, and the player isn't on a
- *  split-Ace (which standard Stake rules treat as a single auto-stand
- *  card per hand — we model that by setting done=true after split for
+ *  split-Ace (which this table treats as a single auto-stand
+ *  card per hand — modeled by setting done=true after split for
  *  Aces). */
 export function canSplit(state: RoundState): boolean {
   if (state.phase !== 'player') return false;
@@ -250,7 +290,7 @@ export function stand(rng: Rng, state: RoundState): RoundState {
 }
 
 export function resolveDealer(rng: Rng, state: RoundState): RoundState {
-  if (state.phase === 'done') return state;
+  if (state.phase === 'done' || state.phase === 'insurance') return state;
   // Only draw the dealer's full hand if any player hand survived (i.e.,
   // didn't bust). If every player hand busted, the dealer's hole stays
   // unseen and pays nothing on every hand. We still expose the dealer
@@ -280,11 +320,11 @@ export function resolveDealer(rng: Rng, state: RoundState): RoundState {
     }
     return { ...h, outcome, payout: +payout.toFixed(2) };
   });
-  const totalPayout = newHands.reduce((s, h) => s + (h.payout ?? 0), 0);
+  const totalPayout = +(newHands.reduce((s, h) => s + (h.payout ?? 0), 0) + (state.insurance?.payout ?? 0)).toFixed(2);
   // Round summary: pick a single representative outcome for the legacy
   // RoundState.outcome field. Player wins overall if total payout > total
   // bet; loses if < ; pushes if =.
-  const totalBet = newHands.reduce((s, h) => s + h.bet, 0);
+  const totalBet = roundStake(state);
   let summary: Outcome;
   if (totalPayout > totalBet) summary = 'player-win';
   else if (totalPayout < totalBet) summary = 'dealer-win';

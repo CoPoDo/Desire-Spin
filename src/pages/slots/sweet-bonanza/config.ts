@@ -8,122 +8,54 @@ import type { SlotConfig } from '../_shared/types';
  *          banana yellow (lowest paying); lollipop scatter; multiplier bombs.
  *
  * Pay table values mirror Pragmatic's published tier ratios for 8-9 / 10-11 / 12+.
- * Weights are balanced for ~96% RTP smoke (acceptable band 95–98%).
+ * Occurrence weights are local; no certified provider RTP is claimed.
  */
 
 export const sweetBonanzaConfig: SlotConfig = {
   id: 'sweet-bonanza',
   name: 'Sweet Bonanza',
-  // Real Sweet Bonanza max-win is 21,100× the bet (Pragmatic's
-  // published headline). Matches the welcome-splash banner.
+  // Pinned to Stake's advertised original-game 21,100× limit.
+  // Other provider/operator releases advertise a different maximum.
   maxWinMultiplier: 21100,
   cols: 6,
   rows: 5,
   payAnywhereThreshold: 8,
-  // Removing the former fake base-game multiplier bombs changes the model's
-  // hit contribution. This calibrated scale keeps the documented 96.5% target
-  // while multiplier bombs remain exclusive to free spins.
-  payoutScaleBase: 1.9,
   scatterId: 'lollipop',
   scatterTriggerCount: 4,
   scatterRetriggerCount: 3,
   freeSpinsAwardOnTrigger: 10,
   freeSpinsAwardOnRetrigger: 5,
   buyBonusCost: 100,
-  ante: { betMultiplier: 1.25, scatterWeightBoost: 2.0 },
+  ante: { betMultiplier: 1.25, scatterWeightBoost: 1.09 },
   multiplierFreeMode: 'sum-at-end',
   // Multiplier bombs are a free-spins feature in the original game.
   multiplierBaseMode: 'disabled',
   symbols: [
-    {
-      id: 'heart',
-      tier: 'top',
-      label: 'red heart',
-      payout: { 8: 10, 10: 25, 12: 50 },
-    },
-    {
-      id: 'grape',
-      tier: 'high',
-      label: 'grapes',
-      payout: { 8: 2.5, 10: 5, 12: 15 },
-    },
-    {
-      id: 'watermelon',
-      tier: 'high',
-      label: 'watermelon',
-      payout: { 8: 2.1, 10: 4.5, 12: 12 },
-    },
-    {
-      id: 'plum',
-      tier: 'high',
-      label: 'plum',
-      payout: { 8: 1.8, 10: 4, 12: 10 },
-    },
-    {
-      id: 'apple',
-      tier: 'mid',
-      label: 'apple',
-      payout: { 8: 1.5, 10: 2, 12: 8 },
-    },
-    {
-      id: 'blueberry',
-      tier: 'mid',
-      label: 'blueberries',
-      payout: { 8: 1.2, 10: 1.6, 12: 4.8 },
-    },
-    {
-      id: 'banana',
-      tier: 'low',
-      label: 'banana',
-      payout: { 8: 1, 10: 1.4, 12: 3.6 },
-    },
-    {
-      id: 'candy-pink',
-      tier: 'low',
-      label: 'pink candy',
-      payout: { 8: 0.8, 10: 1.2, 12: 2.4 },
-    },
-    {
-      id: 'candy-blue',
-      tier: 'low',
-      label: 'blue candy',
-      payout: { 8: 0.6, 10: 0.9, 12: 2 },
-    },
-    {
-      id: 'lollipop',
-      tier: 'scatter',
-      label: 'lollipop',
-      payout: { 4: 3, 5: 5, 6: 100 },
-    },
+    { id: 'heart', tier: 'top', label: 'red heart', payout: { 8: 10, 10: 25, 12: 50 } },
+    { id: 'grape', tier: 'low', label: 'grapes', payout: { 8: 0.4, 10: 0.9, 12: 4 } },
+    { id: 'watermelon', tier: 'low', label: 'watermelon', payout: { 8: 0.5, 10: 1, 12: 5 } },
+    { id: 'plum', tier: 'mid', label: 'plum', payout: { 8: 0.8, 10: 1.2, 12: 8 } },
+    { id: 'apple', tier: 'mid', label: 'apple', payout: { 8: 1, 10: 1.5, 12: 10 } },
+    { id: 'blueberry', tier: 'high', label: 'blue oval candy', payout: { 8: 1.5, 10: 2, 12: 12 } },
+    { id: 'banana', tier: 'low', label: 'banana', payout: { 8: 0.25, 10: 0.75, 12: 2 } },
+    { id: 'candy-pink', tier: 'high', label: 'square candy', payout: { 8: 2.5, 10: 10, 12: 25 } },
+    { id: 'candy-blue', tier: 'high', label: 'pentagon candy', payout: { 8: 2, 10: 5, 12: 15 } },
+    { id: 'lollipop', tier: 'scatter', label: 'lollipop', payout: {4:3,5:5,6:100} },
   ],
   // Order matches symbols[] above.
   // Heart, grape, watermelon, plum, apple, blueberry, banana, pink, blue, lollipop
-  // Calibrated for ~96.5% RTP and ~0.4% scatter trigger rate.
-  weightsBase: [4, 8, 9, 10, 12, 14, 16, 16, 18, 2.0],
-  weightsFree: [6, 9, 10, 12, 13, 14, 14, 14, 14, 2.6],
-  // Multiplier frequencies — calibrated to real Sweet Bonanza FEEL while
-  // keeping RTP in the 96-98% test envelope:
-  //   - Base game: 7% per tumble (real game ~10% but at our orb-EV those
-  //     rates push RTP > 1.5, so tuned slightly down to match the actual
-  //     payout RTP target rather than exact orb frequency)
-  //   - Free spins: 40% per tumble (real game ~65-70% but again EV-balanced)
-  // Audited against real Pragmatic Sweet Bonanza public weights —
-  // previous values overweight 50/100/200/500× orbs. Now skewed
-  // heavily toward 2-5× with rare 100×+ to mirror the real game.
-  multiplierTableBase: {
-    pPerTumble: 0.07,
-    maxPerTumble: 2,
-    values: [
-      [2, 22], [3, 16], [4, 13], [5, 10], [6, 7], [8, 6], [10, 5],
-      [12, 4], [15, 3.5], [20, 3], [25, 2.5], [50, 1.8], [100, 1.2], [500, 0.3],
-    ],
-  },
+  // Local symbol weights, not provider reel strips.
+  weightsBase: [4, 16, 14, 12, 11, 9, 18, 6, 8, 2.25],
+  weightsFree: [4, 16, 14, 12, 11, 9, 26, 6, 8, 2.6],
+  // Published original-game value set; occurrence weights are local.
+  // No provider PAR distribution or exact return is claimed.
+  multiplierTableBase: { pPerTumble: 0, maxPerTumble: 1, values: [[2, 1]] },
   multiplierTableFree: {
-    pPerTumble: 0.40,
+    pPerTumble: 0.75,
     maxPerTumble: 3,
     values: [
-      [2, 24], [3, 18], [4, 14], [5, 11], [6, 8], [8, 6], [10, 5],
-      [15, 4], [20, 3], [25, 2.5], [50, 1.8], [100, 1.2], [200, 0.7], [500, 0.25],
+      [2, 24], [3, 18], [5, 16], [8, 10], [10, 8], [12, 6], [15, 5],
+      [18, 4], [20, 3], [25, 2.5], [30, 2], [35, 1.5], [50, 1.2], [100, .7],
     ],
   },
   theme: {

@@ -1,7 +1,7 @@
 import type { Rng } from '../../../lib/fairness';
 
-/** Sic Bo: three fair dice, with the standard Macau total-return table.
- * Small/Big exclude every triple (102 winning combinations out of 216).
+/** Sic Bo: three fair dice, with an explicit local total-return table.
+ * Small/Big exclude every triple (105 winning combinations out of 216).
  * Odd/Even exclude triples (105/216). Total bets include triples.
  * Returns include the original stake. House edge varies by wager. */
 
@@ -19,6 +19,12 @@ export const SMALL_BIG_PAYOUT = 2;
 export const ODD_EVEN_PAYOUT = 2;
 export const ANY_TRIPLE_PAYOUT = 31;
 export const SPECIFIC_TRIPLE_PAYOUT = 181;
+// Two-distinct-face coverage and 6:1 profit odds: Crown Sydney approved rules,
+// section 6.3. Other bets retain this app's explicitly displayed local variant.
+export const COMBINATION_PAYOUT = 7;
+export const TWO_DICE_COMBINATIONS: [number, number][] = Array.from({ length: 6 }, (_, i) =>
+  Array.from({ length: 5 - i }, (_, j): [number, number] => [i + 1, i + j + 2]),
+).flat();
 
 export type Bet =
   | { kind: 'small' }
@@ -28,6 +34,7 @@ export type Bet =
   | { kind: 'anyTriple' }
   | { kind: 'specificTriple'; face: number } // 1..6
   | { kind: 'double'; face: number }         // 1..6
+  | { kind: 'combination'; faces: [number, number] } // both distinct faces appear
   | { kind: 'total'; sum: number }           // 4..17
   | { kind: 'singleDie'; face: number };     // 1..6, pays per count
 
@@ -61,6 +68,11 @@ export function payoutMultiplier(bet: Bet, r: Roll): number {
       const count = r.filter((die) => die === bet.face).length;
       return count >= 2 ? 11 : 0;
     }
+    case 'combination': {
+      const [first, second] = bet.faces;
+      if (![first, second].every(face => Number.isInteger(face) && face >= 1 && face <= 6) || first === second) return 0;
+      return r.includes(first) && r.includes(second) ? COMBINATION_PAYOUT : 0;
+    }
     case 'total':
       // Sum bets win on ANY 3-dice combination producing that sum,
       // including triples (Stake / standard Sic Bo convention). The
@@ -71,10 +83,10 @@ export function payoutMultiplier(bet: Bet, r: Roll): number {
       // of the payout table probability.
       return sum === bet.sum ? (SUM_PAYOUTS[bet.sum] ?? 0) : 0;
     case 'singleDie': {
-      // Real Sic Bo "single die" wager: pays 1:1 / 2:1 / 3:1 (returns
+      // This table's "single die" wager: pays 1:1 / 2:1 / 3:1 (returns
       // 2× / 3× / 4× including stake) when the chosen face appears
       // on 1 / 2 / 3 of the three dice. RTP = (75×2 + 15×3 + 1×4)/216
-      // ≈ 92.13% — high house edge by design, matches real Sic Bo.
+      // ≈ 92.13%. Other published variants return more for a triple.
       const count =
         (r[0] === bet.face ? 1 : 0) +
         (r[1] === bet.face ? 1 : 0) +

@@ -1,25 +1,15 @@
+import { ArtworkGate } from '../_shared/ArtworkGate';
 import { LineSlotView } from '../_shared/LineSlotView';
-import type { LineSlotProfile } from '../_shared/lineEngine';
-import { PHARAOH_SYMBOL_MAP } from './symbols';
+import { useMemo, useState } from 'react';
+import { pharaohProfileForLines, type PharaohLines } from './profile';
+import { PHARAOH_SYMBOL_MAP, PHARAOH_ATLAS, PHARAOH_WORLD, PHARAOH_COBRA } from './symbols';
 import { PharaohScene } from './Scene';
 
-export const PHARAOH_PROFILE: LineSlotProfile = {
-  id: 'pharaoh-gold', cols: 3, rows: 3, paylines: [[0, 0, 0], [1, 1, 1], [2, 2, 2]], maxWin: 2500,
-  scatterId: 'scarab', feature: 'classic', freeSpins: 0,
-  symbols: [
-    { id: 'pharaoh', weight: 3, pay: { 3: 100 } },
-    { id: 'eye', weight: 7, pay: { 3: 40 } },
-    { id: 'ankh', weight: 9, pay: { 3: 25 } },
-    { id: 'jackal', weight: 11, pay: { 3: 15 } },
-    { id: 'falcon', weight: 13, pay: { 3: 10 } },
-    { id: 'lotus', weight: 15, pay: { 3: 7 } },
-    { id: 'gem-blue', weight: 18, pay: { 3: 5 } },
-    { id: 'gem-red', weight: 20, pay: { 3: 4 } },
-    { id: 'gem-green', weight: 22, pay: { 3: 3 } },
-    { id: 'scarab', weight: 2, scatter: true },
-  ],
-};
+export { PHARAOH_PROFILE, pharaohProfileForLines } from './profile';
 
+const PHARAOH_ASSETS = [PHARAOH_ATLAS, PHARAOH_WORLD, PHARAOH_COBRA];
 export function PharaohGold() {
-  return <LineSlotView profile={PHARAOH_PROFILE} title="Pharaoh's Gold" subtitle="Realtime Gaming classic · 3 reels · 3 paylines" scene={<PharaohScene />} symbolMap={PHARAOH_SYMBOL_MAP} accent="#ffd166" />;
+  const [lines, setLines] = useState<PharaohLines>(3);
+  const profile = useMemo(() => pharaohProfileForLines(lines), [lines]);
+  return <ArtworkGate title="Pharaoh's Gold" assets={PHARAOH_ASSETS}><LineSlotView profile={profile} title="Pharaoh's Gold" subtitle={`3 reels · ${lines} active ${lines === 1 ? 'line' : 'lines'} · Local probabilities`} scene={<PharaohScene />} symbolMap={PHARAOH_SYMBOL_MAP} accent="#e6be70" extraControls={(busy) => <label className="line-count-control">Lines<select aria-label="Active paylines" value={lines} disabled={busy} onChange={(event) => setLines(Number(event.target.value) as PharaohLines)}><option value={1}>1 line</option><option value={2}>2 lines</option><option value={3}>3 lines</option></select></label>} /></ArtworkGate>;
 }

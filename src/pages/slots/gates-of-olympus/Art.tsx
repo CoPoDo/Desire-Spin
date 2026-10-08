@@ -1,14 +1,1 @@
-import { CrownSymbol, RingSymbol, ZeusBoltSymbol, RedGemSymbol, BlueGemSymbol, YellowGemSymbol } from './symbols';
-
-export function OlympusArt() {
-  return (
-    <div className="absolute inset-0 grid grid-cols-3 grid-rows-4 gap-1 p-2 grid-bg-olympus">
-      <div className="row-span-2 col-span-2"><ZeusBoltSymbol /></div>
-      <div><CrownSymbol /></div>
-      <div><RingSymbol /></div>
-      <div><RedGemSymbol /></div>
-      <div><YellowGemSymbol /></div>
-      <div className="col-span-2"><BlueGemSymbol /></div>
-    </div>
-  );
-}
+export function OlympusArt() { return <div className="absolute inset-0 overflow-hidden"><img loading="lazy" decoding="async" src="/art-v2/olympus/temple-world.webp" alt="" className="h-full w-full object-cover" style={{ objectPosition: '78% center' }} draggable={false} /><div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" /></div>; }

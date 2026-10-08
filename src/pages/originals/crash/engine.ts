@@ -8,7 +8,7 @@ import type { Rng } from '../../../lib/fairness';
  *  Bust distribution: P(bust >= T) = 0.99 / T  (1% house edge / 99% RTP).
  *  Math is identical to Limbo's RNG mapping. */
 
-const BUST_CAP = 100_000;
+const BUST_CAP = 1_000_000; // Published Stake Crash maximum.
 
 export function rollBust(rng: Rng): number {
   const u = Math.max(rng.next(), 1e-7);

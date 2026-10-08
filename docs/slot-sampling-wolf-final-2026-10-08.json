@@ -1,0 +1,234 @@
+{
+  "phase": "final-holdout",
+  "sourceChangedDuringRun": [],
+  "generatedAt": "2026-10-08T09:12:19.056Z",
+  "revision": "ed1f369772449b8d86690470e8ea29ac2a026e42",
+  "sourceHashes": {
+    "src/pages/slots/_shared/lineEngine.ts": "de528e5723440c277af4c65f12f2502d7df4cd088a719743b9deb0098460e902",
+    "src/pages/slots/wolf-gold/index.tsx": "6daa6705bb7191f01c497a11e2eef379a138c3a7bdf10a515aeaee44f20e9b1d",
+    "src/pages/slots/wolf-gold/paylines.ts": "4d73346df13910f17685d095c78fca6c49487f3b227be0bf309f9ce6c92ffaf1",
+    "src/lib/fairness.ts": "48aa72ab8d8e287d4cb3ba0da9de252c7dd0cd5fb7aa990703aa74bee324259d",
+    "src/lib/sha256.ts": "990d6d46eccb37fc9bec5c3da3f7cd4627c1a85b3d86d12b2078db5541af3aae",
+    "tests/slot-sampling-math.ts": "b6740f614dc352f06b550047922da069d5282394a9440550b759ad8268e34afa"
+  },
+  "methodology": {
+    "baseRounds": 200000,
+    "buyRounds": 30000,
+    "seeds": [
+      196613,
+      262147,
+      327673
+    ],
+    "rng": "mulberry32",
+    "only": [
+      "wolf"
+    ],
+    "baseBet": 1,
+    "fullBaseCyclesIncludeTriggeredFeatures": true,
+    "conditionalFreeSpinIsNotRTP": true,
+    "certifiedProviderProbabilities": false,
+    "normalIntervalsMayMissUnsampledRareTails": true
+  },
+  "results": [
+    {
+      "scenario": "wolf-base",
+      "kind": "base",
+      "seed": 196613,
+      "rounds": 200000,
+      "cost": 1,
+      "meanPayout": 0.9904119999999995,
+      "returnFraction": 0.9904119999999995,
+      "standardError": 0.03508712168134946,
+      "approximate95Interval": [
+        0.9216412415045545,
+        1.0591827584954445
+      ],
+      "positivePayoutFraction": 0.36791,
+      "recoveredCostFraction": 0.114285,
+      "payoutQuantiles": {
+        "p50": 0,
+        "p90": 1,
+        "p99": 9.6,
+        "max": 2161
+      },
+      "triggers": 1386,
+      "caps": 0,
+      "meanAwardedFreeSpins": 0.03465
+    },
+    {
+      "scenario": "wolf-base",
+      "kind": "base",
+      "seed": 262147,
+      "rounds": 200000,
+      "cost": 1,
+      "meanPayout": 0.9460019999999943,
+      "returnFraction": 0.9460019999999943,
+      "standardError": 0.03103811176444051,
+      "approximate95Interval": [
+        0.8851673009416909,
+        1.0068366990582978
+      ],
+      "positivePayoutFraction": 0.365005,
+      "recoveredCostFraction": 0.113725,
+      "payoutQuantiles": {
+        "p50": 0,
+        "p90": 1,
+        "p99": 9.6,
+        "max": 1278.6
+      },
+      "triggers": 1354,
+      "caps": 0,
+      "meanAwardedFreeSpins": 0.03385
+    },
+    {
+      "scenario": "wolf-base",
+      "kind": "base",
+      "seed": 327673,
+      "rounds": 200000,
+      "cost": 1,
+      "meanPayout": 1.046468000000007,
+      "returnFraction": 1.046468000000007,
+      "standardError": 0.03837475155271568,
+      "approximate95Interval": [
+        0.9712534869566843,
+        1.1216825130433299
+      ],
+      "positivePayoutFraction": 0.36775,
+      "recoveredCostFraction": 0.114215,
+      "payoutQuantiles": {
+        "p50": 0,
+        "p90": 1,
+        "p99": 9.6,
+        "max": 1249.8
+      },
+      "triggers": 1398,
+      "caps": 0,
+      "meanAwardedFreeSpins": 0.03495
+    },
+    {
+      "scenario": "wolf-free-spin",
+      "kind": "conditional-free-spin",
+      "seed": 196613,
+      "rounds": 200000,
+      "cost": 1,
+      "meanPayout": 13.110655999999931,
+      "returnFraction": 13.110655999999931,
+      "standardError": 0.13411975296274894,
+      "approximate95Interval": [
+        12.847781284192944,
+        13.373530715806918
+      ],
+      "positivePayoutFraction": 0.4208,
+      "recoveredCostFraction": 0.4208,
+      "payoutQuantiles": {
+        "p50": 0,
+        "p90": 32,
+        "p99": 109,
+        "max": 1232
+      },
+      "triggers": 8,
+      "caps": 0,
+      "meanAwardedFreeSpins": 0.00012
+    },
+    {
+      "scenario": "wolf-free-spin",
+      "kind": "conditional-free-spin",
+      "seed": 262147,
+      "rounds": 200000,
+      "cost": 1,
+      "meanPayout": 12.904062000000257,
+      "returnFraction": 12.904062000000257,
+      "standardError": 0.13032431108442954,
+      "approximate95Interval": [
+        12.648626350274775,
+        13.15949764972574
+      ],
+      "positivePayoutFraction": 0.41909,
+      "recoveredCostFraction": 0.41909,
+      "payoutQuantiles": {
+        "p50": 0,
+        "p90": 32.8,
+        "p99": 108,
+        "max": 1234
+      },
+      "triggers": 6,
+      "caps": 0,
+      "meanAwardedFreeSpins": 0.00009
+    },
+    {
+      "scenario": "wolf-free-spin",
+      "kind": "conditional-free-spin",
+      "seed": 327673,
+      "rounds": 200000,
+      "cost": 1,
+      "meanPayout": 13.153653999999904,
+      "returnFraction": 13.153653999999904,
+      "standardError": 0.1344114810366747,
+      "approximate95Interval": [
+        12.89020749716802,
+        13.417100502831786
+      ],
+      "positivePayoutFraction": 0.41881,
+      "recoveredCostFraction": 0.41881,
+      "payoutQuantiles": {
+        "p50": 0,
+        "p90": 32.8,
+        "p99": 108,
+        "max": 1207
+      },
+      "triggers": 5,
+      "caps": 0,
+      "meanAwardedFreeSpins": 0.000075
+    }
+  ],
+  "pooled": [
+    {
+      "scenario": "wolf-base",
+      "kind": "base",
+      "rounds": 600000,
+      "cost": 1,
+      "meanPayout": 0.9942939999999925,
+      "returnFraction": 0.9942939999999925,
+      "standardError": 0.02018554259713111,
+      "approximate95Interval": [
+        0.9547303365096155,
+        1.0338576634903693
+      ],
+      "positivePayoutFraction": 0.3668883333333333,
+      "recoveredCostFraction": 0.114075,
+      "payoutQuantiles": {
+        "p50": 0,
+        "p90": 1,
+        "p99": 9.6,
+        "max": 2161
+      },
+      "triggers": 4138,
+      "caps": 0,
+      "elapsedSeconds": 9.771236516
+    },
+    {
+      "scenario": "wolf-free-spin",
+      "kind": "conditional-free-spin",
+      "rounds": 600000,
+      "cost": 1,
+      "meanPayout": 13.056123999999725,
+      "returnFraction": 13.056123999999725,
+      "standardError": 0.07676731196410765,
+      "approximate95Interval": [
+        12.905660068550073,
+        13.206587931449377
+      ],
+      "positivePayoutFraction": 0.41956666666666664,
+      "recoveredCostFraction": 0.41956666666666664,
+      "payoutQuantiles": {
+        "p50": 0,
+        "p90": 32.8,
+        "p99": 108.4,
+        "max": 1234
+      },
+      "triggers": 19,
+      "caps": 0,
+      "elapsedSeconds": 9.087138943999998
+    }
+  ]
+}

@@ -21,33 +21,27 @@ export const gatesOfOlympusConfig: SlotConfig = {
   freeSpinsAwardOnTrigger: 15,
   freeSpinsAwardOnRetrigger: 5,
   buyBonusCost: 100,
-  ante: { betMultiplier: 1.25, scatterWeightBoost: 2.0 },
-  multiplierFreeMode: 'sum-at-end',
+  buyTriggerScatters: 4,
+  ante: { betMultiplier: 1.25, scatterWeightBoost: 1.13 },
+  multiplierFreeMode: 'accumulate-on-win',
   symbols: [
     { id: 'crown', tier: 'top', label: 'crown', payout: { 8: 10, 10: 25, 12: 50 } },
-    { id: 'ring', tier: 'high', label: 'ring', payout: { 8: 5, 10: 12, 12: 25 } },
-    { id: 'hourglass', tier: 'high', label: 'hourglass', payout: { 8: 2.5, 10: 6, 12: 15 } },
-    { id: 'chalice', tier: 'high', label: 'chalice', payout: { 8: 2, 10: 4, 12: 10 } },
-    { id: 'gem-red', tier: 'mid', label: 'red gem', payout: { 8: 1, 10: 2, 12: 5 } },
-    { id: 'gem-purple', tier: 'mid', label: 'purple gem', payout: { 8: 0.8, 10: 1.6, 12: 4 } },
-    { id: 'gem-yellow', tier: 'low', label: 'yellow gem', payout: { 8: 0.6, 10: 1.2, 12: 3 } },
-    { id: 'gem-green', tier: 'low', label: 'green gem', payout: { 8: 0.5, 10: 0.9, 12: 2.5 } },
-    { id: 'gem-blue', tier: 'low', label: 'blue gem', payout: { 8: 0.3, 10: 0.7, 12: 2 } },
+    { id: 'ring', tier: 'high', label: 'ring', payout: { 8: 2.5, 10: 10, 12: 25 } },
+    { id: 'hourglass', tier: 'high', label: 'hourglass', payout: { 8: 2, 10: 5, 12: 15 } },
+    { id: 'chalice', tier: 'high', label: 'chalice', payout: { 8: 1.5, 10: 2, 12: 12 } },
+    { id: 'gem-red', tier: 'mid', label: 'red gem', payout: { 8: 1, 10: 1.5, 12: 10 } },
+    { id: 'gem-purple', tier: 'mid', label: 'purple gem', payout: { 8: 0.8, 10: 1.2, 12: 8 } },
+    { id: 'gem-yellow', tier: 'low', label: 'yellow gem', payout: { 8: 0.5, 10: 1, 12: 5 } },
+    { id: 'gem-green', tier: 'low', label: 'green gem', payout: { 8: 0.4, 10: 0.9, 12: 4 } },
+    { id: 'gem-blue', tier: 'low', label: 'blue gem', payout: { 8: 0.25, 10: 0.75, 12: 2 } },
     { id: 'zeus-bolt', tier: 'scatter', label: 'lightning bolt', payout: { 4: 3, 5: 5, 6: 100 } },
   ],
-  // Calibrated for ~96.5% RTP and ~0.5% scatter trigger rate.
-  weightsBase: [4, 6, 9, 11, 12, 14, 16, 16, 18, 2.05],
+  // Local occurrence weights. The public feature rules are reproduced,
+  // but provider reel strips/PAR distributions and RTP are not certified.
+  weightsBase: [4, 6, 9, 11, 12, 14, 16, 16, 18, 2.3],
   weightsFree: [6, 8, 10, 12, 13, 14, 14, 14, 14, 2.7],
-  // Multiplier orb frequencies tuned to match real Pragmatic Olympus
-  // (per public Stake-data analysis):
-  //   Base: ~12-15% per tumble → ~18-22% of base spins show ≥1 multiplier
-  //   Free: ~55-65% per tumble → ~88-94% of free spins show ≥1 multiplier
-  // Was 9% / 45% — slightly under-frequent; bumped to 13% / 55% so Zeus
-  // visibly throws orbs on roughly the same fraction of spins as the
-  // real game. Multiplier value distribution unchanged (heavy 2-5×,
-  // rare 100×+ — already matches real Pragmatic published weights).
   multiplierTableBase: {
-    pPerTumble: 0.13,
+    pPerTumble: 0.025,
     maxPerTumble: 2,
     values: [
       [2, 22], [3, 16], [4, 13], [5, 10], [6, 7], [8, 6], [10, 5],

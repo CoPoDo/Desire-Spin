@@ -25,10 +25,13 @@ import { SpinReel } from './SpinReel';
 import { Paytable } from './Paytable';
 import { buyBonusRound, playRound } from './engine';
 import { CountUp } from '../../../components/ui/CountUp';
+import { CabinetControls } from './CabinetControls';
+import { ScatterAnticipationLabel } from './ScatterAnticipationLabel';
+import './authored-cabinets.css';
 import { CoinShower } from '../../../components/ui/CoinShower';
 import {
   TurboIcon, AutoplayIcon, InfoIcon, MusicIcon, MusicMutedIcon,
-  PlusIcon, MinusIcon, StopIcon, SpinArrowIcon,
+
 } from '../../../components/ui/icons';
 
 /**
@@ -186,6 +189,7 @@ export function ImmersiveSlotView({
   const [newKeys, setNewKeys] = useState<Set<string>>(new Set());
   const [winTotal, setWinTotal] = useState(0);
   const [statusMsg, setStatusMsg] = useState<string>('');
+  const [featureMultiplier, setFeatureMultiplier] = useState(0);
   const [freeSpins, setFreeSpins] = useState<{ remaining: number; total: number; running: number } | null>(null);
   const [bigWin, setBigWin] = useState<{ payout: number; tier: WinTier } | null>(null);
   // Welcome splash on first visit — disappears on user interaction or 3.5s.
@@ -337,10 +341,6 @@ export function ImmersiveSlotView({
       // the end with the total payout).
       let inFsLocal = mode === 'free';
       let lastFrameKind: string | null = null;
-      // Pre-spin pause matches real game's "reels stopping" gap (~220ms).
-      // Skipped under turbo + tap-to-skip — those want maximum speed.
-      const presDur = turboRef.current ? (skipRef.current ? 0 : 80) : 220;
-      if (presDur > 0 && !reduceMotion) await sleep(presDur);
       for (const frame of frames) {
         if (!aliveRef.current) return;
         if (reduceMotion || skipRef.current) {
@@ -539,113 +539,33 @@ export function ImmersiveSlotView({
             break;
           }
           case 'multipliersLanded': {
-            // Real Pragmatic Olympus: when Zeus drops multiplier orbs,
-            // the board pauses and orbs land ONE-BY-ONE with a thunder
-            // crack on each. Previous version dropped them all
-            // simultaneously which felt rushed. Now stagger ~280ms per
-            // orb (140ms in turbo) with per-orb thunder + bolt + impact.
+            // These exact orbs already arrived on the committed initial/tumble
+            // grid. Celebrate their landing without replacing cells, blanking
+            // symbols, or replaying a second drop after they have settled.
             const isZeus = cfg.id === 'gates-of-olympus';
-            const STAGGER = skipRef.current ? 70 : turboRef.current ? 140 : 280;
             const landings = frame.landings;
-            // Build the pre-landing grid by stripping new orb cells back
-            // to placeholders. lastGrid (previous frame's grid) doesn't
-            // include these new orbs, so it's the cleanest "before" state.
-            const stripFresh = (g: TGrid): TGrid => {
-              const next: TGrid = g.map((col) => col.map((c) => ({ ...c })));
-              return next;
-            };
-            const preGrid: TGrid = lastGrid
-              ? stripFresh(lastGrid)
-              : (() => {
-                  // No lastGrid: synthesise one from frame.grid by clearing
-                  // the new landing cells. The cell will render as empty
-                  // briefly, which is fine for the rare initial-spin case.
-                  const c = stripFresh(frame.grid);
-                  for (const m of landings) {
-                    const cell = c[m.col]?.[m.row];
-                    if (cell && cell.key === m.key) {
-                      cell.multiplier = undefined;
-                    }
-                  }
-                  return c;
-                })();
-            // Show the "before" grid first so orbs visibly POP IN one
-            // at a time.
-            setGrid(preGrid);
-            // Speak Zeus's line on the first orb (gives a "Zeus is
-            // intervening" cue alongside the eyes-glow + thunder).
-            if (isZeus && landings.length > 0) {
-              setZeusEyesGlow(true);
-              speakAndShout(zeusLineFor('multiplierLanded'));
-              scheduleSpin(() => setZeusEyesGlow(false), STAGGER * landings.length + 600);
-            }
-
-            // Stagger each orb's landing with full audiovisual emphasis.
-            const buildBolt = (col: number, row: number) => {
-              const startX = 18, startY = 22;
-              const endX = ((col + 0.5) / cfg.cols) * 100;
-              const endY = ((row + 0.5) / cfg.rows) * 100;
-              const dx = endX - startX, dy = endY - startY;
-              const seg = (t: number, jitter: number) => {
-                const x = startX + dx * t + (Math.random() - 0.5) * jitter;
-                const y = startY + dy * t + (Math.random() - 0.5) * jitter;
-                return `${x.toFixed(2)} ${y.toFixed(2)}`;
-              };
-              return `M ${startX} ${startY} L ${seg(0.28, 4)} L ${seg(0.55, 5)} L ${seg(0.78, 4)} L ${endX} ${endY}`;
-            };
-
-            for (let i = 0; i < landings.length; i++) {
-              if (!aliveRef.current) return;
-              if (skipRef.current) break;
-              const m = landings[i]!;
-              // Stage the grid: include landings[0..i].
-              const staged: TGrid = preGrid.map((col) => col.map((c) => ({ ...c })));
-              for (let j = 0; j <= i; j++) {
-                const lj = landings[j]!;
-                const cell = staged[lj.col]?.[lj.row];
-                if (cell) {
-                  cell.symbolId = '__mult__';
-                  cell.multiplier = lj.value;
-                  cell.key = lj.key;
-                }
-              }
-              setGrid(staged);
-              lastGrid = staged;
-              // Mark THIS orb's key as "new" so the Grid's per-cell drop
-              // animation fires (initial scale 0.85, drop-in from above)
-              // instead of materialising silently.
-              setNewKeys((prev) => {
-                const next = new Set(prev);
-                next.add(m.key);
-                return next;
-              });
-              // Per-orb visual emphasis (cleared by the next iteration
-              // or the post-loop settle).
-              setFloatingMults([m]);
-              setOrbImpacts([{ id: `oi-${m.key}`, col: m.col, row: m.row }]);
-              if (isZeus) {
-                setZeusBolts([{ id: `zb-${m.key}`, d: buildBolt(m.col, m.row), col: m.col, row: m.row }]);
-                sound.play('thunder');
-              } else {
-                sound.play('multiplier');
-              }
-              // Per-orb screen rumble scaled to this orb's value.
-              if (m.value >= 100) setOrbRumble('lg');
-              else if (m.value >= 25) setOrbRumble('md');
-              else if (m.value >= 10) setOrbRumble('sm');
-              else setOrbRumble(null);
-              // Wait before the next orb (unless this is the last).
-              if (i < landings.length - 1) await sleep(STAGGER);
-            }
-
-            // Final settle: ensure exact frame grid + clear short-lived
-            // visual flourishes so the next frame doesn't inherit them.
+            const stagger = turboRef.current ? 140 : 240;
             setGrid(frame.grid);
             lastGrid = frame.grid;
-            scheduleSpin(() => setOrbImpacts([]), 700);
-            scheduleSpin(() => setZeusBolts([]), 480);
-            scheduleSpin(() => setFloatingMults([]), 800);
-            scheduleSpin(() => setOrbRumble(null), 700);
+            if (isZeus && landings.length) {
+              setZeusEyesGlow(true);
+              speakAndShout(zeusLineFor('multiplierLanded'));
+              scheduleSpin(() => setZeusEyesGlow(false), stagger * landings.length + 450);
+            }
+            for (let index = 0; index < landings.length; index++) {
+              if (!aliveRef.current || skipRef.current) break;
+              const orb = landings[index]!;
+              setOrbImpacts([{ id: `oi-${orb.key}`, col: orb.col, row: orb.row }]);
+              if (isZeus) {
+                const x = ((orb.col + .5) / cfg.cols) * 100;
+                const y = ((orb.row + .5) / cfg.rows) * 100;
+                setZeusBolts([{ id: `zb-${orb.key}`, d: `M 18 22 L ${(18 + x) / 2 + 2} ${(22 + y) / 2 - 2} L ${(18 + x) / 2 - 1} ${(22 + y) / 2 + 2} L ${x} ${y}`, col: orb.col, row: orb.row }]);
+              }
+              sound.play(isZeus ? 'thunder' : 'multiplier');
+              if (index < landings.length - 1) await sleep(stagger);
+            }
+            scheduleSpin(() => setOrbImpacts([]), 550);
+            scheduleSpin(() => setZeusBolts([]), 350);
             break;
           }
           case 'tumble': {
@@ -743,12 +663,14 @@ export function ImmersiveSlotView({
             break;
           }
           case 'freeSpinsBegin': {
+            setFeatureMultiplier(0);
             setFreeSpins({ remaining: frame.total, total: frame.total, running: 0 });
             sound.play('free-spins-trigger');
             inFsLocal = true;
             break;
           }
           case 'multiplierApplied': {
+            if (cfg.multiplierFreeMode === 'accumulate-on-win') setFeatureMultiplier(frame.sumOfMultipliers);
             sound.play('mega-win');
             setStatusMsg(`×${fmtMultiplier(frame.sumOfMultipliers)} → ${fmtCurrency(frame.finalPayout)}`);
             if (cfg.id === 'gates-of-olympus' && frame.sumOfMultipliers >= 50) {
@@ -768,6 +690,7 @@ export function ImmersiveSlotView({
             break;
           }
           case 'freeSpinsEnd': {
+            setFeatureMultiplier(0);
             sound.play('free-spins-end');
             // Show outro overlay summarizing the FS session win.
             setFsOutroOverlay({ totalPayout: frame.totalPayout });
@@ -860,7 +783,7 @@ export function ImmersiveSlotView({
 
   const runRound = useCallback(
     async (mode: 'spin' | 'buy') => {
-      if (busyRef.current || !Number.isFinite(bet) || bet <= 0) return;
+      if (busyRef.current || !Number.isFinite(bet) || bet <= 0 || (mode === 'buy' && ante)) return;
       if (bigWin || fsOutroOverlay || fsOverlay) { requestSkip(); return; }
       const baseBet = bet;
       const adjBet = ante ? +(bet * cfg.ante.betMultiplier).toFixed(2) : bet;
@@ -891,9 +814,9 @@ export function ImmersiveSlotView({
       setZeusBolts([]);
       setOrbRumble(null);
       setZeusCallout(null);
-      // Pre-spin: blur+darken the previous grid for ~180ms so the swap to
-      // the new grid feels like a real "reels stopped" transition.
-      setPrespin(true);
+      // SpinReel now carries the current board into motion itself. Fading
+      // it out first would visibly restore the old board at strip mount.
+      setPrespin(false);
       sound.play('spin');
       // Kick off background music on first user interaction (browser autoplay
       // policy requires a user gesture). switchIntensity is no-op if already
@@ -927,7 +850,7 @@ export function ImmersiveSlotView({
           nonce: seeds.nonce,
         });
         session.recordSpin(cost, payout, result.freeSpinsAwarded > 0);
-        await playFrames(result.frames, baseBet, mode === 'buy' ? 'free' : 'base');
+        await playFrames(result.frames, baseBet, 'base');
         if (aliveRef.current) {
           setWinTotal(payout);
           setStatusMsg(payout >= (cfg.maxWinMultiplier ?? 5000) * baseBet ? `Maximum round win · ${fmtCurrency(payout)}` : payout > 0 ? `${fmtCurrency(payout)} total win` : 'No win · ready to spin');
@@ -1180,104 +1103,16 @@ export function ImmersiveSlotView({
   } as CSSProperties;
 
   return (
-    <div className="absolute inset-0 flex flex-col" style={fsThemeStyle}>
+    <div className={`authored-game ${cfg.id === 'gates-of-olympus' ? 'authored-olympus' : 'authored-bonanza'} ${inFree ? 'is-free' : ''}`} style={fsThemeStyle}>
+      <div className="authored-world" aria-hidden="true">{backdropSrc ? <img src={backdropSrc} alt="" draggable={false} /> : backdropElement}</div>
+      <div className="authored-layout"><div className="authored-cabinet">
+      <h1 className="authored-wordmark">{cfg.id === 'gates-of-olympus' ? <><small>GATES OF</small><strong>OLYMPUS</strong></> : <><strong>Sweet Bonanza</strong><small>FRUIT & FORTUNE</small></>}</h1>
       <p className="sr-only" role="status" aria-live="polite">{statusMsg}</p>
-      {/* Persistent free-spins HUD — fixed top, shows over the floating top
-          bar during a free-spins session. Three stats: spin counter, current
-          on-grid multiplier total (sum of all visible orbs), and total won.
-          Real-Olympus parity. */}
-      {inFree && freeSpins && (
-        <div
-          className="absolute top-[max(env(safe-area-inset-top),6px)] mt-[52px] left-1/2 -translate-x-1/2 z-[35] flex items-stretch gap-2 px-3 py-1.5 rounded-2xl whitespace-nowrap olympus-fs-counter"
-          // Override the .olympus-fs-counter gold gradient with the
-          // slot's own accent so the FS HUD feels native — Bonanza
-          // glows pink, Cantina warm orange, Wolf violet, etc.
-          style={{
-            background: `linear-gradient(180deg, ${cfg.theme.accent}38, ${cfg.theme.accent}11)`,
-            borderColor: `${cfg.theme.accent}8c`,
-            boxShadow: `inset 0 0 0 1px rgba(255,255,255,.06), 0 0 18px ${cfg.theme.glow}, 0 4px 14px rgba(0,0,0,.45)`,
-          }}
-        >
-          <div className="flex flex-col items-center px-1.5">
-            <span className="text-[8px] uppercase tracking-widest" style={{ color: cfg.theme.accent, opacity: 0.85 }}>Spins</span>
-            <span
-              className="font-serif italic font-bold text-lg leading-none tabular-nums"
-              style={{ color: cfg.theme.accent, textShadow: `0 0 12px ${cfg.theme.glow}` }}
-            >
-              {(freeSpins.total - freeSpins.remaining)}/{freeSpins.total}
-            </span>
-          </div>
-          <span className="self-center" style={{ color: cfg.theme.accent, opacity: 0.4 }}>·</span>
-          {/* TOTAL MULTIPLIER — more prominent: brighter when active, springs/
-              pulses when value increases. Real Olympus emphasizes this stat. */}
-          <motion.div
-            className="flex flex-col items-center px-2 rounded-xl"
-            animate={gridMultiplierTotal > 0 ? {
-              scale: [1, 1.08, 1],
-            } : { scale: 1 }}
-            transition={{ duration: 0.6 }}
-            key={gridMultiplierTotal}
-            style={gridMultiplierTotal > 0 ? {
-              background: `linear-gradient(180deg, ${cfg.theme.accent}38, ${cfg.theme.accent}10)`,
-              boxShadow: `0 0 14px ${cfg.theme.glow}`,
-            } : undefined}
-          >
-            <span className="text-[8px] uppercase tracking-widest" style={{ color: cfg.theme.accent, opacity: 0.85 }}>Total Mult</span>
-            <CountUp
-              value={gridMultiplierTotal}
-              format={(n) => `${n.toFixed(0)}×`}
-              duration={350}
-              className="font-serif italic font-extrabold text-xl leading-none tabular-nums"
-              style={gridMultiplierTotal > 0 ? {
-                color: '#fff7d6',
-                textShadow: `0 0 14px ${cfg.theme.accent}, 0 0 24px ${cfg.theme.glow}`,
-              } : { color: cfg.theme.accent, opacity: 0.55 }}
-            />
-          </motion.div>
-          <span className="self-center" style={{ color: cfg.theme.accent, opacity: 0.4 }}>·</span>
-          <div className="flex flex-col items-center px-1.5">
-            <span className="text-[8px] uppercase tracking-widest" style={{ color: cfg.theme.accent, opacity: 0.85 }}>Won</span>
-            <CountUp
-              value={freeSpins.running}
-              format={fmtCurrency}
-              className="font-serif italic font-bold text-lg leading-none tabular-nums"
-              style={{ color: cfg.theme.accent, textShadow: `0 0 12px ${cfg.theme.glow}` }}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* "Tap to skip" hint — pulses subtly during a busy spin to remind the
-          player they can fast-forward. Hidden on autoplay (which already
-          shows AUTO indicator) and during the FS overlays (those are short).
-          Real Pragmatic Olympus shows a similar hint. */}
-      <AnimatePresence>
-        {busy && !autoplay && !fsOverlay && !fsOutroOverlay && !lightningStrike && !bigWin && (
-          <motion.div
-            className="absolute z-20 left-1/2 pointer-events-none px-3 py-1 rounded-full text-[9px] uppercase tracking-[0.24em] font-mono font-semibold"
-            style={{
-              bottom: '120px',
-              transform: 'translateX(-50%)',
-              background: 'rgba(0,0,0,0.45)',
-              // Tap-to-skip hint — was hardcoded gold border + gold text
-              // shadow. Now uses the slot's accent so the hint reads
-              // native to each game (pink on Bonanza, violet on Wolf,
-              // etc.). Real Pragmatic varies this colour per slot.
-              color: cfg.theme.accent,
-              border: `1px solid ${cfg.theme.accent}4d`,
-              textShadow: `0 0 10px ${cfg.theme.glow}`,
-            }}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: [0.45, 0.85, 0.45] }}
-            exit={{ opacity: 0, y: 4, transition: { opacity: { duration: 0.15, repeat: 0 }, y: { duration: 0.15 } } }}
-            transition={{
-              opacity: { duration: 1.4, repeat: Infinity, ease: 'easeInOut' },
-            }}
-          >
-            Tap to skip
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {inFree && freeSpins && <div className="authored-free-hud" role="status">
+        <span>Free spins<strong>{freeSpins.remaining}/{freeSpins.total}</strong></span>
+        <span>{cfg.multiplierFreeMode === 'accumulate-on-win' ? 'Feature' : 'Multiplier'}<strong>{cfg.multiplierFreeMode === 'accumulate-on-win' ? featureMultiplier : gridMultiplierTotal}×</strong></span>
+        <span>Won<strong>{fmtCurrency(freeSpins.running)}</strong></span>
+      </div>}
 
       {/* Painted backdrop scene fills available space, preserves aspect ratio.
           pt-12 clears the floating top bar; min-h-0 + overflow-hidden lets the
@@ -1286,7 +1121,7 @@ export function ImmersiveSlotView({
       <button
         type="button"
         onClick={() => { if (busyRef.current) requestSkip(); }}
-        className="flex-1 min-h-0 flex items-center justify-center overflow-hidden pt-12 pb-1 px-2 cursor-default focus:outline-none"
+        className="authored-reel-button"
         aria-label={busy ? 'Tap to skip animation' : 'Reels'}
       >
         <div
@@ -1317,6 +1152,7 @@ export function ImmersiveSlotView({
             maxWidth: '100%',
           }}
         >
+          <div className="legacy-scene" aria-hidden="true">
           {backdropSrc ? (
             <>
               <img
@@ -1517,11 +1353,12 @@ export function ImmersiveSlotView({
               }} />
             </motion.div>
           </AnimatePresence>
+          </div>
           {/* Grid positioned inside the arch. The pre-spin transition
               matches what the real-game inspiration does — see
               prespinStyle docs in types.ts. */}
           <div
-            className="absolute"
+            className="authored-grid absolute"
             style={(() => {
               const base = {
                 left: `${liveInsets.left}%`,
@@ -1588,6 +1425,7 @@ export function ImmersiveSlotView({
               <SpinReel
                 cfg={cfg}
                 renderCell={renderCell}
+                initialGrid={grid}
                 finalGrid={reelSpinTarget}
                 /* Turbo runs a quick reel (still visible) instead of an
                  * instant blink; normal speed is a full Vegas spin. */
@@ -1620,7 +1458,7 @@ export function ImmersiveSlotView({
                   left: `${liveInsets.left + c * (liveInsets.width / cfg.cols)}%`,
                   top: `${liveInsets.top}%`,
                   width: `${liveInsets.width / cfg.cols}%`,
-                  height: `${liveInsets.width / cfg.cols * (cfg.rows / 1.2)}%`,
+                  height: '100%',
                   background:
                     'linear-gradient(180deg, rgba(255,233,168,0.0) 0%, rgba(255,200,80,0.18) 50%, rgba(255,233,168,0.0) 100%)',
                   mixBlendMode: 'screen',
@@ -1640,7 +1478,7 @@ export function ImmersiveSlotView({
                 className="absolute pointer-events-none rounded-full z-[2]"
                 style={{
                   left: `${liveInsets.left + (idleGlint.col + 0.5) * (liveInsets.width / cfg.cols)}%`,
-                  top: `${liveInsets.top + (idleGlint.row + 0.5) * (liveInsets.width / cfg.cols)}%`,
+                  top: `${liveInsets.top + (idleGlint.row + 0.5) * (liveInsets.width / cfg.rows)}%`,
                   width: `${liveInsets.width / cfg.cols * 0.6}%`,
                   aspectRatio: '1 / 1',
                   transform: 'translate(-50%, -50%)',
@@ -1714,7 +1552,7 @@ export function ImmersiveSlotView({
                 className="absolute pointer-events-none rounded-full z-[6]"
                 style={{
                   left: `${liveInsets.left + (imp.col + 0.5) * (liveInsets.width / cfg.cols)}%`,
-                  top: `${liveInsets.top + (imp.row + 0.5) * (liveInsets.width / cfg.cols)}%`,
+                  top: `${liveInsets.top + (imp.row + 0.5) * (liveInsets.width / cfg.rows)}%`,
                   width: `${liveInsets.width / cfg.cols * 0.9}%`,
                   aspectRatio: '1 / 1',
                   transform: 'translate(-50%, -50%)',
@@ -1749,7 +1587,7 @@ export function ImmersiveSlotView({
                       className="absolute pointer-events-none z-[8] rounded-full"
                       style={{
                         left: `${liveInsets.left + (imp.col + 0.5) * (liveInsets.width / cfg.cols)}%`,
-                        top: `${liveInsets.top + (imp.row + 0.5) * (liveInsets.width / cfg.cols)}%`,
+                        top: `${liveInsets.top + (imp.row + 0.5) * (liveInsets.width / cfg.rows)}%`,
                         width: '4px',
                         height: '4px',
                         background: '#fffbe1',
@@ -1780,7 +1618,7 @@ export function ImmersiveSlotView({
                   // (pink on Bonanza, violet on Wolf, etc.).
                   color: cfg.theme.accent,
                   left: `${liveInsets.left + (m.col + 0.5) * (liveInsets.width / cfg.cols)}%`,
-                  top: `${liveInsets.top + (m.row + 0.5) * (liveInsets.width / cfg.cols)}%`,
+                  top: `${liveInsets.top + (m.row + 0.5) * (liveInsets.width / cfg.rows)}%`,
                   textShadow: `0 0 18px ${cfg.theme.glow}, 0 2px 4px rgba(0,0,0,.7)`,
                   fontSize: 'clamp(20px, 5vw, 32px)',
                   transform: 'translate(-50%, -50%)',
@@ -1809,7 +1647,7 @@ export function ImmersiveSlotView({
                 className="absolute pointer-events-none z-[6]"
                 style={{
                   left: `${liveInsets.left + (f.col + 0.5) * (liveInsets.width / cfg.cols)}%`,
-                  top: `${liveInsets.top + (f.row + 0.5) * (liveInsets.width / cfg.cols)}%`,
+                  top: `${liveInsets.top + (f.row + 0.5) * (liveInsets.width / cfg.rows)}%`,
                   width: `${liveInsets.width / cfg.cols * 1.4}%`,
                   aspectRatio: '1 / 1',
                   transform: 'translate(-50%, -50%)',
@@ -1849,9 +1687,8 @@ export function ImmersiveSlotView({
             )}
           </AnimatePresence>
 
-          {/* Anticipation: stronger pulsing amber-red border + on-screen
-              callout when 3+ scatters are visible (one away from a free
-              spins trigger). Real Olympus does this exact tension build. */}
+          {/* Stronger scatter hint uses the current base/feature threshold.
+              Only engine award events announce any earned free spins. */}
           <AnimatePresence>
             {anticipation >= 3 && (
               <motion.div
@@ -1877,7 +1714,7 @@ export function ImmersiveSlotView({
                     textShadow: '0 0 8px rgba(255,200,40,.9), 0 1px 2px rgba(0,0,0,.6)',
                   }}
                 >
-                  {anticipation} scatters · 1 from bonus!
+                  <ScatterAnticipationLabel count={anticipation} cfg={cfg} inFree={inFree} />
                 </div>
               </motion.div>
             )}
@@ -1893,7 +1730,7 @@ export function ImmersiveSlotView({
           <AnimatePresence>
             {winBursts.map((b) => {
               const cx = liveInsets.left + (b.col + 0.5) * (liveInsets.width / cfg.cols);
-              const cy = liveInsets.top + (b.row + 0.5) * (liveInsets.width / cfg.cols);
+              const cy = liveInsets.top + (b.row + 0.5) * (liveInsets.width / cfg.rows);
               return (
                 <div
                   key={b.id}
@@ -1942,7 +1779,7 @@ export function ImmersiveSlotView({
                 className="absolute pointer-events-none z-[1] rounded-full"
                 style={{
                   left: `${liveInsets.left + (p.col + 0.5) * (liveInsets.width / cfg.cols)}%`,
-                  top: `${liveInsets.top + (p.row + 0.5) * (liveInsets.width / cfg.cols)}%`,
+                  top: `${liveInsets.top + (p.row + 0.5) * (liveInsets.width / cfg.rows)}%`,
                   width: `${liveInsets.width / cfg.cols * 3}%`,
                   aspectRatio: '1 / 1',
                   transform: 'translate(-50%, -50%)',
@@ -1969,7 +1806,7 @@ export function ImmersiveSlotView({
                 className="absolute pointer-events-none flex items-center justify-center z-[5]"
                 style={{
                   left: `${liveInsets.left + (p.col + 0.5) * (liveInsets.width / cfg.cols)}%`,
-                  top: `${liveInsets.top + (p.row + 0.5) * (liveInsets.width / cfg.cols)}%`,
+                  top: `${liveInsets.top + (p.row + 0.5) * (liveInsets.width / cfg.rows)}%`,
                   transform: 'translate(-50%, -50%)',
                 }}
                 initial={{ scale: 0.2, opacity: 0, y: 12 }}
@@ -2199,8 +2036,8 @@ export function ImmersiveSlotView({
       {/* Status row above the bottom bar — switches between Last win,
           live cascade message, autoplay indicator, and the idle "Place
           your bet" prompt that real game shows when reels are at rest. */}
-      <div className="flex items-center justify-between px-4 h-6 text-[11px] font-mono">
-        <span className="text-ink-dim">
+      <div className="authored-status">
+        <span className="last-win">
           Last win{' '}
           <CountUp
             value={winTotal}
@@ -2238,208 +2075,28 @@ export function ImmersiveSlotView({
         ) : null}
       </div>
 
-      {/* Bottom action bar — Pragmatic-style mobile spin controls */}
-      <div
-        className="flex items-stretch justify-between gap-2 px-3 pt-2 pb-[max(env(safe-area-inset-bottom),10px)] bg-gradient-to-t from-black/85 via-black/55 to-transparent"
-      >
-        {/* Left column: bet stepper + buy bonus stacked */}
-        <div className="flex flex-col items-center justify-end gap-1.5 min-w-[96px]">
-          <div className="flex items-center gap-1 mt-0.5">
-            <button
-              aria-label="Decrease bet"
-              onClick={stepDown}
-              disabled={busy || autoplay !== null || presetIdx === 0}
-              className="w-8 h-8 rounded-full bg-bg-card border border-edge text-ink hover:bg-bg-hover disabled:opacity-40 flex items-center justify-center transition active:scale-90 disabled:active:scale-100"
-            >
-              <MinusIcon />
-            </button>
-            <button
-              onClick={() => setBetSheetOpen(true)}
-              disabled={busy || autoplay !== null}
-              className="flex flex-col items-center"
-            >
-              <span className="text-[8px] uppercase tracking-[0.2em] text-ink-mute leading-none">
-                {ante ? 'Total' : 'Bet'}
-              </span>
-              <span
-                className="font-mono font-semibold text-sm tabular-nums min-w-[52px] text-center"
-                style={{
-                  // Bet readout — was hardcoded Olympus gold (#ffe9a8 +
-                  // gold glow). Now uses the slot's theme accent so the
-                  // value pops in each slot's own colour.
-                  color: cfg.theme.accent,
-                  textShadow: `0 0 10px ${cfg.theme.glow}`,
-                }}
-              >
-                {fmtCurrency(ante ? bet * cfg.ante.betMultiplier : bet)}
-              </span>
-            </button>
-            <button
-              aria-label="Increase bet"
-              onClick={stepUp}
-              disabled={busy || autoplay !== null || presetIdx === betPresets.length - 1}
-              className="w-8 h-8 rounded-full bg-bg-card border border-edge text-ink hover:bg-bg-hover disabled:opacity-40 flex items-center justify-center transition active:scale-90 disabled:active:scale-100"
-            >
-              <PlusIcon />
-            </button>
-          </div>
-          <button
-            onClick={() => setBuyBonusOpen(true)}
-            disabled={busy || inFree || autoplay !== null || balance.balance < buyCost}
-            className="w-full px-2 py-1.5 rounded-lg disabled:opacity-40 disabled:saturate-50 relative overflow-hidden transition active:scale-[0.97] disabled:active:scale-100"
-            style={{
-              // Theme-tinted Buy Bonus button — bright accent at top
-              // fading into a deeper anchor at the bottom. Was a fixed
-              // magenta/purple gradient that clashed with non-Bonanza
-              // palettes (Olympus gold, Wanted rust, etc.).
-              background: `linear-gradient(180deg, ${cfg.theme.accent} 0%, ${cfg.theme.accent}c0 35%, rgba(20,8,30,.7) 70%, rgba(20,8,30,.95) 100%)`,
-              border: '1.5px solid #ffd37a',
-              boxShadow: `inset 0 1px 0 rgba(255,233,168,.55), inset 0 -2px 0 rgba(20,8,30,.55), 0 0 14px ${cfg.theme.glow}, 0 4px 8px rgba(0,0,0,.5)`,
-            }}
-          >
-            <div className="text-[8px] font-bold uppercase tracking-[0.18em] text-[#fff7d6] leading-none"
-                 style={{ textShadow: '0 1px 0 rgba(20,8,30,.7), 0 0 6px rgba(255,200,80,.7)' }}>
-              Buy Free Spins
-            </div>
-            <div className="text-[11px] font-mono font-bold text-[#fff7d6] mt-0.5 leading-none tabular-nums"
-                 style={{ textShadow: '0 1px 0 rgba(20,8,30,.7), 0 0 6px rgba(255,200,80,.95)' }}>
-              {fmtCurrency(buyCost)}
-            </div>
-          </button>
-        </div>
-
-        {/* Big round SPIN button (or stop button when autoplaying) */}
-        <button
-          aria-label={autoplay ? 'Stop autoplay' : busy ? 'Skip to result' : bigWin || fsOutroOverlay || fsOverlay ? 'Dismiss win' : 'Spin'}
-          onClick={() => {
-            if (autoplay) { setAutoplay(null); return; }
-            if (busyRef.current) { requestSkip(); return; }
-            runRound('spin');
-          }}
-          disabled={!autoplay && !busy && balance.balance < (ante ? bet * cfg.ante.betMultiplier : bet)}
-          className="spin-btn flex-shrink-0"
-          data-fs={inFree ? '1' : undefined}
-        >
-          <span className="spin-btn-inner">
-            {autoplay ? (
-              <span className="text-[#fff7d6] flex items-center justify-center" style={{ filter: 'drop-shadow(0 0 8px rgba(255,200,80,.95))' }}>
-                <StopIcon size={26} />
-              </span>
-            ) : inFree && freeSpins ? (
-              // FS mode — show remaining count prominently. Real Pragmatic
-              // shows the FS counter on the spin button during bonus.
-              <span className="flex flex-col items-center justify-center leading-none">
-                <span className="font-serif italic font-extrabold text-[#fff7d6] tabular-nums"
-                      style={{ fontSize: 'clamp(20px, 5.2vw, 30px)', textShadow: '0 0 10px rgba(255,200,80,.95), 0 1px 0 rgba(60,30,5,.7)' }}>
-                  {freeSpins.remaining}
-                </span>
-                <span className="font-mono text-[#fff7d6]/70 leading-none mt-0.5"
-                      style={{ fontSize: 'clamp(7px, 1.8vw, 10px)', letterSpacing: '0.18em', textShadow: '0 1px 0 rgba(60,30,5,.6)' }}>
-                  FREE
-                </span>
-              </span>
-            ) : busy ? (
-              <span className="text-[#fff7d6] flex items-center justify-center" style={{ filter: 'drop-shadow(0 0 8px rgba(255,200,80,.95))' }}>
-                <StopIcon size={26} />
-              </span>
-            ) : (
-              <span className="text-[#fff7d6] flex items-center justify-center" style={{ filter: 'drop-shadow(0 0 10px rgba(255,200,80,.95))' }}>
-                <SpinArrowIcon size={32} strokeWidth={2.6} />
-              </span>
-            )}
-          </span>
-        </button>
-
-        {/* Right column: turbo + auto + ante */}
-        <div className="flex flex-col items-center justify-end gap-1.5 min-w-[96px]">
-          <div className="flex items-center gap-1.5">
-            <button
-              aria-label={turbo ? 'Turbo on' : 'Turbo off'}
-              onClick={() => setTurbo((t) => !t)}
-              className="w-8 h-8 rounded-full border flex items-center justify-center transition"
-              style={
-                turbo
-                  ? {
-                      // Active turbo button — was hardcoded gold gradient.
-                      // Now uses theme accent so the toggle feels native
-                      // to the slot.
-                      background: `linear-gradient(180deg, ${cfg.theme.accent} 0%, ${cfg.theme.accent}dd 60%, rgba(0,0,0,.4) 100%)`,
-                      borderColor: cfg.theme.accent,
-                      color: '#1a0f00',
-                      boxShadow: `0 0 14px ${cfg.theme.glow}`,
-                    }
-                  : { color: 'var(--ink-dim, #9aa3b2)' }
-              }
-            >
-              <TurboIcon size={16} />
-            </button>
-            <button
-              aria-label="Auto play"
-              onClick={() => setAutoplaySheetOpen(true)}
-              disabled={busy || inFree}
-              className="w-8 h-8 rounded-full bg-bg-card border border-edge text-ink-dim hover:bg-bg-hover disabled:opacity-40 flex items-center justify-center transition active:scale-90 disabled:active:scale-100"
-            >
-              <AutoplayIcon size={16} />
-            </button>
-            <button
-              aria-label="Game info / paytable"
-              onClick={() => setPaytableOpen(true)}
-              className="w-8 h-8 rounded-full bg-bg-card border border-edge text-ink-dim hover:bg-bg-hover flex items-center justify-center transition active:scale-90"
-            >
-              <InfoIcon size={16} />
-            </button>
-            <button
-              aria-label={music.musicEnabled ? 'Music on' : 'Music off'}
-              onClick={() => music.setMusicEnabled(!music.musicEnabled)}
-              className="w-8 h-8 rounded-full border flex items-center justify-center bg-bg-card"
-              style={
-                music.musicEnabled
-                  ? {
-                      // Music-on indicator now uses theme accent border
-                      // + accent icon. Was hardcoded gold even on Wolf
-                      // Gold / Bonanza / etc.
-                      borderColor: `${cfg.theme.accent}66`,
-                      color: cfg.theme.accent,
-                    }
-                  : { borderColor: 'var(--edge-color, #2a3142)', color: 'var(--ink-mute, #6b7280)' }
-              }
-            >
-              {music.musicEnabled ? <MusicIcon size={16} /> : <MusicMutedIcon size={16} />}
-            </button>
-          </div>
-          <button
-            onClick={() => setAnte((v) => !v)}
-            disabled={busy || inFree || autoplay !== null}
-            aria-pressed={ante}
-            className="w-full px-2 py-1 rounded-lg text-[10px] uppercase tracking-[0.16em] font-bold leading-none transition active:scale-95 disabled:opacity-40 disabled:active:scale-100"
-            style={
-              ante
-                ? {
-                    // Active ante toggle — was hardcoded gold. Now derives
-                    // from the slot's theme accent so each game's "ante on"
-                    // state lights up in its own colour.
-                    background: `linear-gradient(180deg, ${cfg.theme.accent} 0%, ${cfg.theme.accent}cc 100%)`,
-                    color: '#1a0f00',
-                    border: `1px solid #fff5c4`,
-                    boxShadow:
-                      `inset 0 1px 0 rgba(255,255,255,.5), 0 0 14px ${cfg.theme.glow}`,
-                    textShadow: '0 1px 0 rgba(255,255,255,.4)',
-                  }
-                : {
-                    background: `${cfg.theme.accent}10`,
-                    color: cfg.theme.accent,
-                    border: `1px solid ${cfg.theme.accent}59`,
-                  }
-            }
-          >
-            Ante Bet
-          </button>
-        </div>
-      </div>
+      <CabinetControls
+        bet={ante ? bet * cfg.ante.betMultiplier : bet} win={winTotal} busy={busy}
+        spinLabel={autoplay ? 'Stop autoplay' : busy ? 'Skip to result' : 'Spin'}
+        onSpin={() => { if (autoplay) { setAutoplay(null); return; } if (busyRef.current) { requestSkip(); return; } void runRound('spin'); }}
+        spinDisabled={!autoplay && !busy && balance.balance < (ante ? bet * cfg.ante.betMultiplier : bet)}
+        controlsDisabled={busy || autoplay !== null} decreaseDisabled={presetIdx === 0} increaseDisabled={presetIdx === betPresets.length - 1}
+        onDecrease={stepDown} onIncrease={stepUp} onBet={() => setBetSheetOpen(true)}
+        toolbar={<>
+          <button aria-label={turbo ? 'Turbo on' : 'Turbo off'} aria-pressed={turbo} onClick={() => setTurbo((value) => !value)}><TurboIcon size={14} /><span className="cabinet-tool-label">Turbo</span></button>
+          <button aria-label="Auto play" onClick={() => setAutoplaySheetOpen(true)} disabled={busy || inFree}><AutoplayIcon size={14} /><span className="cabinet-tool-label">Auto</span></button>
+          <button className="cabinet-bonus" onClick={() => setBuyBonusOpen(true)} disabled={busy || inFree || ante || autoplay !== null || balance.balance < buyCost} title={ante ? "Turn Ante off to buy free spins" : undefined}><span>Buy free spins</span><strong>{fmtCurrency(buyCost)}</strong></button>
+          <button aria-pressed={ante} onClick={() => setAnte((value) => !value)} disabled={busy || inFree || autoplay !== null}>Ante {ante ? 'on' : 'off'}</button>
+          <button aria-label="Game info / paytable" onClick={() => setPaytableOpen(true)}><InfoIcon size={14} /><span className="cabinet-tool-label">Pays</span></button>
+          <button aria-label={music.musicEnabled ? 'Music on' : 'Music off'} aria-pressed={music.musicEnabled} onClick={() => music.setMusicEnabled(!music.musicEnabled)}>{music.musicEnabled ? <MusicIcon size={14} /> : <MusicMutedIcon size={14} />}</button>
+        </>}
+      />
+      </div></div>
+      <div className="authored-footnote">8+ anywhere pays · Play money</div>
 
       <Modal open={buyBonusOpen} onClose={() => setBuyBonusOpen(false)} title="Buy free spins?" width="sm">
         <p className="text-sm text-ink-dim">Spend {fmtCurrency(buyCost)} play credits for {cfg.freeSpinsAwardOnTrigger} free spins at a locked {fmtCurrency(bet)} stake. Wins are random and may be less than the cost. Local probabilities differ from the provider game.</p>
-        <div className="mt-5 flex gap-2"><button className="btn-ghost flex-1" onClick={() => setBuyBonusOpen(false)}>Cancel</button><button className="btn-primary flex-1" disabled={busy || !balance.canAfford(buyCost)} onClick={() => { setBuyBonusOpen(false); void runRound('buy'); }}>Buy · {fmtCurrency(buyCost)}</button></div>
+        <div className="mt-5 flex gap-2"><button className="btn-ghost flex-1" onClick={() => setBuyBonusOpen(false)}>Cancel</button><button className="btn-primary flex-1" disabled={busy || ante || !balance.canAfford(buyCost)} onClick={() => { setBuyBonusOpen(false); void runRound('buy'); }}>Buy · {fmtCurrency(buyCost)}</button></div>
       </Modal>
       <Modal open={autoplaySheetOpen} onClose={() => setAutoplaySheetOpen(false)} title="Autoplay" width="sm">
         <p className="mb-4 text-sm text-ink-dim">Uses the current stake. Stop any time. Autoplay pauses for menus and stops when you leave the tab or run out of credits.</p>
@@ -2755,31 +2412,7 @@ export function ImmersiveSlotView({
             >
               {fsOverlay.count} spins awarded
             </motion.div>
-            {[...Array(8)].map((_, i) => {
-              const left = 8 + (i * 11) + (i % 2 === 0 ? 4 : 0);
-              const top = 12 + ((i * 17) % 70);
-              const delay = (i * 0.08) % 0.5;
-              return (
-                <motion.span
-                  key={i}
-                  className="absolute text-4xl md:text-5xl"
-                  style={{
-                    left: `${left}%`,
-                    top: `${top}%`,
-                    // Glyph colour pulled from the slot's accent. White-
-                    // ish base with a theme-tinted halo so emoji-rendered
-                    // glyphs (chili 🌶, sheriff star ⭐, full moon 🌕,
-                    // scarab 🪲) keep their natural colour while the
-                    // surrounding glow matches the game palette.
-                    color: '#ffffff',
-                    textShadow: `0 0 18px ${cfg.theme.accent}f0, 0 0 36px ${cfg.theme.glow}`,
-                  }}
-                  initial={{ scale: 0, rotate: -180, opacity: 0 }}
-                  animate={{ scale: [0, 1.3, 1], rotate: [180, 20, 0], opacity: [0, 1, 1] }}
-                  transition={{ duration: 0.8, delay, ease: 'easeOut' }}
-                >{fsTriggerGlyph}</motion.span>
-              );
-            })}
+            <span className="sr-only">{fsTriggerGlyph}</span>
           </motion.div>
         )}
       </AnimatePresence>

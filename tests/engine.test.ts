@@ -45,7 +45,8 @@ describe('Slot engine — frame structure', () => {
 });
 
 describe('Slot engine — sane RTP envelope', () => {
-  // True RTP convergence needs 1M+ spins; with 8k spins and rare free-spins
+  // These are local occurrence models, not certified provider mathematics.
+  // With 8k spins and rare free-spins
   // triggers, variance is enormous (a single 1000× mega-win shifts the mean
   // by ~12.5 percentage points). We just check the engine produces a
   // non-degenerate configuration and isn't grinding the player to zero or
@@ -62,7 +63,7 @@ describe('Slot engine — sane RTP envelope', () => {
 
   it('Sweet Bonanza RTP smoke is in (0.6, 1.5)', () => {
     const v = rtp(sweetBonanzaConfig);
-    // Calibrated config converges to ~96.5% at 100k+ spins; 8k has high variance.
+    // A broad regression guard only; this does not assert an exact expected return.
     expect(v).toBeGreaterThan(0.6);
     expect(v).toBeLessThan(1.5);
   });

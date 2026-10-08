@@ -1,0 +1,234 @@
+{
+  "phase": "calibration",
+  "sourceChangedDuringRun": [],
+  "generatedAt": "2026-10-08T09:10:06.397Z",
+  "revision": "ed1f369772449b8d86690470e8ea29ac2a026e42",
+  "sourceHashes": {
+    "src/pages/slots/_shared/lineEngine.ts": "7ce7e88e46d53ae379e956b3e2b7c8f07d735ad6fdac6727d7ec921c8ea928cf",
+    "src/pages/slots/wanted-wild/index.tsx": "e2956b27eadf5c1bbc007b0cd8ebabd5e658002a1f1fdc533d8829630437c86c",
+    "src/pages/slots/wolf-gold/index.tsx": "fa0d3dcf7cda76339721d96119f049b6db11f2649983fa2e9386022c5725984d",
+    "src/pages/slots/sugar-rush/engine.ts": "99e54164bf788ff4f571379b68dccdfb8fa27f8fb9380d0285e3b78c95def384",
+    "src/pages/slots/big-juan/engine.ts": "9c5205f9cf3766122401940d4c48d0fff022f0e48f1d75e8654d5a6a0255317b",
+    "src/pages/originals/big-bass/engine.ts": "a0b11b013383f4bae1f92bcd59d266bdedc6dcefd4a4e32df657a288383f7928"
+  },
+  "methodology": {
+    "baseRounds": 50000,
+    "buyRounds": 10000,
+    "seeds": [
+      98127,
+      45219,
+      73901
+    ],
+    "rng": "mulberry32",
+    "only": [
+      "bass"
+    ],
+    "baseBet": 1,
+    "fullBaseCyclesIncludeTriggeredFeatures": true,
+    "conditionalFreeSpinIsNotRTP": true,
+    "certifiedProviderProbabilities": false,
+    "normalIntervalsMayMissUnsampledRareTails": true
+  },
+  "results": [
+    {
+      "scenario": "big-bass-base",
+      "kind": "base",
+      "seed": 98127,
+      "rounds": 50000,
+      "cost": 1,
+      "meanPayout": 1.2548200000000014,
+      "returnFraction": 1.2548200000000014,
+      "standardError": 0.11647876751330152,
+      "approximate95Interval": [
+        1.0265216156739303,
+        1.4831183843260725
+      ],
+      "positivePayoutFraction": 0.12942,
+      "recoveredCostFraction": 0.0532,
+      "payoutQuantiles": {
+        "p50": 0,
+        "p90": 0.5,
+        "p99": 10,
+        "max": 2100
+      },
+      "triggers": 499,
+      "caps": 1,
+      "meanAwardedFreeSpins": 0.15596
+    },
+    {
+      "scenario": "big-bass-base",
+      "kind": "base",
+      "seed": 45219,
+      "rounds": 50000,
+      "cost": 1,
+      "meanPayout": 1.295220000000021,
+      "returnFraction": 1.295220000000021,
+      "standardError": 0.11436292528877429,
+      "approximate95Interval": [
+        1.0710686664340234,
+        1.5193713335660184
+      ],
+      "positivePayoutFraction": 0.1295,
+      "recoveredCostFraction": 0.05392,
+      "payoutQuantiles": {
+        "p50": 0,
+        "p90": 0.5,
+        "p99": 10,
+        "max": 2100
+      },
+      "triggers": 529,
+      "caps": 1,
+      "meanAwardedFreeSpins": 0.1675
+    },
+    {
+      "scenario": "big-bass-base",
+      "kind": "base",
+      "seed": 73901,
+      "rounds": 50000,
+      "cost": 1,
+      "meanPayout": 1.4628099999999982,
+      "returnFraction": 1.4628099999999982,
+      "standardError": 0.12278618882855397,
+      "approximate95Interval": [
+        1.2221490698960324,
+        1.7034709301039639
+      ],
+      "positivePayoutFraction": 0.1277,
+      "recoveredCostFraction": 0.05372,
+      "payoutQuantiles": {
+        "p50": 0,
+        "p90": 0.5,
+        "p99": 10,
+        "max": 1941
+      },
+      "triggers": 534,
+      "caps": 0,
+      "meanAwardedFreeSpins": 0.1762
+    },
+    {
+      "scenario": "big-bass-buy",
+      "kind": "buy",
+      "seed": 98127,
+      "rounds": 10000,
+      "cost": 100,
+      "meanPayout": 98.0672500000001,
+      "returnFraction": 0.9806725000000011,
+      "standardError": 0.021029103365174887,
+      "approximate95Interval": [
+        0.9394554574042583,
+        1.021889542595744
+      ],
+      "positivePayoutFraction": 0.9749,
+      "recoveredCostFraction": 0.2267,
+      "payoutQuantiles": {
+        "p50": 29,
+        "p90": 234,
+        "p99": 1116.5,
+        "max": 2100
+      },
+      "triggers": 10000,
+      "caps": 10,
+      "meanAwardedFreeSpins": 14.5499
+    },
+    {
+      "scenario": "big-bass-buy",
+      "kind": "buy",
+      "seed": 45219,
+      "rounds": 10000,
+      "cost": 100,
+      "meanPayout": 96.56765000000028,
+      "returnFraction": 0.9656765000000028,
+      "standardError": 0.02057243796940884,
+      "approximate95Interval": [
+        0.9253545215799615,
+        1.0059984784200442
+      ],
+      "positivePayoutFraction": 0.974,
+      "recoveredCostFraction": 0.2279,
+      "payoutQuantiles": {
+        "p50": 29.5,
+        "p90": 230,
+        "p99": 1102,
+        "max": 2100
+      },
+      "triggers": 10000,
+      "caps": 13,
+      "meanAwardedFreeSpins": 14.5344
+    },
+    {
+      "scenario": "big-bass-buy",
+      "kind": "buy",
+      "seed": 73901,
+      "rounds": 10000,
+      "cost": 100,
+      "meanPayout": 99.46029999999999,
+      "returnFraction": 0.9946029999999999,
+      "standardError": 0.021126378928433623,
+      "approximate95Interval": [
+        0.95319529730027,
+        1.0360107026997298
+      ],
+      "positivePayoutFraction": 0.9755,
+      "recoveredCostFraction": 0.2308,
+      "payoutQuantiles": {
+        "p50": 30,
+        "p90": 236,
+        "p99": 1097,
+        "max": 2100
+      },
+      "triggers": 10000,
+      "caps": 10,
+      "meanAwardedFreeSpins": 14.6046
+    }
+  ],
+  "pooled": [
+    {
+      "scenario": "big-bass-base",
+      "kind": "base",
+      "rounds": 150000,
+      "cost": 1,
+      "meanPayout": 1.3376166666666789,
+      "returnFraction": 1.3376166666666789,
+      "standardError": 0.06808700345031223,
+      "approximate95Interval": [
+        1.2041661399040668,
+        1.471067193429291
+      ],
+      "positivePayoutFraction": 0.12887333333333334,
+      "recoveredCostFraction": 0.05361333333333333,
+      "payoutQuantiles": {
+        "p50": 0,
+        "p90": 0.5,
+        "p99": 10,
+        "max": 2100
+      },
+      "triggers": 1562,
+      "caps": 2,
+      "elapsedSeconds": 1.555888382
+    },
+    {
+      "scenario": "big-bass-buy",
+      "kind": "buy",
+      "rounds": 30000,
+      "cost": 100,
+      "meanPayout": 98.03173333333298,
+      "returnFraction": 0.9803173333333298,
+      "standardError": 0.012072589163576756,
+      "approximate95Interval": [
+        0.9566550585727194,
+        1.0039796080939403
+      ],
+      "positivePayoutFraction": 0.9748,
+      "recoveredCostFraction": 0.22846666666666668,
+      "payoutQuantiles": {
+        "p50": 29.5,
+        "p90": 233.5,
+        "p99": 1101.5,
+        "max": 2100
+      },
+      "triggers": 30000,
+      "caps": 33,
+      "elapsedSeconds": 4.9647913489999995
+    }
+  ]
+}

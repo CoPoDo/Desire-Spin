@@ -12,6 +12,7 @@ import {
   type Card,
   DRAGON_TIGER_PAYOUT,
   TIE_PAYOUT,
+  SUITED_TIE_PAYOUT,
   play,
   rankLabel,
   suitGlyph,
@@ -21,7 +22,7 @@ import { fireConfetti } from '../../../lib/confetti';
 
 type Phase = 'idle' | 'dealing' | 'reveal';
 
-type Chips = { dragon: number; tie: number; tiger: number };
+type Chips = Record<BetKind, number>;
 
 export function DragonTigerGame() {
   const { balance, fairness, sound, history, session } = useGame();
@@ -29,7 +30,7 @@ export function DragonTigerGame() {
   /** Chips placed on each cell. Real Dragon Tiger lets you bet on
    *  multiple options simultaneously (e.g. Dragon + Tie) — our old
    *  single-pick radio forced you to choose just one. */
-  const [chips, setChips] = useState<Chips>({ dragon: 0, tie: 0, tiger: 0 });
+  const [chips, setChips] = useState<Chips>({ dragon: 0, tie: 0, tiger: 0, suitedTie: 0 });
   const [phase, setPhase] = useState<Phase>('idle');
   const [dragon, setDragon] = useState<Card | null>(null);
   const [tiger, setTiger] = useState<Card | null>(null);
@@ -39,7 +40,7 @@ export function DragonTigerGame() {
   const [totalReturn, setTotalReturn] = useState<number>(0);
   const { busy, busyRef, setBusy, schedule } = useRoundPlayback();
 
-  const totalStake = +(chips.dragon + chips.tie + chips.tiger).toFixed(2);
+  const totalStake = +(chips.dragon + chips.tie + chips.tiger + chips.suitedTie).toFixed(2);
 
   const placeChip = useCallback((kind: BetKind) => {
     if (busyRef.current) return;
@@ -49,7 +50,7 @@ export function DragonTigerGame() {
 
   const clearChips = useCallback(() => {
     if (busyRef.current) return;
-    setChips({ dragon: 0, tie: 0, tiger: 0 });
+    setChips({ dragon: 0, tie: 0, tiger: 0, suitedTie: 0 });
   }, [busy]);
 
   const start = useCallback(() => {
@@ -68,6 +69,7 @@ export function DragonTigerGame() {
     const activeBets: { kind: BetKind; amount: number }[] = [];
     if (chips.dragon > 0) activeBets.push({ kind: 'dragon', amount: chips.dragon });
     if (chips.tie > 0) activeBets.push({ kind: 'tie', amount: chips.tie });
+    if (chips.suitedTie > 0) activeBets.push({ kind: 'suitedTie', amount: chips.suitedTie });
     if (chips.tiger > 0) activeBets.push({ kind: 'tiger', amount: chips.tiger });
     const r = play(rng, activeBets);
     if (r.totalReturn > 0) balance.credit(r.totalReturn);
@@ -194,6 +196,8 @@ export function DragonTigerGame() {
               payoutLabel={`${DRAGON_TIGER_PAYOUT}×`}
             />
           </div>
+          <p className="mt-3 text-[11px] text-stake-muted">Eight-deck rules · Ace low, King high. Dragon and Tiger return half your stake on a tie. Payouts include stake.</p>
+          <button onClick={() => placeChip('suitedTie')} disabled={busy} className="mt-3 w-full rounded-xl border border-stake-border bg-stake-input py-2.5 text-[11px] font-bold text-stake-muted disabled:opacity-50">Suited Tie · {SUITED_TIE_PAYOUT}×{chips.suitedTie > 0 ? ` · ${fmtCurrency(chips.suitedTie)}` : ''}</button>
           {/* Tie cell — now a chip-bettable button matching the cards */}
           <div className="mt-3">
             <button

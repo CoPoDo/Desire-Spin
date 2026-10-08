@@ -15,9 +15,8 @@ import type {
  * Tumble slot engine — pay-anywhere with cascading wins, random multiplier
  * symbols, free spins, ante bet, and buy-bonus.
  *
- * Mirrors the published mechanics of Pragmatic Play's "Sweet Bonanza" and
- * "Gates of Olympus" closely enough that the produced spins *feel* identical
- * — but with internal weights tuned for a casual emulator (95–98% RTP).
+ * Implements the public feature structure of Sweet Bonanza and Gates of
+ * Olympus using local probabilities. Provider math and RTP are not certified.
  *
  * The engine is fully deterministic given a `Rng`. The render layer plays
  * `result.frames` in sequence with animation timing of its choosing.
@@ -31,7 +30,7 @@ const nextKey = (rng: Rng) => {
 };
 
 export type SpinOptions = {
-  /** Total bet for this spin (after ante / buy adjustments). */
+  /** Base bet used by the paytable; ante and purchase costs are charged separately. */
   bet: number;
   /** Whether ante bet is active (boosts scatter weight in base spins). */
   ante: boolean;
@@ -215,7 +214,7 @@ function sumGridMultipliers(grid: Grid): number {
  *  - In free spins, multipliers persist on grid for the whole spin, then sum
  *    and apply to total spin payout at the end.
  */
-export function spin(rng: Rng, cfg: SlotConfig, opts: SpinOptions, mode: SpinMode, payoutLimit = (cfg.maxWinMultiplier ?? 5000) * opts.bet): SpinResult {
+export function spin(rng: Rng, cfg: SlotConfig, opts: SpinOptions, mode: SpinMode, payoutLimit = (cfg.maxWinMultiplier ?? 5000) * opts.bet, carriedMultiplier = 0, guaranteedScatters = 0): SpinResult {
   const { bet, ante } = opts;
   if (!Number.isFinite(bet) || bet <= 0) throw new RangeError('Bet must be positive and finite');
   const cap = Math.max(0, payoutLimit);
@@ -223,16 +222,26 @@ export function spin(rng: Rng, cfg: SlotConfig, opts: SpinOptions, mode: SpinMod
   const frames: Frame[] = [];
   let grid = fillGrid(rng, cfg, weights);
 
+  if (guaranteedScatters > 0) {
+    if (mode !== 'base' || !Number.isInteger(guaranteedScatters) || guaranteedScatters > cfg.cols * cfg.rows) throw new RangeError('Invalid purchased scatter entry');
+    const ordinary = cfg.symbols.map((symbol, index) => symbol.id === cfg.scatterId ? 0 : weights[index]!);
+    if (!ordinary.some((weight) => weight > 0)) throw new RangeError('Purchased entry requires ordinary symbols');
+    grid = grid.map((column) => column.map((cell) => cell.symbolId === cfg.scatterId ? newCell(rng, cfg.symbols[rng.weighted(ordinary)]!.id) : cell));
+    const positions = Array.from({ length: cfg.cols * cfg.rows }, (_, index) => index);
+    for (let index = 0; index < guaranteedScatters; index++) {
+      const choice = index + rng.nextInt(positions.length - index);
+      [positions[index], positions[choice]] = [positions[choice]!, positions[index]!];
+      const position = positions[index]!;
+      grid[Math.floor(position / cfg.rows)]![position % cfg.rows] = newCell(rng, cfg.scatterId);
+    }
+  }
+
   // Track scatters seen during the entire spin (Pragmatic behavior).
   const scattersAtStart = countScatters(grid, cfg);
   let scatterTotal = scattersAtStart;
 
-  // Free spins: keep multiplier symbols sticky on the grid until end of spin.
-  // Base: multipliers act as pay-modifying tokens that apply on the chain
-  // they landed in (Gates of Olympus base) or sum at end of spin (Sweet Bonanza
-  // base) — controlled per-game via cfg flags. We use a hybrid approach
-  // matching public behavior: multipliers landed during a chain apply only
-  // to *that* chain's payout (base game), and persist into next chain (free).
+  // Multiplier tokens survive the complete tumble sequence. In Gates free
+  // spins, winning tokens additionally accumulate across the whole feature.
   let chainIdx = 0;
   let subtotal = 0;
   let working: Grid = clone(grid);
@@ -260,17 +269,7 @@ export function spin(rng: Rng, cfg: SlotConfig, opts: SpinOptions, mode: SpinMod
       tumbleIdx: chainIdx,
       chainPayout,
     });
-    // Apply chain-level multipliers (base game only): if multipliers exist on
-    // the *current* grid before tumble, they apply to this chain.
-    if (mode === 'base') {
-      const sum = sumGridMultipliers(working);
-      const factor = sum > 0 ? sum : 1;
-      subtotal = Math.min(cap, subtotal + chainPayout * factor);
-    } else {
-      // Free spins: track multipliers on grid for end-of-spin application;
-      // chains pay 1× for now.
-      subtotal += chainPayout;
-    }
+    subtotal += chainPayout;
 
     if (subtotal >= cap) break;
 
@@ -289,24 +288,22 @@ export function spin(rng: Rng, cfg: SlotConfig, opts: SpinOptions, mode: SpinMod
     scatterTotal = Math.max(scatterTotal, countScatters(working, cfg));
   }
 
-  // Free-spins: apply summed multipliers at end of spin.
-  if (mode === 'free') {
-    const finalMultSum = sumGridMultipliers(working);
-    if (finalMultSum > 0 && subtotal > 0) {
-      const before = subtotal;
-      subtotal = Math.min(cap, subtotal * finalMultSum);
-      frames.push({
-        kind: 'multiplierApplied',
-        sumOfMultipliers: finalMultSum,
-        preMultiplierPayout: before,
-        finalPayout: subtotal,
-      });
-    }
+  // Both base and free sequences apply their final visible multiplier sum
+  // once, to the whole sequence. A carried Gates multiplier activates only
+  // when a NEW multiplier lands on a winning free spin.
+  let featureMultiplier = carriedMultiplier;
+  const finalMultSum = sumGridMultipliers(working);
+  if (finalMultSum > 0 && subtotal > 0) {
+    if (mode === 'free' && cfg.multiplierFreeMode === 'accumulate-on-win') featureMultiplier += finalMultSum;
+    const applied = mode === 'free' && cfg.multiplierFreeMode === 'accumulate-on-win' ? featureMultiplier : finalMultSum;
+    const before = subtotal;
+    subtotal = Math.min(cap, subtotal * applied);
+    frames.push({ kind: 'multiplierApplied', sumOfMultipliers: applied, preMultiplierPayout: before, finalPayout: subtotal });
   }
 
   // Scatter pay-out (Pragmatic public: 4 → 3×, 5 → 5×, 6+ → 100× in Sweet Bonanza).
   let scatterPay = 0;
-  if (mode === 'base') {
+  {
     const scatterDef = cfg.symbols.find((s) => s.id === cfg.scatterId);
     if (scatterDef) {
       scatterPay = lookupPay(scatterDef.payout, scatterTotal) * bet;
@@ -333,6 +330,7 @@ export function spin(rng: Rng, cfg: SlotConfig, opts: SpinOptions, mode: SpinMod
     frames,
     totalPayout: subtotal,
     triggeredFreeSpins: triggeredFree,
+    featureMultiplier,
     freeSpinsAwarded: freeAwarded,
   };
 }
@@ -358,11 +356,18 @@ function runRound(rng: Rng, cfg: SlotConfig, opts: SpinOptions, initialFreeSpins
   let total = 0;
   let awarded = initialFreeSpins;
   let pending = initialFreeSpins;
+  let carriedMultiplier = 0;
   const appendSpin = (result: SpinResult) => {
     total = +Math.min(cap, total + result.totalPayout).toFixed(2);
     frames.push(...result.frames.map((frame): Frame => frame.kind === 'final' ? { ...frame, runningPayout: total } : frame));
   };
-  if (initialFreeSpins === 0) {
+  if (bought && cfg.buyTriggerScatters) {
+    const entry = spin(rng, cfg, { ...opts, ante: false }, 'base', cap, 0, cfg.buyTriggerScatters);
+    entry.frames = entry.frames.map((frame) => frame.kind === 'freeSpinsAwarded' ? { ...frame, reason: 'buy' } : frame);
+    appendSpin(entry);
+    pending = entry.freeSpinsAwarded;
+    awarded = pending;
+  } else if (initialFreeSpins === 0) {
     const first = spin(rng, cfg, opts, 'base', cap);
     appendSpin(first);
     pending = first.freeSpinsAwarded;
@@ -375,7 +380,8 @@ function runRound(rng: Rng, cfg: SlotConfig, opts: SpinOptions, initialFreeSpins
     let completed = 0;
     while (pending > 0 && total < cap) {
       if (++completed > 1000) throw new Error('Free-spin safety limit exceeded');
-      const result = spin(rng, cfg, opts, 'free', cap - total);
+      const result = spin(rng, cfg, opts, 'free', cap - total, carriedMultiplier);
+      carriedMultiplier = result.featureMultiplier ?? carriedMultiplier;
       appendSpin(result);
       pending--;
       if (total < cap && countScattersInFrames(result.frames, cfg) >= cfg.scatterRetriggerCount) {
@@ -398,5 +404,6 @@ function countScattersInFrames(frames: Frame[], cfg: SlotConfig): number {
 }
 
 export function buyBonusRound(rng: Rng, cfg: SlotConfig, opts: SpinOptions): RoundResult {
+  if (opts.ante) throw new RangeError('Disable ante before buying free spins');
   return runRound(rng, cfg, opts, cfg.freeSpinsAwardOnTrigger, true);
 }

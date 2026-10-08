@@ -1,5 +1,6 @@
 /** Typed localStorage with versioning and safe fallbacks for SSR/private mode. */
 const PREFIX = 'desire-spin:v1:';
+const LOCAL_CHANGE = 'desire-spin:storage-change';
 
 function safeWindow(): Storage | null {
   try {
@@ -22,9 +23,33 @@ export function loadJson<T>(key: string, fallback: T, validate?: (value: unknown
   }
 }
 
+/** Null means absent; undefined means storage cannot currently be read. */
+export function readStorageSnapshot(key: string): string | null | undefined {
+  try { return safeWindow()?.getItem(PREFIX + key); } catch { return undefined; }
+}
+
+export function subscribeStorage(key: string, listener: () => void): () => void {
+  if (typeof window === 'undefined') return () => {};
+  const onStorage = (event: StorageEvent) => {
+    if (event.key === null || event.key === PREFIX + key) listener();
+  };
+  const onLocal = (event: Event) => {
+    if ((event as CustomEvent<string>).detail === key) listener();
+  };
+  window.addEventListener('storage', onStorage);
+  window.addEventListener(LOCAL_CHANGE, onLocal);
+  return () => {
+    window.removeEventListener('storage', onStorage);
+    window.removeEventListener(LOCAL_CHANGE, onLocal);
+  };
+}
+
 export function saveJson<T>(key: string, value: T): void {
   try {
-    safeWindow()?.setItem(PREFIX + key, JSON.stringify(value));
+    const storage = safeWindow();
+    if (!storage) return;
+    storage.setItem(PREFIX + key, JSON.stringify(value));
+    window.dispatchEvent(new CustomEvent(LOCAL_CHANGE, { detail: key }));
   } catch {
     // Storage is best-effort; a private-mode/quota failure must not break play.
   }
@@ -32,7 +57,10 @@ export function saveJson<T>(key: string, value: T): void {
 
 export function removeKey(key: string): void {
   try {
-    safeWindow()?.removeItem(PREFIX + key);
+    const storage = safeWindow();
+    if (!storage) return;
+    storage.removeItem(PREFIX + key);
+    window.dispatchEvent(new CustomEvent(LOCAL_CHANGE, { detail: key }));
   } catch {
     // Storage may be blocked even when the Storage object is available.
   }

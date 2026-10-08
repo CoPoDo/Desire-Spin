@@ -1,0 +1,36 @@
+{
+  "source": "https://www.coolcat-casino.com/slots/pharaohs-gold.php",
+  "checkedAt": "2026-10-08",
+  "observed": {
+    "reels": 3,
+    "maxActiveLines": 3,
+    "firstLine": "center",
+    "symbols": [
+      "Mask",
+      "Ankh",
+      "Scarab",
+      "Cobra",
+      "Eye of Horus"
+    ],
+    "wild": "Eye of Horus",
+    "maskCoinsByLine": [
+      50,
+      50,
+      100
+    ],
+    "scarabThreeCoins": 25,
+    "cobraThreeCoins": 5,
+    "cobraTwoCoins": 2
+  },
+  "provisionalLocal": {
+    "ankhThreeCoins": 25,
+    "lineTwo": "top horizontal",
+    "lineThree": "bottom horizontal",
+    "twoCobraPosition": "left-aligned prefix, Wild substitution allowed",
+    "blankStops": "local frequency"
+  },
+  "unimplemented": [
+    "live progressive pool and award"
+  ],
+  "sourceConflict": "The numerical paytable identifies Mask as the top symbol; some accompanying prose identifies Ankh."
+}

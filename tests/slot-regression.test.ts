@@ -105,10 +105,11 @@ describe('slot outcome and presentation regression', () => {
   it('precomputes a single capped Sugar buy, retaining multiplier spots between free spins', () => {
     const round = playSugarRound(createRng('sugar-round', 'test', 2), 1, true);
     expect(round.spins.length).toBeGreaterThanOrEqual(1);
-    expect(round.spins.every((entry) => entry.free)).toBe(true);
+    expect(round.spins[0]!.free).toBe(false);
+    expect(round.spins.slice(1).every((entry) => entry.free)).toBe(true);
     expect(round.totalPayout).toBeLessThanOrEqual(5000);
     expect(round.totalPayout).toBeCloseTo(round.spins.reduce((sum, entry) => sum + entry.result.totalPayout, 0), 2);
-    for (let index = 1; index < round.spins.length; index++) {
+    for (let index = 2; index < round.spins.length; index++) {
       expect(round.spins[index]!.result.frames[0]!.spots).toEqual(round.spins[index - 1]!.result.spots);
     }
     expect(round).toEqual(playSugarRound(createRng('sugar-round', 'test', 2), 1, true));

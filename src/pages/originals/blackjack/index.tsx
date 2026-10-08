@@ -12,11 +12,14 @@ import {
   type Hand,
   type RoundState,
   canSplit,
+  chooseInsurance,
   dealRound,
   double,
   handValue,
   hit,
+  insuranceCost,
   rankLabel,
+  roundStake,
   split,
   splitCost,
   stand,
@@ -32,11 +35,12 @@ export function BlackjackGame() {
   const { begin, addStake, settle, delay, wager, onLeave, error } = lifecycle;
   const done = round?.phase === 'done';
 
-  // Leaving the table stands every unfinished hand, including split hands.
+  // Leaving declines an unanswered side bet and stands unfinished hands.
   onLeave.current = (updateView = false) => {
     let current = roundRef.current;
     const rng = wager.current?.rng;
     if (!current || !rng) return 0;
+    if (current.phase === 'insurance') current = chooseInsurance(current, false);
     while (current.phase === 'player') current = stand(rng, current);
     if (updateView) setRound(current);
     return current.payout;
@@ -45,8 +49,7 @@ export function BlackjackGame() {
   const finish = useCallback((r: RoundState) => {
     setRound(r);
     if (r.phase === 'done' && settle(r.payout)) {
-      const totalBet = r.hands.reduce((sum, hand) => sum + hand.bet, 0);
-      const profit = r.payout - totalBet;
+      const profit = +(r.payout - roundStake(r)).toFixed(2);
       sound.play(r.outcome === 'player-blackjack' ? 'big-win' : profit > 0 ? 'win' : profit === 0 ? 'click' : 'drop');
       if (r.outcome === 'player-blackjack') fireConfetti({ count: 100 });
     }
@@ -76,6 +79,16 @@ export function BlackjackGame() {
     finish(move(entry.rng, current));
   }, [roundRef, wager, busyRef, addStake, setBusy, sound, finish]);
 
+  const insure = useCallback((accept: boolean) => {
+    const current = roundRef.current;
+    const entry = wager.current;
+    if (!current || current.phase !== 'insurance' || busyRef.current || !entry || entry.settled) return;
+    if (accept && (insuranceCost(current) <= 0 || !addStake(insuranceCost(current)))) return;
+    setBusy(true);
+    sound.play('click');
+    finish(chooseInsurance(current, accept));
+  }, [roundRef, wager, busyRef, addStake, setBusy, sound, finish]);
+
   const onHit = useCallback(() => act('hit'), [act]);
   const onStand = useCallback(() => act('stand'), [act]);
   const onDouble = useCallback(() => act('double'), [act]);
@@ -103,27 +116,29 @@ export function BlackjackGame() {
     }
   }, true);
 
-  // Show only the dealer's first card while player is still acting
+  // Insurance is decided before the peek; never leak the hole card or total.
+  const dealerHidden = round?.phase === 'player' || round?.phase === 'insurance';
   const dealerVisible = round
-    ? round.phase === 'player'
+    ? dealerHidden
       ? [round.dealer[0]!]
       : round.dealer
     : [];
-  const dealerVal = round && round.phase !== 'player' ? handValue(round.dealer) : null;
+  const dealerVal = round && !dealerHidden ? handValue(round.dealer) : null;
 
   // Convenience accessors for the active hand
   const activeHand = round?.hands[round.activeIdx];
   const splitAvailable = round ? canSplit(round) && balance.balance >= splitCost(round) : false;
   const doubleAvailable = round && round.phase === 'player' && activeHand && activeHand.cards.length === 2 && !activeHand.done && balance.balance >= activeHand.bet;
-  const totalBet = round ? round.hands.reduce((s, h) => s + h.bet, 0) : 0;
-  const totalProfit = round?.phase === 'done' ? round.payout - totalBet : 0;
+  const totalBet = round ? roundStake(round) : 0;
+  const totalProfit = round?.phase === 'done' ? +(round.payout - totalBet).toFixed(2) : 0;
+  const insuranceBet = round ? insuranceCost(round) : 0;
 
   return (
     <OriginalPageLayout title="Blackjack">
       <div className="flex flex-col p-4 gap-3 max-w-md mx-auto w-full">
         {error && <p role="alert" className="text-stake-red text-sm text-center">{error}</p>}
         {/* Dealer */}
-        <div className="rounded-lg bg-stake-card border border-stake-border p-4">
+        <div role="region" aria-label="Dealer hand" className="rounded-lg bg-stake-card border border-stake-border p-4">
           <div className="flex items-center justify-between mb-2">
             <span className="text-[10px] uppercase tracking-widest text-stake-muted">Dealer</span>
             {dealerVal && (
@@ -136,7 +151,7 @@ export function BlackjackGame() {
             {dealerVisible.map((c, i) => (
               <CardView key={i} card={c} delay={i === 0 ? 0 : (i - 1) * 450 + 50} />
             ))}
-            {round && round.phase === 'player' && (
+            {dealerHidden && (
               <CardView hidden delay={100} />
             )}
             {!round && (
@@ -161,6 +176,14 @@ export function BlackjackGame() {
               />
             ))}
           </div>
+        )}
+
+        {round?.insurance && (
+          <p role="status" className="text-xs text-stake-muted text-center">
+            Insurance {fmtCurrency(round.insurance.bet)} · {round.insurance.payout > 0
+              ? `${fmtCurrency(round.insurance.payout)} returned (2:1 profit)`
+              : 'lost; dealer has no blackjack'}
+          </p>
         )}
 
         {/* Outcome */}
@@ -201,6 +224,30 @@ export function BlackjackGame() {
               {done ? 'Deal Again' : `Deal · ${fmtCurrency(bet)}`}
             </button>
           </div>
+        ) : round.phase === 'insurance' ? (
+          <div role="group" aria-label="Insurance decision" className="rounded-lg bg-stake-card border border-accent-gold/50 p-4 space-y-3">
+            <p className="font-bold text-sm text-accent-gold">Dealer shows an Ace. Insurance?</p>
+            <p className="text-xs text-stake-muted">An extra bet of up to half your original stake pays 2:1 profit if the dealer has blackjack. Otherwise the insurance is lost.</p>
+            {handValue(round.hands[0]!.cards).blackjack && insuranceBet * 2 === round.initialBet && (
+              <p className="text-xs text-stake-muted">With your blackjack, buying full insurance guarantees {fmtCurrency(round.initialBet)} net profit, the same as taking even money.</p>
+            )}
+            {insuranceBet * 2 !== round.initialBet && (
+              <p className="text-xs text-stake-muted">This play-money table rounds insurance down to a whole cent. A one-cent main bet cannot be insured.</p>
+            )}
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => insure(true)}
+                disabled={busy || insuranceBet <= 0 || balance.balance < insuranceBet}
+                className="py-3 rounded-xl bg-accent-gold text-stake-bg font-bold text-sm disabled:opacity-50"
+              >Buy insurance · {fmtCurrency(insuranceBet)}</button>
+              <button
+                onClick={() => insure(false)}
+                disabled={busy}
+                className="py-3 rounded-xl bg-stake-input border border-stake-border font-bold text-sm disabled:opacity-50"
+              >No insurance</button>
+            </div>
+            {balance.balance < insuranceBet && <p className="text-xs text-stake-muted">Not enough credits for insurance. You can continue without it.</p>}
+          </div>
         ) : (
           <div className="grid grid-cols-4 gap-2">
             <button
@@ -235,7 +282,7 @@ export function BlackjackGame() {
             </button>
           </div>
         )}
-        <p className="text-[11px] text-stake-muted text-center">Leaving the table automatically stands and settles every unfinished hand.</p>
+        <p className="text-[11px] text-stake-muted text-center">Leaving declines any unanswered insurance offer, then automatically stands and settles every unfinished hand.</p>
       </div>
     </OriginalPageLayout>
   );
@@ -319,6 +366,8 @@ function CardView({ card, hidden, delay = 0, compact = false }: { card?: Card; h
   if (hidden) {
     return (
       <motion.div
+        role="img"
+        aria-label="Hidden dealer card"
         initial={{ y: -20, opacity: 0, rotateY: 90 }}
         animate={{ y: 0, opacity: 1, rotateY: 0 }}
         transition={{ delay: delay / 1000, type: 'spring', stiffness: 240, damping: 20 }}
@@ -347,6 +396,8 @@ function CardView({ card, hidden, delay = 0, compact = false }: { card?: Card; h
   const red = card.suit === '♥' || card.suit === '♦';
   return (
     <motion.div
+      role="img"
+      aria-label={`${rankLabel(card.rank)} ${card.suit}`}
       initial={{ y: -30, opacity: 0, rotateY: 180 }}
       animate={{ y: 0, opacity: 1, rotateY: 0 }}
       transition={{ delay: delay / 1000, type: 'spring', stiffness: 240, damping: 20 }}

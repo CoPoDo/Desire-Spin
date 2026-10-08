@@ -1,0 +1,81 @@
+{
+  "width": 1254,
+  "height": 1254,
+  "grid": [
+    1,
+    1
+  ],
+  "alphaZeroPct": 56.62,
+  "alphaRange": [
+    0,
+    255
+  ],
+  "alphaByteIdentical": true,
+  "visibleRgbByteIdentical": true,
+  "assetPath": "/art-v2/pharaoh/cobra.webp",
+  "symbols": [
+    {
+      "name": "cobra",
+      "col": 0,
+      "row": 0,
+      "sourceRegion": [
+        0,
+        0,
+        1254,
+        1254
+      ],
+      "bboxByAlphaThresholdAbsolute": {
+        "1": [
+          187,
+          54,
+          1073,
+          1193
+        ],
+        "2": [
+          188,
+          55,
+          1071,
+          1193
+        ],
+        "4": [
+          189,
+          55,
+          1069,
+          1193
+        ],
+        "8": [
+          189,
+          57,
+          1069,
+          1191
+        ],
+        "16": [
+          189,
+          57,
+          1069,
+          1191
+        ],
+        "32": [
+          189,
+          57,
+          1068,
+          1191
+        ],
+        "64": [
+          189,
+          57,
+          1068,
+          1190
+        ]
+      },
+      "recommendedPaddedBboxAbsolute": [
+        181,
+        49,
+        1077,
+        1199
+      ],
+      "aspectRatio": 0.7791304347826087,
+      "touchesRegionEdge": false
+    }
+  ]
+}

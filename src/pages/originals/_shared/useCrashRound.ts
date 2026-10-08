@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useGame } from '../../../game-context';
 import { createRng, sha256Hex, type Seeds } from '../../../lib/fairness';
 import { multiplierAt, rollBust } from '../crash/engine';
+import { rollCrash as rollAviator, AVIATOR_MAX_MULTIPLIER } from '../aviator/engine';
 import { fireConfetti } from '../../../lib/confetti';
 import { type AutoConfig, type Mode, useAutoBetRunner } from './AutoBetController';
 
@@ -114,20 +115,20 @@ export function useCrashRound(game: 'Crash' | 'Aviator', livePhase: 'running' | 
       b: { ...configured.b, active: !automatic && configured.b.active },
     };
     const participating = [next.a, next.b].filter((slot) => slot.active);
-    if (!participating.length || participating.some((slot) => !Number.isFinite(slot.bet) || slot.bet < 0.01 || (slot.autoEnabled && (!Number.isFinite(slot.autoCashout) || slot.autoCashout < 1.01 || slot.autoCashout > 100_000)))) return false;
+    if (!participating.length || participating.some((slot) => !Number.isFinite(slot.bet) || slot.bet < 0.01 || (slot.autoEnabled && (!Number.isFinite(slot.autoCashout) || slot.autoCashout < 1.01 || slot.autoCashout > (game === 'Aviator' ? AVIATOR_MAX_MULTIPLIER : 1_000_000))))) return false;
     const total = +participating.reduce((sum, slot) => sum + slot.bet, 0).toFixed(2);
     const svc = services.current;
     if (!svc.balance.debit(total)) return false;
     phaseRef.current = livePhase;
     const seeds = svc.fairness.consumeNonce();
-    const point = rollBust(createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce));
+    const point = (game === 'Aviator' ? rollAviator : rollBust)(createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce));
     round.current = { started: performance.now(), bust: point, seeds, hash: sha256Hex(seeds.serverSeed) };
     for (const id of ['a', 'b'] as const) updateSlot(id, { ...next[id], status: next[id].active ? 'live' : 'idle', cashedAt: null });
     setPhase(livePhase); setBust(point); setCurrentMult(1);
     svc.sound.play('click');
     animation.current = requestAnimationFrame(tickRef.current);
     return true;
-  }, [livePhase, updateSlot]);
+  }, [game, livePhase, updateSlot]);
 
   const start = useCallback(() => { begin(false); }, [begin]);
   const cashOutSlot = useCallback((id: CrashSlotId) => {

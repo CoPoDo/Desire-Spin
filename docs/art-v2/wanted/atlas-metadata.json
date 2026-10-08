@@ -1,0 +1,1025 @@
+{
+  "width": 1448,
+  "height": 1086,
+  "grid": [
+    4,
+    3
+  ],
+  "cellWidth": 362,
+  "cellHeight": 362,
+  "alphaZeroPct": 81.23,
+  "alphaRange": [
+    0,
+    255
+  ],
+  "symbols": [
+    {
+      "name": "outlaw",
+      "col": 0,
+      "row": 0,
+      "bboxAlphaGt64CellRelative": [
+        104,
+        144,
+        299,
+        336
+      ],
+      "bboxAbsolute": [
+        104,
+        144,
+        299,
+        336
+      ],
+      "touchesCellEdge": false,
+      "centerOffset": [
+        20.5,
+        59.0
+      ],
+      "normalizedSquareSource": {
+        "x": 79.625,
+        "y": 118.125,
+        "size": 243.75,
+        "objectOccupancy": 0.8
+      },
+      "cssSpriteAt80PercentOccupancy": {
+        "backgroundImage": "url(/art-v2/wanted/symbols-atlas.png)",
+        "backgroundSize": "594.05128% 445.53846%",
+        "backgroundPosition": "6.61200% 14.02493%",
+        "backgroundRepeat": "no-repeat"
+      },
+      "bboxByAlphaThresholdCellRelative": {
+        "1": [
+          101,
+          141,
+          303,
+          339
+        ],
+        "2": [
+          101,
+          141,
+          302,
+          339
+        ],
+        "4": [
+          101,
+          143,
+          302,
+          337
+        ],
+        "8": [
+          103,
+          143,
+          301,
+          337
+        ],
+        "16": [
+          103,
+          143,
+          300,
+          337
+        ],
+        "32": [
+          103,
+          144,
+          299,
+          336
+        ],
+        "64": [
+          104,
+          144,
+          299,
+          336
+        ]
+      },
+      "recommendedPaddedBboxAbsolute": [
+        95,
+        135,
+        309,
+        345
+      ]
+    },
+    {
+      "name": "badge",
+      "col": 1,
+      "row": 0,
+      "bboxAlphaGt64CellRelative": [
+        103,
+        142,
+        282,
+        333
+      ],
+      "bboxAbsolute": [
+        465,
+        142,
+        644,
+        333
+      ],
+      "touchesCellEdge": false,
+      "centerOffset": [
+        11.5,
+        56.5
+      ],
+      "normalizedSquareSource": {
+        "x": 435.125,
+        "y": 118.125,
+        "size": 238.75,
+        "objectOccupancy": 0.8
+      },
+      "cssSpriteAt80PercentOccupancy": {
+        "backgroundImage": "url(/art-v2/wanted/symbols-atlas.png)",
+        "backgroundSize": "606.49215% 454.86911%",
+        "backgroundPosition": "35.98305% 13.94217%",
+        "backgroundRepeat": "no-repeat"
+      },
+      "bboxByAlphaThresholdCellRelative": {
+        "1": [
+          100,
+          135,
+          285,
+          335
+        ],
+        "2": [
+          100,
+          138,
+          284,
+          335
+        ],
+        "4": [
+          101,
+          141,
+          284,
+          333
+        ],
+        "8": [
+          102,
+          141,
+          282,
+          333
+        ],
+        "16": [
+          102,
+          141,
+          282,
+          333
+        ],
+        "32": [
+          103,
+          141,
+          282,
+          333
+        ],
+        "64": [
+          103,
+          142,
+          282,
+          333
+        ]
+      },
+      "recommendedPaddedBboxAbsolute": [
+        456,
+        133,
+        652,
+        341
+      ]
+    },
+    {
+      "name": "revolver",
+      "col": 2,
+      "row": 0,
+      "bboxAlphaGt64CellRelative": [
+        100,
+        142,
+        293,
+        334
+      ],
+      "bboxAbsolute": [
+        824,
+        142,
+        1017,
+        334
+      ],
+      "touchesCellEdge": false,
+      "centerOffset": [
+        15.5,
+        57.0
+      ],
+      "normalizedSquareSource": {
+        "x": 799.875,
+        "y": 117.375,
+        "size": 241.25,
+        "objectOccupancy": 0.8
+      },
+      "cssSpriteAt80PercentOccupancy": {
+        "backgroundImage": "url(/art-v2/wanted/symbols-atlas.png)",
+        "backgroundSize": "600.20725% 450.15544%",
+        "backgroundPosition": "66.28341% 13.89464%",
+        "backgroundRepeat": "no-repeat"
+      },
+      "bboxByAlphaThresholdCellRelative": {
+        "1": [
+          98,
+          136,
+          296,
+          337
+        ],
+        "2": [
+          98,
+          139,
+          296,
+          337
+        ],
+        "4": [
+          98,
+          141,
+          296,
+          335
+        ],
+        "8": [
+          100,
+          141,
+          294,
+          334
+        ],
+        "16": [
+          100,
+          141,
+          294,
+          334
+        ],
+        "32": [
+          100,
+          142,
+          294,
+          334
+        ],
+        "64": [
+          100,
+          142,
+          293,
+          334
+        ]
+      },
+      "recommendedPaddedBboxAbsolute": [
+        816,
+        133,
+        1026,
+        342
+      ]
+    },
+    {
+      "name": "whiskey",
+      "col": 3,
+      "row": 0,
+      "bboxAlphaGt64CellRelative": [
+        100,
+        143,
+        243,
+        334
+      ],
+      "bboxAbsolute": [
+        1186,
+        143,
+        1329,
+        334
+      ],
+      "touchesCellEdge": false,
+      "centerOffset": [
+        -9.5,
+        57.5
+      ],
+      "normalizedSquareSource": {
+        "x": 1138.125,
+        "y": 119.125,
+        "size": 238.75,
+        "objectOccupancy": 0.8
+      },
+      "cssSpriteAt80PercentOccupancy": {
+        "backgroundImage": "url(/art-v2/wanted/symbols-atlas.png)",
+        "backgroundSize": "606.49215% 454.86911%",
+        "backgroundPosition": "94.11826% 14.06019%",
+        "backgroundRepeat": "no-repeat"
+      },
+      "bboxByAlphaThresholdCellRelative": {
+        "1": [
+          91,
+          140,
+          248,
+          340
+        ],
+        "2": [
+          95,
+          140,
+          248,
+          339
+        ],
+        "4": [
+          97,
+          142,
+          247,
+          337
+        ],
+        "8": [
+          99,
+          142,
+          246,
+          335
+        ],
+        "16": [
+          99,
+          142,
+          244,
+          335
+        ],
+        "32": [
+          99,
+          142,
+          244,
+          335
+        ],
+        "64": [
+          100,
+          143,
+          243,
+          334
+        ]
+      },
+      "recommendedPaddedBboxAbsolute": [
+        1177,
+        134,
+        1340,
+        343
+      ]
+    },
+    {
+      "name": "horseshoe",
+      "col": 0,
+      "row": 1,
+      "bboxAlphaGt64CellRelative": [
+        117,
+        96,
+        285,
+        269
+      ],
+      "bboxAbsolute": [
+        117,
+        458,
+        285,
+        631
+      ],
+      "touchesCellEdge": false,
+      "centerOffset": [
+        20.0,
+        1.5
+      ],
+      "normalizedSquareSource": {
+        "x": 92.875,
+        "y": 436.375,
+        "size": 216.25,
+        "objectOccupancy": 0.8
+      },
+      "cssSpriteAt80PercentOccupancy": {
+        "backgroundImage": "url(/art-v2/wanted/symbols-atlas.png)",
+        "backgroundSize": "669.59538% 502.19653%",
+        "backgroundPosition": "7.54009% 50.17246%",
+        "backgroundRepeat": "no-repeat"
+      },
+      "bboxByAlphaThresholdCellRelative": {
+        "1": [
+          114,
+          93,
+          288,
+          272
+        ],
+        "2": [
+          114,
+          94,
+          287,
+          270
+        ],
+        "4": [
+          114,
+          95,
+          287,
+          270
+        ],
+        "8": [
+          116,
+          95,
+          286,
+          270
+        ],
+        "16": [
+          116,
+          95,
+          285,
+          270
+        ],
+        "32": [
+          116,
+          95,
+          285,
+          270
+        ],
+        "64": [
+          117,
+          96,
+          285,
+          269
+        ]
+      },
+      "recommendedPaddedBboxAbsolute": [
+        108,
+        449,
+        294,
+        640
+      ]
+    },
+    {
+      "name": "boot",
+      "col": 1,
+      "row": 1,
+      "bboxAlphaGt64CellRelative": [
+        107,
+        86,
+        295,
+        269
+      ],
+      "bboxAbsolute": [
+        469,
+        448,
+        657,
+        631
+      ],
+      "touchesCellEdge": false,
+      "centerOffset": [
+        20.0,
+        -3.5
+      ],
+      "normalizedSquareSource": {
+        "x": 445.5,
+        "y": 422.0,
+        "size": 235.0,
+        "objectOccupancy": 0.8
+      },
+      "cssSpriteAt80PercentOccupancy": {
+        "backgroundImage": "url(/art-v2/wanted/symbols-atlas.png)",
+        "backgroundSize": "616.17021% 462.12766%",
+        "backgroundPosition": "36.72712% 49.58872%",
+        "backgroundRepeat": "no-repeat"
+      },
+      "bboxByAlphaThresholdCellRelative": {
+        "1": [
+          104,
+          83,
+          298,
+          271
+        ],
+        "2": [
+          104,
+          84,
+          297,
+          270
+        ],
+        "4": [
+          105,
+          85,
+          297,
+          270
+        ],
+        "8": [
+          106,
+          86,
+          295,
+          270
+        ],
+        "16": [
+          106,
+          86,
+          295,
+          269
+        ],
+        "32": [
+          106,
+          86,
+          295,
+          269
+        ],
+        "64": [
+          107,
+          86,
+          295,
+          269
+        ]
+      },
+      "recommendedPaddedBboxAbsolute": [
+        460,
+        440,
+        665,
+        640
+      ]
+    },
+    {
+      "name": "hat",
+      "col": 2,
+      "row": 1,
+      "bboxAlphaGt64CellRelative": [
+        90,
+        121,
+        301,
+        257
+      ],
+      "bboxAbsolute": [
+        814,
+        483,
+        1025,
+        619
+      ],
+      "touchesCellEdge": false,
+      "centerOffset": [
+        14.5,
+        8.0
+      ],
+      "normalizedSquareSource": {
+        "x": 787.625,
+        "y": 419.125,
+        "size": 263.75,
+        "objectOccupancy": 0.8
+      },
+      "cssSpriteAt80PercentOccupancy": {
+        "backgroundImage": "url(/art-v2/wanted/symbols-atlas.png)",
+        "backgroundSize": "549.00474% 411.75355%",
+        "backgroundPosition": "66.50834% 50.97294%",
+        "backgroundRepeat": "no-repeat"
+      },
+      "bboxByAlphaThresholdCellRelative": {
+        "1": [
+          84,
+          118,
+          304,
+          260
+        ],
+        "2": [
+          87,
+          119,
+          304,
+          260
+        ],
+        "4": [
+          87,
+          119,
+          303,
+          258
+        ],
+        "8": [
+          89,
+          119,
+          302,
+          258
+        ],
+        "16": [
+          89,
+          121,
+          301,
+          258
+        ],
+        "32": [
+          89,
+          121,
+          301,
+          258
+        ],
+        "64": [
+          90,
+          121,
+          301,
+          257
+        ]
+      },
+      "recommendedPaddedBboxAbsolute": [
+        805,
+        473,
+        1034,
+        628
+      ]
+    },
+    {
+      "name": "ace",
+      "col": 3,
+      "row": 1,
+      "bboxAlphaGt64CellRelative": [
+        99,
+        90,
+        264,
+        276
+      ],
+      "bboxAbsolute": [
+        1185,
+        452,
+        1350,
+        638
+      ],
+      "touchesCellEdge": false,
+      "centerOffset": [
+        0.5,
+        2.0
+      ],
+      "normalizedSquareSource": {
+        "x": 1151.25,
+        "y": 428.75,
+        "size": 232.5,
+        "objectOccupancy": 0.8
+      },
+      "cssSpriteAt80PercentOccupancy": {
+        "backgroundImage": "url(/art-v2/wanted/symbols-atlas.png)",
+        "backgroundSize": "622.79570% 467.09677%",
+        "backgroundPosition": "94.71411% 50.23433%",
+        "backgroundRepeat": "no-repeat"
+      },
+      "bboxByAlphaThresholdCellRelative": {
+        "1": [
+          95,
+          87,
+          267,
+          279
+        ],
+        "2": [
+          96,
+          88,
+          267,
+          279
+        ],
+        "4": [
+          97,
+          90,
+          265,
+          277
+        ],
+        "8": [
+          98,
+          90,
+          265,
+          277
+        ],
+        "16": [
+          99,
+          90,
+          265,
+          277
+        ],
+        "32": [
+          99,
+          90,
+          264,
+          277
+        ],
+        "64": [
+          99,
+          90,
+          264,
+          276
+        ]
+      },
+      "recommendedPaddedBboxAbsolute": [
+        1176,
+        444,
+        1359,
+        647
+      ]
+    },
+    {
+      "name": "coin",
+      "col": 0,
+      "row": 2,
+      "bboxAlphaGt64CellRelative": [
+        115,
+        34,
+        291,
+        208
+      ],
+      "bboxAbsolute": [
+        115,
+        758,
+        291,
+        932
+      ],
+      "touchesCellEdge": false,
+      "centerOffset": [
+        22.0,
+        -60.0
+      ],
+      "normalizedSquareSource": {
+        "x": 93.0,
+        "y": 735.0,
+        "size": 220.0,
+        "objectOccupancy": 0.8
+      },
+      "cssSpriteAt80PercentOccupancy": {
+        "backgroundImage": "url(/art-v2/wanted/symbols-atlas.png)",
+        "backgroundSize": "658.18182% 493.63636%",
+        "backgroundPosition": "7.57329% 84.87298%",
+        "backgroundRepeat": "no-repeat"
+      },
+      "bboxByAlphaThresholdCellRelative": {
+        "1": [
+          113,
+          31,
+          294,
+          212
+        ],
+        "2": [
+          113,
+          31,
+          293,
+          211
+        ],
+        "4": [
+          114,
+          33,
+          293,
+          209
+        ],
+        "8": [
+          115,
+          34,
+          291,
+          209
+        ],
+        "16": [
+          115,
+          34,
+          291,
+          209
+        ],
+        "32": [
+          115,
+          34,
+          291,
+          209
+        ],
+        "64": [
+          115,
+          34,
+          291,
+          208
+        ]
+      },
+      "recommendedPaddedBboxAbsolute": [
+        107,
+        750,
+        299,
+        941
+      ]
+    },
+    {
+      "name": "poster",
+      "col": 1,
+      "row": 2,
+      "bboxAlphaGt64CellRelative": [
+        107,
+        27,
+        288,
+        222
+      ],
+      "bboxAbsolute": [
+        469,
+        751,
+        650,
+        946
+      ],
+      "touchesCellEdge": false,
+      "centerOffset": [
+        16.5,
+        -56.5
+      ],
+      "normalizedSquareSource": {
+        "x": 437.625,
+        "y": 726.625,
+        "size": 243.75,
+        "objectOccupancy": 0.8
+      },
+      "cssSpriteAt80PercentOccupancy": {
+        "backgroundImage": "url(/art-v2/wanted/symbols-atlas.png)",
+        "backgroundSize": "594.05128% 445.53846%",
+        "backgroundPosition": "36.34005% 86.27189%",
+        "backgroundRepeat": "no-repeat"
+      },
+      "bboxByAlphaThresholdCellRelative": {
+        "1": [
+          105,
+          23,
+          292,
+          226
+        ],
+        "2": [
+          105,
+          24,
+          290,
+          223
+        ],
+        "4": [
+          107,
+          24,
+          290,
+          223
+        ],
+        "8": [
+          107,
+          26,
+          288,
+          222
+        ],
+        "16": [
+          107,
+          26,
+          288,
+          222
+        ],
+        "32": [
+          107,
+          26,
+          288,
+          222
+        ],
+        "64": [
+          107,
+          27,
+          288,
+          222
+        ]
+      },
+      "recommendedPaddedBboxAbsolute": [
+        461,
+        742,
+        658,
+        954
+      ]
+    },
+    {
+      "name": "versus",
+      "col": 2,
+      "row": 2,
+      "bboxAlphaGt64CellRelative": [
+        89,
+        33,
+        292,
+        217
+      ],
+      "bboxAbsolute": [
+        813,
+        757,
+        1016,
+        941
+      ],
+      "touchesCellEdge": false,
+      "centerOffset": [
+        9.5,
+        -56.0
+      ],
+      "normalizedSquareSource": {
+        "x": 787.625,
+        "y": 722.125,
+        "size": 253.75,
+        "objectOccupancy": 0.8
+      },
+      "cssSpriteAt80PercentOccupancy": {
+        "backgroundImage": "url(/art-v2/wanted/symbols-atlas.png)",
+        "backgroundSize": "570.64039% 427.98030%",
+        "backgroundPosition": "65.95143% 86.76780%",
+        "backgroundRepeat": "no-repeat"
+      },
+      "bboxByAlphaThresholdCellRelative": {
+        "1": [
+          86,
+          30,
+          295,
+          218
+        ],
+        "2": [
+          86,
+          30,
+          294,
+          218
+        ],
+        "4": [
+          86,
+          32,
+          294,
+          218
+        ],
+        "8": [
+          88,
+          32,
+          292,
+          217
+        ],
+        "16": [
+          88,
+          33,
+          292,
+          217
+        ],
+        "32": [
+          88,
+          33,
+          292,
+          217
+        ],
+        "64": [
+          89,
+          33,
+          292,
+          217
+        ]
+      },
+      "recommendedPaddedBboxAbsolute": [
+        804,
+        748,
+        1024,
+        949
+      ]
+    },
+    {
+      "name": "wild",
+      "col": 3,
+      "row": 2,
+      "bboxAlphaGt64CellRelative": [
+        83,
+        26,
+        266,
+        220
+      ],
+      "bboxAbsolute": [
+        1169,
+        750,
+        1352,
+        944
+      ],
+      "touchesCellEdge": false,
+      "centerOffset": [
+        -6.5,
+        -58.0
+      ],
+      "normalizedSquareSource": {
+        "x": 1139.25,
+        "y": 725.75,
+        "size": 242.5,
+        "objectOccupancy": 0.8
+      },
+      "cssSpriteAt80PercentOccupancy": {
+        "backgroundImage": "url(/art-v2/wanted/symbols-atlas.png)",
+        "backgroundSize": "597.11340% 447.83505%",
+        "backgroundPosition": "94.50436% 86.04031%",
+        "backgroundRepeat": "no-repeat"
+      },
+      "bboxByAlphaThresholdCellRelative": {
+        "1": [
+          78,
+          23,
+          269,
+          223
+        ],
+        "2": [
+          80,
+          24,
+          268,
+          221
+        ],
+        "4": [
+          80,
+          24,
+          266,
+          221
+        ],
+        "8": [
+          82,
+          26,
+          266,
+          221
+        ],
+        "16": [
+          82,
+          26,
+          266,
+          221
+        ],
+        "32": [
+          82,
+          26,
+          266,
+          221
+        ],
+        "64": [
+          83,
+          26,
+          266,
+          220
+        ]
+      },
+      "recommendedPaddedBboxAbsolute": [
+        1160,
+        742,
+        1360,
+        953
+      ]
+    }
+  ]
+}

@@ -1,0 +1,247 @@
+{
+  "generator": "built-in image_gen",
+  "runtimeFormat": "lossless WebP",
+  "creativeEdits": "Built-in image generation only; Sharp used for lossless encoding and alpha bounds inspection, not visual edits.",
+  "cropConvention": "recommendedPaddedBboxAbsolute: alpha >8 bounds plus up to 8px, exclusive right and bottom. Use measured regions, not naive equal grid cells.",
+  "entries": [
+    {
+      "theme": "olympus",
+      "world": "temple-world.webp",
+      "atlas": "symbols-atlas.webp",
+      "worldDimensions": [
+        1774,
+        887
+      ],
+      "atlasDimensions": [
+        1448,
+        1086
+      ],
+      "symbolIds": [
+        "crown",
+        "ring",
+        "hourglass",
+        "chalice",
+        "gem-red",
+        "gem-purple",
+        "gem-yellow",
+        "gem-green",
+        "gem-blue",
+        "zeus-bolt",
+        "multiplier",
+        "laurel"
+      ],
+      "alphaZeroPct": 46.33,
+      "losslessAlphaVerified": true,
+      "losslessVisibleRgbVerified": true,
+      "bytes": 3666916
+    },
+    {
+      "theme": "sugar",
+      "world": "bakery-world.webp",
+      "atlas": "symbols-atlas.webp",
+      "worldDimensions": [
+        1774,
+        887
+      ],
+      "atlasDimensions": [
+        1448,
+        1086
+      ],
+      "symbolIds": [
+        "donut",
+        "cupcake",
+        "popsicle",
+        "gingerb",
+        "jellybean",
+        "gum",
+        "mint",
+        "candy-pink",
+        "candy-blue",
+        "lollipop",
+        "multiplier",
+        "jar"
+      ],
+      "alphaZeroPct": 75.24,
+      "losslessAlphaVerified": true,
+      "losslessVisibleRgbVerified": true,
+      "bytes": 2521798
+    },
+    {
+      "theme": "bonanza",
+      "world": "orchard-world.webp",
+      "atlas": "symbols-atlas.webp",
+      "worldDimensions": [
+        1774,
+        887
+      ],
+      "atlasDimensions": [
+        1448,
+        1086
+      ],
+      "symbolIds": [
+        "heart",
+        "grape",
+        "watermelon",
+        "plum",
+        "apple",
+        "blueberry",
+        "banana",
+        "candy-pink",
+        "candy-blue",
+        "lollipop",
+        "multiplier",
+        "cherries"
+      ],
+      "alphaZeroPct": 77.39,
+      "losslessAlphaVerified": true,
+      "losslessVisibleRgbVerified": true,
+      "bytes": 3265962
+    },
+    {
+      "theme": "juan",
+      "world": "fiesta-world.webp",
+      "atlas": "symbols-atlas.webp",
+      "worldDimensions": [
+        1774,
+        887
+      ],
+      "atlasDimensions": [
+        1448,
+        1086
+      ],
+      "symbolIds": [
+        "juan",
+        "senorita",
+        "chihuahua",
+        "vihuela",
+        "hot_sauce",
+        "A",
+        "K",
+        "Q",
+        "J",
+        "10",
+        "chili",
+        "pinata"
+      ],
+      "alphaZeroPct": 73.83,
+      "losslessAlphaVerified": true,
+      "losslessVisibleRgbVerified": true,
+      "bytes": 3071780
+    },
+    {
+      "theme": "wolf",
+      "world": "moonlit-world.webp",
+      "atlas": "symbols-atlas.webp",
+      "worldDimensions": [
+        1774,
+        887
+      ],
+      "atlasDimensions": [
+        1448,
+        1086
+      ],
+      "symbolIds": [
+        "wolf",
+        "eagle",
+        "cougar",
+        "mustang",
+        "feather",
+        "arrow",
+        "turquoise",
+        "amber",
+        "jasper",
+        "coyote",
+        "wild",
+        "coin"
+      ],
+      "alphaZeroPct": 77.74,
+      "losslessAlphaVerified": true,
+      "losslessVisibleRgbVerified": true,
+      "bytes": 2806544
+    },
+    {
+      "theme": "pharaoh",
+      "world": "temple-world.webp",
+      "atlas": "symbols-atlas.webp",
+      "worldDimensions": [
+        1774,
+        887
+      ],
+      "atlasDimensions": [
+        1448,
+        1086
+      ],
+      "symbolIds": [
+        "pharaoh",
+        "eye",
+        "ankh",
+        "jackal",
+        "falcon",
+        "lotus",
+        "gem-blue",
+        "gem-red",
+        "gem-green",
+        "scarab",
+        "wild",
+        "coin"
+      ],
+      "alphaZeroPct": 75.77,
+      "losslessAlphaVerified": true,
+      "losslessVisibleRgbVerified": true,
+      "bytes": 2889090
+    },
+    {
+      "theme": "bass",
+      "world": "lake-world.webp",
+      "atlas": "symbols-atlas.webp",
+      "worldDimensions": [
+        1774,
+        887
+      ],
+      "atlasDimensions": [
+        1448,
+        1086
+      ],
+      "symbolIds": [
+        "bigbass",
+        "smallfish",
+        "tackle",
+        "truck",
+        "anchor",
+        "ace",
+        "king",
+        "queen",
+        "jack",
+        "scatter",
+        "fisherman",
+        "coin"
+      ],
+      "alphaZeroPct": 72.3,
+      "losslessAlphaVerified": true,
+      "losslessVisibleRgbVerified": true,
+      "bytes": 3063134
+    }
+  ],
+  "wantedFeatureAtlas": {
+    "path": "/art-v2/wanted/feature-atlas.webp",
+    "dimensions": [
+      2172,
+      724
+    ],
+    "symbolIds": [
+      "skull",
+      "train",
+      "duel",
+      "dead"
+    ],
+    "metadata": "wanted/feature-atlas-metadata.json"
+  },
+  "audit": {
+    "metadataParses": true,
+    "boundsValid": true,
+    "allExpectedSymbolsPresent": true,
+    "noRegionEdgeWarnings": true,
+    "noDuplicatePngInPublic": true,
+    "noCodeFilesChangedByArtWorker": true
+  }
+}

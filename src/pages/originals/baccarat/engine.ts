@@ -1,6 +1,9 @@
 import type { Rng } from '../../../lib/fairness';
 
-/** Baccarat (Punto Banco) — Stake-style.
+/** Baccarat (Punto Banco) — Stake-style main bets, with optional canonical
+ * pair side bets from live Baccarat (not offered in Stake Originals).
+ * https://stake.com/casino/games/baccarat
+ * https://games.evolution.com/live-casino/live-baccarat/
  *
  *  Bets:
  *    Player → wins on player higher, pays 1:1
@@ -50,9 +53,9 @@ export type BaccaratRound = {
   bankerPair: boolean;
 };
 
-/** Side-bet kinds supported on the Baccarat table. The two main bets
- *  (player/banker/tie) are Side; the two side bets are first-two-card
- *  pair bets at 11:1, matching real Punto Banco. */
+/** Side-bet kinds supported on this local table. The three main bets
+ *  (player/banker/tie) are Side; the optional live-Baccarat pair extension
+ *  pays 11:1 for matching ranks in the first two cards. */
 export type BetKind = Side | 'playerPair' | 'bankerPair';
 
 export function play(rng: Rng): BaccaratRound {

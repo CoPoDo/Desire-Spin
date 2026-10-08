@@ -78,12 +78,10 @@ describe('Big Juan interruptible presentation', () => {
         for (const callback of callbacks) callback(now);
       });
     };
-    await frame(200); // spin-up
-    await frame(1000); // constant
-    await frame(1000); // deceleration reaches the real outcome
-    expect(strip.style.transform).toBe('translate3d(0, 0px, 0)');
+    await frame(0); // establish the one animation clock
+    await frame(600); // deceleration, same outcome nodes in the strip
     expect(Array.from(strip.children).slice(0, 4)).toEqual(landedNodes);
-    await frame(60); // small mechanical settle, then React handoff
+    await frame(300); // reaches zero velocity and hands off in the same commit
     await act(async () => { await completion; });
     const rest = () => Array.from(view.container.querySelectorAll('.bj-rest-cells .bj-spin-glyph'));
     expect(rest().map((node) => node.innerHTML)).toEqual(landingArtwork);
@@ -97,6 +95,29 @@ describe('Big Juan interruptible presentation', () => {
     view.rerender(<SpinReel ref={ref} {...props} symbols={final} />);
     expect(rest()).toEqual(restingNodes);
     expect(rest().map((node) => node.innerHTML)).toEqual(landingArtwork);
+  });
+
+  it('accelerates into cruise and decelerates without a phase-position jump', async () => {
+    const frames = new Map<number, FrameRequestCallback>();
+    let id = 0;
+    vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => { frames.set(++id, callback); return id; });
+    vi.stubGlobal('cancelAnimationFrame', (handle: number) => { frames.delete(handle); });
+    const { ref, container } = reel();
+    let completion!: Promise<void>;
+    act(() => { completion = ref.current!.spin(['10', 'J', 'K', 'Q'], options); });
+    const strip = container.querySelector<HTMLElement>('.spin-reel-strip')!;
+    const positions: number[] = [];
+    for (let time = 0; time <= 900; time += 15) {
+      await act(async () => { const pending = [...frames.values()]; frames.clear(); pending.forEach((callback) => callback(time)); });
+      positions.push(Number(strip.style.transform.match(/calc\(([-\d.e+]+)/)?.[1] ?? 0));
+    }
+    await completion;
+    const velocities = positions.slice(1).map((position, index) => (position - positions[index]!) / .015);
+    expect(positions.every((position, index) => !index || position >= positions[index - 1]!)).toBe(true);
+    expect(velocities[0]).toBeLessThan(velocities[20]! * .02);
+    expect(velocities.at(-1)).toBeLessThan(velocities[20]! * .02);
+    expect(velocities.slice(11, 37).every((velocity) => Math.abs(velocity - velocities[20]!) < .01)).toBe(true);
+    expect(container.querySelector('.spin-reel-strip')?.children).toHaveLength(0);
   });
 
   it('cancels count-up without waiting for another animation frame', async () => {

@@ -1,0 +1,171 @@
+{
+  "capturedAt": "2026-10-08",
+  "referenceGame": "Big Bass Bonanza, original Pragmatic Play release",
+  "sources": [
+    "https://www.daznbet.com/uploads/media/DUK/Game-Rules/Big_Bass_Bonanza_EN.pdf",
+    "https://stake.com/casino/games/pragmatic-play-big-bass-bonanza"
+  ],
+  "method": "Visually inspected page 1 of the game rules for symbol identities, paytable and ten payline diagrams; compared rule text and total-bet paytable with Stake.",
+  "paytableUnits": "bet per line; divide by ten for multiples of total bet",
+  "paytable": {
+    "floater": {
+      "2": 5,
+      "3": 50,
+      "4": 200,
+      "5": 2000
+    },
+    "rod": {
+      "3": 30,
+      "4": 150,
+      "5": 1000
+    },
+    "dragonfly": {
+      "3": 20,
+      "4": 100,
+      "5": 500
+    },
+    "tacklebox": {
+      "3": 20,
+      "4": 100,
+      "5": 500
+    },
+    "bigbass": {
+      "3": 10,
+      "4": 50,
+      "5": 200
+    },
+    "ace": {
+      "3": 5,
+      "4": 25,
+      "5": 100
+    },
+    "king": {
+      "3": 5,
+      "4": 25,
+      "5": 100
+    },
+    "queen": {
+      "3": 5,
+      "4": 25,
+      "5": 100
+    },
+    "jack": {
+      "3": 5,
+      "4": 25,
+      "5": 100
+    },
+    "ten": {
+      "3": 5,
+      "4": 25,
+      "5": 100
+    }
+  },
+  "paylinesZeroBasedTopToBottom": [
+    [
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      2,
+      2,
+      2,
+      2,
+      2
+    ],
+    [
+      1,
+      0,
+      0,
+      0,
+      1
+    ],
+    [
+      1,
+      2,
+      2,
+      2,
+      1
+    ],
+    [
+      2,
+      1,
+      0,
+      1,
+      2
+    ],
+    [
+      0,
+      1,
+      2,
+      1,
+      0
+    ],
+    [
+      2,
+      2,
+      1,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      1,
+      2,
+      2
+    ],
+    [
+      2,
+      1,
+      1,
+      1,
+      0
+    ]
+  ],
+  "scatterFreeSpins": {
+    "3": 10,
+    "4": 15,
+    "5": 20
+  },
+  "scatterCashPay": 0,
+  "moneyRangeFromStake": [
+    2,
+    2000
+  ],
+  "fishAlwaysValued": true,
+  "wildsOnlyInFreeSpins": true,
+  "collectorMilestones": [
+    4,
+    8,
+    12
+  ],
+  "spinsPerRetrigger": 10,
+  "retriggerCollectionMultipliers": [
+    2,
+    3,
+    10
+  ],
+  "retriggerTiming": "Queued batches; finish the preceding batch before applying the new collection multiplier. Wild count carries through the feature.",
+  "randomExtraFish": "Can appear after a free spin with exactly one Wild; public rules do not specify probability, count distribution or position distribution.",
+  "wholeRoundMaximumBetMultiplier": 2100,
+  "remainingFeaturesForfeitedAtCap": true,
+  "originalBonusBuy": false,
+  "localDemoShortcutCostMultiplier": 100,
+  "publishedRtpInPdf": 0.9671,
+  "unpublishedLocalApproximations": [
+    "reel strips and symbol frequencies",
+    "intermediate fish money values and their frequency distribution",
+    "extra-fish count, placement and frequency distribution"
+  ],
+  "localProbabilityReport": "../slot-sampling-bass-final-2026-10-08.json"
+}
