@@ -69,3 +69,81 @@ Status legend: **Rebuilt** = critical structural mismatch corrected; **Verified*
 - Registry tests require exactly 34 unique manifests and lobby routes and reject all five removed IDs.
 - Golden tests cover Diamonds categories/RTP, Cases risk RTP, Sugar Rush cluster/spots, Sweet Bonanza base multiplier exclusion, Big Bass dimensions/paylines, deterministic reel outcomes, and event chronology.
 - The full legacy engine/RTP suite remains active alongside the new fidelity suite.
+
+## Reliability and presentation follow-up — 2026-10-08
+
+The following corrections apply to the local play-money implementation. They do
+not certify provider-equivalent probability tables or licensed visuals.
+
+- Line and Sugar Rush games now derive the complete base/feature cycle from one
+  nonce, preserve its starting stake/options, and record one wager and payout
+  before playing its presentation. Navigating away or refreshing cannot abandon
+  the remaining free-spin awards. Sugar Rush bonus purchases now include their
+  full 100× cost in that same history entry.
+- All slot controls use a synchronous round lock and the wallet's fresh debit
+  result. Repeated spin clicks skip presentation rather than debit again. A
+  failed outcome calculation refunds only an unsettled wager.
+- The maximum payout applies across the whole base/feature cycle. Final tumble
+  frames and feature-end totals agree with settlement, and caps stop further
+  feature generation. Pathological RNG/configurations have explicit safety
+  guards rather than unbounded loops.
+- Tumble animation keys are seed-replay deterministic. New symbols land before
+  their multiplier presentation. Turbo scales grid timing, and reduced-motion
+  mode resolves without long transform/particle sequences. Reel completion is
+  once-only and stale timers/listeners are canceled on unmount.
+- Line evaluation considers the best eligible Wild substitution once per line,
+  including Wild-only prefixes. Local paylines include balanced diagonals and
+  are inspectable in each game's paytable; they are not represented as exact
+  provider lines. VS/expanding-symbol transforms follow the initial reel stops.
+- Wolf Gold replays the held-money respin boards separately, preserving the
+  original grid on which its line wins were evaluated.
+- Local rule/pay screens now disclose implemented payouts, feature behavior,
+  caps, and probability limitations. Sweet Bonanza displays its existing 1.9×
+  base calibration in the base paytable, with separate free-spin values, and
+  correctly describes multipliers as a free-spin-only feature. Unsupported
+  claims about bonus expected return/RTP were removed from purchase/info UI.
+- Shared accessible dialogs replace the tumble bet, autoplay, and buy sheets.
+  Autoplay pauses for menus and stops on backgrounding. Line and Sugar Rush
+  controls include visible Skip, Turbo, and rule/pay access with mobile titles,
+  status announcements, and readable result displays.
+
+New deterministic coverage: `tests/slot-regression.test.ts` and
+`tests/slot-controls.test.tsx`. Big Juan interruption/control coverage is in
+`tests/big-juan-ui.test.tsx` and `tests/big-juan-animation.test.tsx`.
+
+### Landing-continuity follow-up
+
+A user-reported “reel lands, then the board changes” defect was traced to
+multiple independent presentation bugs and corrected:
+
+- The shared reel renderer discarded `multiplier` and original cell keys, so a
+  multiplier's landed representation differed from the resting grid. It now
+  carries the complete cell and uses the same artwork renderer at both stages.
+- Tumble multiplier cells are now determined before the initial/drop frame, so
+  the landing frame already contains the actual outcome. Following multiplier
+  frames emphasize those same cells rather than substituting new symbols.
+  Later multipliers may occupy only newly entering cells; non-winning survivors
+  retain their identity and descend in their original columns. Cosmetic token
+  replacements on an already stopped losing board were removed. These changes
+  alter the local probability path; the existing RTP smoke envelope passes, but
+  old point estimates must not be treated as current certified RTP.
+- Sugar Rush frames now carry deterministic candy keys. The UI moves surviving
+  keyed elements down, removes only winners, and drops newly keyed candies from
+  above. Multiplier-position backgrounds stay anchored under their own grid
+  cells instead of moving with the candy artwork.
+- Wolf/Wanted/Pharaoh use actual finite vertical strips containing the committed
+  stop symbols. Their former wobble-then-replace presentation was removed.
+  Wanted/Wolf's announced Wild/expansion features remain separate, intentional
+  post-stop transforms.
+- Big Juan's moving/resting reels now share the same SVG renderer. Final strip
+  content remains until the synchronous rest-view handoff. Bonus cells and the
+  fourth reel contain the prepared outcome throughout their finite roll.
+- Desktop line and Sugar boards are height-constrained to the viewport; their
+  control areas and headers use quieter borders, spacing, and less ornamental
+  glow. Narrow layouts can scroll through all controls.
+
+`tests/slot-landing.test.tsx` verifies identical final cell/artwork data through
+reel-to-grid handoff, multiplier board identity, retained survivor DOM nodes,
+Sugar's column/gravity topology, and once-only reel completion. Sugar control
+coverage additionally checks that the exact candy DOM node and artwork survive
+movement to the next row.

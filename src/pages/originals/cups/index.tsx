@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
 import { useGame } from '../../../game-context';
-import { createRng } from '../../../lib/fairness';
+import { useInteractiveRound, useRoundState } from '../_shared/useInteractiveRound';
+import { useRoundPlayback } from '../_shared/useRoundPlayback';
 import { fmtCurrency, fmtMultiplier } from '../../../lib/format';
 import { BetInput } from '../_shared/BetInput';
 import {
@@ -18,12 +19,14 @@ const DIFFICULTIES: Difficulty[] = ['easy', 'medium', 'hard'];
 type Phase = 'idle' | 'reveal-ball' | 'shuffling' | 'pick' | 'reveal';
 
 export function CupsGame() {
-  const { balance, fairness, sound, history, session } = useGame();
+  const { balance, sound } = useGame();
+  const round = useInteractiveRound('3 Cups');
+  const { wait, schedule } = useRoundPlayback();
   const [bet, setBet] = useState(1);
   const [difficulty, setDifficulty] = useState<Difficulty>('easy');
-  const [phase, setPhase] = useState<Phase>('idle');
+  const [phase, setPhase, phaseRef] = useRoundState<Phase>('idle');
   const [result, setResult] = useState<CupsResult | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy, busyRef] = useRoundState(false);
   /** cupOrder[visualPos] = cupId — represents which cup is at each
    *  visible position. Shuffled by repeatedly swapping pairs so cups
    *  visibly slide between positions (like a real shell-game where
@@ -47,91 +50,49 @@ export function CupsGame() {
     setPhase('idle');
   }, [cupCount]);
 
+  round.onLeave.current = (updateView = false) => {
+    if (updateView) { setPhase('idle'); setBusy(false); setResult(null); setBallCupId(null); }
+    return round.wager.current?.bet ?? 0;
+  };
+
   const start = useCallback(async () => {
-    if (busy) return;
-    if (balance.balance < bet || bet <= 0) return;
-    sound.play('click');
-    balance.debit(bet);
-    setResult(null);
-    setBusy(true);
-    // Reset cupOrder, then briefly REVEAL the ball under one cup so
-    // the player gets a "starting position" beat. Real shell games
-    // always show the ball first, then cover it. The chosen cup is
-    // derived from the engine seed so it stays provably-fair.
-    const seeds = fairness.consumeNonce();
-    const rng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
-    const r = play(rng, bet, 0, difficulty); // dummy pickedAt=0; will overwrite later
+    if (busyRef.current || !['idle', 'reveal'].includes(phaseRef.current)) return;
+    const wager = round.begin(bet);
+    if (!wager) return;
+    sound.play('click'); setResult(null); setBusy(true);
+    const r = play(wager.rng, bet, 0, difficulty);
     setBallCupId(r.ballAt);
-    setCupOrder(Array.from({ length: cupCount }, (_, i) => i));
-    setPhase('reveal-ball');
-    await new Promise<void>((res) => setTimeout(res, 650));
+    let order = Array.from({ length: cupCount }, (_, index) => index);
+    setCupOrder(order); setPhase('reveal-ball');
+    if (!(await wait(650)) || wager.settled) return;
     setPhase('shuffling');
-    // Shuffle: K swaps. Each swap moves cups visibly between positions
-    // (framer-motion's `layout` prop animates the index change).
-    const K = cupCount === 3 ? 5 : cupCount === 4 ? 6 : 7;
-    for (let k = 0; k < K; k++) {
+    const swaps = cupCount === 3 ? 5 : cupCount === 4 ? 6 : 7;
+    for (let swap = 0; swap < swaps; swap++) {
       sound.play('tick');
-      setCupOrder((prev) => {
-        const next = [...prev];
-        const i = Math.floor(Math.random() * next.length);
-        let j = Math.floor(Math.random() * next.length);
-        while (j === i) j = Math.floor(Math.random() * next.length);
-        [next[i], next[j]] = [next[j]!, next[i]!];
-        return next;
-      });
-      await new Promise<void>((res) => setTimeout(res, 280));
+      const left = wager.rng.nextInt(cupCount);
+      const draw = wager.rng.nextInt(cupCount - 1);
+      const right = draw >= left ? draw + 1 : draw;
+      order = [...order];
+      [order[left], order[right]] = [order[right]!, order[left]!];
+      setCupOrder(order);
+      if (!(await wait(280)) || wager.settled) return;
     }
-    setPhase('pick');
-    setBusy(false);
-    // Save the consumed seeds so pick() can record them later. Stash
-    // on the result object so we don't need an extra useState.
-    pendingSeedsRef.current = seeds;
-  }, [busy, balance, bet, sound, difficulty, fairness, cupCount]);
+    setPhase('pick'); setBusy(false);
+  }, [bet, difficulty, cupCount, sound, round, busyRef, phaseRef, setBusy, setPhase, wait]);
 
-  // Stash for the seeds used by the active round so pick() can attach
-  // them to the history record.
-  const pendingSeedsRef = useRef<{ serverSeed: string; clientSeed: string; nonce: number } | null>(null);
-
-  const pick = useCallback(
-    (cupId: number) => {
-      if (phase !== 'pick' || busy || ballCupId === null) return;
-      setBusy(true);
-      sound.play('click');
-      const win = cupId === ballCupId;
-      const payout = win ? +(bet * mult).toFixed(2) : 0;
-      const r: CupsResult = {
-        ballAt: ballCupId,
-        pickedAt: cupId,
-        win,
-        multiplier: win ? mult : 0,
-        payout,
-      };
-      setResult(r);
-      setPhase('reveal');
-      if (win) {
-        balance.credit(payout);
-        sound.play(mult >= 3 ? 'big-win' : 'win');
-        fireConfetti({
-          count: mult >= 3 ? 110 : 60,
-        });
-      } else {
-        sound.play('drop');
-      }
-      const seeds = pendingSeedsRef.current;
-      history.record({
-        game: '3 Cups',
-        bet,
-        payout,
-        multiplier: r.multiplier,
-        serverSeedHash: fairness.hash,
-        clientSeed: seeds?.clientSeed ?? '',
-        nonce: seeds?.nonce ?? 0,
-      });
-      session.recordSpin(bet, payout, false);
-      setTimeout(() => setBusy(false), 320);
-    },
-    [phase, busy, bet, mult, ballCupId, balance, sound, history, fairness, session, pendingSeedsRef],
-  );
+  const pick = useCallback((cupId: number) => {
+    const wager = round.wager.current;
+    if (phaseRef.current !== 'pick' || busyRef.current || ballCupId === null || !wager || wager.settled) return;
+    setBusy(true); sound.play('click');
+    const win = cupId === ballCupId;
+    const payout = win ? +(wager.bet * mult).toFixed(2) : 0;
+    round.settle(payout);
+    setResult({ ballAt: ballCupId, pickedAt: cupId, win, multiplier: win ? mult : 0, payout });
+    setPhase('reveal');
+    sound.play(win ? 'big-win' : 'drop');
+    if (win) fireConfetti({ count: 70 });
+    schedule(() => setBusy(false), 320);
+  }, [round, phaseRef, busyRef, ballCupId, mult, setBusy, setPhase, sound, schedule]);
 
   const reset = useCallback(() => {
     setPhase('idle');
@@ -142,7 +103,9 @@ export function CupsGame() {
 
   return (
     <OriginalPageLayout title="3 Cups">
+      {round.error && <p role="alert" className="p-3 text-sm text-stake-red">{round.error}</p>}
       <div className="flex flex-col p-4 gap-4 max-w-md mx-auto w-full">
+        <p className="text-[11px] text-stake-muted">Follow the ball, then choose a cup. Leaving before choosing returns your stake.</p>
         {/* Status */}
         <div className="rounded-xl bg-stake-card border border-stake-border p-3 text-center">
           {phase === 'idle' && (

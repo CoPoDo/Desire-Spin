@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Modal } from '../ui/Modal';
 import { useGame } from '../../game-context';
 import { shortHash } from '../../lib/format';
@@ -7,20 +7,27 @@ export function FairnessPanel({ open, onClose }: { open: boolean; onClose: () =>
   const { fairness } = useGame();
   const [clientDraft, setClientDraft] = useState(fairness.seeds.clientSeed);
   const [copied, setCopied] = useState<string | null>(null);
+  const [copyError, setCopyError] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout>>();
+  useEffect(() => { if (open) { setClientDraft(fairness.seeds.clientSeed); setCopyError(false); } }, [open, fairness.seeds.clientSeed]);
+  useEffect(() => () => clearTimeout(timer.current), []);
 
   const copy = async (label: string, text: string) => {
     try {
       await navigator.clipboard.writeText(text);
       setCopied(label);
-      setTimeout(() => setCopied(null), 1200);
+      setCopyError(false);
+      clearTimeout(timer.current);
+      timer.current = setTimeout(() => setCopied(null), 1200);
     } catch {
-      /* ignore */
+      setCopyError(true);
     }
   };
 
   return (
     <Modal open={open} onClose={onClose} title="Local fairness replay" width="lg">
       <div className="space-y-5">
+        {copyError && <p role="status" className="text-sm text-ink-dim">Clipboard unavailable. Select and copy the seed text manually.</p>}
         <p className="text-sm text-ink-dim">
           Every result is deterministic from a local secret seed, your client seed, and a
           per-bet nonce. All values are created and stored in this browser. The hash supports
@@ -45,7 +52,8 @@ export function FairnessPanel({ open, onClose }: { open: boolean; onClose: () =>
         <Field label="Client seed (you control)">
           <div className="flex gap-2">
             <input
-              className="input font-mono text-sm flex-1"
+              aria-label="Client seed"
+              className="input font-mono text-sm flex-1 min-w-0"
               value={clientDraft}
               onChange={(e) => setClientDraft(e.target.value)}
               spellCheck={false}
@@ -65,12 +73,12 @@ export function FairnessPanel({ open, onClose }: { open: boolean; onClose: () =>
         </Field>
 
         <div className="card p-4 space-y-3 bg-bg-elev/60">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap gap-3 items-center justify-between">
             <div>
               <h3 className="font-semibold">Rotate local secret seed</h3>
               <p className="text-xs text-ink-dim">
-                Reveal the current local seed and start a fresh one, preserving past rounds
-                for deterministic replay.
+                Reveal the current local seed and start a fresh one. Only the most recent
+                revealed seed is kept; copy it before rotating again.
               </p>
             </div>
             <button className="btn-primary" onClick={fairness.rotate}>

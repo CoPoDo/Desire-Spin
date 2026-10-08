@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useReducedMotion } from 'framer-motion';
 
 /** Smoothly animates a number value from its previous render to the new one.
  *  Used for the Last Win readout and the Total Won counter during free spins
@@ -16,12 +17,14 @@ export function CountUp({
   className?: string;
   style?: React.CSSProperties;
 }) {
+  const reducedMotion = useReducedMotion();
   const [display, setDisplay] = useState(value);
   const fromRef = useRef(value);
   const startRef = useRef<number | null>(null);
   const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
+    if (reducedMotion || duration <= 0 || !Number.isFinite(duration)) { setDisplay(value); return; }
     if (value === display) return;
     fromRef.current = display;
     startRef.current = null;
@@ -40,7 +43,7 @@ export function CountUp({
       if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [value, duration]);
+  }, [value, duration, reducedMotion]);
 
   return (
     <span className={className} style={style}>

@@ -1,18 +1,9 @@
 import type { Rng } from '../../../lib/fairness';
 
-/** Dragon Tower (Stake-style):
- *  Climb a tower row by row. Each row has N tiles, of which D are deadly
- *  (skulls) and N-D are safe. Pick a safe tile to advance. Cash out
- *  anytime; one skull = lose all.
- *
- *  Difficulty determines tiles-per-row + deaths-per-row:
- *    easy:    4 tiles, 1 death  → 75% safe → mult ×0.99/(0.75) = 1.32 / step
- *    medium:  3 tiles, 1 death  → 66.7% safe → mult ×1.485
- *    hard:    2 tiles, 1 death  → 50% safe → mult ×1.98
- *    expert:  3 tiles, 2 deaths → 33.3% safe → mult ×2.97
- *    master:  4 tiles, 3 deaths → 25% safe → mult ×3.96
- *  Total rows: 9 (so max ladder, master = 3.96^9 ≈ 60,000× theoretical
- *  but capped by Stake's display formatting). */
+/** Dragon Tower: nine rows, one fixed 2% edge on the cashout total.
+ *  Each row is independently shuffled. The per-row fair growth is tiles/safe.
+ *  Source: https://stake.com/casino/games/dragon-tower (98% RTP).
+ */
 
 export type Difficulty = 'easy' | 'medium' | 'hard' | 'expert' | 'master';
 export const ROWS = 9;
@@ -25,7 +16,7 @@ const DIFFS: Record<Difficulty, { tiles: number; deaths: number }> = {
   master:  { tiles: 4, deaths: 3 },
 };
 
-const HOUSE_EDGE = 0.01;
+const HOUSE_EDGE = 0.02;
 
 export function configFor(d: Difficulty) {
   return DIFFS[d];
@@ -35,14 +26,15 @@ export function stepMultiplierFor(d: Difficulty): number {
   const { tiles, deaths } = DIFFS[d];
   const safe = tiles - deaths;
   if (safe <= 0) return 0;
-  // Per-step fair multiplier = tiles / safe; with house edge each step.
+  // First-row gross return; later rows grow by the fair conditional odds.
   return +((tiles / safe) * (1 - HOUSE_EDGE)).toFixed(4);
 }
 
 export function multiplierAt(d: Difficulty, step: number): number {
   if (step <= 0) return 1;
-  const m = stepMultiplierFor(d);
-  return +Math.pow(m, step).toFixed(4);
+  const { tiles, deaths } = DIFFS[d];
+  if (!Number.isInteger(step) || step > ROWS) return 0;
+  return +((1 - HOUSE_EDGE) * Math.pow(tiles / (tiles - deaths), step)).toFixed(6);
 }
 
 /** Place skull positions per row, deterministically from RNG. */
@@ -88,7 +80,7 @@ export function startRound(rng: Rng, bet: number, difficulty: Difficulty): Tower
 }
 
 export function pickTile(round: TowerRound, tile: number): TowerRound {
-  if (round.done || round.step >= ROWS) return round;
+  if (round.done || round.step >= ROWS || !Number.isInteger(tile) || tile < 0 || tile >= configFor(round.difficulty).tiles) return round;
   const skulls = round.skulls[round.step]!;
   const isSkull = skulls.includes(tile);
   const picks = round.picks.slice();

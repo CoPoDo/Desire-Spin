@@ -1,5 +1,6 @@
-import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { SlotConfig } from './types';
+export type ReelConfig = Pick<SlotConfig, 'cols' | 'rows' | 'symbols' | 'scatterId'> & { theme: Pick<SlotConfig['theme'], 'cellClass'> };
 import type { CellRenderer } from './Grid';
 
 /**
@@ -27,7 +28,7 @@ export function SpinReel({
   staggerMs,
   onComplete,
 }: {
-  cfg: SlotConfig;
+  cfg: ReelConfig;
   renderCell: CellRenderer;
   /** Final grid the reels lock onto at the top of each strip. */
   finalGrid: { symbolId: string; multiplier?: number; key: string }[][];
@@ -48,14 +49,16 @@ export function SpinReel({
   // waiting on the reel. Fires onComplete exactly once.
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
+  const completeRef = useRef(false);
+  const finish = useCallback(() => {
+    if (completeRef.current) return;
+    completeRef.current = true;
+    onCompleteRef.current();
+  }, []);
   useLayoutEffect(() => {
     const longest = durationMs + (cfg.cols - 1) * staggerMs;
-    let done = false;
-    const t = window.setTimeout(() => {
-      if (done) return;
-      done = true;
-      onCompleteRef.current();
-    }, longest + 400);
+    completeRef.current = false;
+    const t = window.setTimeout(finish, longest + 400);
     return () => window.clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -75,7 +78,7 @@ export function SpinReel({
       const firstCol = el.querySelector('[data-spin-reel-col]') as HTMLElement | null;
       const viewportH = firstCol?.clientHeight ?? el.clientHeight;
       if (viewportH <= 0) return;
-      const cellH = Math.max(20, (viewportH - (cfg.rows - 1) * GAP_PX) / cfg.rows);
+      const cellH = Math.max(1, (viewportH - (cfg.rows - 1) * GAP_PX) / cfg.rows);
       setCellHeight(cellH);
     };
     recompute();
@@ -108,7 +111,7 @@ export function SpinReel({
           renderCell={renderCell}
           cellClass={cfg.theme.cellClass ?? ''}
           durationMs={durationMs + c * staggerMs}
-          onComplete={c === cfg.cols - 1 ? onComplete : undefined}
+          onComplete={c === cfg.cols - 1 ? finish : undefined}
         />
       ))}
     </div>
@@ -150,6 +153,12 @@ function SpinReelColumn({
   const durationRef = useRef(durationMs);
   durationRef.current = durationMs;
   const startedRef = useRef(false);
+  const cleanupRef = useRef<(() => void) | null>(null);
+  useLayoutEffect(() => () => {
+    cleanupRef.current?.();
+    cleanupRef.current = null;
+    startedRef.current = false;
+  }, []);
 
   // Strip layout, top → bottom:
   //   FINAL_SYMBOLS  (rows entries — revealed at rest)
@@ -157,7 +166,7 @@ function SpinReelColumn({
   // The strip is initially translated up so only the bottom block of
   // filler is visible, then animates to translateY(0) which puts the
   // FINAL_SYMBOLS in the viewport.
-  const SPIN_LOOPS = 5;
+  const SPIN_LOOPS = 2;
   const stripSymbols = useMemo(() => {
     const filler: string[] = [];
     for (let i = 0; i < rows * SPIN_LOOPS; i++) {
@@ -165,8 +174,7 @@ function SpinReelColumn({
         fillerPool[Math.floor(Math.random() * fillerPool.length)] ?? fillerPool[0] ?? '',
       );
     }
-    const finalIds = finalColumn.map((c) => c.symbolId);
-    return [...finalIds, ...filler];
+    return [...finalColumn, ...filler.map((symbolId, index) => ({ symbolId, multiplier: undefined, key: `filler-${colIndex}-${index}` }))];
     // Generated once per mount — re-generating filler every render
     // would jitter the visible symbols mid-spin.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -200,7 +208,8 @@ function SpinReelColumn({
     strip.style.transform = 'translate3d(0, 0, 0)';
 
     let settled = false;
-    const handleEnd = () => {
+    const handleEnd = (event?: TransitionEvent) => {
+      if (event && (event.target !== strip || event.propertyName !== 'transform')) return;
       if (settled) return;
       settled = true;
       window.clearTimeout(t);
@@ -210,6 +219,11 @@ function SpinReelColumn({
     // Fallback in case transitionend doesn't fire (tab-switch, etc.).
     const t = window.setTimeout(handleEnd, dur + 140);
     strip.addEventListener('transitionend', handleEnd);
+    cleanupRef.current = () => {
+      settled = true;
+      window.clearTimeout(t);
+      strip.removeEventListener('transitionend', handleEnd);
+    };
     // Intentionally only depends on cellHeight — see refs above.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cellHeight]);
@@ -241,10 +255,13 @@ function SpinReelColumn({
           visibility: cellHeight > 0 ? 'visible' : 'hidden',
         }}
       >
-        {stripSymbols.map((symbolId, i) => (
+        {stripSymbols.map((cell, i) => (
           <ReelStripCell
             key={`${colIndex}-${i}`}
-            symbolId={symbolId}
+            symbolId={cell.symbolId}
+            multiplier={cell.multiplier}
+            cellKey={cell.key}
+            final={i < rows}
             cellClass={cellClass}
             height={cellHeight}
             renderCell={renderCell}
@@ -257,17 +274,26 @@ function SpinReelColumn({
 
 function ReelStripCell({
   symbolId,
+  multiplier,
+  cellKey,
+  final,
   cellClass,
   height,
   renderCell,
 }: {
   symbolId: string;
+  multiplier?: number;
+  cellKey: string;
+  final: boolean;
   cellClass: string;
   height: number;
   renderCell: CellRenderer;
 }): ReactNode {
   return (
     <div
+      data-reel-final={final ? cellKey : undefined}
+      data-symbol={symbolId}
+      data-multiplier={multiplier}
       className={`cell ${cellClass}`}
       style={{
         flexShrink: 0,
@@ -275,7 +301,7 @@ function ReelStripCell({
         height: height > 0 ? `${height}px` : undefined,
       }}
     >
-      {renderCell({ symbolId, winning: false, cellKey: `spin-${symbolId}` })}
+      {renderCell({ symbolId, multiplier, winning: false, cellKey })}
     </div>
   );
 }

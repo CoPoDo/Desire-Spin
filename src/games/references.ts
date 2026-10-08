@@ -52,7 +52,7 @@ export const GAME_REFERENCES: readonly GameReferenceManifest[] = [
     referenceTitle: title as string,
     referenceVersion: 'Stake Originals web client, pinned audit',
     sources: [STAKE, `https://stake.com/casino/games/${id}`],
-    targetRtp: id === 'diamonds' ? 0.9829 : 0.99,
+    targetRtp: id === 'diamonds' ? 0.9829 : id === 'dragon-tower' || id === 'pump' ? 0.98 : 0.99,
     mechanics: mechanics as string[],
     fidelity: 'documented',
     multiplayerMode: id === 'crash' ? 'local-simulation' : 'none',

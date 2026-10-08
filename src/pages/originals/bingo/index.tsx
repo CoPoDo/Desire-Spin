@@ -1,3 +1,4 @@
+import { useRoundPlayback } from '../_shared/useRoundPlayback';
 import { useCallback, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
@@ -22,7 +23,7 @@ export function BingoGame() {
   const { balance, fairness, sound, history, session } = useGame();
   const [bet, setBet] = useState(1);
   const [phase, setPhase] = useState<Phase>('idle');
-  const [busy, setBusy] = useState(false);
+  const { busy, busyRef, setBusy, schedule } = useRoundPlayback();
   const [result, setResult] = useState<BingoResult | null>(null);
   const [drawnSoFar, setDrawnSoFar] = useState<number[]>([]);
   const [marked, setMarked] = useState<Set<number>>(new Set([12])); // FREE
@@ -32,11 +33,12 @@ export function BingoGame() {
   const [lineCallout, setLineCallout] = useState<{ id: number; count: number } | null>(null);
 
   const start = useCallback(() => {
-    if (busy) return;
-    if (balance.balance < bet || bet <= 0) return;
+    if (busyRef.current) return;
+    if (!balance.canAfford(bet)) return;
+    if (busyRef.current || !balance.debit(bet)) return;
     setBusy(true);
     sound.play('click');
-    balance.debit(bet);
+
     setPhase('drawing');
     setDrawnSoFar([]);
     setMarked(new Set([12]));
@@ -44,16 +46,29 @@ export function BingoGame() {
     const seeds = fairness.consumeNonce();
     const rng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
     const r = play(rng, bet);
+    if (r.payout > 0) balance.credit(r.payout);
+    history.record({
+      game: 'Bingo',
+      bet,
+      payout: r.payout,
+      multiplier: r.multiplier,
+      serverSeedHash: fairness.hash,
+      clientSeed: seeds.clientSeed,
+      nonce: seeds.nonce,
+    });
+    session.recordSpin(bet, r.payout, false);
+
     setResult(r);
 
     // Animate draws sequentially.
     let i = 0;
+    const markedNow = new Set<number>([12]);
+    let lineCount = 0;
     const drawNext = () => {
       if (i >= DRAW_COUNT) {
         // Final settle
         setPhase('reveal');
         if (r.payout > 0) {
-          balance.credit(r.payout);
           sound.play(
             r.lineCount >= 4 ? 'mega-win' :
             r.lineCount >= 2 ? 'big-win' : 'win',
@@ -68,16 +83,7 @@ export function BingoGame() {
         } else {
           sound.play('drop');
         }
-        history.record({
-          game: 'Bingo',
-          bet,
-          payout: r.payout,
-          multiplier: r.multiplier,
-          serverSeedHash: fairness.hash,
-          clientSeed: seeds.clientSeed,
-          nonce: seeds.nonce,
-        });
-        session.recordSpin(bet, r.payout, false);
+
         setBusy(false);
         return;
       }
@@ -99,32 +105,23 @@ export function BingoGame() {
       // 'tick' otherwise.
       sound.play(cardIdx >= 0 ? 'coin' : 'tick');
       if (cardIdx >= 0) {
-        setMarked((prev) => {
-          const next = new Set(prev);
-          next.add(cardIdx);
-          // Recompute lines after this mark. If line count just
-          // INCREASED, fire a "+1 LINE!" floating callout so the
-          // player gets a clear "BINGO!" moment when each new line
-          // completes — matches real live-bingo callouts where the
-          // caller announces each line.
-          const lines = computeLineMatches(r.card, next);
-          setCompletedLines((prevLines) => {
-            if (lines.length > prevLines.length) {
-              setLineCallout({ id: Date.now() + Math.random(), count: lines.length });
-              sound.play(lines.length >= 3 ? 'mega-win' : 'big-win');
-              window.setTimeout(() => setLineCallout(null), 1100);
-            }
-            return lines;
-          });
-          return next;
-        });
+        markedNow.add(cardIdx);
+        const lines = computeLineMatches(r.card, markedNow);
+        if (lines.length > lineCount) {
+          setLineCallout({ id: i, count: lines.length });
+          sound.play(lines.length >= 3 ? 'mega-win' : 'big-win');
+          schedule(() => setLineCallout(null), 1100);
+        }
+        lineCount = lines.length;
+        setMarked(new Set(markedNow));
+        setCompletedLines(lines);
       }
       // Faster pacing now that we draw 40 numbers (was 12). 130ms each
       // gives ~5.2s total — fast enough to stay engaging without
       // feeling rushed. The "tick" SFX still plays per draw.
-      setTimeout(drawNext, 130);
+      schedule(drawNext, 130);
     };
-    setTimeout(drawNext, 380);
+    schedule(drawNext, 380);
   }, [busy, balance, bet, fairness, sound, history, session]);
 
   const reset = useCallback(() => {
@@ -243,7 +240,7 @@ export function BingoGame() {
             <BetInput bet={bet} onBetChange={setBet} disabled={busy} />
             <button
               onClick={phase === 'reveal' ? () => { reset(); start(); } : start}
-              disabled={busy || balance.balance < bet || bet <= 0}
+              disabled={busy || !balance.canAfford(bet)}
               className="w-full py-3.5 rounded-xl bg-stake-green text-stake-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
             >
               {phase === 'reveal' ? 'Play Again' : `Buy Card · ${fmtCurrency(bet)}`}

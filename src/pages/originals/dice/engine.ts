@@ -21,7 +21,7 @@ const HOUSE_EDGE = 0.01; // 1% — matches Stake's 99% RTP on Dice.
 
 /** 0 to 99.99 inclusive on each end */
 export function rollDice(rng: Rng): number {
-  // Two independent draws to get a 0-9999 integer, then divide by 100.
+  // One uniform draw in 0..9999, expressed in hundredths.
   // This matches Stake's documented dice roll math (4-decimal precision
   // expressed as 2-decimal display).
   const v = rng.nextInt(10000);
@@ -29,9 +29,13 @@ export function rollDice(rng: Rng): number {
 }
 
 export function winChanceFor(direction: DiceDirection, target: number): number {
-  // Target is the threshold the roll must beat. Roll is in [0, 100).
-  if (direction === 'over') return Math.max(0, 100 - target);
-  return Math.max(0, target);
+  if (!Number.isFinite(target)) return 0;
+  // Strict comparisons against 10,000 equally likely hundredth values.
+  // In particular, 50.00 is not a winning roll for "over 50".
+  const points = direction === 'over'
+    ? 9999 - Math.floor(target * 100 + 1e-9)
+    : Math.ceil(target * 100 - 1e-9);
+  return Math.max(0, Math.min(10000, points)) / 100;
 }
 
 export function multiplierFor(direction: DiceDirection, target: number): number {

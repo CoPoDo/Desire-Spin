@@ -1,101 +1,88 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { loadJson, saveJson } from '../lib/storage';
-import {
-  Seeds,
-  generateClientSeed,
-  generateServerSeed,
-  sha256Hex,
-} from '../lib/fairness';
+import { isCount, isRecord } from '../lib/accounting';
+import { type Seeds, generateClientSeed, generateServerSeed, sha256Hex } from '../lib/fairness';
 
 const KEY = 'fairness';
-
-type FairnessState = {
+export type FairnessState = {
   current: Seeds;
   currentHash: string;
-  /** Last revealed (rotated-out) server seed pair, for verification UX. */
   previous?: Seeds & { revealed: true };
 };
 
 function makeFresh(): FairnessState {
   const serverSeed = generateServerSeed();
-  return {
-    current: { serverSeed, clientSeed: generateClientSeed(), nonce: 0 },
-    currentHash: sha256Hex(serverSeed),
-  };
+  return { current: { serverSeed, clientSeed: generateClientSeed(), nonce: 0 }, currentHash: sha256Hex(serverSeed) };
+}
+
+function validSeeds(value: unknown): value is Seeds {
+  return isRecord(value) && typeof value.serverSeed === 'string' && value.serverSeed.length > 0 &&
+    value.serverSeed.length <= 1024 && typeof value.clientSeed === 'string' && value.clientSeed.length > 0 &&
+    value.clientSeed.length <= 1024 && isCount(value.nonce) && value.nonce < Number.MAX_SAFE_INTEGER;
+}
+
+export function normalizeFairness(value: unknown): FairnessState {
+  if (!isRecord(value) || !validSeeds(value.current)) return makeFresh();
+  const { serverSeed, clientSeed, nonce } = value.current;
+  // A saved hash is derived data; repair it without discarding valid seeds.
+  const next: FairnessState = { current: { serverSeed, clientSeed, nonce }, currentHash: sha256Hex(serverSeed) };
+  if (isRecord(value.previous) && value.previous.revealed === true && validSeeds(value.previous)) {
+    next.previous = {
+      serverSeed: value.previous.serverSeed,
+      clientSeed: value.previous.clientSeed,
+      nonce: value.previous.nonce,
+      revealed: true,
+    };
+  }
+  return next;
 }
 
 export function useFairness() {
-  const [state, setState] = useState<FairnessState>(() =>
-    loadJson<FairnessState | null>(KEY, null) ?? makeFresh(),
-  );
-  // Authoritative copy for synchronous reads (setState updater timing in React
-  // 18 makes it unsafe to assume the updater has run before the call returns).
-  const ref = useRef<FairnessState>(state);
-  // Keep ref in sync whenever state changes from anywhere.
-  useEffect(() => {
-    ref.current = state;
-  }, [state]);
+  const [state, setState] = useState(() => normalizeFairness(loadJson<unknown>(KEY, null)));
+  const ref = useRef(state);
+  useEffect(() => { saveJson(KEY, ref.current); }, []);
 
-  useEffect(() => {
-    saveJson(KEY, state);
-  }, [state]);
-
-  const setClientSeed = useCallback((clientSeed: string) => {
-    const trimmed = clientSeed.trim() || generateClientSeed();
-    ref.current = { ...ref.current, current: { ...ref.current.current, clientSeed: trimmed } };
-    setState(ref.current);
-  }, []);
-
-  /**
-   * Increment nonce — call once per bet committed. Returns the seeds *as used
-   * by this bet* (i.e. the nonce value the engine should sign with). Reads
-   * and mutates a ref so we get a synchronous, race-free snapshot regardless
-   * of React's batching / StrictMode behavior.
-   */
-  const consumeNonce = useCallback((): Seeds => {
-    const snapshot: Seeds = { ...ref.current.current };
-    ref.current = {
-      ...ref.current,
-      current: { ...ref.current.current, nonce: ref.current.current.nonce + 1 },
-    };
-    setState(ref.current);
-    return snapshot;
-  }, []);
-
-  /** Reveal current server seed and rotate to a new one. */
-  const rotate = useCallback(() => {
-    const newServer = generateServerSeed();
-    const next: FairnessState = {
-      current: {
-        serverSeed: newServer,
-        clientSeed: ref.current.current.clientSeed,
-        nonce: 0,
-      },
-      currentHash: sha256Hex(newServer),
-      previous: { ...ref.current.current, revealed: true },
-    };
+  const commit = useCallback((next: FairnessState) => {
     ref.current = next;
+    saveJson(KEY, next);
     setState(next);
   }, []);
 
-  /** Wipe and start fresh. */
-  const resetSeeds = useCallback(() => {
-    const fresh = makeFresh();
-    ref.current = fresh;
-    setState(fresh);
-  }, []);
+  const setClientSeed = useCallback((clientSeed: string) => {
+    const trimmed = clientSeed.trim();
+    if (trimmed.length > 1024) return false;
+    commit({ ...ref.current, current: { ...ref.current.current, clientSeed: trimmed || generateClientSeed() } });
+    return true;
+  }, [commit]);
 
-  const view = useMemo(
-    () => ({
-      seeds: state.current,
-      hash: state.currentHash,
-      previous: state.previous,
-    }),
-    [state],
-  );
+  /** Synchronous snapshot, durably consumed before a game computes its outcome. */
+  const consumeNonce = useCallback((): Seeds => {
+    if (ref.current.current.nonce >= Number.MAX_SAFE_INTEGER - 1) {
+      throw new Error('This seed has no nonces left. Rotate the local seed to continue.');
+    }
+    const snapshot = { ...ref.current.current };
+    commit({ ...ref.current, current: { ...snapshot, nonce: snapshot.nonce + 1 } });
+    return snapshot;
+  }, [commit]);
 
-  return useMemo(
-    () => ({ ...view, setClientSeed, consumeNonce, rotate, resetSeeds }),
-    [view, setClientSeed, consumeNonce, rotate, resetSeeds],
-  );
+  const rotate = useCallback(() => {
+    const serverSeed = generateServerSeed();
+    commit({
+      current: { serverSeed, clientSeed: ref.current.current.clientSeed, nonce: 0 },
+      currentHash: sha256Hex(serverSeed),
+      previous: { ...ref.current.current, revealed: true },
+    });
+  }, [commit]);
+
+  const resetSeeds = useCallback(() => commit(makeFresh()), [commit]);
+
+  return useMemo(() => ({
+    seeds: state.current,
+    hash: state.currentHash,
+    previous: state.previous,
+    setClientSeed,
+    consumeNonce,
+    rotate,
+    resetSeeds,
+  }), [state, setClientSeed, consumeNonce, rotate, resetSeeds]);
 }

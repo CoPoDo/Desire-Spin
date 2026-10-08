@@ -14,10 +14,13 @@ import type { Rng } from '../../../lib/fairness';
  */
 
 export const GRID_SIZE = 25;
+function normalizeMineCount(count: number): number {
+  return Number.isFinite(count) ? Math.max(1, Math.min(24, Math.floor(count))) : 3;
+}
 
 /** Place mines deterministically using a Fisher-Yates shuffle keyed by RNG. */
 export function placeMines(rng: Rng, mineCount: number): Set<number> {
-  const m = Math.max(1, Math.min(24, Math.floor(mineCount)));
+  const m = normalizeMineCount(mineCount);
   const indices = Array.from({ length: GRID_SIZE }, (_, i) => i);
   // Standard Fisher-Yates with the provably-fair Rng
   for (let i = GRID_SIZE - 1; i > 0; i--) {
@@ -68,7 +71,7 @@ export type MinesRoundState = {
 export function startRound(rng: Rng, bet: number, mineCount: number): MinesRoundState {
   return {
     mineSet: placeMines(rng, mineCount),
-    mineCount,
+    mineCount: normalizeMineCount(mineCount),
     bet,
     revealed: new Set(),
     done: false,
@@ -78,14 +81,15 @@ export function startRound(rng: Rng, bet: number, mineCount: number): MinesRound
 }
 
 export function reveal(state: MinesRoundState, idx: number): MinesRoundState {
-  if (state.done || state.revealed.has(idx)) return state;
+  if (state.done || !Number.isInteger(idx) || idx < 0 || idx >= GRID_SIZE || state.revealed.has(idx)) return state;
   const revealed = new Set(state.revealed);
   revealed.add(idx);
   const hit = state.mineSet.has(idx);
   if (hit) {
     return { ...state, revealed, done: true, hitMine: true, payout: 0 };
   }
-  return { ...state, revealed };
+  const next = { ...state, revealed };
+  return revealed.size === GRID_SIZE - state.mineCount ? cashOut(next) : next;
 }
 
 export function cashOut(state: MinesRoundState): MinesRoundState {

@@ -12,7 +12,7 @@ export function LocalRoundFeed({ currentMultiplier, active, crashed, game }: { c
       </div>
       <div className="grid grid-cols-3 gap-1 text-[9px] text-stake-muted">
         {PLAYERS.map(([name, amount, target]) => {
-          const cashed = active && currentMultiplier >= target;
+          const cashed = (active || crashed) && currentMultiplier >= target;
           const busted = crashed && currentMultiplier < target;
           return (
             <div key={name} className="rounded-md bg-stake-input px-2 py-1.5">

@@ -23,8 +23,12 @@ import type {
  * `result.frames` in sequence with animation timing of its choosing.
  */
 
-let keyCounter = 0;
-const nextKey = () => `c${++keyCounter}`;
+const keyCounters = new WeakMap<Rng, number>();
+const nextKey = (rng: Rng) => {
+  const count = (keyCounters.get(rng) ?? 0) + 1;
+  keyCounters.set(rng, count);
+  return `c${count}`;
+};
 
 export type SpinOptions = {
   /** Total bet for this spin (after ante / buy adjustments). */
@@ -41,8 +45,8 @@ function pickSymbol(rng: Rng, weights: number[]): number {
   return rng.weighted(weights);
 }
 
-function newCell(symbolId: string, multiplier?: number): Cell {
-  return { symbolId, multiplier, key: nextKey() };
+function newCell(rng: Rng, symbolId: string, multiplier?: number): Cell {
+  return { symbolId, multiplier, key: nextKey(rng) };
 }
 
 function fillGrid(rng: Rng, cfg: SlotConfig, weights: number[]): Grid {
@@ -51,7 +55,7 @@ function fillGrid(rng: Rng, cfg: SlotConfig, weights: number[]): Grid {
     const col: Cell[] = [];
     for (let r = 0; r < cfg.rows; r++) {
       const idx = pickSymbol(rng, weights);
-      col.push(newCell(cfg.symbols[idx]!.id));
+      col.push(newCell(rng, cfg.symbols[idx]!.id));
     }
     grid.push(col);
   }
@@ -106,9 +110,10 @@ function findWins(grid: Grid, cfg: SlotConfig, bet: number, mode: SpinMode): Win
 function lookupPay(table: Record<number, number>, count: number): number {
   // Pick the largest threshold ≤ count.
   let best = 0;
+  let threshold = -1;
   for (const k of Object.keys(table)) {
     const n = parseInt(k, 10);
-    if (n <= count && table[n]! > best) best = table[n]!;
+    if (n <= count && n > threshold) { threshold = n; best = table[n]!; }
   }
   return best;
 }
@@ -129,7 +134,7 @@ function tumbleAfterWins(grid: Grid, wins: WinGroup[], cfg: SlotConfig, rng: Rng
     const need = cfg.rows - survivors.length;
     for (let i = 0; i < need; i++) {
       const idx = pickSymbol(rng, weights);
-      fresh.push(newCell(cfg.symbols[idx]!.id));
+      fresh.push(newCell(rng, cfg.symbols[idx]!.id));
     }
     // Stack: fresh on top, survivors below — preserving row order (top-down).
     next.push([...fresh, ...survivors]);
@@ -143,6 +148,7 @@ function rollMultipliers(
   cfg: SlotConfig,
   rng: Rng,
   mode: SpinMode,
+  eligibleKeys?: ReadonlySet<string>,
 ): MultiplierLanding[] {
   if (mode === 'base' && cfg.multiplierBaseMode === 'disabled') return [];
   const table = mode === 'base' ? cfg.multiplierTableBase : cfg.multiplierTableFree;
@@ -150,7 +156,7 @@ function rollMultipliers(
   if (rng.next() >= table.pPerTumble) return [];
   // How many multipliers? Heavily weighted toward 1.
   const countRoll = rng.next();
-  const count = countRoll < 0.85 ? 1 : countRoll < 0.97 ? 2 : Math.min(table.maxPerTumble, 3);
+  const count = Math.min(table.maxPerTumble, countRoll < 0.85 ? 1 : countRoll < 0.97 ? 2 : 3);
   const landings: MultiplierLanding[] = [];
   const used = new Set<string>();
   // Pick free cells (cells not currently holding a multiplier) and assign value.
@@ -163,11 +169,11 @@ function rollMultipliers(
     const key = `${c}:${r}`;
     if (used.has(key)) continue;
     const cell = grid[c]?.[r];
-    if (!cell || cell.multiplier !== undefined || cell.symbolId === cfg.scatterId) continue;
+    if (!cell || cell.multiplier !== undefined || cell.symbolId === cfg.scatterId || (eligibleKeys && !eligibleKeys.has(cell.key))) continue;
     used.add(key);
     const vIdx = rng.weighted(valuesWeights);
     const value = table.values[vIdx]![0];
-    landings.push({ col: c, row: r, value, key: nextKey() });
+    landings.push({ col: c, row: r, value, key: nextKey(rng) });
   }
   return landings;
 }
@@ -209,12 +215,13 @@ function sumGridMultipliers(grid: Grid): number {
  *  - In free spins, multipliers persist on grid for the whole spin, then sum
  *    and apply to total spin payout at the end.
  */
-export function spin(rng: Rng, cfg: SlotConfig, opts: SpinOptions, mode: SpinMode): SpinResult {
+export function spin(rng: Rng, cfg: SlotConfig, opts: SpinOptions, mode: SpinMode, payoutLimit = (cfg.maxWinMultiplier ?? 5000) * opts.bet): SpinResult {
   const { bet, ante } = opts;
+  if (!Number.isFinite(bet) || bet <= 0) throw new RangeError('Bet must be positive and finite');
+  const cap = Math.max(0, payoutLimit);
   const weights = activeWeights(cfg, mode, ante);
   const frames: Frame[] = [];
   let grid = fillGrid(rng, cfg, weights);
-  frames.push({ kind: 'initialDrop', grid: clone(grid) });
 
   // Track scatters seen during the entire spin (Pragmatic behavior).
   const scattersAtStart = countScatters(grid, cfg);
@@ -235,14 +242,16 @@ export function spin(rng: Rng, cfg: SlotConfig, opts: SpinOptions, mode: SpinMod
     const initialLandings = rollMultipliers(working, cfg, rng, mode);
     if (initialLandings.length > 0) {
       working = applyMultiplierLandings(working, initialLandings);
-      frames.push({ kind: 'multipliersLanded', landings: initialLandings, grid: clone(working) });
     }
+    frames.push({ kind: 'initialDrop', grid: clone(working) });
+    if (initialLandings.length > 0) frames.push({ kind: 'multipliersLanded', landings: initialLandings, grid: clone(working) });
   }
 
-  while (true) {
+  while (subtotal < cap) {
+    if (chainIdx >= 1000) throw new Error('Tumble safety limit exceeded');
     const wins = findWins(working, cfg, bet, mode);
     if (wins.length === 0) break;
-    const chainPayout = wins.reduce((a, w) => a + w.payout, 0);
+    const chainPayout = Math.min(wins.reduce((a, w) => a + w.payout, 0), cap - subtotal);
     chainIdx++;
     frames.push({
       kind: 'wins',
@@ -256,34 +265,28 @@ export function spin(rng: Rng, cfg: SlotConfig, opts: SpinOptions, mode: SpinMod
     if (mode === 'base') {
       const sum = sumGridMultipliers(working);
       const factor = sum > 0 ? sum : 1;
-      subtotal += chainPayout * factor;
+      subtotal = Math.min(cap, subtotal + chainPayout * factor);
     } else {
       // Free spins: track multipliers on grid for end-of-spin application;
       // chains pay 1× for now.
       subtotal += chainPayout;
     }
 
+    if (subtotal >= cap) break;
+
     // Tumble winners away.
+    const survivorKeys = new Set(working.flat().map((cell) => cell.key));
     working = tumbleAfterWins(working, wins, cfg, rng, weights);
-    // Roll for new multiplier landings.
-    const landings = rollMultipliers(working, cfg, rng, mode);
+    const incomingKeys = new Set(working.flat().filter((cell) => !survivorKeys.has(cell.key)).map((cell) => cell.key));
+    // Decide every incoming cell before its landing animation starts.
+    const landings = rollMultipliers(working, cfg, rng, mode, incomingKeys);
     if (landings.length > 0) {
       working = applyMultiplierLandings(working, landings);
-      frames.push({ kind: 'multipliersLanded', landings, grid: clone(working) });
     }
     frames.push({ kind: 'tumble', grid: clone(working) });
+    if (landings.length > 0) frames.push({ kind: 'multipliersLanded', landings, grid: clone(working) });
     // Update scatter total with any new scatters tumbled in.
     scatterTotal = Math.max(scatterTotal, countScatters(working, cfg));
-  }
-
-  // No more wins. Roll for "drop only" multiplier landings (rare even without
-  // a win, mostly free spins) — keeps Olympus' "Zeus throws multipliers" feel.
-  if (mode === 'base') {
-    const landings = rollMultipliers(working, cfg, rng, mode);
-    if (landings.length > 0) {
-      working = applyMultiplierLandings(working, landings);
-      frames.push({ kind: 'multipliersLanded', landings, grid: clone(working) });
-    }
   }
 
   // Free-spins: apply summed multipliers at end of spin.
@@ -291,7 +294,7 @@ export function spin(rng: Rng, cfg: SlotConfig, opts: SpinOptions, mode: SpinMod
     const finalMultSum = sumGridMultipliers(working);
     if (finalMultSum > 0 && subtotal > 0) {
       const before = subtotal;
-      subtotal = subtotal * finalMultSum;
+      subtotal = Math.min(cap, subtotal * finalMultSum);
       frames.push({
         kind: 'multiplierApplied',
         sumOfMultipliers: finalMultSum,
@@ -309,6 +312,7 @@ export function spin(rng: Rng, cfg: SlotConfig, opts: SpinOptions, mode: SpinMod
       scatterPay = lookupPay(scatterDef.payout, scatterTotal) * bet;
     }
     if (scatterPay > 0) {
+      scatterPay = Math.min(scatterPay, Math.max(0, cap - subtotal));
       frames.push({ kind: 'scattersWon', count: scatterTotal, payout: scatterPay });
       subtotal += scatterPay;
     }
@@ -317,12 +321,13 @@ export function spin(rng: Rng, cfg: SlotConfig, opts: SpinOptions, mode: SpinMod
   // Trigger free spins?
   let triggeredFree = false;
   let freeAwarded = 0;
-  if (mode === 'base' && scatterTotal >= cfg.scatterTriggerCount) {
+  if (mode === 'base' && subtotal < cap && scatterTotal >= cfg.scatterTriggerCount) {
     triggeredFree = true;
     freeAwarded = cfg.freeSpinsAwardOnTrigger;
     frames.push({ kind: 'freeSpinsAwarded', count: freeAwarded, reason: 'scatter' });
   }
 
+  subtotal = +Math.min(cap, subtotal).toFixed(2);
   frames.push({ kind: 'final', spinPayout: subtotal, runningPayout: subtotal });
   return {
     frames,
@@ -333,10 +338,8 @@ export function spin(rng: Rng, cfg: SlotConfig, opts: SpinOptions, mode: SpinMod
 }
 
 /**
- * Run an entire round = one base spin + (if triggered) the full free-spin
- * session including retriggers. Used by the React layer for compact "play
- * the whole round" semantics. Multipliers persist across free spins via a
- * grid kept between calls.
+ * A deterministic base spin and its entire feature share one RNG and one cap.
+ * Every final frame contains the credited, cumulative total, including rounding.
  */
 export function playRound(
   rng: Rng,
@@ -345,102 +348,55 @@ export function playRound(
   startingMode: SpinMode = 'base',
   initialFreeSpins = 0,
 ): RoundResult {
-  const allFrames: Frame[] = [];
+  return runRound(rng, cfg, opts, startingMode === 'free' ? Math.max(1, initialFreeSpins) : 0, false);
+}
+
+function runRound(rng: Rng, cfg: SlotConfig, opts: SpinOptions, initialFreeSpins: number, bought: boolean): RoundResult {
+  if (!Number.isFinite(opts.bet) || opts.bet <= 0) throw new RangeError('Bet must be positive and finite');
+  const cap = +((cfg.maxWinMultiplier ?? 5000) * opts.bet).toFixed(2);
+  const frames: Frame[] = [];
   let total = 0;
-  let awarded = 0;
-
-  // Initial spin.
-  const first = spin(rng, cfg, opts, startingMode);
-  allFrames.push(...first.frames);
-  total += first.totalPayout;
-
-  let pendingFree = first.triggeredFreeSpins
-    ? first.freeSpinsAwarded
-    : startingMode === 'free'
-      ? initialFreeSpins
-      : 0;
-
-  if (pendingFree > 0) {
-    allFrames.push({ kind: 'freeSpinsBegin', total: pendingFree });
-    awarded = pendingFree;
-    while (pendingFree > 0) {
-      const fs = spin(rng, cfg, opts, 'free');
-      allFrames.push(...fs.frames);
-      total += fs.totalPayout;
-      pendingFree--;
-      // Retrigger logic: scatters during a free spin add freeSpinsAwardOnRetrigger.
-      // We re-derive by walking frames for a `scattersWon`/scatter count signal.
-      const scatterFrame = fs.frames.find(
-        (f) => f.kind === 'scattersWon',
-      ) as Extract<Frame, { kind: 'scattersWon' }> | undefined;
-      // In free mode we don't emit scattersWon; retrigger needs to be detected
-      // at the engine level. We piggyback on the running count via a small re-scan:
-      const ret = countScattersInFrames(fs.frames, cfg);
-      if (ret >= cfg.scatterRetriggerCount) {
-        const extra = cfg.freeSpinsAwardOnRetrigger;
-        pendingFree += extra;
-        awarded += extra;
-        allFrames.push({ kind: 'freeSpinsAwarded', count: extra, reason: 'retrigger' });
+  let awarded = initialFreeSpins;
+  let pending = initialFreeSpins;
+  const appendSpin = (result: SpinResult) => {
+    total = +Math.min(cap, total + result.totalPayout).toFixed(2);
+    frames.push(...result.frames.map((frame): Frame => frame.kind === 'final' ? { ...frame, runningPayout: total } : frame));
+  };
+  if (initialFreeSpins === 0) {
+    const first = spin(rng, cfg, opts, 'base', cap);
+    appendSpin(first);
+    pending = first.freeSpinsAwarded;
+    awarded = pending;
+  } else if (bought) {
+    frames.push({ kind: 'freeSpinsAwarded', count: pending, reason: 'buy' });
+  }
+  if (pending > 0 && total < cap) {
+    frames.push({ kind: 'freeSpinsBegin', total: pending });
+    let completed = 0;
+    while (pending > 0 && total < cap) {
+      if (++completed > 1000) throw new Error('Free-spin safety limit exceeded');
+      const result = spin(rng, cfg, opts, 'free', cap - total);
+      appendSpin(result);
+      pending--;
+      if (total < cap && countScattersInFrames(result.frames, cfg) >= cfg.scatterRetriggerCount) {
+        pending += cfg.freeSpinsAwardOnRetrigger;
+        awarded += cfg.freeSpinsAwardOnRetrigger;
+        frames.push({ kind: 'freeSpinsAwarded', count: cfg.freeSpinsAwardOnRetrigger, reason: 'retrigger' });
       }
-      // mark scatterFrame as referenced for tsc strictness
-      void scatterFrame;
     }
-    allFrames.push({ kind: 'freeSpinsEnd', totalPayout: total });
+    frames.push({ kind: 'freeSpinsEnd', totalPayout: total });
   }
-
-  // Apply per-slot max-win cap (× bet). Real Pragmatic slots cap a single
-  // round's payout at e.g. Olympus 5,000× / Bonanza 21,100×; without a
-  // cap a lucky free-spins chain with stacked multipliers could
-  // theoretically pay 100,000×+ which (a) doesn't match the real game's
-  // headline number, and (b) could overflow the balance UI on big
-  // tabletops. Default cap: 5000× (standard Pragmatic value).
-  const cap = (cfg.maxWinMultiplier ?? 5000) * opts.bet;
-  if (total > cap) total = cap;
-
-  return { frames: allFrames, totalPayout: total, freeSpinsAwarded: awarded };
+  return { frames, totalPayout: total, freeSpinsAwarded: awarded };
 }
 
-/** Last-grid scatter count by inspecting frames. */
 function countScattersInFrames(frames: Frame[], cfg: SlotConfig): number {
-  // Find the most recent grid frame.
-  let lastGrid: Grid | undefined;
   for (let i = frames.length - 1; i >= 0; i--) {
-    const f = frames[i]!;
-    if ('grid' in f) {
-      lastGrid = f.grid;
-      break;
-    }
+    const frame = frames[i]!;
+    if ('grid' in frame) return countScatters(frame.grid, cfg);
   }
-  if (!lastGrid) return 0;
-  return countScatters(lastGrid, cfg);
+  return 0;
 }
 
-/** Helper: kick off a buy-bonus round (skip base, enter free spins directly). */
 export function buyBonusRound(rng: Rng, cfg: SlotConfig, opts: SpinOptions): RoundResult {
-  // Buy bonus enters free spins with the standard award count.
-  const allFrames: Frame[] = [];
-  let total = 0;
-  const fs = cfg.freeSpinsAwardOnTrigger;
-  allFrames.push({ kind: 'freeSpinsAwarded', count: fs, reason: 'buy' });
-  allFrames.push({ kind: 'freeSpinsBegin', total: fs });
-  let pending = fs;
-  let awarded = fs;
-  while (pending > 0) {
-    const r = spin(rng, cfg, opts, 'free');
-    allFrames.push(...r.frames);
-    total += r.totalPayout;
-    pending--;
-    const ret = countScattersInFrames(r.frames, cfg);
-    if (ret >= cfg.scatterRetriggerCount) {
-      const extra = cfg.freeSpinsAwardOnRetrigger;
-      pending += extra;
-      awarded += extra;
-      allFrames.push({ kind: 'freeSpinsAwarded', count: extra, reason: 'retrigger' });
-    }
-  }
-  allFrames.push({ kind: 'freeSpinsEnd', totalPayout: total });
-  // Same per-slot max-win cap as playRound (see comment there).
-  const cap = (cfg.maxWinMultiplier ?? 5000) * opts.bet;
-  if (total > cap) total = cap;
-  return { frames: allFrames, totalPayout: total, freeSpinsAwarded: awarded };
+  return runRound(rng, cfg, opts, cfg.freeSpinsAwardOnTrigger, true);
 }

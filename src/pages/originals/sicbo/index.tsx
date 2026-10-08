@@ -1,3 +1,4 @@
+import { useRoundPlayback } from '../_shared/useRoundPlayback';
 import { useCallback, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
@@ -54,14 +55,14 @@ export function SicBoGame() {
   const { balance, fairness, sound, history, session } = useGame();
   const [chip, setChip] = useState(1);
   const [chips, setChips] = useState<ChipMap>({});
-  const [busy, setBusy] = useState(false);
+  const { busy, busyRef, setBusy, schedule } = useRoundPlayback();
   const [dice, setDice] = useState<Roll | null>(null);
   const [result, setResult] = useState<{ totalStake: number; totalReturn: number } | null>(null);
   const [recent, setRecent] = useState<{ id: string; sum: number }[]>([]);
 
   const placeChip = useCallback(
     (bet: Bet) => {
-      if (busy) return;
+      if (busyRef.current) return;
       sound.play('tick');
       setChips((prev) => ({
         ...prev,
@@ -72,7 +73,7 @@ export function SicBoGame() {
   );
 
   const clearBets = useCallback(() => {
-    if (busy) return;
+    if (busyRef.current) return;
     setChips({});
     setResult(null);
   }, [busy]);
@@ -83,19 +84,20 @@ export function SicBoGame() {
   );
 
   const rollDice = useCallback(() => {
-    if (busy || totalStake <= 0 || balance.balance < totalStake) return;
+    if (busyRef.current || totalStake <= 0 || balance.balance < totalStake) return;
+    if (busyRef.current || !balance.debit(totalStake)) return;
     setBusy(true);
     sound.play('click');
-    balance.debit(totalStake);
+
     // Dice-rattle SFX during the spin — three quick rattles then the
     // dice land. Real Sic Bo opens with the dealer shaking the cup;
     // silent during the 1s wait felt missing.
-    window.setTimeout(() => sound.play('tick'), 80);
-    window.setTimeout(() => sound.play('tick'), 240);
-    window.setTimeout(() => sound.play('tick'), 400);
-    window.setTimeout(() => sound.play('drop'), 620);
-    window.setTimeout(() => sound.play('drop'), 720);
-    window.setTimeout(() => sound.play('drop'), 820);
+    schedule(() => sound.play('tick'), 80);
+    schedule(() => sound.play('tick'), 240);
+    schedule(() => sound.play('tick'), 400);
+    schedule(() => sound.play('drop'), 620);
+    schedule(() => sound.play('drop'), 720);
+    schedule(() => sound.play('drop'), 820);
     setDice(null);
     setResult(null);
     const seeds = fairness.consumeNonce();
@@ -105,10 +107,21 @@ export function SicBoGame() {
       amount,
     }));
     const r = play(rng, bets);
-    setTimeout(() => {
+    if (r.totalReturn > 0) balance.credit(r.totalReturn);
+    history.record({
+      game: 'Sic Bo',
+      bet: totalStake,
+      payout: r.totalReturn,
+      multiplier: r.totalReturn / Math.max(totalStake, 0.01),
+      serverSeedHash: fairness.hash,
+      clientSeed: seeds.clientSeed,
+      nonce: seeds.nonce,
+    });
+    session.recordSpin(totalStake, r.totalReturn, false);
+
+    schedule(() => {
       setDice(r.dice);
       if (r.totalReturn > 0) {
-        balance.credit(r.totalReturn);
         sound.play(
           r.totalReturn >= totalStake * 10 ? 'mega-win' :
           r.totalReturn >= totalStake * 2 ? 'big-win' : 'win',
@@ -122,16 +135,7 @@ export function SicBoGame() {
       } else {
         sound.play('drop');
       }
-      history.record({
-        game: 'Sic Bo',
-        bet: totalStake,
-        payout: r.totalReturn,
-        multiplier: r.totalReturn / Math.max(totalStake, 0.01),
-        serverSeedHash: fairness.hash,
-        clientSeed: seeds.clientSeed,
-        nonce: seeds.nonce,
-      });
-      session.recordSpin(totalStake, r.totalReturn, false);
+
       setResult({ totalStake, totalReturn: r.totalReturn });
       setRecent((prev) => [{ id: `${seeds.nonce}`, sum: r.sum }, ...prev].slice(0, 12));
       setBusy(false);

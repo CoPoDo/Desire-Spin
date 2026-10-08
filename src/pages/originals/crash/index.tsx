@@ -1,285 +1,23 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCrashRound, type CrashSlot as Slot, type CrashSlotId as SlotId } from '../_shared/useCrashRound';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
 import { useGame } from '../../../game-context';
 import { useHotkey } from '../../../hooks/useHotkey';
-import { createRng } from '../../../lib/fairness';
 import { fmtCurrency } from '../../../lib/format';
 import { BetInput } from '../_shared/BetInput';
 import {
   AutoConfigFields,
   AutoProgressDisplay,
   ManualAutoTabs,
-  type AutoConfig,
-  type Mode,
-  useAutoBetRunner,
 } from '../_shared/AutoBetController';
-import { multiplierAt, rollBust, timeForMultiplier } from './engine';
-import { fireConfetti } from '../../../lib/confetti';
+import { timeForMultiplier } from './engine';
 import { LocalRoundFeed } from '../_shared/LocalRoundFeed';
 
-type Phase = 'idle' | 'running' | 'done';
-type SlotId = 'a' | 'b';
-
-/** Per-slot state. Real Stake Crash has TWO independent bet panels —
- *  each with its own bet amount, auto-cashout target, and status. The
- *  player can ladder strategies (e.g., one bet auto-cashes at 1.5× for
- *  safety while a second rides to 50× for a moonshot). */
-type Slot = {
-  bet: number;
-  autoCashout: number;
-  autoEnabled: boolean;
-  active: boolean;                       // is this slot included in the next round?
-  status: 'idle' | 'live' | 'cashed' | 'busted';
-  cashedAt: number | null;
-};
-
-const initialSlot = (bet: number, autoCashout: number, active: boolean): Slot => ({
-  bet,
-  autoCashout,
-  autoEnabled: false,
-  active,
-  status: 'idle',
-  cashedAt: null,
-});
-
-/** Stake-style Crash with TWO independent bet panels.
- *  Round phases:
- *    idle → place bets → click Bet → running → all live slots cashed
- *    or busted → done. */
 export function CrashGame() {
-  const { balance, fairness, sound, history, session } = useGame();
-  // Each slot is independently configurable. Slot B starts inactive so
-  // single-bet players see the same compact UI as before.
-  const [slotA, setSlotA] = useState<Slot>(initialSlot(1, 2.0, true));
-  const [slotB, setSlotB] = useState<Slot>(initialSlot(1, 5.0, false));
-  const [mode, setMode] = useState<Mode>('manual');
-  const [autoConfig, setAutoConfig] = useState<AutoConfig>({ count: 10, stopOnProfit: 0, stopOnLoss: 0 });
-  const [autoActive, setAutoActive] = useState(false);
-  const [phase, setPhase] = useState<Phase>('idle');
-  const [bust, setBust] = useState<number | null>(null);
-  const [currentMult, setCurrentMult] = useState(1.0);
-  const [recent, setRecent] = useState<{ id: string; bust: number; cashedAt: number | null }[]>([]);
-
-  const startTimeRef = useRef<number>(0);
-  const rafRef = useRef<number | null>(null);
-  const bustRef = useRef<number | null>(null);
-  const phaseRef = useRef<Phase>('idle');
-  const lastClimbMilestoneRef = useRef<number>(0);
-  // Latest slot states via refs so the rAF tick can read fresh values
-  // without re-creating the callback on every state change.
-  const slotARef = useRef<Slot>(slotA); useEffect(() => { slotARef.current = slotA; }, [slotA]);
-  const slotBRef = useRef<Slot>(slotB); useEffect(() => { slotBRef.current = slotB; }, [slotB]);
-
-  const cleanup = useCallback(() => {
-    if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
-    rafRef.current = null;
-  }, []);
-  useEffect(() => () => cleanup(), [cleanup]);
-
-  // Auto-bet pending Promise resolver. Auto-bet only runs slot A.
-  const autoResolveRef = useRef<((delta: number) => void) | null>(null);
-
-  /** Finalize a single slot after it cashes or busts. Credits the
-   *  payout (if won) and updates the slot's status. Returns the net
-   *  delta for that slot. */
-  const finalizeSlot = useCallback(
-    (id: SlotId, slot: Slot, cashedAt: number | null) => {
-      const won = cashedAt !== null;
-      const payout = won ? +(slot.bet * cashedAt).toFixed(2) : 0;
-      if (won) {
-        balance.credit(payout);
-      }
-      // Sound only for slot A (otherwise two slots cashing simultaneously
-      // would chord. Slot B uses a quieter chime.)
-      if (won) {
-        if (id === 'a') {
-          sound.play(cashedAt >= 10 ? 'mega-win' : cashedAt >= 3 ? 'big-win' : 'win');
-          if (cashedAt >= 2) {
-            fireConfetti({
-              count: cashedAt >= 20 ? 130 : cashedAt >= 5 ? 80 : 50,
-              colors: ['#00e701', '#22d3ee', '#ffd166', '#ffffff'],
-            });
-          }
-        } else {
-          sound.play('coin');
-        }
-      }
-      // Per-slot history record so the player can see each bet in the
-      // shared history table independently.
-      history.record({
-        game: id === 'a' ? 'Crash' : 'Crash (B)',
-        bet: slot.bet,
-        payout,
-        multiplier: won ? cashedAt : 0,
-        serverSeedHash: fairness.hash,
-        clientSeed: '',
-        nonce: 0,
-      });
-      session.recordSpin(slot.bet, payout, false);
-      return payout - slot.bet;
-    },
-    [balance, sound, history, fairness, session],
-  );
-
-  const tick = useCallback(() => {
-    const elapsed = (performance.now() - startTimeRef.current) / 1000;
-    const m = multiplierAt(elapsed);
-    setCurrentMult(m);
-    // Climb-tick milestones
-    const milestones = [1.5, 2, 3, 5, 10, 25, 50, 100, 250, 500, 1000];
-    while (
-      lastClimbMilestoneRef.current < milestones.length &&
-      m >= milestones[lastClimbMilestoneRef.current]!
-    ) {
-      const idx = lastClimbMilestoneRef.current;
-      sound.play(idx >= 7 ? 'big-win' : idx >= 4 ? 'win' : 'coin');
-      lastClimbMilestoneRef.current += 1;
-    }
-    const bAt = bustRef.current;
-    if (bAt === null) return;
-
-    // Check each slot's auto-cashout — fire if multiplier crosses
-    // target AND target is below the bust.
-    for (const [id, ref, setSlot] of [
-      ['a', slotARef, setSlotA] as const,
-      ['b', slotBRef, setSlotB] as const,
-    ]) {
-      const s = ref.current;
-      if (s.status === 'live' && s.autoEnabled && m >= s.autoCashout && s.autoCashout < bAt) {
-        setSlot({ ...s, status: 'cashed', cashedAt: s.autoCashout });
-        finalizeSlot(id, s, s.autoCashout);
-      }
-    }
-
-    if (m >= bAt) {
-      // Bust — mark all live slots busted.
-      setCurrentMult(bAt);
-      cleanup();
-      if (phaseRef.current === 'running') {
-        // Auto-bet only tracks slot A's delta
-        let slotADelta = 0;
-        const sA = slotARef.current;
-        if (sA.status === 'live') {
-          setSlotA({ ...sA, status: 'busted', cashedAt: null });
-          slotADelta = finalizeSlot('a', sA, null);
-        } else if (sA.status === 'cashed' && sA.cashedAt !== null) {
-          slotADelta = sA.bet * sA.cashedAt - sA.bet;
-        }
-        const sB = slotBRef.current;
-        if (sB.status === 'live') {
-          setSlotB({ ...sB, status: 'busted', cashedAt: null });
-          finalizeSlot('b', sB, null);
-        }
-        sound.play('drop');
-        phaseRef.current = 'done';
-        setPhase('done');
-        setRecent((r) => [{ id: `${Date.now()}`, bust: bAt, cashedAt: sA.cashedAt }, ...r].slice(0, 20));
-        // Resolve auto-bet promise with slot-A delta
-        if (autoResolveRef.current) {
-          autoResolveRef.current(slotADelta);
-          autoResolveRef.current = null;
-        }
-      }
-      return;
-    }
-    rafRef.current = requestAnimationFrame(tick);
-  }, [cleanup, finalizeSlot, sound]);
-
-  /** Compute the set of slots that will participate in the next round
-   *  and the total cost. */
-  const activeSlots = useMemo(() => {
-    return [
-      ...(slotA.active ? [{ id: 'a' as SlotId, slot: slotA }] : []),
-      ...(slotB.active ? [{ id: 'b' as SlotId, slot: slotB }] : []),
-    ];
-  }, [slotA, slotB]);
-  const totalBet = activeSlots.reduce((s, x) => s + x.slot.bet, 0);
-
-  const start = useCallback(() => {
-    if (phase === 'running') return;
-    if (activeSlots.length === 0) return;
-    if (totalBet > balance.balance || totalBet <= 0) return;
-    // Reset slots for this round
-    activeSlots.forEach(({ id, slot }) => {
-      const setSlot = id === 'a' ? setSlotA : setSlotB;
-      setSlot({ ...slot, status: 'live', cashedAt: null });
-    });
-    sound.play('click');
-    balance.debit(totalBet);
-    const seeds = fairness.consumeNonce();
-    const rng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
-    const b = rollBust(rng);
-    bustRef.current = b;
-    setBust(b);
-    setCurrentMult(1.0);
-    phaseRef.current = 'running';
-    setPhase('running');
-    startTimeRef.current = performance.now();
-    lastClimbMilestoneRef.current = 0;
-    rafRef.current = requestAnimationFrame(tick);
-  }, [phase, activeSlots, totalBet, balance, fairness, sound, tick]);
-
-  const cashOutSlot = useCallback((id: SlotId) => {
-    const ref = id === 'a' ? slotARef : slotBRef;
-    const setSlot = id === 'a' ? setSlotA : setSlotB;
-    const s = ref.current;
-    if (phaseRef.current !== 'running' || s.status !== 'live') return;
-    const bAt = bustRef.current;
-    if (bAt === null || currentMult >= bAt) return;
-    setSlot({ ...s, status: 'cashed', cashedAt: currentMult });
-    finalizeSlot(id, s, currentMult);
-  }, [currentMult, finalizeSlot]);
-
-  const reset = useCallback(() => {
-    setSlotA((s) => ({ ...s, status: 'idle', cashedAt: null }));
-    setSlotB((s) => ({ ...s, status: 'idle', cashedAt: null }));
-    setPhase('idle');
-    setBust(null);
-    setCurrentMult(1.0);
-    bustRef.current = null;
-    phaseRef.current = 'idle';
-  }, []);
-
-  /** Auto-bet uses slot A only — slot B is too unusual to auto-loop
-   *  (two independent strategies are a player choice, not a machine
-   *  loop). Forces slot A's auto-cashout on so the round resolves. */
-  const autoRunOnce = useCallback(async (): Promise<number> => {
-    if (phaseRef.current !== 'idle' && phaseRef.current !== 'done') return 0;
-    const sA = slotARef.current;
-    if (!sA.autoEnabled) {
-      setSlotA({ ...sA, autoEnabled: true });
-    }
-    const bet = sA.bet;
-    if (balance.balance < bet || bet <= 0) return 0;
-    return new Promise<number>((resolve) => {
-      autoResolveRef.current = resolve;
-      // Hide slot B during auto-bet so the player isn't confused
-      setSlotA({ ...sA, autoEnabled: true, status: 'live', cashedAt: null });
-      setSlotB((s) => ({ ...s, active: false, status: 'idle', cashedAt: null }));
-      sound.play('click');
-      balance.debit(bet);
-      const seeds = fairness.consumeNonce();
-      const rng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
-      const b = rollBust(rng);
-      bustRef.current = b;
-      setBust(b);
-      setCurrentMult(1.0);
-      phaseRef.current = 'running';
-      setPhase('running');
-      startTimeRef.current = performance.now();
-      lastClimbMilestoneRef.current = 0;
-      rafRef.current = requestAnimationFrame(tick);
-    });
-  }, [balance, fairness, sound, tick]);
-
-  const progress = useAutoBetRunner({
-    active: autoActive,
-    config: autoConfig,
-    intervalMs: 600,
-    runOnce: autoRunOnce,
-    onStop: () => setAutoActive(false),
-  });
+  const { balance } = useGame();
+  const { slotA, slotB, setSlotA, setSlotB, phase, bust, currentMult, recent,
+    mode, setMode, autoConfig, setAutoConfig, autoActive, setAutoActive, progress,
+    activeSlots, totalBet, start, cashOutSlot, reset } = useCrashRound('Crash', 'running');
 
   const inGame = phase === 'running';
   const lost = phase === 'done' && bust !== null && slotA.status === 'busted' && (!slotB.active || slotB.status === 'busted');
@@ -466,7 +204,9 @@ export function CrashGame() {
           </div>
         )}
 
-        <LocalRoundFeed currentMultiplier={currentMult} active={inGame} crashed={lost} game="Crash" />
+        <p className="text-[11px] text-stake-muted">Leaving the game cashes out live bets at the current multiplier, unless the round has already crashed.</p>
+
+        <LocalRoundFeed currentMultiplier={currentMult} active={inGame} crashed={phase === 'done'} game="Crash" />
 
         {/* === Mode tabs + auto-bet config === */}
         <div className="rounded-lg bg-stake-panel border border-stake-border p-3 space-y-3">
@@ -510,7 +250,7 @@ export function CrashGame() {
           {mode === 'auto' && (
             <>
               <AutoConfigFields config={autoConfig} onChange={setAutoConfig} disabled={autoActive} />
-              {autoActive && <AutoProgressDisplay progress={progress} config={autoConfig} />}
+              {(autoActive || progress.stopReason) && <AutoProgressDisplay progress={progress} config={autoConfig} />}
               <p className="text-[11px] text-stake-dim leading-relaxed">
                 Auto-bet runs bet A only with its auto-cashout target. Bet B is paused during auto.
               </p>
@@ -539,7 +279,7 @@ export function CrashGame() {
           ) : (
             <button
               onClick={() => setAutoActive((a) => !a)}
-              disabled={!autoActive && (balance.balance < slotA.bet || slotA.bet <= 0)}
+              disabled={!autoActive && (inGame || balance.balance < slotA.bet || slotA.bet <= 0)}
               className={`w-full py-3.5 rounded font-bold text-sm disabled:opacity-50 transition active:scale-[0.99] ${
                 autoActive ? 'bg-stake-red text-white' : 'bg-stake-green text-stake-bg hover:bg-stake-green-hi'
               }`}
@@ -625,12 +365,14 @@ function SlotPanel({
             type="number"
             inputMode="decimal"
             min={1.01}
+            max={100000}
+            aria-label={`${label} auto cashout multiplier`}
             step={0.01}
             value={slot.autoCashout}
             disabled={!editable}
             onChange={(e) => {
               const v = parseFloat(e.target.value);
-              if (Number.isFinite(v)) onChange({ ...slot, autoCashout: Math.max(1.01, v) });
+              if (Number.isFinite(v)) onChange({ ...slot, autoCashout: Math.min(100000, +Math.max(1.01, v).toFixed(2)) });
             }}
             className="font-mono font-semibold text-xs tabular-nums bg-stake-input border border-stake-border rounded px-2 py-1 w-20 text-right text-stake-text outline-none focus:border-stake-dim disabled:opacity-50"
           />

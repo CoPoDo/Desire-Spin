@@ -1,3 +1,5 @@
+import { ReelStrip } from '../_shared/ReelStrip';
+import { useRoundPlayback } from '../_shared/useRoundPlayback';
 import { useCallback, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
@@ -14,7 +16,7 @@ import {
   type Mode,
   useAutoBetRunner,
 } from '../_shared/AutoBetController';
-import { FREE_SPIN_AWARDS, SYMBOLS, type BassResult, spin, spinFreeRound, symbolById } from './engine';
+import { SYMBOLS, PAYLINES, LOCAL_LINE_SCALE, type BassResult, planRound, symbolById } from './engine';
 import { fireConfetti } from '../../../lib/confetti';
 import { CountUp } from '../../../components/ui/CountUp';
 
@@ -24,7 +26,10 @@ export function BigBassGame() {
   const [mode, setMode] = useState<Mode>('manual');
   const [autoConfig, setAutoConfig] = useState<AutoConfig>({ count: 10, stopOnProfit: 0, stopOnLoss: 0 });
   const [autoActive, setAutoActive] = useState(false);
-  const [busy, setBusy] = useState(false);
+  const { busy, busyRef, setBusy, wait } = useRoundPlayback();
+  const skipRef = useRef(false);
+  const [reelRound, setReelRound] = useState(0);
+  const [fastReveal, setFastReveal] = useState(false);
   const [reels, setReels] = useState<string[]>([
     'anchor', 'tackle', 'ace', 'king', 'queen',
     'jack', 'smallfish', 'bigbass', 'truck', 'anchor',
@@ -46,207 +51,70 @@ export function BigBassGame() {
   const stateRef = useRef({ bet });
   stateRef.current = { bet };
 
-  /** Buy-bonus cost — matches the typical 100× bet that real Pragmatic
-   *  Big Bass Bonanza charges to skip directly into free spins with
-   *  the medium (3-scatter / 10-spin) entry tier. */
+  /** Local demo shortcut: 100× stake for the 10-spin entry tier. */
   const BUY_BONUS_MULT = 100;
   const buyBonusCost = +(bet * BUY_BONUS_MULT).toFixed(2);
 
-  /** Run one regular spin. Returns net delta. */
-  const playOnce = useCallback(async (): Promise<number> => {
-    const { bet: b } = stateRef.current;
-    if (balance.balance < b || b <= 0) return 0;
-    setBusy(true);
-    sound.play('click');
-    balance.debit(b);
+  const pause = useCallback((ms: number) => wait(skipRef.current ? 0 : ms), [wait]);
+
+  const revealReels = useCallback(async (result: BassResult) => {
+    setLastResult(null);
+    setReels(result.reels);
+    setReelRound((id) => id + 1);
+    // The destination symbols are already inside each rolling strip.
+    // No whole-board replacement occurs after the stopping animation.
+    if (!(await pause(1320))) return false;
+    setLastResult(result);
+    if (!skipRef.current) sound.play('drop');
+    return pause(150);
+  }, [sound, pause]);
+
+  const runRound = useCallback(async (buy: boolean): Promise<number | null> => {
+    const b = stateRef.current.bet;
+    const cost = +(b * (buy ? BUY_BONUS_MULT : 1)).toFixed(2);
+    if (busyRef.current || !balance.debit(cost)) return null;
+    setBusy(true); skipRef.current = false; setFastReveal(false); setShowBuyConfirm(false);
     const seeds = fairness.consumeNonce();
     const rng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
-    const r = spin(rng, b);
-    await revealReels(r);
-    setLastResult(r);
-    if (r.payout > 0) {
-      balance.credit(r.payout);
-      sound.play(r.multiplier >= 100 ? 'mega-win' : r.multiplier >= 10 ? 'big-win' : 'win');
-      if (r.multiplier >= 10) {
-        fireConfetti({
-          count: r.multiplier >= 100 ? 130 : 70,
-          colors: ['#5fb8ff', '#22d3ee', '#00e701', '#ffd166', '#ffffff'],
-        });
-      }
-    } else {
-      sound.play('drop');
-    }
-    history.record({
-      game: 'Big Bass Bonanza',
-      bet: b,
-      payout: r.payout,
-      multiplier: r.multiplier,
-      serverSeedHash: fairness.hash,
-      clientSeed: seeds.clientSeed,
-      nonce: seeds.nonce,
-    });
-    session.recordSpin(b, r.payout, false);
-
-    // 3+ scatters → free spins!
-    if (r.scatterCount >= 3) {
-      const award = FREE_SPIN_AWARDS[r.scatterCount] ?? 10;
-      setShowFsBanner({ count: award });
-      sound.play('free-spins-trigger');
-      // Pause on the banner so the player reads it
-      await new Promise<void>((res) => setTimeout(res, 2000));
-      setShowFsBanner(null);
-      // Run free spins
-      const totalFsWin = await runFreeSpins(award, b);
-      setBusy(false);
-      return r.payout - b + totalFsWin;
-    }
-    setBusy(false);
-    return r.payout - b;
-  }, [balance, fairness, history, session, sound]);
-
-  /** Buy directly into a 10-spin free-spins round (matches the medium
-   *  scatter entry tier in the real game). Costs 100× bet, no main spin. */
-  const buyFreeSpins = useCallback(async () => {
-    const b = stateRef.current.bet;
-    const cost = +(b * BUY_BONUS_MULT).toFixed(2);
-    if (busy || balance.balance < cost) return;
-    setShowBuyConfirm(false);
-    setBusy(true);
+    const planned = planRound(rng, b, buy);
+    if (planned.totalPayout > 0) balance.credit(planned.totalPayout);
+    history.record({ game: buy ? 'Big Bass · Demo Bonus' : 'Big Bass Bonanza', bet: cost,
+      payout: planned.totalPayout, multiplier: planned.totalPayout / cost,
+      serverSeedHash: fairness.hash, clientSeed: seeds.clientSeed, nonce: seeds.nonce });
+    session.recordSpin(cost, planned.totalPayout, planned.bonusAward > 0, planned.totalPayout / b);
     sound.play('click');
-    balance.debit(cost);
-    history.record({
-      game: 'Big Bass · Buy FS',
-      bet: cost,
-      payout: 0, // recorded again per-FS-spin below
-      multiplier: 0,
-      serverSeedHash: fairness.hash,
-      clientSeed: '',
-      nonce: 0,
-    });
-    session.recordSpin(cost, 0, false);
-    // Show the trigger banner before launching FS
-    setShowFsBanner({ count: 10 });
-    sound.play('free-spins-trigger');
-    await new Promise<void>((res) => setTimeout(res, 2000));
-    setShowFsBanner(null);
-    await runFreeSpins(10, b);
-    setBusy(false);
-  }, [busy, balance, sound, history, fairness, session]);
-  // runFreeSpins is hoisted via useCallback below; mutual-ref needs to be
-  // declared before this function in the file. (Order matters with
-  // TypeScript strict mode — see Blackjack.) The runFreeSpins ref is set
-  // by useEffect below to allow buyFreeSpins to call it without circular
-  // declaration issues.
-
-  /** Reveal the 5×3 grid one reel at a time. */
-  const revealReels = useCallback(async (r: BassResult) => {
-    setLastResult(null);
-    for (let reel = 0; reel < 5; reel++) {
-      await new Promise<void>((res) => setTimeout(res, 230));
-      setReels((prev) => {
-        const next = [...prev];
-        for (let row = 0; row < 3; row++) {
-          const index = row * 5 + reel;
-          next[index] = r.reels[index]!;
+    setFreeSpinsWon(0); setFreeSpinsRemaining(planned.bonusAward);
+    if (planned.base && !(await revealReels(planned.base))) return planned.totalPayout - cost;
+    if (planned.bonusAward > 0) {
+      setShowFsBanner({ count: planned.bonusAward }); sound.play('free-spins-trigger');
+      if (!(await pause(1400))) return planned.totalPayout - cost;
+      setShowFsBanner(null);
+      for (const frame of planned.feature) {
+        if (!(await revealReels(frame.result))) return planned.totalPayout - cost;
+        setFreeSpinsRemaining(frame.remaining); setFreeSpinsWon(frame.runningWin);
+        if (!skipRef.current) sound.play(frame.result.collectedMultiplier > 0 ? 'big-win' : frame.result.payout > 0 ? 'win' : 'drop');
+        if (frame.addedSpins > 0) {
+          setShowFsBanner({ count: frame.addedSpins });
+          if (!(await pause(1000))) return planned.totalPayout - cost;
+          setShowFsBanner(null);
         }
-        return next;
-      });
-      sound.play('drop');
-    }
-    await new Promise<void>((res) => setTimeout(res, 220));
-  }, [sound]);
-
-  /** Run N free spins. Each spin doesn't debit the bet. Money values
-   *  accumulate. Returns total money won across all FS. */
-  const runFreeSpins = useCallback(async (count: number, b: number): Promise<number> => {
-    let totalWin = 0;
-    let remaining = count;
-    let fishermanProgress = 0;
-    let collectorMultiplier = 1;
-    setFreeSpinsRemaining(remaining);
-    setFreeSpinsWon(0);
-    while (remaining > 0) {
-      // Brief pause between spins
-      await new Promise<void>((res) => setTimeout(res, 350));
-      const seeds = fairness.consumeNonce();
-      const rng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
-      const r = spinFreeRound(rng, b, collectorMultiplier);
-      await revealReels(r);
-      setLastResult(r);
-      remaining -= 1;
-      setFreeSpinsRemaining(remaining);
-      if (r.payout > 0) {
-        balance.credit(r.payout);
-        totalWin += r.payout;
-        setFreeSpinsWon((w) => +(w + r.payout).toFixed(2));
-        // Collector beat — when fisherman collected money this spin,
-        // play a more dramatic SFX and a quick particle splash.
-        if (r.collectedMultiplier > 0) {
-          sound.play('mega-win');
-          fireConfetti({
-            count: 90,
-            colors: ['#5fb8ff', '#ffd166', '#22d3ee', '#ffffff'],
-          });
-        } else if (r.multiplier >= 10) {
-          sound.play('big-win');
-        } else {
-          sound.play('win');
-        }
-      } else {
-        sound.play('drop');
+        if (!(await pause(250))) return planned.totalPayout - cost;
       }
-      // Retrigger: 3+ scatters during FS add the same award
-      if (r.scatterCount >= 3) {
-        const extra = FREE_SPIN_AWARDS[r.scatterCount] ?? 10;
-        remaining += extra;
-        setFreeSpinsRemaining(remaining);
-        setShowFsBanner({ count: extra });
-        sound.play('free-spins-trigger');
-        await new Promise<void>((res) => setTimeout(res, 1500));
-        setShowFsBanner(null);
-      }
-      fishermanProgress += r.fishermanCount;
-      while (fishermanProgress >= 4) {
-        fishermanProgress -= 4;
-        collectorMultiplier = collectorMultiplier === 1 ? 2 : collectorMultiplier === 2 ? 3 : 10;
-        remaining += 10;
-        setFreeSpinsRemaining(remaining);
-        setShowFsBanner({ count: 10 });
-        await new Promise<void>((res) => setTimeout(res, 1200));
-        setShowFsBanner(null);
-      }
-      history.record({
-        game: 'Big Bass Bonanza FS',
-        bet: 0, // free spin
-        payout: r.payout,
-        multiplier: r.multiplier,
-        serverSeedHash: fairness.hash,
-        clientSeed: seeds.clientSeed,
-        nonce: seeds.nonce,
-      });
-      session.recordSpin(0, r.payout, true);
-    }
-    // FS complete — real Pragmatic Big Bass shows a "TOTAL WIN"
-    // overlay with a tier-scaled count-up. Fires whenever any wins
-    // landed during FS, not just big ones (the count-up still feels
-    // dramatic even for moderate totals because it's the bonus
-    // reveal moment).
-    if (totalWin > 0) {
-      setFsTotalReveal({ amount: totalWin, bet: b });
-      sound.play(totalWin >= b * 50 ? 'mega-win' : totalWin >= b * 10 ? 'big-win' : 'win');
-      if (totalWin >= b * 20) {
-        fireConfetti({
-          count: 200,
-          colors: ['#5fb8ff', '#ffd166', '#22d3ee', '#00e701', '#ffffff'],
-        });
-      }
-      // Pause on the reveal so the player reads the total.
-      await new Promise<void>((res) => setTimeout(res, 3800));
+      const featureWin = planned.feature[planned.feature.length - 1]?.runningWin ?? 0;
+      setFsTotalReveal({ amount: featureWin, bet: b });
+      if (!(await pause(2400))) return planned.totalPayout - cost;
       setFsTotalReveal(null);
     }
-    setFreeSpinsRemaining(0);
-    return totalWin;
-  }, [balance, fairness, history, session, sound, revealReels]);
+    if (planned.totalPayout > 0) {
+      sound.play(planned.totalPayout >= b * 100 ? 'mega-win' : planned.totalPayout >= b * 10 ? 'big-win' : 'win');
+      if (planned.totalPayout >= b * 10) fireConfetti({ count: 80 });
+    } else sound.play('drop');
+    setFreeSpinsRemaining(0); setBusy(false);
+    return +(planned.totalPayout - cost).toFixed(2);
+  }, [balance, fairness, history, session, sound, busyRef, setBusy, revealReels, pause]);
+
+  const playOnce = useCallback(() => runRound(false), [runRound]);
+  const buyFreeSpins = useCallback(() => runRound(true), [runRound]);
 
   const progress = useAutoBetRunner({
     active: autoActive,
@@ -260,7 +128,7 @@ export function BigBassGame() {
   // round is running (FS auto-advances; user shouldn't interrupt).
   useHotkey(' ', () => {
     if (mode !== 'manual') return;
-    if (busy || freeSpinsRemaining > 0 || balance.balance < bet) return;
+    if (busyRef.current || freeSpinsRemaining > 0 || balance.balance < bet) return;
     void playOnce();
   }, mode === 'manual');
 
@@ -268,6 +136,10 @@ export function BigBassGame() {
 
   return (
     <OriginalPageLayout title="Big Bass Bonanza">
+      <div className="max-w-md mx-auto px-4 pt-3 text-[11px] text-stake-muted">
+        Local reel weights and demo bonus buy. Full round winnings settle before playback, including on departure.
+        {busy && <button className="block mt-2 rounded border border-stake-border px-3 py-2 text-stake-text" onClick={() => { skipRef.current = true; setFastReveal(true); }}>Skip reveal</button>}
+      </div>
       <div className="grid grid-cols-1 p-4 gap-4 max-w-5xl mx-auto w-full lg:grid-cols-[minmax(0,620px)_320px] lg:items-start lg:justify-center">
         {/* Buy Free Spins confirmation dialog */}
         <AnimatePresence>
@@ -329,7 +201,7 @@ export function BigBassGame() {
                   </div>
                 </div>
                 <p className="text-[11px] text-stake-muted mb-4 leading-relaxed">
-                  Free spins feature money symbols collected by the fisherman 🦞.
+                  Free spins feature money symbols collected by the fisherman 🚤.
                   Big variance — average return ≈ {fmtCurrency(buyBonusCost * 0.95)}.
                 </p>
                 <div className="flex gap-2">
@@ -386,7 +258,7 @@ export function BigBassGame() {
                 >
                   +{showFsBanner.count}
                 </div>
-                <div className="text-xs text-[#fff5dc] mt-1">🦞 Fisherman triggered</div>
+                <div className="text-xs text-[#fff5dc] mt-1">🚤 Fisherman triggered</div>
               </div>
             </motion.div>
           )}
@@ -428,72 +300,29 @@ export function BigBassGame() {
               'inset 0 1px 0 rgba(95,184,255,.15), inset 0 -8px 18px rgba(0,0,0,.5), 0 6px 18px rgba(0,0,0,.4)',
           }}
         >
-          <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
-            {reels.map((s, i) => {
-              const meta = symbolById(s);
-              const inWin = !!lastResult?.winningPositions?.includes(i);
-              const isScatter = s === 'scatter';
-              const scatterWin = isScatter && (lastResult?.scatterCount ?? 0) >= 3;
-              const highlight = inWin || scatterWin;
-              const moneyValue = lastResult?.moneyValues?.[i] ?? 0;
-              return (
-                <motion.div
-                  key={i}
-                  className="aspect-square rounded-lg flex items-center justify-center select-none relative"
-                  animate={
-                    highlight
-                      ? { scale: [1, 1.12, 1], rotate: [0, -3, 3, 0] }
-                      : busy
-                        ? { y: [0, -3, 0] }
-                        : { scale: 1, rotate: 0, y: 0 }
-                  }
-                  transition={{
-                    duration: highlight ? 0.7 : 0.32,
-                    repeat: highlight ? Infinity : 0,
-                    ease: 'easeInOut',
-                  }}
-                  style={{
-                    background: highlight
-                      ? `linear-gradient(180deg, ${meta?.color}30, rgba(0,0,0,.4))`
-                      : 'linear-gradient(180deg, rgba(255,255,255,.04), rgba(0,0,0,.45))',
-                    border: highlight
-                      ? `2px solid ${meta?.color}`
-                      : '1px solid rgba(255,255,255,.08)',
-                    boxShadow: highlight
-                      ? `0 0 16px ${meta?.color}aa, inset 0 1px 0 rgba(255,255,255,.15)`
-                      : 'inset 0 1px 0 rgba(255,255,255,.04)',
-                  }}
-                >
-                  <span
-                    className="text-3xl sm:text-4xl"
-                    style={{
-                      filter: highlight
-                        ? `drop-shadow(0 0 10px ${meta?.color})`
-                        : 'drop-shadow(0 2px 4px rgba(0,0,0,.6))',
-                    }}
-                  >
-                    {meta?.emoji ?? s}
-                  </span>
-                  {/* Money-value badge on bass symbols during FS */}
-                  {moneyValue > 0 && (
-                    <motion.span
-                      className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded-full text-[9px] font-mono font-bold tabular-nums"
-                      initial={{ scale: 0, y: 4 }}
-                      animate={{ scale: 1, y: 0 }}
-                      transition={{ type: 'spring', stiffness: 360, damping: 18 }}
-                      style={{
-                        background: 'linear-gradient(180deg, #ffd166, #c8932e)',
-                        color: '#0a1018',
-                        boxShadow: '0 0 10px rgba(255,209,102,.7), 0 2px 4px rgba(0,0,0,.5)',
-                        border: '1px solid #fff5c4',
-                      }}
-                    >
-                      {moneyValue}×
-                    </motion.span>
-                  )}
-                </motion.div>
-              );
-            })}
+          <div className="grid grid-cols-5 gap-1 sm:gap-1.5">
+            {Array.from({ length: 5 }, (_, reel) => (
+              <ReelStrip key={reel} reel={reel} roundId={reelRound}
+                symbols={[reels[reel]!, reels[5 + reel]!, reels[10 + reel]!]}
+                pool={SYMBOLS.filter((symbol) => !symbol.isWild).map((symbol) => symbol.id)}
+                duration={fastReveal ? 0.08 : 0.8 + reel * 0.13}
+                renderSymbol={(symbol, row) => {
+                  const meta = symbolById(symbol);
+                  const index = row === null ? -1 : row * 5 + reel;
+                  const highlight = !!lastResult && index >= 0 &&
+                    (lastResult.winningPositions.includes(index) || (symbol === 'scatter' && lastResult.scatterCount >= 3));
+                  const money = index >= 0 ? lastResult?.moneyValues[index] ?? 0 : 0;
+                  return (
+                    <div className="relative w-full h-full rounded flex items-center justify-center text-3xl sm:text-4xl"
+                      style={{ background: highlight ? `${meta?.color}25` : 'rgba(255,255,255,.025)',
+                        border: `1px solid ${highlight ? meta?.color : 'rgba(255,255,255,.07)'}`,
+                        boxShadow: highlight ? `inset 0 0 16px ${meta?.color}30` : undefined }}>
+                      <span>{meta?.emoji ?? symbol}</span>
+                      {money > 0 && <span className="absolute bottom-0.5 right-0.5 rounded bg-accent-gold px-1 text-[9px] leading-4 font-mono font-bold text-stake-bg">{money}×</span>}
+                    </div>
+                  );
+                }} />
+            ))}
           </div>
           {/* "COLLECT!" overlay when fisherman snags money on a FS round */}
           <AnimatePresence>
@@ -530,13 +359,13 @@ export function BigBassGame() {
                 <div className="text-[10px] uppercase tracking-widest text-stake-muted">
                   {lastResult.lineLength}× {symbolById(lastResult.lineSymbol)?.emoji} · line
                   {lastResult.scatterCount >= 3
-                    ? ` + ${lastResult.scatterCount}× 🦞`
+                    ? ` + ${lastResult.scatterCount}× 🚤`
                     : ''}
                   {lastResult.collectedMultiplier > 0 ? ` · COLLECT +${lastResult.collectedMultiplier}×` : ''}
                 </div>
               ) : lastResult.scatterCount >= 3 ? (
                 <div className="text-[10px] uppercase tracking-widest text-stake-muted">
-                  {lastResult.scatterCount}× scatter 🦞
+                  {lastResult.scatterCount}× scatter 🚤
                   {lastResult.collectedMultiplier > 0 ? ` · COLLECT +${lastResult.collectedMultiplier}×` : ''}
                 </div>
               ) : lastResult.collectedMultiplier > 0 ? (
@@ -566,7 +395,7 @@ export function BigBassGame() {
             </>
           ) : (
             <div className="text-[10px] uppercase tracking-widest text-stake-muted">
-              Cast & spin · 3+ 🦞 triggers free spins
+              Cast & spin · 3+ 🚤 triggers free spins
             </div>
           )}
         </div>
@@ -574,7 +403,7 @@ export function BigBassGame() {
         {/* Paytable summary */}
         <div className="rounded-xl bg-stake-card border border-stake-border p-2">
           <div className="text-[10px] uppercase tracking-widest text-stake-muted mb-1.5 px-1">
-            Top pays · 5-of-a-kind · 3+ 🦞 = free spins
+            Per-line returns · 5 matching · 3+ 🚤 = free spins
           </div>
           <div className="grid grid-cols-5 gap-1">
             {SYMBOLS.filter((s) => !s.isScatter && s.pay && s.pay[5] >= 50).map((s) => (
@@ -584,7 +413,7 @@ export function BigBassGame() {
                   className="text-[10px] font-mono font-bold tabular-nums"
                   style={{ color: s.color }}
                 >
-                  {s.pay![5]}×
+                  {(s.pay![5] / PAYLINES.length * LOCAL_LINE_SCALE).toFixed(2)}×
                 </div>
               </div>
             ))}
@@ -599,7 +428,7 @@ export function BigBassGame() {
           {mode === 'auto' && (
             <>
               <AutoConfigFields config={autoConfig} onChange={setAutoConfig} disabled={autoActive} />
-              {autoActive && <AutoProgressDisplay progress={progress} config={autoConfig} />}
+              {(autoActive || progress.stopReason) && <AutoProgressDisplay progress={progress} config={autoConfig} />}
             </>
           )}
           {mode === 'manual' ? (
@@ -612,8 +441,7 @@ export function BigBassGame() {
                 {inFs ? 'Free spins running…' : busy ? 'Reeling…' : `Cast · ${fmtCurrency(bet)}`}
               </button>
               {/* Buy Free Spins — pay 100× bet to skip directly into the
-                  10-FS round. Real Pragmatic Big Bass Bonanza ships this
-                  shortcut. Confirmation modal to prevent accidental
+                  10-FS round. This is a local demo shortcut. Confirmation modal to prevent accidental
                   hundred-stake fat-finger taps. */}
               <button
                 onClick={() => setShowBuyConfirm(true)}
@@ -626,13 +454,13 @@ export function BigBassGame() {
                   boxShadow: '0 0 14px rgba(255,209,102,.4)',
                 }}
               >
-                Buy Free Spins · {fmtCurrency(buyBonusCost)}
+                Demo Bonus · {fmtCurrency(buyBonusCost)}
               </button>
             </>
           ) : (
             <button
               onClick={() => setAutoActive((a) => !a)}
-              disabled={!autoActive && (balance.balance < bet || bet <= 0 || inFs)}
+              disabled={!autoActive && (busy || balance.balance < bet || bet <= 0 || inFs)}
               className={`w-full py-3.5 rounded-xl font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99] ${
                 autoActive ? 'bg-stake-red text-white' : 'bg-stake-green text-stake-bg'
               }`}
@@ -665,7 +493,7 @@ export function BigBassGame() {
               transition={{ delay: 0.1 }}
               style={{ color: '#fff5dc' }}
             >
-              Free Spins · 🦞 Complete
+              Free Spins · 🚤 Complete
             </motion.div>
             <motion.div
               className="font-display font-extrabold uppercase tracking-[0.3em] mb-3"

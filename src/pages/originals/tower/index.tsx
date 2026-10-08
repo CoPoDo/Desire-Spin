@@ -4,7 +4,7 @@ import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayou
 import { useGame } from '../../../game-context';
 import { useHotkey } from '../../../hooks/useHotkey';
 import { usePersistedBet } from '../../../hooks/usePersistedBet';
-import { createRng } from '../../../lib/fairness';
+import { useInteractiveRound, useRoundState } from '../_shared/useInteractiveRound';
 import { fmtCurrency, fmtMultiplier } from '../../../lib/format';
 import { BetInput } from '../_shared/BetInput';
 import {
@@ -22,100 +22,58 @@ import { fireConfetti } from '../../../lib/confetti';
 const DIFFICULTIES: Difficulty[] = ['easy', 'medium', 'hard', 'expert', 'master'];
 
 export function TowerGame() {
-  const { balance, fairness, sound, history, session } = useGame();
+  const { balance, sound } = useGame();
   const [bet, setBet] = usePersistedBet('tower', 1);
   const [difficulty, setDifficulty] = useState<Difficulty>('medium');
-  const [round, setRound] = useState<TowerRound | null>(null);
+  const [round, setRound, roundRef] = useRoundState<TowerRound | null>(null);
+  const { begin, settle, onLeave, error } = useInteractiveRound('Dragon Tower');
 
-  const cfg = configFor(difficulty);
+  const cfg = configFor(round?.difficulty ?? difficulty);
   const inGame = round !== null && !round.done;
   const currentMult = round ? multiplierAt(round.difficulty, round.step) : 1;
   const nextMult = round ? multiplierAt(round.difficulty, round.step + 1) : 1;
   const cashoutAmount = round ? +(round.bet * currentMult).toFixed(2) : 0;
 
-  const start = useCallback(() => {
-    if (round && !round.done) return;
-    if (balance.balance < bet || bet <= 0) return;
-    sound.play('click');
-    balance.debit(bet);
-    const seeds = fairness.consumeNonce();
-    const rng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
-    setRound(startRound(rng, bet, difficulty));
-  }, [round, balance, bet, difficulty, fairness, sound]);
+  onLeave.current = (updateView = false) => {
+    const current = roundRef.current;
+    if (!current) return 0;
+    const next = current.done ? current : current.step ? cashOut(current) : { ...current, done: true, payout: current.bet };
+    if (updateView) setRound(next);
+    return next.payout;
+  };
 
-  const onTile = useCallback(
-    (row: number, tile: number) => {
-      if (!round || round.done || row !== round.step) return;
-      const next = pickTile(round, tile);
-      setRound(next);
-      if (next.hitSkull) {
-        sound.play('drop');
-        history.record({
-          game: 'Dragon Tower',
-          bet: round.bet,
-          payout: 0,
-          multiplier: 0,
-          serverSeedHash: fairness.hash,
-          clientSeed: '',
-          nonce: 0,
-        });
-        session.recordSpin(round.bet, 0, false);
-      } else if (next.done) {
-        // Topped out
-        balance.credit(next.payout);
-        sound.play('mega-win');
-        history.record({
-          game: 'Dragon Tower',
-          bet: round.bet,
-          payout: next.payout,
-          multiplier: multiplierAt(round.difficulty, ROWS),
-          serverSeedHash: fairness.hash,
-          clientSeed: '',
-          nonce: 0,
-        });
-        session.recordSpin(round.bet, next.payout, false);
-      } else {
-        // Climbing-tone progression — earlier steps play 'win', mid
-        // steps escalate to 'big-win', last step plays 'mega-win' so
-        // the audio crescendo matches the visual height. Real Stake
-        // Tower has a clearly ascending pitch as the player climbs.
-        // (next.step is the row the player just completed.)
-        sound.play(
-          next.step >= 7 ? 'mega-win' :
-          next.step >= 4 ? 'big-win' : 'win',
-        );
-      }
-    },
-    [round, balance, fairness, history, session, sound],
-  );
+  const start = useCallback(() => {
+    if (roundRef.current && !roundRef.current.done) return;
+    const entry = begin(bet);
+    if (!entry) return;
+    sound.play('click');
+    setRound(startRound(entry.rng, entry.bet, difficulty));
+  }, [roundRef, begin, bet, difficulty, sound, setRound]);
+
+  const onTile = useCallback((row: number, tile: number) => {
+    const current = roundRef.current;
+    if (!current || current.done || row !== current.step) return;
+    const next = pickTile(current, tile);
+    if (next === current) return;
+    setRound(next);
+    if (next.done) settle(next.payout);
+    sound.play(next.hitSkull ? 'drop' : next.done ? 'mega-win' : next.step >= 4 ? 'big-win' : 'win');
+  }, [roundRef, setRound, settle, sound]);
 
   const doCashOut = useCallback(() => {
-    if (!round || round.done || round.step === 0) return;
-    // Tier SFX with cash-out multiplier — Hardcore mode can chain to
-    // 100×+, Easy peaks at ~10×; flat 'big-win' sounded the same for
-    // both. Now ≥10× = mega, otherwise big.
-    sound.play(currentMult >= 10 ? 'mega-win' : 'big-win');
-    const next = cashOut(round);
+    const current = roundRef.current;
+    if (!current || current.done || current.step === 0) return;
+    const next = cashOut(current);
     setRound(next);
-    balance.credit(next.payout);
-    if (currentMult >= 1.5) {
-      fireConfetti({
-        count: currentMult >= 50 ? 130 : currentMult >= 10 ? 80 : 50,
-      });
-    }
-    history.record({
-      game: 'Dragon Tower',
-      bet: round.bet,
-      payout: next.payout,
-      multiplier: currentMult,
-      serverSeedHash: fairness.hash,
-      clientSeed: '',
-      nonce: 0,
-    });
-    session.recordSpin(round.bet, next.payout, false);
-  }, [round, balance, currentMult, fairness, history, session, sound]);
+    if (!settle(next.payout)) return;
+    const mult = multiplierAt(current.difficulty, current.step);
+    sound.play(mult >= 10 ? 'mega-win' : 'big-win');
+    if (mult >= 1.5) fireConfetti({ count: mult >= 50 ? 100 : 50 });
+  }, [roundRef, setRound, settle, sound]);
 
-  const reset = useCallback(() => setRound(null), []);
+  const reset = useCallback(() => {
+    if (roundRef.current?.done) setRound(null);
+  }, [roundRef, setRound]);
 
   /** Pick a random tile on the current row — matches Mines's "?"
    *  button. Useful for autopilot-style play or when you can't decide. */
@@ -137,7 +95,6 @@ export function TowerGame() {
   useHotkey('R', () => pickRandom(), true);
   useHotkey(' ', () => {
     if (!round || round.done) {
-      if (round?.done) setRound(null);
       start();
     } else if (round.step > 0) {
       doCashOut();
@@ -147,6 +104,7 @@ export function TowerGame() {
   return (
     <OriginalPageLayout title="Dragon Tower">
       <div className="flex flex-col p-4 gap-4 max-w-md mx-auto w-full">
+        {error && <p role="alert" className="text-stake-red text-sm text-center">{error}</p>}
         {/* Status */}
         <div className="rounded-lg bg-stake-card border border-stake-border p-3 text-center">
           {!round || round.done ? (
@@ -215,6 +173,7 @@ export function TowerGame() {
                     return (
                       <button
                         key={tile}
+                        aria-label={`Row ${rowIdx + 1}, tile ${tile + 1}${showSkull ? ': skull' : showSafe ? ': safe' : ''}`}
                         onClick={() => onTile(rowIdx, tile)}
                         disabled={!isActive}
                         className="flex-1 aspect-[2/1] rounded-lg flex items-center justify-center text-lg font-bold transition-all active:scale-95"
@@ -255,6 +214,8 @@ export function TowerGame() {
             })}
           </div>
         </div>
+
+        <p className="text-[11px] text-stake-muted text-center">Leaving cashes out completed rows. A bet with no tile picked is returned.</p>
 
         {/* Controls */}
         {!inGame ? (

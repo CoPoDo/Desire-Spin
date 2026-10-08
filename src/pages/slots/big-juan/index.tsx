@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { motion, AnimatePresence, MotionConfig, useReducedMotion } from 'framer-motion';
 import { useGame } from '../../../game-context';
 import { useHotkey } from '../../../hooks/useHotkey';
 import { createRng } from '../../../lib/fairness';
@@ -46,7 +46,9 @@ import { BigJuanBonusRound } from './BonusRound';
 import { fireConfetti } from '../../../lib/confetti';
 import { SpinReel, type SpinReelHandle } from './SpinReel';
 import { JuanCharacter, type JuanMood } from './JuanCharacter';
-import { animateCountUp } from './winCounter';
+import { animateCountUp, type CountUpHandle } from './winCounter';
+import { useDialogFocus } from './useDialogFocus';
+import './presentation.css';
 
 type PendingBigJuanSettlement = {
   wagerCost: number;
@@ -60,6 +62,17 @@ type PendingBigJuanSettlement = {
 };
 
 const PENDING_SETTLEMENT_KEY = 'bj:pending-settlement';
+
+function isPendingSettlement(value: unknown): value is PendingBigJuanSettlement {
+  if (!value || typeof value !== 'object') return false;
+  const p = value as PendingBigJuanSettlement;
+  return Number.isFinite(p.wagerCost) && p.wagerCost > 0
+    && (p.payout === null || (Number.isFinite(p.payout) && p.payout >= 0))
+    && Number.isFinite(p.multiplier) && p.multiplier >= 0
+    && (p.game === 'Big Juan' || p.game === 'Big Juan · Bonus Buy')
+    && typeof p.serverSeedHash === 'string' && typeof p.clientSeed === 'string'
+    && Number.isSafeInteger(p.nonce) && p.nonce >= 0 && typeof p.feature === 'boolean';
+}
 
 /** A play-money reconstruction of Big Juan's documented rules and flow.
  * Original art/audio are used; exposed display-loop order is reproduced,
@@ -87,6 +100,7 @@ export function BigJuan() {
 
   // ── Round + UI state ──────────────────────────────────────────────
   const [busy, setBusy] = useState(false);
+  const [roundError, setRoundError] = useState<string | null>(null);
   const [reelsSpinning, setReelsSpinning] = useState(false);
   const [grid, setGrid] = useState<TGrid>(() => makeBlankGrid());
   /** Last result. The UI uses it for the win-cycle, last-win pill,
@@ -156,17 +170,17 @@ export function BigJuan() {
       const viewportH = firstReel?.clientHeight ?? el.clientHeight;
       const gap = 6;
       if (viewportH <= 0) return;
-      const cellH = Math.max(36, Math.floor((viewportH - gap * 3) / 4));
+      const cellH = Math.max(1, (viewportH - gap * 3) / 4);
       el.style.setProperty('--bj-cell-h', `${cellH}px`);
       el.style.setProperty('--bj-cell-gap', `${gap}px`);
       setCellPx((prev) => (prev.height === cellH && prev.gap === gap ? prev : { height: cellH, gap }));
     };
     // Wait one frame so the layout has settled (the spin-reel's
     // height comes from its parent's aspect-ratio'd height).
-    requestAnimationFrame(recompute);
+    const frame = requestAnimationFrame(recompute);
     const ro = new ResizeObserver(recompute);
     ro.observe(el);
-    return () => ro.disconnect();
+    return () => { cancelAnimationFrame(frame); ro.disconnect(); };
   }, []);
 
   // ── Sheets / overlays ─────────────────────────────────────────────
@@ -197,10 +211,17 @@ export function BigJuan() {
   const [turbo, setTurbo] = useState<boolean>(() => loadJson<boolean>('bj:turbo', false));
   useEffect(() => { saveJson('bj:turbo', turbo); }, [turbo]);
 
+  const hasBlockingOverlay = betSheetOpen || autoplaySheetOpen || paytableOpen || buyBonusConfirm;
+  const welcomeDialogRef = useDialogFocus<HTMLDivElement>(welcomeSplash);
+  const buyDialogRef = useDialogFocus<HTMLDivElement>(buyBonusConfirm);
+  const autoplayDialogRef = useDialogFocus<HTMLDivElement>(autoplaySheetOpen);
+  const winDialogRef = useDialogFocus<HTMLDivElement>(!!bigWin);
+
   // ── Aux refs ─────────────────────────────────────────────────────
   const aliveRef = useRef(true);
   const roundLockedRef = useRef(false);
   const pendingSettlementRef = useRef<PendingBigJuanSettlement | null>(null);
+  const winCountRef = useRef<CountUpHandle | null>(null);
   const balanceCreditRef = useRef(balance.credit);
   const historyRecordRef = useRef(history.record);
   const sessionRecordRef = useRef(session.recordSpin);
@@ -265,6 +286,15 @@ export function BigJuan() {
     });
     sessionRecordRef.current(pending.wagerCost, pending.payout, pending.feature);
   }, []);
+  // Claim the prepared result before committing. Every completion path shares
+  // this guard, including route cleanup and repeated feature callbacks.
+  const settlePendingRound = useCallback(() => {
+    const pending = pendingSettlementRef.current;
+    if (!pending) return false;
+    clearPendingSettlement();
+    commitPendingSettlement(pending);
+    return true;
+  }, [clearPendingSettlement, commitPendingSettlement]);
   useEffect(() => {
     aliveRef.current = true;
     // A hard refresh can bypass React's unmount cleanup. Recover the durable
@@ -272,23 +302,20 @@ export function BigJuan() {
     const recovered = loadJson<PendingBigJuanSettlement | null>(PENDING_SETTLEMENT_KEY, null);
     if (recovered) {
       clearPendingSettlement();
-      commitPendingSettlement(recovered);
+      if (isPendingSettlement(recovered)) commitPendingSettlement(recovered);
     }
     return () => {
       aliveRef.current = false;
+      winCountRef.current?.cancel();
       for (const wake of staggerWakeupsRef.current) wake();
       staggerWakeupsRef.current.clear();
       for (const timer of timersRef.current) clearTimeout(timer);
       timersRef.current.clear();
       // Route changes must never strand a debited game cycle. Once the seeded
-      // outcome is known, commit it atomically; otherwise void/refund it.
-      const pending = pendingSettlementRef.current;
-      if (pending) {
-        clearPendingSettlement();
-        commitPendingSettlement(pending);
-      }
+      // outcome is known, commit it once; otherwise void/refund it.
+      settlePendingRound();
     };
-  }, [clearPendingSettlement, commitPendingSettlement]);
+  }, [clearPendingSettlement, commitPendingSettlement, settlePendingRound]);
 
   // ── Win-line cycling ─────────────────────────────────────────────
   useEffect(() => {
@@ -299,14 +326,31 @@ export function BigJuan() {
       i = (i + 1) % lastResult.wins.length;
       setActiveWin(lastResult.wins[i]!);
     };
+    if (reducedMotion || lastResult.wins.length === 1) return;
     const interval = setInterval(tick, 1100);
     return () => clearInterval(interval);
-  }, [lastResult]);
+  }, [lastResult, reducedMotion]);
+
+  const beginPaidRound = useCallback((cost: number) => {
+    if (!balance.debit(cost)) return null;
+    try {
+      const seeds = fairness.consumeNonce();
+      setRoundError(null);
+      return { seeds, serverSeedHash: fairness.hash };
+    } catch (error) {
+      balance.credit(cost);
+      setAutoplay(null);
+      setRoundError(error instanceof Error ? error.message : 'Unable to start the round. Your stake was returned.');
+      return null;
+    }
+  }, [balance, fairness]);
 
   // ── Spin ─────────────────────────────────────────────────────────
   const spin = useCallback(async () => {
-    if (roundLockedRef.current || busy || bonus) return;
-    if (balance.balance < bet || bet <= 0) return;
+    if (roundLockedRef.current || busy || bonus || hasBlockingOverlay || welcomeSplash || bigWin) return;
+    if (bet <= 0) return;
+    const started = beginPaidRound(bet);
+    if (!started) return;
     roundLockedRef.current = true;
     reelStopRequestedRef.current = false;
     setBusy(true);
@@ -324,10 +368,8 @@ export function BigJuan() {
     winValueRef.current = 0;
     if (winDisplayElRef.current) winDisplayElRef.current.textContent = fmtCurrency(0);
     sound.play('click');
-    balance.debit(roundBet);
 
-    const roundServerSeedHash = fairness.hash;
-    const seeds = fairness.consumeNonce();
+    const { serverSeedHash: roundServerSeedHash, seeds } = started;
     persistPendingSettlement({
       wagerCost: roundBet,
       payout: null,
@@ -400,14 +442,15 @@ export function BigJuan() {
           reelIndex: i,
           instant: !!reducedMotion || reelStopRequestedRef.current,
         });
+        if (!aliveRef.current) return;
         sound.play('juan-reel-stop');
         if (useAnticipation) setAnticipatingReel(null);
       })();
       reelPromises.push(p);
     }
     await Promise.all(reelPromises);
-    setReelsSpinning(false);
     if (!aliveRef.current) return;
+    setReelsSpinning(false);
 
     // Promote the React rest-view to the pre-switch grid. (SpinReel
     // hands off cleanly: its imperative strip is now empty + hidden,
@@ -424,12 +467,15 @@ export function BigJuan() {
       sound.play('juan-switch');
       // Flame burst beat (~600-900ms).
       await delay(reducedMotion ? 0 : turbo ? 420 : 760);
+      if (!aliveRef.current) return;
       // Transform cells: swap to the post-switch grid.
       setGrid(r.grid);
       await delay(reducedMotion ? 0 : turbo ? 180 : 360);
+      if (!aliveRef.current) return;
       setIgniteCells(new Set());
       schedule(() => setShowWildSwitch(false), reducedMotion ? 0 : turbo ? 650 : 1100);
       await delay(reducedMotion ? 0 : turbo ? 140 : 260);
+      if (!aliveRef.current) return;
     }
 
     // ── Headline result + big-win banner ────────────────────────────
@@ -444,13 +490,17 @@ export function BigJuan() {
       // count-up, but settle the combined balance only after the feature.
       sound.play(baseMult >= 50 ? 'mega-win' : baseMult >= 10 ? 'big-win' : 'win');
       if (winDisplayElRef.current && !reducedMotion) {
-        await animateCountUp(
+        const countUp = animateCountUp(
           winDisplayElRef.current,
           0,
           basePayout,
           (value) => fmtCurrency(value),
           { bet: roundBet, durationMs: turbo ? 500 : 1250 },
         );
+        winCountRef.current = countUp;
+        await countUp;
+        winCountRef.current = null;
+        if (!aliveRef.current) return;
       }
       winValueRef.current = basePayout;
       setWinDisplay(basePayout);
@@ -459,10 +509,12 @@ export function BigJuan() {
     // Locally calibrated presentation tiers; provider thresholds are private.
     const tier = bigWinTierFor(baseMult);
     if (tier && !entersBonus) {
-      setBigWin({ payout: basePayout, tier });
+      setPaytableOpen(false);
+      const banner = { payout: basePayout, tier };
+      setBigWin(banner);
       setJuanMood(tier.name === 'max' || tier.name === 'epic' ? 'pistols' : 'cheer');
       const dismissMs = turbo ? Math.max(2200, tier.durationMs * 0.6) : tier.durationMs;
-      schedule(() => setBigWin(null), dismissMs);
+      schedule(() => setBigWin((current) => current === banner ? null : current), dismissMs);
       const confettiCount =
         tier.name === 'max' ? 280
         : tier.name === 'epic' ? 220
@@ -471,7 +523,7 @@ export function BigJuan() {
         : tier.name === 'mega' ? 100
         : tier.name === 'big' ? 70
         : 50;
-      fireConfetti({
+      if (!reducedMotion) fireConfetti({
         count: confettiCount,
         colors: ['#ff5560', '#ffd166', '#1fff7a', '#5fb8ff', '#c042b8', '#ffffff'],
       });
@@ -503,6 +555,7 @@ export function BigJuan() {
       if (!aliveRef.current) return;
       setShowFsTrigger(null);
       setTriggerPhase(null);
+      setPaytableOpen(false);
       setBonus({
         source: 'organic',
         scatterCount: r.scatterCount,
@@ -520,60 +573,38 @@ export function BigJuan() {
     }
 
     // ── History + session ──────────────────────────────────────────
-    clearPendingSettlement();
-    if (basePayout > 0) balance.credit(basePayout);
-    history.record({
-      game: 'Big Juan',
-      bet: roundBet,
-      payout: basePayout,
-      multiplier: baseMult,
-      serverSeedHash: roundServerSeedHash,
-      clientSeed: seeds.clientSeed,
-      nonce: seeds.nonce,
-    });
-    session.recordSpin(roundBet, basePayout, false);
+    if (!settlePendingRound()) return;
     roundLockedRef.current = false;
     setBusy(false);
-  }, [busy, bonus, bet, balance, fairness, sound, history, session, turbo, reducedMotion, cellPx, delay, delayReelStagger, schedule, persistPendingSettlement, clearPendingSettlement]);
+  }, [busy, bonus, bet, balance, fairness, sound, history, session, turbo, reducedMotion, cellPx, delay, delayReelStagger, schedule, persistPendingSettlement, settlePendingRound, hasBlockingOverlay, welcomeSplash, bigWin, beginPaidRound]);
 
   // ── Bonus resolved ────────────────────────────────────────────────
-  const resolveBonus = useCallback((totalBonusMult: number) => {
-    if (!bonus) return;
-    const totalCycleMult = +(bonus.baseMultiplier + totalBonusMult).toFixed(4);
+  const resolveBonus = useCallback(() => {
+    if (!bonus || !aliveRef.current || !settlePendingRound()) return;
+    const totalCycleMult = +(bonus.baseMultiplier + bonus.outcome.totalMultiplier).toFixed(4);
     const payout = +(bonus.bet * totalCycleMult).toFixed(2);
-    clearPendingSettlement();
     if (payout > 0) {
-      balance.credit(payout);
       // Feature cycles celebrate their combined base + respin result.
       const tier = bigWinTierFor(totalCycleMult);
       if (tier) {
-        setBigWin({ payout, tier });
+        const banner = { payout, tier };
+        setBigWin(banner);
         const dismissMs = turbo ? Math.max(2200, tier.durationMs * 0.6) : tier.durationMs;
-        schedule(() => setBigWin(null), dismissMs);
-        fireConfetti({
+        schedule(() => setBigWin((current) => current === banner ? null : current), dismissMs);
+        if (!reducedMotion) fireConfetti({
           count: tier.name === 'max' ? 300 : tier.name === 'epic' ? 220 : 160,
           colors: ['#ff5560', '#ffd166', '#1fff7a', '#5fb8ff', '#c042b8', '#ffffff'],
         });
       }
       sound.play(totalCycleMult >= 100 ? 'mega-win' : 'big-win');
     }
-    history.record({
-      game: bonus.source === 'buy' ? 'Big Juan · Bonus Buy' : 'Big Juan',
-      bet: bonus.wagerCost,
-      payout,
-      multiplier: +(payout / Math.max(bonus.wagerCost, 0.01)).toFixed(4),
-      serverSeedHash: bonus.historySeeds.serverSeedHash,
-      clientSeed: bonus.historySeeds.clientSeed,
-      nonce: bonus.historySeeds.nonce,
-    });
-    session.recordSpin(bonus.wagerCost, payout, true);
     winValueRef.current = payout;
     setWinDisplay(payout);
     setLastWinPayout(payout);
     setBonus(null);
     roundLockedRef.current = false;
     setBusy(false);
-  }, [bonus, balance, history, session, sound, turbo, schedule, clearPendingSettlement]);
+  }, [bonus, sound, turbo, reducedMotion, schedule, settlePendingRound]);
 
   // ── Autoplay loop ─────────────────────────────────────────────────
   useEffect(() => {
@@ -582,7 +613,7 @@ export function BigJuan() {
       setAutoplay(null);
       return;
     }
-    if (busy || bonus) return;
+    if (busy || bonus || hasBlockingOverlay || welcomeSplash) return;
     if (bigWin) return; // Local safety: do not bury a win presentation.
     if (balance.balance < bet) {
       setAutoplay(null);
@@ -593,20 +624,21 @@ export function BigJuan() {
       void spin();
     }, turbo ? 280 : 720);
     return () => clearTimeout(t);
-  }, [autoplay, busy, bonus, bigWin, balance.balance, bet, spin, turbo]);
+  }, [autoplay, busy, bonus, bigWin, balance.balance, bet, spin, turbo, hasBlockingOverlay, welcomeSplash]);
 
   // ── Bonus Buy ────────────────────────────────────────────────────
   const buyBonusCost = +(bet * BUY_BONUS_COST_MULTIPLIER).toFixed(2);
   const buyBonus = useCallback(async () => {
     if (roundLockedRef.current || busy || bonus) return;
-    if (balance.balance < buyBonusCost) return;
+    if (autoplay || welcomeSplash || bigWin) return;
+    const started = beginPaidRound(buyBonusCost);
+    if (!started) return;
     roundLockedRef.current = true;
     reelStopRequestedRef.current = false;
     setBusy(true);
     const roundBet = bet;
     const wagerCost = buyBonusCost;
     sound.play('click');
-    balance.debit(wagerCost);
     setBuyBonusConfirm(false);
     setLastResult(null);
     setWinningCells(new Set());
@@ -615,8 +647,7 @@ export function BigJuan() {
 
     // The entry rolls 4 or 5 piñatas. Their unpublished weighting is locally
     // calibrated; a fresh nonce keeps this local result reproducible.
-    const roundServerSeedHash = fairness.hash;
-    const seeds = fairness.consumeNonce();
+    const { serverSeedHash: roundServerSeedHash, seeds } = started;
     persistPendingSettlement({
       wagerCost,
       payout: null,
@@ -656,11 +687,11 @@ export function BigJuan() {
         reelIndex,
         instant: !!reducedMotion || reelStopRequestedRef.current,
       });
-      sound.play('juan-reel-stop');
+      if (aliveRef.current) sound.play('juan-reel-stop');
     });
     await Promise.all(reelPromises);
-    setReelsSpinning(false);
     if (!aliveRef.current) return;
+    setReelsSpinning(false);
     setGrid(entryGrid);
 
     setShowFsTrigger(entry.scatters);
@@ -690,20 +721,20 @@ export function BigJuan() {
       wagerCost,
       baseMultiplier: 0,
     });
-  }, [busy, bonus, balance, buyBonusCost, bet, fairness, sound, turbo, reducedMotion, delay, delayReelStagger, cellPx, persistPendingSettlement]);
+  }, [busy, bonus, balance, buyBonusCost, bet, fairness, sound, turbo, reducedMotion, delay, delayReelStagger, cellPx, persistPendingSettlement, autoplay, welcomeSplash, bigWin, beginPaidRound]);
 
   // ── Hotkeys ──────────────────────────────────────────────────────
   const dismissWelcome = useCallback(() => {
     if (hideIntroNextTime) saveJson('bj:intro-hidden', true);
     setWelcomeSplash(false);
   }, [hideIntroNextTime]);
-  const hasBlockingOverlay = betSheetOpen || autoplaySheetOpen || paytableOpen || buyBonusConfirm;
   const onPlayHotkey = useCallback(() => {
     if (welcomeSplash) {
       dismissWelcome();
       return;
     }
     if (hasBlockingOverlay) return;
+    if (bigWin) { setBigWin(null); return; }
     if (reelsSpinning) {
       stopReels();
       return;
@@ -711,12 +742,13 @@ export function BigJuan() {
     if (autoplay) { setAutoplay(null); return; }
     if (busy || bonus || balance.balance < bet) return;
     void spin();
-  }, [welcomeSplash, dismissWelcome, hasBlockingOverlay, reelsSpinning, stopReels, autoplay, busy, bonus, balance.balance, bet, spin]);
+  }, [welcomeSplash, dismissWelcome, hasBlockingOverlay, bigWin, reelsSpinning, stopReels, autoplay, busy, bonus, balance.balance, bet, spin]);
   useHotkey(' ', onPlayHotkey, !bonus);
   useHotkey('Enter', onPlayHotkey, !bonus);
 
   // Esc closes open sheets / banners.
   useHotkey('Escape', () => {
+    if (bigWin) { setBigWin(null); return; }
     if (betSheetOpen) { setBetSheetOpen(false); return; }
     if (autoplaySheetOpen) { setAutoplaySheetOpen(false); return; }
     if (paytableOpen) { setPaytableOpen(false); return; }
@@ -727,8 +759,11 @@ export function BigJuan() {
 
   // ── Render ───────────────────────────────────────────────────────
   return (
+    <MotionConfig reducedMotion="user">
     <div className="absolute inset-0 overflow-hidden text-ink flex flex-col big-juan-stage">
       <BigJuanBackdrop />
+      {roundError && <p role="alert" className="absolute top-24 left-4 right-4 z-40 rounded-xl bg-black/90 p-3 text-center text-sm">{roundError}</p>}
+
 
       {/* Jackpot tier ribbon — top of screen, Grand → Mini. Values in
        *  currency (× bet). Real Big Juan shows this prominently. */}
@@ -938,10 +973,10 @@ export function BigJuan() {
       {/* Bottom bar — bet | buy | info | SPIN | turbo | auto.
        *  flex-shrink-0 + min-height guarantee the footer stays on screen
        *  even when the reel stage tries to claim the full main area. */}
-      <footer className="relative z-30 flex-shrink-0 flex items-center justify-center gap-1.5 px-3 pb-[max(env(safe-area-inset-bottom),8px)] pt-2 min-h-[80px]">
+      <footer className="bj-controls relative z-30 flex-shrink-0 flex items-center justify-center gap-1.5 px-3 pb-[max(env(safe-area-inset-bottom),8px)] pt-2 min-h-[80px]">
         <button
           onClick={() => setBetSheetOpen(true)}
-          disabled={busy}
+          disabled={busy || !!autoplay || !!bonus}
           className="flex flex-col items-start px-3 py-2 rounded-xl bg-bg-card/80 backdrop-blur-sm border border-edge disabled:opacity-50 flex-shrink-0 transition active:scale-95 disabled:active:scale-100"
           aria-label="Bet amount"
         >
@@ -973,7 +1008,7 @@ export function BigJuan() {
           ⓘ
         </button>
         <button
-          onClick={() => { if (reelsSpinning) stopReels(); else void spin(); }}
+          onClick={() => { if (reelsSpinning) stopReels(); else if (autoplay) setAutoplay(null); else void spin(); }}
           disabled={!!bonus || (busy && !reelsSpinning) || (!busy && (balance.balance < bet || bet <= 0))}
           aria-label={reelsSpinning ? 'Stop reels' : 'Spin reels'}
           className={`flex-shrink-0 w-[88px] h-[60px] rounded-2xl font-display font-extrabold text-sm uppercase tracking-wider transition active:scale-[0.99] ${
@@ -1002,7 +1037,7 @@ export function BigJuan() {
         </button>
         <button
           onClick={() => { if (autoplay) setAutoplay(null); else setAutoplaySheetOpen(true); }}
-          disabled={busy || !!bonus}
+          disabled={!autoplay && (busy || !!bonus)}
           aria-label={autoplay ? 'Stop autoplay' : 'Auto-play'}
           className="flex flex-col items-center justify-center w-12 h-12 rounded-xl border disabled:opacity-50 flex-shrink-0 transition active:scale-95 disabled:active:scale-100"
           style={{
@@ -1059,8 +1094,8 @@ export function BigJuan() {
         onClose={() => setBetSheetOpen(false)}
         coinValue={coinValue}
         coinsPerLine={coinsPerLine}
-        onCoinValue={setCoinValue}
-        onCoinsPerLine={setCoinsPerLine}
+        onCoinValue={(value) => { if (!roundLockedRef.current && !autoplay) setCoinValue(value); }}
+        onCoinsPerLine={(value) => { if (!roundLockedRef.current && !autoplay) setCoinsPerLine(value); }}
       />
 
       {/* Bonus respins overlay */}
@@ -1070,7 +1105,7 @@ export function BigJuan() {
             bet={bonus.bet}
             scatterCount={bonus.scatterCount}
             outcome={bonus.outcome}
-            speedMultiplier={reducedMotion ? 40 : turbo ? 1.8 : 1}
+            speedMultiplier={reducedMotion ? 6 : turbo ? 1.8 : 1}
             onClose={resolveBonus}
           />
         )}
@@ -1087,10 +1122,12 @@ export function BigJuan() {
       <AnimatePresence>
         {welcomeSplash && (
           <motion.div
+            ref={welcomeDialogRef}
+            tabIndex={-1}
             role="dialog"
             aria-modal="true"
             aria-label="Big Juan introduction"
-            className="absolute inset-0 z-[150] flex flex-col items-center justify-center text-center p-6"
+            className="bj-intro absolute inset-0 z-[150] flex flex-col items-center justify-center text-center p-6"
             style={{
               background: 'radial-gradient(ellipse at center, rgba(120,16,46,.92), rgba(15,5,5,.98) 70%)',
               backdropFilter: 'blur(8px)',
@@ -1160,7 +1197,7 @@ export function BigJuan() {
               2,600×
             </motion.div>
             <motion.div
-              className="absolute bottom-7 left-1/2 flex w-[min(90vw,360px)] -translate-x-1/2 flex-col items-center gap-2"
+              className="mt-5 flex w-[min(90vw,360px)] flex-col items-center gap-2"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.7 }}
@@ -1187,11 +1224,16 @@ export function BigJuan() {
       </AnimatePresence>
 
       {/* Big-win banner — local per-tier typography in CSS
-       *  (bj-bigwin-tier-*). Tap-anywhere dismisses the banner after the
-       *  minimum display time. */}
+       *  (bj-bigwin-tier-*). The result is already settled; dismissing
+       *  this presentation does not change the payout. */}
       <AnimatePresence>
         {bigWin && (
           <motion.div
+            ref={winDialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Round win"
+            tabIndex={-1}
             className="fixed inset-0 z-[170] flex flex-col items-center justify-center pointer-events-none"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -1264,7 +1306,12 @@ export function BigJuan() {
               aria-label="Cancel autoplay"
             />
             <motion.div
-              className="fixed left-0 right-0 bottom-0 z-50 rounded-t-3xl bg-bg-card border-t border-edge p-4 max-w-md mx-auto"
+              ref={autoplayDialogRef}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Autoplay settings"
+              tabIndex={-1}
+              className="fixed left-0 right-0 bottom-0 z-50 max-h-[90dvh] overflow-y-auto rounded-t-3xl bg-bg-card border-t border-edge p-4 max-w-md mx-auto"
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
@@ -1315,6 +1362,8 @@ export function BigJuan() {
              *  without affecting positioning. */}
             <div className="fixed inset-0 z-[160] flex items-center justify-center p-4 pointer-events-none">
               <motion.div
+                ref={buyDialogRef}
+                tabIndex={-1}
                 role="dialog"
                 aria-modal="true"
                 aria-label="Confirm Bonus Buy"
@@ -1372,7 +1421,7 @@ export function BigJuan() {
                 </button>
                 <button
                   onClick={buyBonus}
-                  disabled={balance.balance < buyBonusCost}
+                  disabled={busy || !!bonus || balance.balance < buyBonusCost}
                   className="flex-[2] py-3 rounded-xl font-display font-extrabold text-sm uppercase tracking-wider disabled:opacity-50"
                   style={{
                     background: 'linear-gradient(180deg, #ffd166 0%, #c8932e 60%, #5a3a04 100%)',
@@ -1390,6 +1439,7 @@ export function BigJuan() {
         )}
       </AnimatePresence>
     </div>
+    </MotionConfig>
   );
 }
 
@@ -1474,6 +1524,7 @@ function BetSheet({
   onCoinValue: (v: number) => void;
   onCoinsPerLine: (v: number) => void;
 }) {
+  const dialogRef = useDialogFocus<HTMLDivElement>(open);
   const total = useMemo(() => totalBetFor(coinValue, coinsPerLine), [coinValue, coinsPerLine]);
   return (
     <AnimatePresence>
@@ -1491,7 +1542,9 @@ function BetSheet({
             role="dialog"
             aria-modal="true"
             aria-label="Bet settings"
-            className="fixed left-0 right-0 bottom-0 z-50 rounded-t-3xl bg-bg-card border-t border-edge p-4 max-w-md mx-auto"
+            ref={dialogRef}
+            tabIndex={-1}
+            className="fixed left-0 right-0 bottom-0 z-50 max-h-[90dvh] overflow-y-auto rounded-t-3xl bg-bg-card border-t border-edge p-4 max-w-md mx-auto"
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
@@ -1516,6 +1569,7 @@ function BetSheet({
                   <button
                     key={v}
                     onClick={() => onCoinValue(v)}
+                    aria-pressed={coinValue === v}
                     className={`py-2 rounded-lg font-mono font-bold text-[11px] tabular-nums transition ${
                       coinValue === v
                         ? 'bg-[#ffd166] text-[#1a0a04] shadow-[0_0_10px_rgba(255,209,102,.55)]'
@@ -1540,6 +1594,7 @@ function BetSheet({
                   <button
                     key={v}
                     onClick={() => onCoinsPerLine(v)}
+                    aria-pressed={coinsPerLine === v}
                     className={`py-2 rounded-lg font-mono font-bold text-[11px] tabular-nums transition ${
                       coinsPerLine === v
                         ? 'bg-[#ffd166] text-[#1a0a04] shadow-[0_0_10px_rgba(255,209,102,.55)]'
@@ -1560,6 +1615,7 @@ function BetSheet({
                 {fmtCurrency(total)}
               </div>
             </div>
+            <button type="button" onClick={onClose} className="mt-3 w-full rounded-xl border border-edge py-3 font-bold">Done</button>
             <div className="text-[9px] text-ink-mute text-center mt-2">
               {fmtCurrency(coinValue)} × {coinsPerLine} × 40 lines
             </div>
@@ -1579,6 +1635,7 @@ function Paytable({
 }: {
   open: boolean; onClose: () => void; bet: number;
 }) {
+  const dialogRef = useDialogFocus<HTMLDivElement>(open);
   // Group symbols for display: lows together, highs individually, wild + scatter
   const lowsForDisplay = SYMBOLS.filter((s) => s.kind === 'low');
   const highsForDisplay = SYMBOLS.filter((s) => s.kind === 'high');
@@ -1605,6 +1662,8 @@ function Paytable({
             role="dialog"
             aria-modal="true"
             aria-label="Big Juan pay table"
+            ref={dialogRef}
+            tabIndex={-1}
             className="pointer-events-auto w-[min(94vw,440px)] max-h-[calc(100dvh-1.5rem)] overflow-y-auto rounded-2xl p-5"
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}

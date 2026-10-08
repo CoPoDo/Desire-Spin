@@ -22,6 +22,7 @@ export type FlyOptions = {
   endRotate?: number;
   /** Animation duration in ms (default 600). */
   durationMs?: number;
+  signal?: AbortSignal;
 };
 
 /** Fly a coin from source rect → target rect. Returns a Promise that
@@ -31,6 +32,7 @@ export function flyCoin(
   targetEl: HTMLElement,
   opts: FlyOptions,
 ): Promise<void> {
+  if (opts.signal?.aborted || opts.durationMs === 0) return Promise.resolve();
   const sourceRect = sourceEl.getBoundingClientRect();
   const targetRect = targetEl.getBoundingClientRect();
 
@@ -63,9 +65,13 @@ export function flyCoin(
     flyEl.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(${scale}) rotate(${rot}deg)`;
     flyEl.style.opacity = '0';
 
-    setTimeout(() => {
+    const finish = () => {
+      clearTimeout(timer);
+      opts.signal?.removeEventListener('abort', finish);
       flyEl.remove();
       resolve();
-    }, durationMs + 40);
+    };
+    const timer = setTimeout(finish, durationMs + 40);
+    opts.signal?.addEventListener('abort', finish, { once: true });
   });
 }

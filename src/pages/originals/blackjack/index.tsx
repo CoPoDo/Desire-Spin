@@ -1,10 +1,10 @@
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
 import { useGame } from '../../../game-context';
 import { useHotkey } from '../../../hooks/useHotkey';
 import { usePersistedBet } from '../../../hooks/usePersistedBet';
-import { createRng } from '../../../lib/fairness';
+import { useInteractiveRound, useRoundState } from '../_shared/useInteractiveRound';
 import { fmtCurrency } from '../../../lib/format';
 import { BetInput } from '../_shared/BetInput';
 import {
@@ -24,189 +24,65 @@ import {
 import { fireConfetti } from '../../../lib/confetti';
 
 export function BlackjackGame() {
-  const { balance, fairness, sound, history, session } = useGame();
+  const { balance, sound } = useGame();
   const [bet, setBet] = usePersistedBet('blackjack', 1);
-  const [round, setRound] = useState<RoundState | null>(null);
-  // We keep one RNG per round so subsequent hits draw from the same stream
-  const [rngState, setRngState] = useState<{ serverSeed: string; clientSeed: string; nonce: number; pos: number } | null>(null);
-  const [busy, setBusy] = useState(false);
-
+  const [round, setRound, roundRef] = useRoundState<RoundState | null>(null);
+  const [busy, setBusy, busyRef] = useRoundState(false);
+  const lifecycle = useInteractiveRound('Blackjack');
+  const { begin, addStake, settle, delay, wager, onLeave, error } = lifecycle;
   const done = round?.phase === 'done';
 
-  const startHand = useCallback(() => {
-    if (busy || balance.balance < bet || bet <= 0) return;
-    sound.play('click');
-    balance.debit(bet);
-    const seeds = fairness.consumeNonce();
-    // Make a fresh RNG and remember its identity so we can recreate it
-    // partway through the round (each hit/double advances cursor).
-    const rng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
-    const r = dealRound(rng, bet);
+  // Leaving the table stands every unfinished hand, including split hands.
+  onLeave.current = (updateView = false) => {
+    let current = roundRef.current;
+    const rng = wager.current?.rng;
+    if (!current || !rng) return 0;
+    while (current.phase === 'player') current = stand(rng, current);
+    if (updateView) setRound(current);
+    return current.payout;
+  };
+
+  const finish = useCallback((r: RoundState) => {
     setRound(r);
-    setRngState({ ...seeds, pos: 0 });
-    if (r.phase === 'done') {
-      // Immediate resolution (blackjack / dealer blackjack / push)
-      if (r.payout > 0) balance.credit(r.payout);
-      sound.play(r.outcome === 'player-blackjack' ? 'big-win' : r.outcome === 'push' ? 'click' : 'drop');
-      history.record({
-        game: 'Blackjack',
-        bet,
-        payout: r.payout,
-        multiplier: r.payout / bet,
-        serverSeedHash: fairness.hash,
-        clientSeed: seeds.clientSeed,
-        nonce: seeds.nonce,
-      });
-      session.recordSpin(bet, r.payout, false);
-    }
-  }, [busy, balance, bet, fairness, sound, history, session]);
-
-  /** Advance using a fresh RNG keyed off the next nonce — keeps each
-   *  draw provably-fair while letting the player make decisions. */
-  const nextRng = useCallback(() => {
-    const seeds = fairness.consumeNonce();
-    return createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
-  }, [fairness]);
-
-  /** When the player commits an action that ends the round (stand,
-   *  double, split-then-resolve), schedule the dealer card reveal +
-   *  outcome chime to match the staggered CardView entrance. */
-  const finalizeRound = useCallback(
-    (r: RoundState) => {
-      if (r.phase !== 'done') return;
-      if (r.payout > 0) balance.credit(r.payout);
-      const totalBet = r.hands.reduce((s, h) => s + h.bet, 0);
+    if (r.phase === 'done' && settle(r.payout)) {
+      const totalBet = r.hands.reduce((sum, hand) => sum + hand.bet, 0);
       const profit = r.payout - totalBet;
-      if (r.outcome === 'player-blackjack' || profit > totalBet) {
-        fireConfetti({ count: r.outcome === 'player-blackjack' ? 130 : 70 });
-      }
-      sound.play(
-        r.outcome === 'player-blackjack' || profit > totalBet ? 'big-win' :
-        profit > 0 ? 'win' :
-        profit === 0 ? 'click' :
-        'drop',
-      );
-      history.record({
-        game: 'Blackjack',
-        bet: totalBet,
-        payout: r.payout,
-        multiplier: r.payout / Math.max(totalBet, 0.01),
-        serverSeedHash: fairness.hash,
-        clientSeed: '',
-        nonce: 0,
-      });
-      session.recordSpin(totalBet, r.payout, false);
-    },
-    [balance, sound, history, fairness, session],
-  );
-
-  const onHit = useCallback(() => {
-    if (!round || round.phase !== 'player' || busy) return;
-    setBusy(true);
-    const rng = nextRng();
-    const r = hit(rng, round);
-    setRound(r);
-    sound.play('click');
-    if (r.phase === 'done') {
-      // Stagger the outcome chime so it lands after the staggered
-      // dealer reveals (each new dealer card is 450ms apart).
-      const newDealerCards = r.dealer.length - 1;
-      for (let i = 0; i < newDealerCards; i++) {
-        window.setTimeout(() => sound.play('drop'), 50 + i * 450);
-      }
-      const settleAt = 200 + newDealerCards * 450;
-      window.setTimeout(() => {
-        finalizeRound(r);
-        setBusy(false);
-      }, settleAt);
-    } else {
-      setTimeout(() => setBusy(false), 220);
+      sound.play(r.outcome === 'player-blackjack' ? 'big-win' : profit > 0 ? 'win' : profit === 0 ? 'click' : 'drop');
+      if (r.outcome === 'player-blackjack') fireConfetti({ count: 100 });
     }
-  }, [round, busy, nextRng, sound, finalizeRound]);
+    delay(() => setBusy(false), r.phase === 'done' ? 550 : 220);
+  }, [setRound, settle, sound, delay, setBusy]);
 
-  const onStand = useCallback(() => {
-    if (!round || round.phase !== 'player' || busy) return;
-    setBusy(true);
-    const rng = nextRng();
-    const r = stand(rng, round);
-    setRound(r);
-    // Dealer phase only resolves if this stand finished the LAST hand.
-    // Otherwise we just advance to the next hand and the player keeps
-    // playing — no dealer reveal yet.
-    if (r.phase === 'done') {
-      const newDealerCards = r.dealer.length - 1;
-      for (let i = 0; i < newDealerCards; i++) {
-        window.setTimeout(() => sound.play('drop'), 50 + i * 450);
-      }
-      const settleAt = 200 + newDealerCards * 450;
-      window.setTimeout(() => {
-        finalizeRound(r);
-        setBusy(false);
-      }, settleAt);
-    } else {
-      sound.play('click');
-      setTimeout(() => setBusy(false), 220);
-    }
-  }, [round, busy, nextRng, finalizeRound, sound]);
-
-  const onDouble = useCallback(() => {
-    if (!round || round.phase !== 'player' || busy) return;
-    const h = round.hands[round.activeIdx];
-    if (!h || h.cards.length !== 2 || h.done) return;
-    if (balance.balance < h.bet) return;
+  const startHand = useCallback(() => {
+    if (busyRef.current || (roundRef.current && roundRef.current.phase !== 'done')) return;
+    const entry = begin(bet);
+    if (!entry) return;
     setBusy(true);
     sound.play('click');
-    balance.debit(h.bet);
-    const rng = nextRng();
-    const r = double(rng, round);
-    setRound(r);
-    if (r.phase === 'done') {
-      const newDealerCards = r.dealer.length - 1;
-      for (let i = 0; i < newDealerCards; i++) {
-        window.setTimeout(() => sound.play('drop'), 50 + i * 450);
-      }
-      const settleAt = 200 + newDealerCards * 450;
-      window.setTimeout(() => {
-        finalizeRound(r);
-        setBusy(false);
-      }, settleAt);
-    } else {
-      // Doubled, but still have other split hands to play
-      setTimeout(() => setBusy(false), 220);
-    }
-  }, [round, busy, balance, sound, nextRng, finalizeRound]);
+    finish(dealRound(entry.rng, entry.bet));
+  }, [begin, bet, busyRef, roundRef, setBusy, sound, finish]);
 
-  const onSplit = useCallback(() => {
-    if (!round || round.phase !== 'player' || busy) return;
-    if (!canSplit(round)) return;
-    const cost = splitCost(round);
-    if (balance.balance < cost) return;
+  const act = useCallback((action: 'hit' | 'stand' | 'double' | 'split') => {
+    const current = roundRef.current;
+    const entry = wager.current;
+    if (!current || current.phase !== 'player' || busyRef.current || !entry || entry.settled) return;
+    const hand = current.hands[current.activeIdx];
+    if (!hand || hand.done) return;
+    if (action === 'double' && (hand.cards.length !== 2 || !addStake(hand.bet))) return;
+    if (action === 'split' && (!canSplit(current) || !addStake(splitCost(current)))) return;
     setBusy(true);
     sound.play('click');
-    balance.debit(cost);
-    const rng = nextRng();
-    const r = split(rng, round);
-    setRound(r);
-    if (r.phase === 'done') {
-      // Split-Aces auto-stand → dealer resolves immediately
-      const newDealerCards = r.dealer.length - 1;
-      for (let i = 0; i < newDealerCards; i++) {
-        window.setTimeout(() => sound.play('drop'), 50 + i * 450);
-      }
-      const settleAt = 200 + newDealerCards * 450;
-      window.setTimeout(() => {
-        finalizeRound(r);
-        setBusy(false);
-      }, settleAt);
-    } else {
-      setTimeout(() => setBusy(false), 220);
-    }
-  }, [round, busy, balance, sound, nextRng, finalizeRound]);
+    const move = { hit, stand, double, split }[action];
+    finish(move(entry.rng, current));
+  }, [roundRef, wager, busyRef, addStake, setBusy, sound, finish]);
 
+  const onHit = useCallback(() => act('hit'), [act]);
+  const onStand = useCallback(() => act('stand'), [act]);
+  const onDouble = useCallback(() => act('double'), [act]);
+  const onSplit = useCallback(() => act('split'), [act]);
   const reset = useCallback(() => {
-    setRound(null);
-    setRngState(null);
-  }, []);
+    if (!busyRef.current && roundRef.current?.phase === 'done') setRound(null);
+  }, [busyRef, roundRef, setRound]);
 
   // Keyboard shortcuts — desktop blackjack convention:
   //   H → Hit       S → Stand
@@ -245,6 +121,7 @@ export function BlackjackGame() {
   return (
     <OriginalPageLayout title="Blackjack">
       <div className="flex flex-col p-4 gap-3 max-w-md mx-auto w-full">
+        {error && <p role="alert" className="text-stake-red text-sm text-center">{error}</p>}
         {/* Dealer */}
         <div className="rounded-lg bg-stake-card border border-stake-border p-4">
           <div className="flex items-center justify-between mb-2">
@@ -358,8 +235,7 @@ export function BlackjackGame() {
             </button>
           </div>
         )}
-        {/* Suppress lint */}
-        {rngState && null}
+        <p className="text-[11px] text-stake-muted text-center">Leaving the table automatically stands and settles every unfinished hand.</p>
       </div>
     </OriginalPageLayout>
   );

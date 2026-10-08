@@ -4,7 +4,7 @@ import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayou
 import { useGame } from '../../../game-context';
 import { useHotkey } from '../../../hooks/useHotkey';
 import { usePersistedBet } from '../../../hooks/usePersistedBet';
-import { createRng } from '../../../lib/fairness';
+import { useInteractiveRound, useRoundState } from '../_shared/useInteractiveRound';
 import { fmtCurrency, fmtMultiplier } from '../../../lib/format';
 import { BetInput } from '../_shared/BetInput';
 import {
@@ -30,11 +30,12 @@ import { fireConfetti } from '../../../lib/confetti';
  *  tiles per round (player pre-selects how many) and cashes out — mirrors
  *  real Stake Mines' Auto mode. */
 export function MinesGame() {
-  const { balance, fairness, sound, history, session } = useGame();
+  const { balance, sound } = useGame();
   const [bet, setBet] = usePersistedBet('mines', 1);
   const [mineCount, setMineCount] = useState(3);
-  const [round, setRound] = useState<MinesRoundState | null>(null);
-  const [busyClick, setBusyClick] = useState(false);
+  const [round, setRound, roundRef] = useRoundState<MinesRoundState | null>(null);
+  const [busyClick, setBusyClick, busyRef] = useRoundState(false);
+  const { begin, settle, delay, onLeave, mounted, error } = useInteractiveRound('Mines');
 
   // Auto mode
   const [mode, setMode] = useState<Mode>('manual');
@@ -50,204 +51,94 @@ export function MinesGame() {
 
   const inGame = round !== null && !round.done;
   const picks = round?.revealed.size ?? 0;
-  const currentMult = useMemo(() => multiplierFor(picks, mineCount), [picks, mineCount]);
-  const nextMult = useMemo(() => multiplierFor(picks + 1, mineCount), [picks, mineCount]);
+  const currentMult = useMemo(() => multiplierFor(picks, round?.mineCount ?? mineCount), [picks, round?.mineCount, mineCount]);
+  const nextMult = useMemo(() => multiplierFor(picks + 1, round?.mineCount ?? mineCount), [picks, round?.mineCount, mineCount]);
   const cashoutAmount = round ? +(round.bet * currentMult).toFixed(2) : 0;
 
   // Max possible tiles to pick before all safe spots are gone.
   const maxTiles = GRID_SIZE - mineCount;
-  // Clamp tilesToReveal whenever mineCount changes.
-  if (tilesToReveal > maxTiles) {
-    // Defer the state update to next tick — calling setState during render
-    // would trigger a warning. Use a ref to track if we've already queued.
-    Promise.resolve().then(() => setTilesToReveal(maxTiles));
-  }
+  // Leaving cashes out safe picks, or returns an untouched wager.
+  onLeave.current = (updateView = false) => {
+    const current = roundRef.current;
+    if (!current) return 0;
+    const next = current.done ? current : current.revealed.size ? cashOut(current) : { ...current, done: true, payout: current.bet };
+    if (updateView) setRound(next);
+    return next.payout;
+  };
+
+  const showResult = useCallback((next: MinesRoundState) => {
+    setRound(next);
+    if (next.done) {
+      settle(next.payout);
+      sound.play(next.hitMine ? 'drop' : 'big-win');
+    } else sound.play('win');
+  }, [setRound, settle, sound]);
 
   const start = useCallback(() => {
-    if (round && !round.done) return;
-    if (balance.balance < bet || bet <= 0) return;
+    if (busyRef.current || (roundRef.current && !roundRef.current.done)) return;
+    const entry = begin(bet);
+    if (!entry) return;
+    setRound(startRound(entry.rng, entry.bet, mineCount));
+    setBusyClick(true);
+    delay(() => setBusyClick(false), 100);
     sound.play('click');
-    balance.debit(bet);
-    const seeds = fairness.consumeNonce();
-    const rng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
-    setRound(startRound(rng, bet, mineCount));
-  }, [balance, bet, mineCount, round, fairness, sound]);
+  }, [begin, bet, mineCount, roundRef, busyRef, setRound, setBusyClick, delay, sound]);
 
   const onTile = useCallback((idx: number) => {
-    if (busyClick || autoActive) return;
-
-    // Click-to-start: if no round is active (or the previous round
-    // finished), start a fresh round AND reveal the clicked tile in one
-    // go. Saves the user a separate "Bet $X" tap — Stake-style Mines on
-    // some clients does the same.
-    if (!round || round.done) {
-      if (balance.balance < bet || bet <= 0) return;
-      setBusyClick(true);
-      sound.play('click');
-      balance.debit(bet);
-      const seeds = fairness.consumeNonce();
-      const rng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
-      const fresh = startRound(rng, bet, mineCount);
-      const next = reveal(fresh, idx);
-      setRound(next);
-      if (next.hitMine) {
-        sound.play('drop');
-        setTimeout(() => {
-          history.record({
-            game: 'Mines',
-            bet: fresh.bet,
-            payout: 0,
-            multiplier: 0,
-            serverSeedHash: fairness.hash,
-            clientSeed: '',
-            nonce: 0,
-          });
-          session.recordSpin(fresh.bet, 0, false);
-        }, 100);
-      } else {
-        sound.play('win');
-      }
-      setTimeout(() => setBusyClick(false), 100);
-      return;
+    if (busyRef.current || autoActive || mode !== 'manual') return;
+    let current = roundRef.current;
+    if (!current || current.done) {
+      const entry = begin(bet);
+      if (!entry) return;
+      current = startRound(entry.rng, entry.bet, mineCount);
     }
-
-    // Active round — reveal a tile, ignore already-revealed clicks.
-    if (round.revealed.has(idx)) return;
+    const next = reveal(current, idx);
+    if (next === current) return;
     setBusyClick(true);
-    const next = reveal(round, idx);
-    setRound(next);
-    if (next.hitMine) {
-      sound.play('drop');
-      // Mine-reveal cascade — non-clicked bombs reveal with random
-      // 0-300ms delays per the CardView animate-presence stagger.
-      // Schedule a short 'tick' for each so the cascade has audio
-      // weight matching the visual reveal. Capped at 6 to avoid spam.
-      const otherMines = Math.min(6, mineCount - 1);
-      for (let i = 0; i < otherMines; i++) {
-        window.setTimeout(() => sound.play('tick'), 60 + i * 70);
-      }
-      // Reveal all mines briefly
-      setTimeout(() => {
-        history.record({
-          game: 'Mines',
-          bet: round.bet,
-          payout: 0,
-          multiplier: 0,
-          serverSeedHash: fairness.hash,
-          clientSeed: '',
-          nonce: 0,
-        });
-        session.recordSpin(round.bet, 0, false);
-      }, 100);
-    } else {
-      sound.play('win');
-    }
-    setTimeout(() => setBusyClick(false), 100);
-  }, [round, busyClick, autoActive, balance, bet, mineCount, sound, history, fairness, session]);
+    showResult(next);
+    delay(() => setBusyClick(false), 100);
+  }, [autoActive, mode, roundRef, busyRef, begin, bet, mineCount, setBusyClick, showResult, delay]);
 
   const doCashOut = useCallback(() => {
-    if (!round || round.done || round.revealed.size === 0) return;
-    // Tier SFX with cash-out multiplier — Mines with 20+ mines can
-    // chain to 100×+ with the right risk; flat 'big-win' sounded the
-    // same as a 1.05× safety hop. Now ≥10× = mega.
-    sound.play(currentMult >= 10 ? 'mega-win' : 'big-win');
-    const next = cashOut(round);
-    setRound(next);
-    balance.credit(next.payout);
-    // Confetti scaled to multiplier — small for low cashouts, big for
-    // brave 20×+ holdouts.
-    if (currentMult >= 1.5) {
-      fireConfetti({
-        count: currentMult >= 20 ? 130 : currentMult >= 5 ? 80 : 50,
-        colors: ['#00e701', '#ffd166', '#22d3ee', '#ffffff'],
-      });
-    }
-    history.record({
-      game: 'Mines',
-      bet: round.bet,
-      payout: next.payout,
-      multiplier: currentMult,
-      serverSeedHash: fairness.hash,
-      clientSeed: '',
-      nonce: 0,
-    });
-    session.recordSpin(round.bet, next.payout, false);
-  }, [round, balance, sound, history, fairness, session, currentMult]);
+    const current = roundRef.current;
+    if (busyRef.current || autoActive || !current || current.done || !current.revealed.size) return;
+    const next = cashOut(current);
+    showResult(next);
+    const mult = multiplierFor(current.revealed.size, current.mineCount);
+    if (mult >= 1.5) fireConfetti({ count: mult >= 20 ? 100 : 50 });
+  }, [roundRef, busyRef, autoActive, showResult]);
 
-  const reset = useCallback(() => setRound(null), []);
+  const reset = useCallback(() => {
+    if (!busyRef.current && roundRef.current?.done) setRound(null);
+  }, [roundRef, busyRef, setRound]);
 
-  /** Pick a random unrevealed tile — Stake's "?" button. */
   const pickRandom = useCallback(() => {
-    if (!round || round.done) return;
-    const remaining: number[] = [];
-    for (let i = 0; i < GRID_SIZE; i++) {
-      if (!round.revealed.has(i)) remaining.push(i);
-    }
-    if (remaining.length === 0) return;
-    const idx = remaining[Math.floor(Math.random() * remaining.length)]!;
-    onTile(idx);
-  }, [round, onTile]);
+    const current = roundRef.current;
+    if (!current || current.done) return;
+    const remaining = Array.from({ length: GRID_SIZE }, (_, i) => i).filter(i => !current.revealed.has(i));
+    if (remaining.length) onTile(remaining[Math.floor(Math.random() * remaining.length)]!);
+  }, [roundRef, onTile]);
 
-  /** One auto round — open the round, pick N random tiles, cash out if
-   *  none hit a mine. Resolves to net delta (positive = profit). */
-  const playOneAutoRound = useCallback(async (): Promise<number> => {
+  const playOneAutoRound = useCallback(async (): Promise<number | null> => {
     const { bet: b, mineCount: m, tilesToReveal: k } = stateRef.current;
-    if (balance.balance < b || b <= 0) return 0;
     const cappedK = Math.min(k, GRID_SIZE - m);
-    if (cappedK < 1) return 0;
-    balance.debit(b);
-    sound.play('click');
-    const seeds = fairness.consumeNonce();
-    const rng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
-    let r = startRound(rng, b, m);
-    // Build a randomized order of all 25 tiles for this round
-    const order: number[] = Array.from({ length: GRID_SIZE }, (_, i) => i);
+    if (cappedK < 1 || !mounted.current) return null;
+    const entry = begin(b);
+    if (!entry) return null;
+    let current = startRound(entry.rng, entry.bet, m);
+    // The automatic policy is known up front. Settle it before cosmetic delay,
+    // so stopping or leaving cannot cancel a loss or duplicate a win.
+    const order = Array.from({ length: GRID_SIZE }, (_, i) => i);
     for (let i = order.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [order[i], order[j]] = [order[j]!, order[i]!];
     }
-    let bust = false;
-    // Reveal cappedK tiles. Each reveal updates the displayed grid so
-    // the player visibly sees the auto-round play out.
-    for (let n = 0; n < cappedK; n++) {
-      r = reveal(r, order[n]!);
-      setRound(r);
-      sound.play(r.hitMine ? 'drop' : 'tick');
-      if (r.hitMine) {
-        bust = true;
-        break;
-      }
-      // Pacing between reveals — short enough to feel snappy, long
-      // enough to read.
-      await new Promise<void>((res) => setTimeout(res, 90));
-    }
-    let delta = -b;
-    if (!bust) {
-      // Cash out the surviving multiplier
-      const cashed = cashOut(r);
-      setRound(cashed);
-      balance.credit(cashed.payout);
-      delta = cashed.payout - b;
-      const mult = multiplierFor(cappedK, m);
-      sound.play(mult >= 10 ? 'mega-win' : mult >= 2 ? 'big-win' : 'win');
-    } else {
-      sound.play('drop');
-    }
-    history.record({
-      game: 'Mines',
-      bet: b,
-      payout: bust ? 0 : b + delta,
-      multiplier: bust ? 0 : multiplierFor(cappedK, m),
-      serverSeedHash: fairness.hash,
-      clientSeed: seeds.clientSeed,
-      nonce: seeds.nonce,
-    });
-    session.recordSpin(b, bust ? 0 : b + delta, false);
-    // Brief settle pause so the bust/win frame is visible before the
-    // next round resets the grid.
-    await new Promise<void>((res) => setTimeout(res, bust ? 500 : 300));
-    return delta;
-  }, [balance, sound, fairness, history, session]);
+    for (let n = 0; n < cappedK && !current.done; n++) current = reveal(current, order[n]!);
+    if (!current.done) current = cashOut(current);
+    showResult(current);
+    await new Promise<void>(resolve => setTimeout(resolve, 400));
+    return current.payout - entry.bet;
+  }, [begin, mounted, showResult]);
 
   const progress = useAutoBetRunner({
     active: autoActive,
@@ -267,6 +158,7 @@ export function MinesGame() {
   return (
     <OriginalPageLayout title="Mines">
       <div className="flex flex-col p-3 gap-3 max-w-md mx-auto w-full">
+        {error && <p role="alert" className="text-stake-red text-sm text-center">{error}</p>}
         {/* Status */}
         <div className="rounded-lg bg-stake-card border border-stake-border p-4 text-center">
           <AnimatePresence mode="wait">
@@ -314,6 +206,7 @@ export function MinesGame() {
               return (
                 <button
                   key={i}
+                  aria-label={`Tile ${i + 1}: ${safeRevealed ? 'gem' : showMine ? 'mine' : 'unrevealed'}`}
                   onClick={() => onTile(i)}
                   // Tiles are interactive any time there's no in-progress
                   // round (so a click on an idle tile starts the round)
@@ -322,7 +215,7 @@ export function MinesGame() {
                   // player from mid-fight clicking through the random
                   // picks.
                   disabled={
-                    autoActive ? true :
+                    autoActive || mode === 'auto' || busyClick ? true :
                     inGame ? isRevealed : balance.balance < bet || bet <= 0
                   }
                   className="relative rounded-lg flex items-center justify-center text-2xl font-bold transition-all duration-150 active:scale-95"
@@ -361,7 +254,7 @@ export function MinesGame() {
                       <motion.span
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
-                        transition={{ type: 'spring', stiffness: 320, damping: 14, delay: lostHit ? 0 : Math.random() * 0.3 }}
+                        transition={{ type: 'spring', stiffness: 320, damping: 14, delay: lostHit ? 0 : (i % 5) * 0.06 }}
                         style={{ filter: lostHit ? 'drop-shadow(0 0 12px rgba(237,65,99,.95))' : undefined }}
                       >
                         💣
@@ -373,6 +266,8 @@ export function MinesGame() {
             })}
           </div>
         </div>
+
+        <p className="text-[11px] text-stake-muted text-center">Leaving cashes out safe picks. An untouched bet is returned. Auto rounds finish once started.</p>
 
         {/* Controls */}
         <div className="rounded-lg bg-stake-panel border border-stake-border p-3 space-y-3">
@@ -431,7 +326,7 @@ export function MinesGame() {
               <AutoConfigFields config={autoConfig} onChange={setAutoConfig} disabled={autoActive} />
               {autoActive && <AutoProgressDisplay progress={progress} config={autoConfig} />}
               <button
-                onClick={() => setAutoActive((a) => !a)}
+                onClick={() => { if (!busyRef.current && !(roundRef.current && !roundRef.current.done)) setAutoActive((a) => !a); }}
                 disabled={!autoActive && (balance.balance < bet || bet <= 0 || inGame)}
                 className={`w-full py-3.5 rounded font-bold text-sm disabled:opacity-50 transition active:scale-[0.99] ${
                   autoActive ? 'bg-stake-red text-white' : 'bg-stake-green text-stake-bg hover:bg-stake-green-hi'
@@ -447,7 +342,7 @@ export function MinesGame() {
               {!inGame ? (
                 <button
                   onClick={round?.done ? reset : start}
-                  disabled={!round?.done && (balance.balance < bet || bet <= 0)}
+                  disabled={busyClick || (!round?.done && (balance.balance < bet || bet <= 0))}
                   className="w-full py-3.5 rounded bg-stake-green text-stake-bg font-bold text-sm disabled:opacity-50 transition active:scale-[0.99] hover:bg-stake-green-hi"
                 >
                   {round?.done ? 'Reset Grid' : `Bet ${fmtCurrency(bet)} · or tap a tile`}
@@ -470,7 +365,7 @@ export function MinesGame() {
                     </button>
                     <button
                       onClick={doCashOut}
-                      disabled={picks === 0}
+                      disabled={busyClick || picks === 0}
                       className="flex-1 py-3.5 rounded bg-stake-green text-stake-bg font-bold text-sm disabled:opacity-50 transition active:scale-[0.99] hover:bg-stake-green-hi"
                     >
                       {picks === 0 ? 'Pick a tile to start' : `Cash Out ${fmtCurrency(cashoutAmount)}`}

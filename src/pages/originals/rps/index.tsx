@@ -1,3 +1,4 @@
+import { useRoundPlayback } from '../_shared/useRoundPlayback';
 import { useCallback, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
@@ -31,36 +32,48 @@ export function RpsGame() {
   const [playerMove, setPlayerMove] = useState<Move | null>(null);
   const [opponentMove, setOpponentMove] = useState<Move | null>(null);
   const [outcome, setOutcome] = useState<Outcome | null>(null);
-  const [busy, setBusy] = useState(false);
+  const { busy, busyRef, setBusy, schedule } = useRoundPlayback();
 
   const start = useCallback(
     (move: Move) => {
-      if (busy) return;
-      if (balance.balance < bet || bet <= 0) return;
+      if (busyRef.current) return;
+      if (!balance.canAfford(bet)) return;
+      if (busyRef.current || !balance.debit(bet)) return;
       setBusy(true);
       setPlayerMove(move);
       setOpponentMove(null);
       setOutcome(null);
       sound.play('click');
-      balance.debit(bet);
+
       setPhase('reveal');
       const seeds = fairness.consumeNonce();
       const rng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
       const r = play(rng, bet, move);
+    if (r.payout > 0) balance.credit(r.payout);
+      history.record({
+        game: 'RPS',
+        bet,
+        payout: r.payout,
+        multiplier: r.multiplier,
+        serverSeedHash: fairness.hash,
+        clientSeed: seeds.clientSeed,
+        nonce: seeds.nonce,
+      });
+      session.recordSpin(bet, r.payout, false);
+
       // Rock-paper-scissors-SHOOT cadence — three thuds during the shake
       // animation matching the 4-bounce rhythm. Real RPS games (and
       // playground RPS) have audible "rock, paper, scissors" beats so
       // the silent shake felt under-paced.
-      window.setTimeout(() => sound.play('drop'), 100);
-      window.setTimeout(() => sound.play('drop'), 380);
-      window.setTimeout(() => sound.play('drop'), 660);
+      schedule(() => sound.play('drop'), 100);
+      schedule(() => sound.play('drop'), 380);
+      schedule(() => sound.play('drop'), 660);
       // Suspense reveal — opponent's hand "shakes" then drops a move
-      setTimeout(() => {
+      schedule(() => {
         setOpponentMove(r.opponent);
         setOutcome(r.outcome);
         setPhase('done');
         if (r.outcome === 'win') {
-          balance.credit(r.payout);
           sound.play('big-win');
           // Win-celebration chip-shower — RPS was the last Original
           // without it. Modest count (60 chips) since it's a single
@@ -71,21 +84,11 @@ export function RpsGame() {
             colors: ['#00e701', '#ffd166', '#ffffff'],
           });
         } else if (r.outcome === 'tie') {
-          balance.credit(r.payout); // refund
           sound.play('tick');
         } else {
           sound.play('drop');
         }
-        history.record({
-          game: 'RPS',
-          bet,
-          payout: r.payout,
-          multiplier: r.multiplier,
-          serverSeedHash: fairness.hash,
-          clientSeed: seeds.clientSeed,
-          nonce: seeds.nonce,
-        });
-        session.recordSpin(bet, r.payout, false);
+
         setBusy(false);
       }, 1100);
     },
@@ -102,7 +105,7 @@ export function RpsGame() {
   // Keyboard shortcuts: R / P / S for the three moves. Resets first
   // if a previous round is showing so player can chain rounds.
   const fire = useCallback((m: Move) => {
-    if (busy) return;
+    if (busyRef.current) return;
     if (phase === 'done') reset();
     start(m);
   }, [busy, phase, reset, start]);
@@ -274,7 +277,7 @@ export function RpsGame() {
                       if (phase === 'done') reset();
                       start(m);
                     }}
-                    disabled={busy || balance.balance < bet || bet <= 0}
+                    disabled={busy || !balance.canAfford(bet)}
                     className="py-3 rounded-xl bg-stake-input border border-stake-border font-bold text-3xl transition disabled:opacity-50 hover:border-stake-green hover:bg-stake-green/10 active:scale-95"
                   >
                     {MOVE_EMOJI[m]}

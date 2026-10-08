@@ -53,6 +53,7 @@ function ensureCanvas() {
 
 function step() {
   if (!ctx || !canvasEl) return;
+  if (document.hidden || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) CHIPS.length = 0;
   ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
   for (let i = CHIPS.length - 1; i >= 0; i--) {
     const c = CHIPS[i]!;
@@ -84,6 +85,10 @@ function step() {
   } else {
     active = false;
     ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+    window.removeEventListener('resize', resize);
+    canvasEl.remove();
+    canvasEl = null;
+    ctx = null;
   }
 }
 
@@ -91,9 +96,11 @@ function step() {
  *  `colors` lets each slot use its own palette so Bonanza wins fountain
  *  hot-pink chips, Olympus wins fountain gold + amethyst, etc. */
 export function fireConfetti(opts: { count?: number; colors?: string[] } = {}) {
+  if (typeof window === 'undefined' || document.hidden || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
   ensureCanvas();
+  if (!ctx) return;
   const colors = opts.colors ?? DEFAULT_COLORS;
-  const count = opts.count ?? 80;
+  const count = Math.max(0, Math.min(opts.count ?? 80, 200, 300 - CHIPS.length));
   for (let i = 0; i < count; i++) {
     CHIPS.push({
       x: window.innerWidth / 2 + (Math.random() - 0.5) * 60,

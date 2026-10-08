@@ -18,7 +18,7 @@ export function rollSlide(rng: Rng): number {
 }
 
 export function winChanceFor(target: number): number {
-  if (target < 1.01) return 0;
+  if (!Number.isFinite(target) || target < 1.01 || target > MAX_MULT) return 0;
   return 99 / target;
 }
 
@@ -35,7 +35,7 @@ export type SlidePlay = {
 
 export function play(rng: Rng, bet: number, target: number): SlidePlay {
   const stop = rollSlide(rng);
-  const win = stop >= target;
+  const win = winChanceFor(target) > 0 && stop >= target;
   return {
     stop,
     target,

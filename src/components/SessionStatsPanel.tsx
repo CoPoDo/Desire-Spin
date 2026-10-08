@@ -14,7 +14,7 @@ export function SessionStatsPanel({
 }) {
   const { session } = useGame();
   const { stats, reset } = session;
-  const sessionMs = Date.now() - stats.startedAt;
+  const sessionMs = Math.max(0, Date.now() - stats.startedAt);
   const minutes = Math.floor(sessionMs / 60000);
   const hours = Math.floor(minutes / 60);
   const sessionLabel =
@@ -26,10 +26,10 @@ export function SessionStatsPanel({
   const netResult = stats.totalWon - stats.totalWagered;
 
   return (
-    <Modal open={open} onClose={onClose} title="Session Stats">
+    <Modal open={open} onClose={onClose} title="Play Stats">
       <div className="grid grid-cols-2 gap-3">
-        <Stat label="Spins" value={stats.spins.toLocaleString()} />
-        <Stat label="Free Spins Triggered" value={stats.freeSpinsTriggered.toLocaleString()} />
+        <Stat label="Rounds / Spins" value={stats.spins.toLocaleString()} />
+        <Stat label="Bonus Features Triggered" value={stats.freeSpinsTriggered.toLocaleString()} />
         <Stat label="Total Wagered" value={fmtCurrency(stats.totalWagered)} />
         <Stat label="Total Won" value={fmtCurrency(stats.totalWon)} highlight={stats.totalWon > 0} />
         <Stat label="Biggest Single Win" value={fmtCurrency(stats.biggestWin)} highlight={stats.biggestWin > 0} />
@@ -39,7 +39,7 @@ export function SessionStatsPanel({
       <div className="card bg-bg-elev/60 p-4 mt-4">
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs uppercase tracking-widest text-ink-mute">Net Result</span>
-          <span className="text-[10px] text-ink-mute">{sessionLabel}</span>
+          <span className="text-[10px] text-ink-mute">Tracking for {sessionLabel}</span>
         </div>
         <div
           className="font-mono font-bold text-2xl tabular-nums"
@@ -52,8 +52,8 @@ export function SessionStatsPanel({
       </div>
 
       <p className="text-xs text-ink-mute mt-4 leading-relaxed">
-        These stats accumulate across all your sessions. They persist in your browser's
-        localStorage and have no impact on the game outcome — purely informational.
+        Play-money stats across all games since your last reset. They stay in this browser.
+        Bonus purchases count toward total wagered; free spins add no extra stake.
       </p>
 
       <div className="mt-4 flex gap-2">

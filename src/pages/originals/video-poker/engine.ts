@@ -44,6 +44,7 @@ export function dealCards(rng: Rng, n: number, exclude: Card[] = []): Card[] {
       if (!excluded.has(`${r}-${s}`)) all.push({ rank: r, suit: s });
     }
   }
+  if (!Number.isInteger(n) || n < 0 || n > all.length) throw new RangeError('Invalid number of cards');
   // Fisher-Yates partial shuffle to pick n
   for (let i = 0; i < n; i++) {
     const j = i + rng.nextInt(all.length - i);
@@ -97,7 +98,8 @@ export function rankLabel2(r: HandRank): string {
 }
 
 export function evaluateHand(cards: Card[]): HandRank {
-  if (cards.length !== 5) return 'no-win';
+  if (cards.length !== 5 || new Set(cards.map(card => `${card.rank}-${card.suit}`)).size !== 5 ||
+      cards.some(card => !Number.isInteger(card.rank) || card.rank < 1 || card.rank > 13 || !SUITS.includes(card.suit))) return 'no-win';
   const ranks = cards.map((c) => c.rank).sort((a, b) => a - b);
   const suits = cards.map((c) => c.suit);
   const isFlush = suits.every((s) => s === suits[0]);
@@ -144,4 +146,13 @@ export function evaluateHand(cards: Card[]): HandRank {
 export function payoutMultiplier(cards: Card[]): { rank: HandRank; multiplier: number } {
   const r = evaluateHand(cards);
   return { rank: r, multiplier: PAY[r] };
+}
+
+/** A single 52-card draw: every initially dealt card stays out of the deck,
+ * including discards. Sampling only around held cards incorrectly redraws discards. */
+export function drawHand(rng: Rng, hand: Card[], held: boolean[]): Card[] {
+  if (hand.length !== 5 || held.length !== 5) throw new RangeError('A draw requires five cards and holds');
+  const draws = dealCards(rng, held.filter(value => !value).length, hand);
+  let next = 0;
+  return hand.map((card, index) => held[index] ? card : draws[next++]!);
 }

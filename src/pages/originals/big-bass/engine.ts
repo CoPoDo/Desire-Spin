@@ -29,13 +29,20 @@ export const SYMBOLS: Symbol[] = [
   { id: 'king', emoji: 'K', weight: 13, pay: { 3: 1.2, 4: 2.5, 5: 6 }, color: '#f59e0b' },
   { id: 'queen', emoji: 'Q', weight: 14, pay: { 3: 1, 4: 2, 5: 5 }, color: '#ec4899' },
   { id: 'jack', emoji: 'J', weight: 15, pay: { 3: 0.8, 4: 1.5, 5: 4 }, color: '#22d3ee' },
-  { id: 'scatter', emoji: '🚤', weight: 1.4, freeWeight: 1.2, isScatter: true, color: '#ff5fa2' },
+  { id: 'scatter', emoji: '🚤', weight: 1.4, freeWeight: 0, isScatter: true, color: '#ff5fa2' },
   { id: 'fisherman', emoji: '🧔', weight: 0, freeWeight: 2.2, isWild: true, color: '#ffd166' },
 ];
 
 export const FREE_SPIN_AWARDS: Record<number, number> = { 3: 10, 4: 15, 5: 20 };
 const SCATTER_PAY: Record<number, number> = { 3: 2, 4: 20, 5: 200 };
-const MONEY_VALUES: [number, number][] = [[1, 30], [2, 24], [3, 16], [5, 12], [10, 8], [15, 5], [20, 3], [50, 1.5], [100, 0.4]];
+export const MONEY_VALUES: [number, number][] = [[1, 30], [2, 24], [3, 16], [5, 12], [10, 8], [15, 5], [20, 3], [50, 1.5], [100, 0.4]];
+
+// Calibrated jointly against the full finite feature, including all three
+// collector upgrades. Base-only calibration previously hid >110% full RTP.
+// Both the complete base game and the local 100× demo bonus target 96.69%
+// before currency rounding; these are local weights, not provider PAR data.
+export const LOCAL_LINE_SCALE = 25.84361723859566;
+export const MONEY_ASSIGNMENT_CHANCE = 0.2942726055989481;
 
 function pickSymbol(rng: Rng, free: boolean): string {
   const weights = SYMBOLS.map((symbol) => free ? (symbol.freeWeight ?? symbol.weight) : symbol.weight);
@@ -92,7 +99,7 @@ function evaluate(grid: string[], bet: number, moneyValues: number[], collectorM
     if (pay <= 0) return;
     // Public reel strips/PAR data are unavailable. The visible paytable is
     // calibrated against the local strip weights to the published RTP band.
-    lineMultiplier += (pay / PAYLINES.length) * 27;
+    lineMultiplier += (pay / PAYLINES.length) * LOCAL_LINE_SCALE;
     winningLines.push(lineIndex);
     cells.slice(0, length).forEach((cell) => winning.add(cell.index));
     if (pay > (symbolById(bestSymbol ?? '')?.pay?.[bestLength as 3 | 4 | 5] ?? 0)) {
@@ -137,6 +144,51 @@ function pickMoneyValue(rng: Rng): number {
 
 export function spinFreeRound(rng: Rng, bet: number, collectorMultiplier = 1): BassResult {
   const grid = createGrid(rng, true);
-  const moneyValues = grid.map((id) => symbolById(id)?.isMoney && rng.next() < 0.72 ? pickMoneyValue(rng) : 0);
+  const moneyValues = grid.map((id) => symbolById(id)?.isMoney && rng.next() < MONEY_ASSIGNMENT_CHANCE ? pickMoneyValue(rng) : 0);
   return evaluate(grid, bet, moneyValues, collectorMultiplier);
+}
+
+export type BassFeatureFrame = {
+  result: BassResult;
+  remaining: number;
+  collectorMultiplier: number;
+  addedSpins: number;
+  runningWin: number;
+};
+export type BassRound = {
+  base: BassResult | null;
+  bonusAward: number;
+  feature: BassFeatureFrame[];
+  totalPayout: number;
+};
+
+/** Resolve the complete paid round before cosmetic playback. The original
+ * feature has three collector upgrades (2×, 3×, 10×), not unlimited 10×
+ * retriggers. At most 50 free spins can therefore belong to one round. */
+export function planRound(rng: Rng, bet: number, buyBonus = false): BassRound {
+  const base = buyBonus ? null : spin(rng, bet);
+  const bonusAward = buyBonus ? 10 : base && base.scatterCount >= 3
+    ? FREE_SPIN_AWARDS[Math.min(5, base.scatterCount)]! : 0;
+  const feature: BassFeatureFrame[] = [];
+  let remaining = bonusAward;
+  let progress = 0;
+  let level = 0;
+  let runningWin = 0;
+  const multipliers = [1, 2, 3, 10] as const;
+  while (remaining > 0) {
+    const collectorMultiplier = multipliers[level]!;
+    const result = spinFreeRound(rng, bet, collectorMultiplier);
+    remaining -= 1;
+    progress += result.fishermanCount;
+    let addedSpins = 0;
+    while (progress >= 4 && level < 3) {
+      progress -= 4;
+      level += 1;
+      remaining += 10;
+      addedSpins += 10;
+    }
+    runningWin = +(runningWin + result.payout).toFixed(2);
+    feature.push({ result, remaining, collectorMultiplier, addedSpins, runningWin });
+  }
+  return { base, bonusAward, feature, totalPayout: +((base?.payout ?? 0) + runningWin).toFixed(2) };
 }

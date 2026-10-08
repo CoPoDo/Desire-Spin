@@ -5,6 +5,13 @@ export const SUGAR_SYMBOLS = ['donut', 'cupcake', 'popsicle', 'gingerb', 'jellyb
 export type SugarSymbol = typeof SUGAR_SYMBOLS[number] | 'lollipop';
 export type MultiplierSpots = number[];
 
+const keyCounters = new WeakMap<Rng, number>();
+function nextKey(rng: Rng): string {
+  const count = (keyCounters.get(rng) ?? 0) + 1;
+  keyCounters.set(rng, count);
+  return `sugar-${count}`;
+}
+
 const WEIGHTS = [4, 7, 8, 9, 11, 12, 14, 16, 18, 1.5];
 const PAY_5: Record<typeof SUGAR_SYMBOLS[number], number> = {
   donut: 1.5, cupcake: 1.2, popsicle: 1, gingerb: 0.8, jellybean: 0.6,
@@ -14,11 +21,13 @@ const PAY_5: Record<typeof SUGAR_SYMBOLS[number], number> = {
 export type SugarCluster = { symbolId: SugarSymbol; positions: number[]; baseMultiplier: number; spotMultiplier: number; payout: number };
 export type SugarFrame = {
   grid: SugarSymbol[];
+  cellKeys: string[];
   spots: MultiplierSpots;
   winningPositions: number[];
   clusters: SugarCluster[];
   payout: number;
   cascade: number;
+  incomingPositions?: number[];
 };
 export type SugarResult = {
   frames: SugarFrame[];
@@ -49,7 +58,7 @@ function neighbours(index: number): number[] {
   return result;
 }
 
-function clusterPay(symbol: typeof SUGAR_SYMBOLS[number], size: number): number {
+export function clusterPay(symbol: typeof SUGAR_SYMBOLS[number], size: number): number {
   const base = PAY_5[symbol];
   if (size >= 15) return base * 20;
   if (size >= 12) return base * 10;
@@ -87,20 +96,24 @@ export function findSugarClusters(grid: readonly SugarSymbol[], spots: readonly 
   return clusters;
 }
 
-function tumble(grid: readonly SugarSymbol[], removed: Set<number>, rng: Rng): SugarSymbol[] {
+function tumble(grid: readonly SugarSymbol[], keys: readonly string[], removed: Set<number>, rng: Rng): { grid: SugarSymbol[]; keys: string[] } {
   const next = new Array<SugarSymbol>(SUGAR_SIZE * SUGAR_SIZE);
+  const nextKeys = new Array<string>(SUGAR_SIZE * SUGAR_SIZE);
   for (let col = 0; col < SUGAR_SIZE; col++) {
-    const survivors: SugarSymbol[] = [];
+    const survivors: { symbol: SugarSymbol; key: string }[] = [];
     for (let row = SUGAR_SIZE - 1; row >= 0; row--) {
       const index = row * SUGAR_SIZE + col;
-      if (!removed.has(index)) survivors.push(grid[index]!);
+      if (!removed.has(index)) survivors.push({ symbol: grid[index]!, key: keys[index]! });
     }
     let survivor = 0;
     for (let row = SUGAR_SIZE - 1; row >= 0; row--) {
-      next[row * SUGAR_SIZE + col] = survivor < survivors.length ? survivors[survivor++]! : pick(rng);
+      const index = row * SUGAR_SIZE + col;
+      const cell = survivors[survivor++];
+      next[index] = cell ? cell.symbol : pick(rng);
+      nextKeys[index] = cell ? cell.key : nextKey(rng);
     }
   }
-  return next;
+  return { grid: next, keys: nextKeys };
 }
 
 export function freeSpinsForScatters(count: number): number {
@@ -113,9 +126,11 @@ export function freeSpinsForScatters(count: number): number {
 }
 
 export function playSugarSpin(rng: Rng, bet: number, persistentSpots?: readonly number[]): SugarResult {
+  if (!Number.isFinite(bet) || bet <= 0) throw new RangeError('Bet must be positive and finite');
   let grid = createSugarGrid(rng);
+  let cellKeys = grid.map(() => nextKey(rng));
   const spots = persistentSpots ? [...persistentSpots] : new Array(SUGAR_SIZE * SUGAR_SIZE).fill(0);
-  const frames: SugarFrame[] = [{ grid: [...grid], spots: [...spots], winningPositions: [], clusters: [], payout: 0, cascade: 0 }];
+  const frames: SugarFrame[] = [{ grid: [...grid], cellKeys: [...cellKeys], spots: [...spots], winningPositions: [], clusters: [], payout: 0, cascade: 0 }];
   let totalPayout = 0;
   let cascade = 0;
   let scatterCount = grid.filter((symbol) => symbol === 'lollipop').length;
@@ -125,14 +140,22 @@ export function playSugarSpin(rng: Rng, bet: number, persistentSpots?: readonly 
     if (!clusters.length) break;
     cascade++;
     const winningPositions = [...new Set(clusters.flatMap((cluster) => cluster.positions))];
-    const payout = clusters.reduce((sum, cluster) => sum + cluster.payout, 0);
+    const rawPayout = clusters.reduce((sum, cluster) => sum + cluster.payout, 0);
+    const payout = Math.min(rawPayout, bet * 5000 - totalPayout);
     totalPayout += payout;
-    frames.push({ grid: [...grid], spots: [...spots], winningPositions, clusters, payout, cascade });
+    frames.push({ grid: [...grid], cellKeys: [...cellKeys], spots: [...spots], winningPositions, clusters, payout, cascade });
 
     for (const position of winningPositions) spots[position] = Math.min(128, spots[position] ? spots[position]! * 2 : 2);
-    grid = tumble(grid, new Set(winningPositions), rng);
+    const incomingPositions: number[] = [];
+    for (let col = 0; col < SUGAR_SIZE; col++) {
+      const count = winningPositions.filter((position) => position % SUGAR_SIZE === col).length;
+      for (let row = 0; row < count; row++) incomingPositions.push(row * SUGAR_SIZE + col);
+    }
+    const dropped = tumble(grid, cellKeys, new Set(winningPositions), rng);
+    grid = dropped.grid;
+    cellKeys = dropped.keys;
     scatterCount = Math.max(scatterCount, grid.filter((symbol) => symbol === 'lollipop').length);
-    frames.push({ grid: [...grid], spots: [...spots], winningPositions: [], clusters: [], payout: 0, cascade });
+    frames.push({ grid: [...grid], cellKeys: [...cellKeys], spots: [...spots], winningPositions: [], clusters: [], payout: 0, cascade, incomingPositions });
     if (totalPayout >= bet * 5000) {
       totalPayout = bet * 5000;
       break;
@@ -147,4 +170,41 @@ export function playSugarSpin(rng: Rng, bet: number, persistentSpots?: readonly 
     freeSpinsAwarded: freeSpinsForScatters(scatterCount),
     totalPayout: +totalPayout.toFixed(2),
   };
+}
+
+export type SugarRound = {
+  spins: { result: SugarResult; free: boolean; remaining: number }[];
+  totalPayout: number;
+  freeSpinsAwarded: number;
+  capped: boolean;
+};
+
+/** Precompute the complete feature with one replayable RNG and one round cap. */
+export function playSugarRound(rng: Rng, bet: number, buy = false): SugarRound {
+  if (!Number.isFinite(bet) || bet <= 0) throw new RangeError('Bet must be positive and finite');
+  const cap = +(bet * 5000).toFixed(2);
+  const spins: SugarRound['spins'] = [];
+  let remaining = buy ? 10 : 0;
+  let freeSpinsAwarded = remaining;
+  let totalPayout = 0;
+  let persistent = new Array<number>(49).fill(0);
+  do {
+    if (spins.length >= 1000) throw new Error('Free-spin safety limit exceeded');
+    const free = buy || spins.length > 0;
+    const result = playSugarSpin(rng, bet, free ? persistent : undefined);
+    if (free) persistent = result.spots;
+    result.totalPayout = +Math.min(result.totalPayout, cap - totalPayout).toFixed(2);
+    // Keep the visible running cascade total within the same whole-round cap.
+    let available = result.totalPayout;
+    result.frames = result.frames.map((frame) => {
+      const payout = Math.min(frame.payout, Math.max(0, available));
+      available -= payout;
+      return { ...frame, payout };
+    });
+    totalPayout = +(totalPayout + result.totalPayout).toFixed(2);
+    spins.push({ result, free, remaining });
+    remaining = Math.max(0, remaining - (free ? 1 : 0)) + result.freeSpinsAwarded;
+    freeSpinsAwarded += result.freeSpinsAwarded;
+  } while (remaining > 0 && totalPayout < cap);
+  return { spins, totalPayout, freeSpinsAwarded, capped: totalPayout >= cap };
 }

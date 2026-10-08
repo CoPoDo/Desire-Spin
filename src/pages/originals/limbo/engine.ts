@@ -16,7 +16,7 @@ export function rollLimbo(rng: Rng): number {
 }
 
 export function winChanceFor(target: number): number {
-  if (target < 1.01) return 0;
+  if (!Number.isFinite(target) || target < 1.01 || target > MAX_MULT) return 0;
   return 99 / target; // %, 1% house edge
 }
 
@@ -29,7 +29,7 @@ export type LimboPlay = {
 
 export function play(rng: Rng, bet: number, target: number): LimboPlay {
   const result = rollLimbo(rng);
-  const win = result >= target;
+  const win = winChanceFor(target) > 0 && result >= target;
   return {
     result,
     win,

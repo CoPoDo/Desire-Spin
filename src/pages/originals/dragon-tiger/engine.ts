@@ -1,21 +1,9 @@
 import type { Rng } from '../../../lib/fairness';
 
-/** Dragon Tiger — two cards dealt face-down (one to Dragon, one to Tiger).
- *  Highest card wins. Bet on Dragon, Tiger, or Tie.
- *
- *  Single deck (52 cards), 2 dealt without replacement:
- *    P(Tie)         = 13 × C(4,2) / C(52,2) = 78/1326 ≈ 5.88%
- *    P(Dragon win)  = (1 − 78/1326) / 2     ≈ 47.06%
- *    P(Tiger  win)  = 47.06%
- *
- *  Payouts calibrated for 99% RTP:
- *    Dragon/Tiger: 1.98× on win, push on tie, 0× on lose.
- *      RTP = 0.4706 × 1.98 + 0.0588 × 1 ≈ 0.9907.
- *    Tie:          16.83× on win, 0× on lose (no push).
- *      RTP = 0.0588 × 16.83 ≈ 0.99.
- *
- *  Card ranks: 2 (low) … A (high, 14). Suits don't break ties.
- */
+/** Dragon Tiger: two distinct cards from an eight-deck shoe (416 cards).
+ * P(tie) = 31/415. Dragon/Tiger return 1.98× on a win and push on a tie;
+ * Tie returns 13.26×. These local payouts yield approximately 99.07% and
+ * 99.05% RTP respectively. Ace is high; suits do not break ties. */
 
 export type Side = 'dragon' | 'tiger';
 export type BetKind = Side | 'tie';
