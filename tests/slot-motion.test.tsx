@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SpinReel, reelProgress, reelTransform, reelTravelRows } from '../src/pages/slots/_shared/SpinReel';
 import { Grid as SlotGrid } from '../src/pages/slots/_shared/Grid';
 import { gatesOfOlympusConfig } from '../src/pages/slots/gates-of-olympus/config';
+import { gravityTracks, gravityOffset, gravityTransform } from '../src/pages/slots/_shared/cascadeMotion';
 import type { Grid } from '../src/pages/slots/_shared/types';
 
 const state = vi.hoisted(() => ({ reduced: false }));
@@ -142,18 +143,104 @@ describe('physical reel motion, beyond outcome identity', () => {
     expect([...view.container.querySelectorAll<HTMLElement>('[data-reel-strip]')].every((strip) => stripOffset(strip) === 0)).toBe(true);
   });
 
-  it('drops incoming cells by whole responsive strides without scaling survivors', () => {
+  it('paints incoming cells above the board before the first moving frame', () => {
     const grid = board('stable');
     const fresh = new Set([grid[1]![0]!.key, grid[1]![1]!.key]);
     const view = render(<SlotGrid grid={grid} cfg={cfg} winning={new Set()} newKeys={fresh} renderCell={art} bare />);
-    const cells = [...view.container.querySelectorAll<HTMLElement>('[data-slot-cell-key]')];
-    const incoming = cells.find((cell) => cell.dataset.slotCellKey === grid[1]![0]!.key)!;
-    expect(JSON.parse(incoming.dataset.initial!)).toEqual({ y: 'calc(-200% + -12px)', opacity: 1 });
-    expect(incoming.style.gridColumn).toBe('2'); expect(incoming.style.gridRow).toBe('1');
-    const survivor = cells.find((cell) => cell.dataset.slotCellKey === grid[1]![2]!.key)!;
-    expect(JSON.parse(survivor.dataset.initial!)).toBe(false);
-    expect(survivor.dataset.layout).toBe('position');
-    expect(JSON.parse(survivor.dataset.animate!)).not.toHaveProperty('scale');
+    const incoming = view.container.querySelector<HTMLElement>('[data-slot-cell-key="stable-1-0"]')!;
+    expect(incoming.style.transform).toBe(gravityTransform(-2, 6));
+    expect(incoming.dataset.cascadeFromRow).toBe('-2');
+    expect(incoming.dataset.cascadePhase).toBe('clear');
+    frame(0); frame(162);
+    expect(incoming.style.transform).toBe(gravityTransform(-2, 6));
+    frame(262);
+    expect(incoming.style.transform).not.toBe(gravityTransform(-2, 6));
+    expect(incoming.style.transform).not.toBe(gravityTransform(0, 6));
+    expect(incoming.dataset.cascadePhase).toBe('fall');
+    frame(700);
+    expect(incoming.style.transform).toBe(gravityTransform(0, 6));
+    expect(incoming.dataset.cascadePhase).toBe('settled');
+  });
+
+  it('holds a surviving DOM node at its old row while winners clear, then falls it', () => {
+    const first = board('old');
+    const second = first.map(column => [...column]);
+    second[0] = [{ key: 'new-0', symbolId: 'ring' }, first[0]![0]!, first[0]![2]!];
+    const view = render(<SlotGrid grid={first} cfg={cfg} winning={new Set(['0:1'])} newKeys={new Set()} renderCell={art} bare />);
+    const survivor = view.container.querySelector<HTMLElement>('[data-slot-cell-key="old-0-0"]')!;
+    view.rerender(<SlotGrid grid={second} cfg={cfg} winning={new Set()} newKeys={new Set(['new-0'])} renderCell={art} bare />);
+    expect(view.container.querySelector('[data-slot-cell-key="old-0-0"]')).toBe(survivor);
+    expect(survivor.style.gridRow).toBe('2');
+    expect(survivor.style.transform).toBe(gravityTransform(-1, 6));
+    expect(survivor.dataset.cascadeFromRow).toBe('0');
+    frame(0); frame(139);
+    expect(survivor.style.transform).toBe(gravityTransform(-1, 6));
+    frame(240);
+    expect(survivor.style.transform).not.toBe(gravityTransform(-1, 6));
+    expect(survivor.style.transform).not.toBe(gravityTransform(0, 6));
+    frame(600);
+    expect(survivor.style.transform).toBe(gravityTransform(0, 6));
+  });
+
+  it.each([1, .5, 0])('preserves column topology and above-board entry at speed %s', speed => {
+    const previous = [{ key: 'keep0', col: 0, row: 0 }, { key: 'keep2', col: 0, row: 2 }, { key: 'fixed', col: 1, row: 4 }];
+    const cells = [{ key: 'new0', col: 0, row: 0 }, { key: 'new1', col: 0, row: 1 }, { key: 'new2', col: 0, row: 2 }, { key: 'keep0', col: 0, row: 3 }, { key: 'keep2', col: 0, row: 4 }, { key: 'fixed', col: 1, row: 4 }];
+    const tracks = gravityTracks(cells, previous, new Set(['new0', 'new1', 'new2']), speed);
+    expect(tracks.filter(t => t.incoming).map(t => t.fromRow)).toEqual([-3, -2, -1]);
+    expect(tracks.find(t => t.key === 'keep0')?.fromRow).toBe(0);
+    for (const t of tracks) {
+      expect(t.row).toBeGreaterThanOrEqual(t.fromRow);
+      expect(gravityOffset(t, 1000)).toBe(0);
+      if (speed === 0) expect(gravityOffset(t, 0)).toBe(0);
+    }
+    if (speed) for (let elapsed = 0; elapsed < 400 * speed; elapsed += 10 * speed) {
+      const positions = tracks.filter(t => t.col === 0).map(t => t.row + gravityOffset(t, elapsed));
+      positions.forEach((position, i) => { if (i) expect(position - positions[i - 1]!).toBeGreaterThanOrEqual(.99); });
+    }
+  });
+
+  it('cancels a cascade frame on unmount and reduced motion uses no moving frames', () => {
+    const grid = board('new');
+    const fresh = new Set(grid.flat().map(cell => cell.key));
+    const view = render(<SlotGrid grid={grid} cfg={cfg} winning={new Set()} newKeys={fresh} renderCell={art} bare />);
+    expect(frames.size).toBe(1);
+    view.unmount();
+    expect(frames.size).toBe(0);
+    state.reduced = true;
+    const quiet = render(<SlotGrid grid={grid} cfg={cfg} winning={new Set()} newKeys={fresh} renderCell={art} bare />);
+    expect(frames.size).toBe(0);
+    expect([...quiet.container.querySelectorAll<HTMLElement>('[data-slot-cell-key]')].every(node => node.dataset.cascadePhase === 'settled')).toBe(true);
+  });
+  it('counts only genuinely new nodes when a frame marks a whole column fresh', () => {
+    const previous = [{ key: 'keep', col: 0, row: 0 }, { key: 'remove', col: 0, row: 1 }];
+    const cells = [{ key: 'new', col: 0, row: 0 }, { key: 'keep', col: 0, row: 1 }];
+    const tracks = gravityTracks(cells, previous, new Set(['new', 'keep']));
+    expect(tracks[0]?.fromRow).toBe(-1);
+    expect(tracks[1]?.fromRow).toBe(0);
+    expect(tracks[1]?.incoming).toBe(false);
+  });
+
+  it('synchronizes clear, falling and final landing cues exactly once', () => {
+    const grid = board('new');
+    const phase = vi.fn();
+    const fresh = new Set(grid.flat().map(cell => cell.key));
+    render(<SlotGrid grid={grid} cfg={cfg} winning={new Set()} newKeys={fresh} renderCell={art} onCascadePhase={phase} bare />);
+    expect(phase.mock.calls.map(call => call[0])).toEqual(['clear']);
+    frame(0); frame(141); frame(200);
+    expect(phase.mock.calls.map(call => call[0])).toEqual(['clear', 'fall']);
+    frame(1000); frame(1200);
+    expect(phase.mock.calls.map(call => call[0])).toEqual(['clear', 'fall', 'land']);
+  });
+
+  it('retains fresh-cell starting positions through StrictMode effect replay', () => {
+    const grid = board('strict');
+    const fresh = new Set(grid.flat().map(cell => cell.key));
+    const view = render(<StrictMode><SlotGrid grid={grid} cfg={cfg} winning={new Set()} newKeys={fresh} renderCell={art} bare /></StrictMode>);
+    expect(frames.size).toBe(1);
+    const node = view.container.querySelector<HTMLElement>('[data-slot-cell-key="strict-0-0"]')!;
+    expect(node.style.transform).toBe(gravityTransform(-3, 6));
+    frame(0); frame(230);
+    expect(node.dataset.cascadePhase).toBe('fall');
   });
   it('removes visual exit copies on time instead of accumulating retired layout nodes', async () => {
     const first = board('first');
@@ -162,7 +249,7 @@ describe('physical reel motion, beyond outcome identity', () => {
     view.rerender(<SlotGrid grid={second} cfg={cfg} winning={new Set()} newKeys={new Set(second.flat().map((cell) => cell.key))} renderCell={art} bare />);
     expect(view.container.querySelectorAll('[data-slot-cell-key]')).toHaveLength(9);
     expect(view.container.querySelectorAll('[data-slot-exiting]')).toHaveLength(9);
-    await act(async () => { await vi.advanceTimersByTimeAsync(120); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(140); });
     expect(view.container.querySelectorAll('[data-slot-exiting]')).toHaveLength(0);
     expect(view.container.querySelectorAll('[data-slot-cell-key]')).toHaveLength(9);
   });

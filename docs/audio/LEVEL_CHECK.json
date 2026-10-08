@@ -1,0 +1,963 @@
+{
+  "tool": "FFmpeg volumedetect (decoded MP3)",
+  "checked": "2026-10-08",
+  "scope": "Final 189 effects/music + two exact selected Olympus performance excerpts.",
+  "maxPeakDbFS": -4.8,
+  "files": [
+    {
+      "file": "olympus/click.mp3",
+      "meanDbFS": -36.7,
+      "peakDbFS": -18.3
+    },
+    {
+      "file": "olympus/tick.mp3",
+      "meanDbFS": -38.1,
+      "peakDbFS": -20.5
+    },
+    {
+      "file": "olympus/spin.mp3",
+      "meanDbFS": -30.8,
+      "peakDbFS": -15.9
+    },
+    {
+      "file": "olympus/drop.mp3",
+      "meanDbFS": -29.5,
+      "peakDbFS": -14.9
+    },
+    {
+      "file": "olympus/cascade-clear.mp3",
+      "meanDbFS": -33.2,
+      "peakDbFS": -17.2
+    },
+    {
+      "file": "olympus/cascade-fall.mp3",
+      "meanDbFS": -32.1,
+      "peakDbFS": -15.4
+    },
+    {
+      "file": "olympus/cascade-land.mp3",
+      "meanDbFS": -29.8,
+      "peakDbFS": -15.9
+    },
+    {
+      "file": "olympus/win.mp3",
+      "meanDbFS": -19.7,
+      "peakDbFS": -6.8
+    },
+    {
+      "file": "olympus/big-win.mp3",
+      "meanDbFS": -20.1,
+      "peakDbFS": -7.0
+    },
+    {
+      "file": "olympus/mega-win.mp3",
+      "meanDbFS": -20.0,
+      "peakDbFS": -7.2
+    },
+    {
+      "file": "olympus/multiplier.mp3",
+      "meanDbFS": -19.2,
+      "peakDbFS": -6.8
+    },
+    {
+      "file": "olympus/lightning-strike.mp3",
+      "meanDbFS": -27.0,
+      "peakDbFS": -7.8
+    },
+    {
+      "file": "olympus/thunder.mp3",
+      "meanDbFS": -28.1,
+      "peakDbFS": -7.7
+    },
+    {
+      "file": "olympus/scatter-land.mp3",
+      "meanDbFS": -21.5,
+      "peakDbFS": -8.3
+    },
+    {
+      "file": "olympus/free-spins-trigger.mp3",
+      "meanDbFS": -19.7,
+      "peakDbFS": -7.2
+    },
+    {
+      "file": "olympus/free-spins-end.mp3",
+      "meanDbFS": -20.2,
+      "peakDbFS": -7.8
+    },
+    {
+      "file": "olympus/coin.mp3",
+      "meanDbFS": -22.9,
+      "peakDbFS": -10.3
+    },
+    {
+      "file": "olympus/anticipation.mp3",
+      "meanDbFS": -20.1,
+      "peakDbFS": -8.3
+    },
+    {
+      "file": "olympus/switch.mp3",
+      "meanDbFS": -19.8,
+      "peakDbFS": -8.8
+    },
+    {
+      "file": "bonanza/click.mp3",
+      "meanDbFS": -37.0,
+      "peakDbFS": -19.3
+    },
+    {
+      "file": "bonanza/tick.mp3",
+      "meanDbFS": -38.3,
+      "peakDbFS": -21.8
+    },
+    {
+      "file": "bonanza/spin.mp3",
+      "meanDbFS": -30.9,
+      "peakDbFS": -16.9
+    },
+    {
+      "file": "bonanza/drop.mp3",
+      "meanDbFS": -30.4,
+      "peakDbFS": -14.4
+    },
+    {
+      "file": "bonanza/cascade-clear.mp3",
+      "meanDbFS": -34.0,
+      "peakDbFS": -18.4
+    },
+    {
+      "file": "bonanza/cascade-fall.mp3",
+      "meanDbFS": -32.0,
+      "peakDbFS": -13.9
+    },
+    {
+      "file": "bonanza/cascade-land.mp3",
+      "meanDbFS": -30.7,
+      "peakDbFS": -15.3
+    },
+    {
+      "file": "bonanza/win.mp3",
+      "meanDbFS": -22.6,
+      "peakDbFS": -10.5
+    },
+    {
+      "file": "bonanza/big-win.mp3",
+      "meanDbFS": -23.8,
+      "peakDbFS": -10.3
+    },
+    {
+      "file": "bonanza/mega-win.mp3",
+      "meanDbFS": -23.9,
+      "peakDbFS": -11.1
+    },
+    {
+      "file": "bonanza/multiplier.mp3",
+      "meanDbFS": -22.4,
+      "peakDbFS": -8.7
+    },
+    {
+      "file": "bonanza/lightning-strike.mp3",
+      "meanDbFS": -27.3,
+      "peakDbFS": -10.0
+    },
+    {
+      "file": "bonanza/thunder.mp3",
+      "meanDbFS": -28.3,
+      "peakDbFS": -10.9
+    },
+    {
+      "file": "bonanza/scatter-land.mp3",
+      "meanDbFS": -24.4,
+      "peakDbFS": -10.3
+    },
+    {
+      "file": "bonanza/free-spins-trigger.mp3",
+      "meanDbFS": -23.7,
+      "peakDbFS": -11.2
+    },
+    {
+      "file": "bonanza/free-spins-end.mp3",
+      "meanDbFS": -22.8,
+      "peakDbFS": -8.8
+    },
+    {
+      "file": "bonanza/coin.mp3",
+      "meanDbFS": -24.8,
+      "peakDbFS": -12.3
+    },
+    {
+      "file": "bonanza/anticipation.mp3",
+      "meanDbFS": -23.2,
+      "peakDbFS": -11.8
+    },
+    {
+      "file": "bonanza/switch.mp3",
+      "meanDbFS": -22.6,
+      "peakDbFS": -10.1
+    },
+    {
+      "file": "sugar/click.mp3",
+      "meanDbFS": -36.6,
+      "peakDbFS": -20.5
+    },
+    {
+      "file": "sugar/tick.mp3",
+      "meanDbFS": -38.9,
+      "peakDbFS": -21.2
+    },
+    {
+      "file": "sugar/spin.mp3",
+      "meanDbFS": -30.7,
+      "peakDbFS": -15.4
+    },
+    {
+      "file": "sugar/drop.mp3",
+      "meanDbFS": -30.0,
+      "peakDbFS": -15.2
+    },
+    {
+      "file": "sugar/cascade-clear.mp3",
+      "meanDbFS": -33.4,
+      "peakDbFS": -17.0
+    },
+    {
+      "file": "sugar/cascade-fall.mp3",
+      "meanDbFS": -32.3,
+      "peakDbFS": -16.7
+    },
+    {
+      "file": "sugar/cascade-land.mp3",
+      "meanDbFS": -30.0,
+      "peakDbFS": -14.7
+    },
+    {
+      "file": "sugar/win.mp3",
+      "meanDbFS": -20.4,
+      "peakDbFS": -8.1
+    },
+    {
+      "file": "sugar/big-win.mp3",
+      "meanDbFS": -21.4,
+      "peakDbFS": -7.5
+    },
+    {
+      "file": "sugar/mega-win.mp3",
+      "meanDbFS": -21.1,
+      "peakDbFS": -7.8
+    },
+    {
+      "file": "sugar/multiplier.mp3",
+      "meanDbFS": -21.0,
+      "peakDbFS": -6.8
+    },
+    {
+      "file": "sugar/lightning-strike.mp3",
+      "meanDbFS": -27.3,
+      "peakDbFS": -9.0
+    },
+    {
+      "file": "sugar/thunder.mp3",
+      "meanDbFS": -28.6,
+      "peakDbFS": -8.3
+    },
+    {
+      "file": "sugar/scatter-land.mp3",
+      "meanDbFS": -22.0,
+      "peakDbFS": -8.3
+    },
+    {
+      "file": "sugar/free-spins-trigger.mp3",
+      "meanDbFS": -20.4,
+      "peakDbFS": -7.6
+    },
+    {
+      "file": "sugar/free-spins-end.mp3",
+      "meanDbFS": -20.9,
+      "peakDbFS": -8.5
+    },
+    {
+      "file": "sugar/coin.mp3",
+      "meanDbFS": -23.5,
+      "peakDbFS": -10.4
+    },
+    {
+      "file": "sugar/anticipation.mp3",
+      "meanDbFS": -21.0,
+      "peakDbFS": -8.6
+    },
+    {
+      "file": "sugar/switch.mp3",
+      "meanDbFS": -20.2,
+      "peakDbFS": -8.1
+    },
+    {
+      "file": "wanted/click.mp3",
+      "meanDbFS": -37.0,
+      "peakDbFS": -17.0
+    },
+    {
+      "file": "wanted/tick.mp3",
+      "meanDbFS": -39.0,
+      "peakDbFS": -21.5
+    },
+    {
+      "file": "wanted/spin.mp3",
+      "meanDbFS": -30.7,
+      "peakDbFS": -16.7
+    },
+    {
+      "file": "wanted/drop.mp3",
+      "meanDbFS": -29.8,
+      "peakDbFS": -14.0
+    },
+    {
+      "file": "wanted/cascade-clear.mp3",
+      "meanDbFS": -32.9,
+      "peakDbFS": -17.8
+    },
+    {
+      "file": "wanted/cascade-fall.mp3",
+      "meanDbFS": -32.2,
+      "peakDbFS": -15.1
+    },
+    {
+      "file": "wanted/cascade-land.mp3",
+      "meanDbFS": -29.7,
+      "peakDbFS": -14.9
+    },
+    {
+      "file": "wanted/win.mp3",
+      "meanDbFS": -19.7,
+      "peakDbFS": -8.9
+    },
+    {
+      "file": "wanted/big-win.mp3",
+      "meanDbFS": -21.2,
+      "peakDbFS": -8.2
+    },
+    {
+      "file": "wanted/mega-win.mp3",
+      "meanDbFS": -20.4,
+      "peakDbFS": -8.3
+    },
+    {
+      "file": "wanted/multiplier.mp3",
+      "meanDbFS": -19.2,
+      "peakDbFS": -6.8
+    },
+    {
+      "file": "wanted/lightning-strike.mp3",
+      "meanDbFS": -26.9,
+      "peakDbFS": -9.7
+    },
+    {
+      "file": "wanted/thunder.mp3",
+      "meanDbFS": -28.9,
+      "peakDbFS": -10.2
+    },
+    {
+      "file": "wanted/scatter-land.mp3",
+      "meanDbFS": -21.5,
+      "peakDbFS": -9.5
+    },
+    {
+      "file": "wanted/free-spins-trigger.mp3",
+      "meanDbFS": -20.4,
+      "peakDbFS": -8.0
+    },
+    {
+      "file": "wanted/free-spins-end.mp3",
+      "meanDbFS": -20.5,
+      "peakDbFS": -8.6
+    },
+    {
+      "file": "wanted/coin.mp3",
+      "meanDbFS": -22.9,
+      "peakDbFS": -11.4
+    },
+    {
+      "file": "wanted/anticipation.mp3",
+      "meanDbFS": -20.1,
+      "peakDbFS": -9.3
+    },
+    {
+      "file": "wanted/switch.mp3",
+      "meanDbFS": -19.3,
+      "peakDbFS": -7.5
+    },
+    {
+      "file": "wolf/click.mp3",
+      "meanDbFS": -37.2,
+      "peakDbFS": -20.5
+    },
+    {
+      "file": "wolf/tick.mp3",
+      "meanDbFS": -38.4,
+      "peakDbFS": -19.4
+    },
+    {
+      "file": "wolf/spin.mp3",
+      "meanDbFS": -30.6,
+      "peakDbFS": -15.6
+    },
+    {
+      "file": "wolf/drop.mp3",
+      "meanDbFS": -30.6,
+      "peakDbFS": -14.9
+    },
+    {
+      "file": "wolf/cascade-clear.mp3",
+      "meanDbFS": -34.0,
+      "peakDbFS": -18.7
+    },
+    {
+      "file": "wolf/cascade-fall.mp3",
+      "meanDbFS": -32.2,
+      "peakDbFS": -16.8
+    },
+    {
+      "file": "wolf/cascade-land.mp3",
+      "meanDbFS": -31.0,
+      "peakDbFS": -16.5
+    },
+    {
+      "file": "wolf/win.mp3",
+      "meanDbFS": -23.0,
+      "peakDbFS": -10.5
+    },
+    {
+      "file": "wolf/big-win.mp3",
+      "meanDbFS": -24.2,
+      "peakDbFS": -10.7
+    },
+    {
+      "file": "wolf/mega-win.mp3",
+      "meanDbFS": -24.2,
+      "peakDbFS": -11.0
+    },
+    {
+      "file": "wolf/multiplier.mp3",
+      "meanDbFS": -22.7,
+      "peakDbFS": -8.8
+    },
+    {
+      "file": "wolf/lightning-strike.mp3",
+      "meanDbFS": -26.5,
+      "peakDbFS": -8.4
+    },
+    {
+      "file": "wolf/thunder.mp3",
+      "meanDbFS": -27.9,
+      "peakDbFS": -9.5
+    },
+    {
+      "file": "wolf/scatter-land.mp3",
+      "meanDbFS": -24.8,
+      "peakDbFS": -11.1
+    },
+    {
+      "file": "wolf/free-spins-trigger.mp3",
+      "meanDbFS": -23.9,
+      "peakDbFS": -11.6
+    },
+    {
+      "file": "wolf/free-spins-end.mp3",
+      "meanDbFS": -23.0,
+      "peakDbFS": -9.1
+    },
+    {
+      "file": "wolf/coin.mp3",
+      "meanDbFS": -24.7,
+      "peakDbFS": -11.8
+    },
+    {
+      "file": "wolf/anticipation.mp3",
+      "meanDbFS": -23.6,
+      "peakDbFS": -12.4
+    },
+    {
+      "file": "wolf/switch.mp3",
+      "meanDbFS": -22.8,
+      "peakDbFS": -9.4
+    },
+    {
+      "file": "pharaoh/click.mp3",
+      "meanDbFS": -37.0,
+      "peakDbFS": -18.7
+    },
+    {
+      "file": "pharaoh/tick.mp3",
+      "meanDbFS": -37.4,
+      "peakDbFS": -19.0
+    },
+    {
+      "file": "pharaoh/spin.mp3",
+      "meanDbFS": -30.6,
+      "peakDbFS": -16.1
+    },
+    {
+      "file": "pharaoh/drop.mp3",
+      "meanDbFS": -29.2,
+      "peakDbFS": -15.0
+    },
+    {
+      "file": "pharaoh/cascade-clear.mp3",
+      "meanDbFS": -32.8,
+      "peakDbFS": -14.4
+    },
+    {
+      "file": "pharaoh/cascade-fall.mp3",
+      "meanDbFS": -32.2,
+      "peakDbFS": -13.7
+    },
+    {
+      "file": "pharaoh/cascade-land.mp3",
+      "meanDbFS": -29.6,
+      "peakDbFS": -14.3
+    },
+    {
+      "file": "pharaoh/win.mp3",
+      "meanDbFS": -19.1,
+      "peakDbFS": -6.9
+    },
+    {
+      "file": "pharaoh/big-win.mp3",
+      "meanDbFS": -19.8,
+      "peakDbFS": -7.2
+    },
+    {
+      "file": "pharaoh/mega-win.mp3",
+      "meanDbFS": -19.7,
+      "peakDbFS": -7.0
+    },
+    {
+      "file": "pharaoh/multiplier.mp3",
+      "meanDbFS": -18.8,
+      "peakDbFS": -6.8
+    },
+    {
+      "file": "pharaoh/lightning-strike.mp3",
+      "meanDbFS": -27.0,
+      "peakDbFS": -10.6
+    },
+    {
+      "file": "pharaoh/thunder.mp3",
+      "meanDbFS": -27.8,
+      "peakDbFS": -9.6
+    },
+    {
+      "file": "pharaoh/scatter-land.mp3",
+      "meanDbFS": -21.1,
+      "peakDbFS": -8.7
+    },
+    {
+      "file": "pharaoh/free-spins-trigger.mp3",
+      "meanDbFS": -19.4,
+      "peakDbFS": -7.0
+    },
+    {
+      "file": "pharaoh/free-spins-end.mp3",
+      "meanDbFS": -19.9,
+      "peakDbFS": -8.0
+    },
+    {
+      "file": "pharaoh/coin.mp3",
+      "meanDbFS": -22.6,
+      "peakDbFS": -10.8
+    },
+    {
+      "file": "pharaoh/anticipation.mp3",
+      "meanDbFS": -19.7,
+      "peakDbFS": -8.3
+    },
+    {
+      "file": "pharaoh/switch.mp3",
+      "meanDbFS": -19.5,
+      "peakDbFS": -8.2
+    },
+    {
+      "file": "juan/click.mp3",
+      "meanDbFS": -37.1,
+      "peakDbFS": -18.7
+    },
+    {
+      "file": "juan/tick.mp3",
+      "meanDbFS": -38.6,
+      "peakDbFS": -21.9
+    },
+    {
+      "file": "juan/spin.mp3",
+      "meanDbFS": -30.6,
+      "peakDbFS": -14.6
+    },
+    {
+      "file": "juan/drop.mp3",
+      "meanDbFS": -30.0,
+      "peakDbFS": -16.1
+    },
+    {
+      "file": "juan/cascade-clear.mp3",
+      "meanDbFS": -33.4,
+      "peakDbFS": -16.6
+    },
+    {
+      "file": "juan/cascade-fall.mp3",
+      "meanDbFS": -32.2,
+      "peakDbFS": -15.3
+    },
+    {
+      "file": "juan/cascade-land.mp3",
+      "meanDbFS": -29.9,
+      "peakDbFS": -15.2
+    },
+    {
+      "file": "juan/win.mp3",
+      "meanDbFS": -20.1,
+      "peakDbFS": -9.2
+    },
+    {
+      "file": "juan/big-win.mp3",
+      "meanDbFS": -20.4,
+      "peakDbFS": -7.0
+    },
+    {
+      "file": "juan/mega-win.mp3",
+      "meanDbFS": -19.7,
+      "peakDbFS": -7.6
+    },
+    {
+      "file": "juan/multiplier.mp3",
+      "meanDbFS": -19.9,
+      "peakDbFS": -8.1
+    },
+    {
+      "file": "juan/lightning-strike.mp3",
+      "meanDbFS": -26.9,
+      "peakDbFS": -9.7
+    },
+    {
+      "file": "juan/thunder.mp3",
+      "meanDbFS": -28.4,
+      "peakDbFS": -8.2
+    },
+    {
+      "file": "juan/scatter-land.mp3",
+      "meanDbFS": -21.3,
+      "peakDbFS": -9.0
+    },
+    {
+      "file": "juan/free-spins-trigger.mp3",
+      "meanDbFS": -19.6,
+      "peakDbFS": -7.6
+    },
+    {
+      "file": "juan/free-spins-end.mp3",
+      "meanDbFS": -19.8,
+      "peakDbFS": -8.1
+    },
+    {
+      "file": "juan/coin.mp3",
+      "meanDbFS": -23.0,
+      "peakDbFS": -11.2
+    },
+    {
+      "file": "juan/anticipation.mp3",
+      "meanDbFS": -20.1,
+      "peakDbFS": -9.1
+    },
+    {
+      "file": "juan/switch.mp3",
+      "meanDbFS": -19.1,
+      "peakDbFS": -7.8
+    },
+    {
+      "file": "bass/click.mp3",
+      "meanDbFS": -36.8,
+      "peakDbFS": -20.6
+    },
+    {
+      "file": "bass/tick.mp3",
+      "meanDbFS": -37.6,
+      "peakDbFS": -18.1
+    },
+    {
+      "file": "bass/spin.mp3",
+      "meanDbFS": -30.6,
+      "peakDbFS": -16.8
+    },
+    {
+      "file": "bass/drop.mp3",
+      "meanDbFS": -30.2,
+      "peakDbFS": -14.5
+    },
+    {
+      "file": "bass/cascade-clear.mp3",
+      "meanDbFS": -34.0,
+      "peakDbFS": -18.3
+    },
+    {
+      "file": "bass/cascade-fall.mp3",
+      "meanDbFS": -32.1,
+      "peakDbFS": -16.2
+    },
+    {
+      "file": "bass/cascade-land.mp3",
+      "meanDbFS": -30.4,
+      "peakDbFS": -15.3
+    },
+    {
+      "file": "bass/win.mp3",
+      "meanDbFS": -22.8,
+      "peakDbFS": -11.0
+    },
+    {
+      "file": "bass/big-win.mp3",
+      "meanDbFS": -23.1,
+      "peakDbFS": -9.9
+    },
+    {
+      "file": "bass/mega-win.mp3",
+      "meanDbFS": -23.9,
+      "peakDbFS": -10.5
+    },
+    {
+      "file": "bass/multiplier.mp3",
+      "meanDbFS": -22.6,
+      "peakDbFS": -10.2
+    },
+    {
+      "file": "bass/lightning-strike.mp3",
+      "meanDbFS": -26.5,
+      "peakDbFS": -9.4
+    },
+    {
+      "file": "bass/thunder.mp3",
+      "meanDbFS": -28.6,
+      "peakDbFS": -11.0
+    },
+    {
+      "file": "bass/scatter-land.mp3",
+      "meanDbFS": -24.4,
+      "peakDbFS": -10.6
+    },
+    {
+      "file": "bass/free-spins-trigger.mp3",
+      "meanDbFS": -23.5,
+      "peakDbFS": -9.7
+    },
+    {
+      "file": "bass/free-spins-end.mp3",
+      "meanDbFS": -22.8,
+      "peakDbFS": -8.8
+    },
+    {
+      "file": "bass/coin.mp3",
+      "meanDbFS": -24.9,
+      "peakDbFS": -11.5
+    },
+    {
+      "file": "bass/anticipation.mp3",
+      "meanDbFS": -23.3,
+      "peakDbFS": -11.1
+    },
+    {
+      "file": "bass/switch.mp3",
+      "meanDbFS": -22.8,
+      "peakDbFS": -10.3
+    },
+    {
+      "file": "lounge/click.mp3",
+      "meanDbFS": -36.9,
+      "peakDbFS": -19.5
+    },
+    {
+      "file": "lounge/tick.mp3",
+      "meanDbFS": -37.8,
+      "peakDbFS": -20.0
+    },
+    {
+      "file": "lounge/spin.mp3",
+      "meanDbFS": -30.7,
+      "peakDbFS": -15.1
+    },
+    {
+      "file": "lounge/drop.mp3",
+      "meanDbFS": -30.7,
+      "peakDbFS": -15.4
+    },
+    {
+      "file": "lounge/cascade-clear.mp3",
+      "meanDbFS": -33.9,
+      "peakDbFS": -16.2
+    },
+    {
+      "file": "lounge/cascade-fall.mp3",
+      "meanDbFS": -32.2,
+      "peakDbFS": -15.9
+    },
+    {
+      "file": "lounge/cascade-land.mp3",
+      "meanDbFS": -30.6,
+      "peakDbFS": -15.6
+    },
+    {
+      "file": "lounge/win.mp3",
+      "meanDbFS": -22.8,
+      "peakDbFS": -10.8
+    },
+    {
+      "file": "lounge/big-win.mp3",
+      "meanDbFS": -24.8,
+      "peakDbFS": -12.3
+    },
+    {
+      "file": "lounge/mega-win.mp3",
+      "meanDbFS": -23.7,
+      "peakDbFS": -10.7
+    },
+    {
+      "file": "lounge/multiplier.mp3",
+      "meanDbFS": -22.6,
+      "peakDbFS": -10.4
+    },
+    {
+      "file": "lounge/lightning-strike.mp3",
+      "meanDbFS": -26.8,
+      "peakDbFS": -10.0
+    },
+    {
+      "file": "lounge/thunder.mp3",
+      "meanDbFS": -28.2,
+      "peakDbFS": -9.8
+    },
+    {
+      "file": "lounge/scatter-land.mp3",
+      "meanDbFS": -24.6,
+      "peakDbFS": -9.8
+    },
+    {
+      "file": "lounge/free-spins-trigger.mp3",
+      "meanDbFS": -23.1,
+      "peakDbFS": -10.9
+    },
+    {
+      "file": "lounge/free-spins-end.mp3",
+      "meanDbFS": -23.0,
+      "peakDbFS": -9.8
+    },
+    {
+      "file": "lounge/coin.mp3",
+      "meanDbFS": -25.0,
+      "peakDbFS": -12.3
+    },
+    {
+      "file": "lounge/anticipation.mp3",
+      "meanDbFS": -23.3,
+      "peakDbFS": -11.9
+    },
+    {
+      "file": "lounge/switch.mp3",
+      "meanDbFS": -22.8,
+      "peakDbFS": -9.5
+    },
+    {
+      "file": "olympus/music-base.mp3",
+      "meanDbFS": -24.2,
+      "peakDbFS": -8.3
+    },
+    {
+      "file": "olympus/music-free.mp3",
+      "meanDbFS": -23.2,
+      "peakDbFS": -8.5
+    },
+    {
+      "file": "bonanza/music-base.mp3",
+      "meanDbFS": -25.4,
+      "peakDbFS": -9.6
+    },
+    {
+      "file": "bonanza/music-free.mp3",
+      "meanDbFS": -24.7,
+      "peakDbFS": -9.4
+    },
+    {
+      "file": "sugar/music-base.mp3",
+      "meanDbFS": -24.9,
+      "peakDbFS": -9.5
+    },
+    {
+      "file": "sugar/music-free.mp3",
+      "meanDbFS": -24.0,
+      "peakDbFS": -8.4
+    },
+    {
+      "file": "wanted/music-base.mp3",
+      "meanDbFS": -24.2,
+      "peakDbFS": -8.8
+    },
+    {
+      "file": "wanted/music-free.mp3",
+      "meanDbFS": -23.4,
+      "peakDbFS": -9.1
+    },
+    {
+      "file": "wolf/music-base.mp3",
+      "meanDbFS": -24.8,
+      "peakDbFS": -9.1
+    },
+    {
+      "file": "wolf/music-free.mp3",
+      "meanDbFS": -24.2,
+      "peakDbFS": -8.5
+    },
+    {
+      "file": "pharaoh/music-base.mp3",
+      "meanDbFS": -24.1,
+      "peakDbFS": -8.5
+    },
+    {
+      "file": "pharaoh/music-free.mp3",
+      "meanDbFS": -23.0,
+      "peakDbFS": -8.6
+    },
+    {
+      "file": "juan/music-base.mp3",
+      "meanDbFS": -24.4,
+      "peakDbFS": -8.3
+    },
+    {
+      "file": "juan/music-free.mp3",
+      "meanDbFS": -23.4,
+      "peakDbFS": -8.2
+    },
+    {
+      "file": "bass/music-base.mp3",
+      "meanDbFS": -25.2,
+      "peakDbFS": -8.9
+    },
+    {
+      "file": "bass/music-free.mp3",
+      "meanDbFS": -24.6,
+      "peakDbFS": -9.6
+    },
+    {
+      "file": "lounge/music-base.mp3",
+      "meanDbFS": -25.2,
+      "peakDbFS": -10.3
+    },
+    {
+      "file": "lounge/music-free.mp3",
+      "meanDbFS": -24.6,
+      "peakDbFS": -10.1
+    },
+    {
+      "file": "voices/olympus/power.mp3",
+      "meanDbFS": -19.4,
+      "peakDbFS": -4.8
+    },
+    {
+      "file": "voices/olympus/glory.mp3",
+      "meanDbFS": -19.4,
+      "peakDbFS": -5.8
+    }
+  ]
+}

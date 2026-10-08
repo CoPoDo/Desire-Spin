@@ -1,0 +1,1141 @@
+{
+  "version": 3,
+  "sampleRate": 32000,
+  "originalDSP": true,
+  "files": [
+    {
+      "file": "olympus/click.mp3",
+      "duration": 0.38,
+      "peakDb": -17.85,
+      "sha256": "36b63e529fe7c140312e8e73070db792d359489b716d0f5e10ee06d399b5556b"
+    },
+    {
+      "file": "olympus/tick.mp3",
+      "duration": 0.37,
+      "peakDb": -20.04,
+      "sha256": "5dcf8e1c3bae8cbcc90f93b345b54a31d4c7030cb20ed81ce7798dc4cb841924"
+    },
+    {
+      "file": "olympus/spin.mp3",
+      "duration": 0.76,
+      "peakDb": -15.43,
+      "sha256": "1e0e83791c558c491a4b2db71ea4b32c545763ee15aaa86c035f4f632bc73da3"
+    },
+    {
+      "file": "olympus/drop.mp3",
+      "duration": 0.5,
+      "peakDb": -14.49,
+      "sha256": "d826975f1673ac79bd249119b579f2156ac6f00871a87734e3d751a17d73ff09"
+    },
+    {
+      "file": "olympus/cascade-clear.mp3",
+      "duration": 0.5,
+      "peakDb": -16.71,
+      "sha256": "74c09b1f2f0852f0bd4091dd7c1b1eeaf69cdded12fc72fd87f7d24c39f83163"
+    },
+    {
+      "file": "olympus/cascade-fall.mp3",
+      "duration": 0.62,
+      "peakDb": -14.91,
+      "sha256": "adcd10fb749c502f7cfae3bb9011cc8edb409a7e84f637a2071ffedc3bfd8641"
+    },
+    {
+      "file": "olympus/cascade-land.mp3",
+      "duration": 0.54,
+      "peakDb": -15.41,
+      "sha256": "89744c5168c30f8d3a07c7dc5bbea9b7e45a2f596f5c4ebd991837ecdae8e936"
+    },
+    {
+      "file": "olympus/win.mp3",
+      "duration": 0.9,
+      "peakDb": -6.38,
+      "sha256": "663e275a0428de1da9de1d556a531e29e2c56055d5e354bad2d90d3f99942b24"
+    },
+    {
+      "file": "olympus/big-win.mp3",
+      "duration": 1.83,
+      "peakDb": -6.6,
+      "sha256": "4a75a42300ba5836cad1e55a999e704c8f4c0b64602a9b965a62a485aac346b1"
+    },
+    {
+      "file": "olympus/mega-win.mp3",
+      "duration": 2.43,
+      "peakDb": -6.79,
+      "sha256": "4679b0bd4f5c8cf4632ce54a8aa317743b05c3c4f8cb6aa4a480791b434f54fb"
+    },
+    {
+      "file": "olympus/multiplier.mp3",
+      "duration": 1.18,
+      "peakDb": -6.38,
+      "sha256": "d534ef7b848f486617bc08678fd42da2ffb6e59b11674d70e14c346386718ebb"
+    },
+    {
+      "file": "olympus/lightning-strike.mp3",
+      "duration": 1.08,
+      "peakDb": -7.4,
+      "sha256": "52f6a94c0b9363ee27a91ea549dfe491fa9f863228f450793a2ba469a9f5f2b0"
+    },
+    {
+      "file": "olympus/thunder.mp3",
+      "duration": 1.48,
+      "peakDb": -7.22,
+      "sha256": "c85334cbeeedaf528df8a0fecc4f1d10c6e2de27b60a133065924e440bf4610c"
+    },
+    {
+      "file": "olympus/scatter-land.mp3",
+      "duration": 0.93,
+      "peakDb": -7.86,
+      "sha256": "a8737f5ad48fdb68141bf685b8b01817e46e160b76531ef946456c8119cf6f56"
+    },
+    {
+      "file": "olympus/free-spins-trigger.mp3",
+      "duration": 2.58,
+      "peakDb": -6.8,
+      "sha256": "e4ada88ab9ab78122314a6c154a52b75cd72d9e3033c6ac73c420e8ab05311c6"
+    },
+    {
+      "file": "olympus/free-spins-end.mp3",
+      "duration": 1.88,
+      "peakDb": -7.39,
+      "sha256": "c993727e43bf27b41ec9866123c1bedc83613527d36bba5563296a34666c8ab0"
+    },
+    {
+      "file": "olympus/coin.mp3",
+      "duration": 0.5,
+      "peakDb": -9.82,
+      "sha256": "1ed2fae9c565159cb3c1bbb87e4337a87c54d47efbd229b1690ad7db6b5d7e2f"
+    },
+    {
+      "file": "olympus/anticipation.mp3",
+      "duration": 1.38,
+      "peakDb": -7.85,
+      "sha256": "7aac7d2194075d7a5d4dedf9e0987f733e18cce39f33871315a59e63106bd1fa"
+    },
+    {
+      "file": "olympus/switch.mp3",
+      "duration": 1.23,
+      "peakDb": -8.32,
+      "sha256": "ff4ded5c329cbc1151d99bc86a5da5667201247742123bbbd4832dd3bc4b7924"
+    },
+    {
+      "file": "bonanza/click.mp3",
+      "duration": 0.38,
+      "peakDb": -18.86,
+      "sha256": "733e60738cd7b815d68fd2139a3910481ab0af1a586f661930a4036de9102bee"
+    },
+    {
+      "file": "bonanza/tick.mp3",
+      "duration": 0.37,
+      "peakDb": -21.36,
+      "sha256": "9c1fe86e34f983285b11af57a13e1dab5e2eba357422f87bf76ef826eca5c32c"
+    },
+    {
+      "file": "bonanza/spin.mp3",
+      "duration": 0.76,
+      "peakDb": -16.42,
+      "sha256": "c4cda03aacafd431678a5cece1986d9c6babb81256397e0d2ad9b9ada5e54d2c"
+    },
+    {
+      "file": "bonanza/drop.mp3",
+      "duration": 0.5,
+      "peakDb": -13.98,
+      "sha256": "9a47bed657150eb6b2d126f77695e26a3f5980a6c2cb702be497e3f444fd9300"
+    },
+    {
+      "file": "bonanza/cascade-clear.mp3",
+      "duration": 0.5,
+      "peakDb": -17.95,
+      "sha256": "a03be4694ff224cf54ca4044dcb6ad87df026f3aa3c7419991649c6d2dff9fd0"
+    },
+    {
+      "file": "bonanza/cascade-fall.mp3",
+      "duration": 0.62,
+      "peakDb": -13.46,
+      "sha256": "b541946565b28009956737d00a60719ccff6df2c1f8870234158b18e88068c18"
+    },
+    {
+      "file": "bonanza/cascade-land.mp3",
+      "duration": 0.54,
+      "peakDb": -14.89,
+      "sha256": "5dde8feef7c7ba43057f3226b329561701448248a903e2a2244272f7d043929d"
+    },
+    {
+      "file": "bonanza/win.mp3",
+      "duration": 0.9,
+      "peakDb": -10.04,
+      "sha256": "500021595d1fcf04ad7d04451b0f73e13d3e35c9b6c46582586e47d1e405c2e0"
+    },
+    {
+      "file": "bonanza/big-win.mp3",
+      "duration": 1.83,
+      "peakDb": -9.83,
+      "sha256": "eeae969a846398301d7a8467c8c26eee27dde00a41f9fa244755a840ac54b969"
+    },
+    {
+      "file": "bonanza/mega-win.mp3",
+      "duration": 2.43,
+      "peakDb": -10.67,
+      "sha256": "07a697667e9150d1fed5670c7fb07e4e799c8f8b9d3f8d3499d8acf6ce23da0e"
+    },
+    {
+      "file": "bonanza/multiplier.mp3",
+      "duration": 1.18,
+      "peakDb": -8.25,
+      "sha256": "59017ddb80b28a757200f68dd73cf74307b63578b6b34b41871c00e0a7e99462"
+    },
+    {
+      "file": "bonanza/lightning-strike.mp3",
+      "duration": 1.08,
+      "peakDb": -9.56,
+      "sha256": "67595f383afa17fc74d5e183c82312e38226e93e575cd777218ca8e0b587efd9"
+    },
+    {
+      "file": "bonanza/thunder.mp3",
+      "duration": 1.48,
+      "peakDb": -10.46,
+      "sha256": "d74b4e59fc0cef8ec8f9aac4cfddd18daa98bc1f77321a47b922bd7f8f5258ad"
+    },
+    {
+      "file": "bonanza/scatter-land.mp3",
+      "duration": 0.93,
+      "peakDb": -9.9,
+      "sha256": "daa4a2ec6397fe77f1db13af55ae81de0acc189849bea4982096010150e20074"
+    },
+    {
+      "file": "bonanza/free-spins-trigger.mp3",
+      "duration": 2.58,
+      "peakDb": -10.79,
+      "sha256": "ccbead8792f9a57653ca795e2f89a0c82971f41e506e72b57816f6366ec40de1"
+    },
+    {
+      "file": "bonanza/free-spins-end.mp3",
+      "duration": 1.88,
+      "peakDb": -8.33,
+      "sha256": "48e0d16ff08964af9fefbe7ba3fc8aadbb46c0a02f689eb582e2ad33d8aeddab"
+    },
+    {
+      "file": "bonanza/coin.mp3",
+      "duration": 0.5,
+      "peakDb": -11.87,
+      "sha256": "0ff437854b22d30c906e7f90db832904aaa5e451a4957f64b3f6b3363b48e25f"
+    },
+    {
+      "file": "bonanza/anticipation.mp3",
+      "duration": 1.38,
+      "peakDb": -11.31,
+      "sha256": "afaa974d6864a2144cc97e3585cf5b306d289cd18d2dbf068b80208d8a7fc5f9"
+    },
+    {
+      "file": "bonanza/switch.mp3",
+      "duration": 1.23,
+      "peakDb": -9.65,
+      "sha256": "e868e5f1589bff4ed5397e8ed4524ffd010401305cafc67b83863541053bc05b"
+    },
+    {
+      "file": "sugar/click.mp3",
+      "duration": 0.38,
+      "peakDb": -20.06,
+      "sha256": "e282c83c6da95c6461f3a535f3bf315c58940c3219259c295792a50ebad503a4"
+    },
+    {
+      "file": "sugar/tick.mp3",
+      "duration": 0.37,
+      "peakDb": -20.77,
+      "sha256": "cbd9864957450d9028702734b4896ddb87664dd392bbd5acd30ed4a19b0c4205"
+    },
+    {
+      "file": "sugar/spin.mp3",
+      "duration": 0.76,
+      "peakDb": -14.95,
+      "sha256": "0613c92a9ef2991b46f0fd8aca2f0723e00ceeaec3eafb7f9c9d6588de585c59"
+    },
+    {
+      "file": "sugar/drop.mp3",
+      "duration": 0.5,
+      "peakDb": -14.8,
+      "sha256": "e3825392b6b782be24d9f8fe90c1129aac81174c51c10bf3e2f094a4f76442bc"
+    },
+    {
+      "file": "sugar/cascade-clear.mp3",
+      "duration": 0.5,
+      "peakDb": -16.52,
+      "sha256": "5336f24ac8793fb5c8ecd64133c8965682549c9f55f117def64071a403c7e47d"
+    },
+    {
+      "file": "sugar/cascade-fall.mp3",
+      "duration": 0.62,
+      "peakDb": -16.26,
+      "sha256": "efc8b17cf3c7962005e031ad18321424dc6515264894b3e2723fb05cbffa45c1"
+    },
+    {
+      "file": "sugar/cascade-land.mp3",
+      "duration": 0.54,
+      "peakDb": -14.22,
+      "sha256": "dfddec8b09da88e478aa0f6b0d33aed8be558717e8249c4587471a4d396cd07f"
+    },
+    {
+      "file": "sugar/win.mp3",
+      "duration": 0.9,
+      "peakDb": -7.63,
+      "sha256": "a0edb977ff7b0cc04ffb307bedb141881fae7c72c9d8d78ffa79dd66fcd3eda3"
+    },
+    {
+      "file": "sugar/big-win.mp3",
+      "duration": 1.83,
+      "peakDb": -7.03,
+      "sha256": "719a84c330608c1af7c6b0548c422a542a2b6a8fabd07d7b1e267ac7235a6eb4"
+    },
+    {
+      "file": "sugar/mega-win.mp3",
+      "duration": 2.43,
+      "peakDb": -7.39,
+      "sha256": "fb7940ca29be00a13cc255fdaf4f5b082fd2c2e9cb51a770f3a97eb2c7eae6e9"
+    },
+    {
+      "file": "sugar/multiplier.mp3",
+      "duration": 1.18,
+      "peakDb": -6.38,
+      "sha256": "9600f48fbc4439932c1137c933f9d4eaf672acf1ad85492342ffc23c021ead6a"
+    },
+    {
+      "file": "sugar/lightning-strike.mp3",
+      "duration": 1.08,
+      "peakDb": -8.59,
+      "sha256": "d2dc355cbfae158bb8459951335690b1bb922f941ce849f020c8e5b7944415c8"
+    },
+    {
+      "file": "sugar/thunder.mp3",
+      "duration": 1.48,
+      "peakDb": -7.84,
+      "sha256": "7536ed6e99c7cc03139d45dd4848f820903fe2cd39b943876e8f9d23aaa86abf"
+    },
+    {
+      "file": "sugar/scatter-land.mp3",
+      "duration": 0.93,
+      "peakDb": -7.86,
+      "sha256": "7e52e94878d0cff5eae5263a38583aabd7cb7bd34158b7ed5f12f8b7ce8384ba"
+    },
+    {
+      "file": "sugar/free-spins-trigger.mp3",
+      "duration": 2.58,
+      "peakDb": -7.19,
+      "sha256": "fde13a1d6b6c07936310e5146b754020a36a19ad6f3abe4a91b06b5ba8223dcc"
+    },
+    {
+      "file": "sugar/free-spins-end.mp3",
+      "duration": 1.88,
+      "peakDb": -8.01,
+      "sha256": "853b52cdb752c5aad6f7439da825a343a58056b9fb512fb455c05d3529c2bfd0"
+    },
+    {
+      "file": "sugar/coin.mp3",
+      "duration": 0.5,
+      "peakDb": -9.97,
+      "sha256": "29d09421885c6f48173cab663185f152eb84b73c8cb5782d9de07e73ea06ec2a"
+    },
+    {
+      "file": "sugar/anticipation.mp3",
+      "duration": 1.38,
+      "peakDb": -8.1,
+      "sha256": "c816d6daa9be43fad07e7ad549f9e7e0bd5f7205969a34521ef3a78b1baab70b"
+    },
+    {
+      "file": "sugar/switch.mp3",
+      "duration": 1.23,
+      "peakDb": -7.66,
+      "sha256": "f11a6681c2c32bf90dbef6daf27b8381e8889bc44a95b3d7a6297631ac7b306d"
+    },
+    {
+      "file": "wanted/click.mp3",
+      "duration": 0.38,
+      "peakDb": -16.52,
+      "sha256": "e3807deb2ebdffa862d863bfe3989c2260ca9b796d9d4ac28cf2ae5156fb38c0"
+    },
+    {
+      "file": "wanted/tick.mp3",
+      "duration": 0.37,
+      "peakDb": -21.04,
+      "sha256": "ebb8ca598a6c3d0811afedf61bb929c5108943e7f13e21df901523d753f41b59"
+    },
+    {
+      "file": "wanted/spin.mp3",
+      "duration": 0.76,
+      "peakDb": -16.2,
+      "sha256": "2d65d5efb5f183ccd22d37002465ebbbf152935d4171f7f4f8660eb29f74df4f"
+    },
+    {
+      "file": "wanted/drop.mp3",
+      "duration": 0.5,
+      "peakDb": -13.53,
+      "sha256": "eb352e181ffba6ad10497b5035917cbe21cfb29ad2017d8d97d1f2cfec8a8676"
+    },
+    {
+      "file": "wanted/cascade-clear.mp3",
+      "duration": 0.5,
+      "peakDb": -17.39,
+      "sha256": "769c6ff4c0229b114b00afd785139de26d8ce2e89b52191ffc5355ac5de8e858"
+    },
+    {
+      "file": "wanted/cascade-fall.mp3",
+      "duration": 0.62,
+      "peakDb": -14.63,
+      "sha256": "565e62aaa6fe538b07e6e469d1edc5b6f777b0f07e27df03c014f6a155132a99"
+    },
+    {
+      "file": "wanted/cascade-land.mp3",
+      "duration": 0.54,
+      "peakDb": -14.48,
+      "sha256": "04de0249b40fc923cf1772906e6100b8da7df7240a46a0bd9dfe21659864b2e9"
+    },
+    {
+      "file": "wanted/win.mp3",
+      "duration": 0.9,
+      "peakDb": -8.44,
+      "sha256": "396081dbf61b2f5727776318f631b5cd51b1320845a7c951574fcf83d491472b"
+    },
+    {
+      "file": "wanted/big-win.mp3",
+      "duration": 1.83,
+      "peakDb": -7.79,
+      "sha256": "0210c9a9cd5fcd28f8b131b0f7ba0be4cb37c24fdd56ec9c908eb75e151dd2af"
+    },
+    {
+      "file": "wanted/mega-win.mp3",
+      "duration": 2.43,
+      "peakDb": -7.82,
+      "sha256": "cbc81bce9a9eb82c98898b3c411a4d9afb9c60602c27358bb00aadb681a02881"
+    },
+    {
+      "file": "wanted/multiplier.mp3",
+      "duration": 1.18,
+      "peakDb": -6.38,
+      "sha256": "ed49a4e11b5f36e97bce672c9418ae363320be1085dacb5560d7e94353d97864"
+    },
+    {
+      "file": "wanted/lightning-strike.mp3",
+      "duration": 1.08,
+      "peakDb": -9.22,
+      "sha256": "4e4a3d077b0b98424642b305ea907979eb384c5f5580ebd5f3c649485c6fcb1b"
+    },
+    {
+      "file": "wanted/thunder.mp3",
+      "duration": 1.48,
+      "peakDb": -9.75,
+      "sha256": "9c467691b8bae33681171c6fa1be78d1fce0add7a1c2fe26b83ccba3a7db3a46"
+    },
+    {
+      "file": "wanted/scatter-land.mp3",
+      "duration": 0.93,
+      "peakDb": -9.04,
+      "sha256": "8c6fdb42982280b678ac80f2aa360d131e4f97c92d42722b4cfc7e3e4186f6d6"
+    },
+    {
+      "file": "wanted/free-spins-trigger.mp3",
+      "duration": 2.58,
+      "peakDb": -7.55,
+      "sha256": "3159f25d03ccc4e2cc3dcc1d9c32567102f6affc1ccba2bc7daf4c00886dd2db"
+    },
+    {
+      "file": "wanted/free-spins-end.mp3",
+      "duration": 1.88,
+      "peakDb": -8.2,
+      "sha256": "2425821b5db6802c8b9ab760c3ca888b1ecee1ba880a030d852852f455c24a57"
+    },
+    {
+      "file": "wanted/coin.mp3",
+      "duration": 0.5,
+      "peakDb": -10.96,
+      "sha256": "3838d7407f17d539a4054e63bf0366b64fbcd1b9c7b4b7e19391fd29f71639d4"
+    },
+    {
+      "file": "wanted/anticipation.mp3",
+      "duration": 1.38,
+      "peakDb": -8.85,
+      "sha256": "2c23ca690aa1cee7c04b20b620e7d4b00e681d63fe34eab3bdf2a14ff4aafdf0"
+    },
+    {
+      "file": "wanted/switch.mp3",
+      "duration": 1.23,
+      "peakDb": -7.01,
+      "sha256": "3f4ba354b032b1a765255ef12590cb4c8581b994eb045611d4c74c9f0278e085"
+    },
+    {
+      "file": "wolf/click.mp3",
+      "duration": 0.38,
+      "peakDb": -20.08,
+      "sha256": "8901ac7f04d0251500e1b3c3a5d8a0429ce8bf75640a40fef3acf5d7923015c7"
+    },
+    {
+      "file": "wolf/tick.mp3",
+      "duration": 0.37,
+      "peakDb": -18.99,
+      "sha256": "4399a158be07fd7677001d73956ae0c13c639b1643e8c7c3c2cb221a9df8498f"
+    },
+    {
+      "file": "wolf/spin.mp3",
+      "duration": 0.76,
+      "peakDb": -15.17,
+      "sha256": "61df00f703a97c6e54363ae9a4e5d2ec8532fdda32f9efbea3b5abb2d2c913b2"
+    },
+    {
+      "file": "wolf/drop.mp3",
+      "duration": 0.5,
+      "peakDb": -14.44,
+      "sha256": "123a7334454eb2a1dede4a4c144c4ec0e08a005634dbc2e69dc07a7efb62f010"
+    },
+    {
+      "file": "wolf/cascade-clear.mp3",
+      "duration": 0.5,
+      "peakDb": -18.26,
+      "sha256": "0baba9878c05fa0c61198a3ceaacbf034efc49813516e54b5b96b29e9693dd8f"
+    },
+    {
+      "file": "wolf/cascade-fall.mp3",
+      "duration": 0.62,
+      "peakDb": -16.36,
+      "sha256": "c7f9ee63baba203f6a5c3adc146aaf0b5f4bda7fa1e935c1e2a2ad7cf2c51b56"
+    },
+    {
+      "file": "wolf/cascade-land.mp3",
+      "duration": 0.54,
+      "peakDb": -16.04,
+      "sha256": "82e259fdbc281d833d14c71701e170e87c44515f384977cb131b7fca93be4031"
+    },
+    {
+      "file": "wolf/win.mp3",
+      "duration": 0.9,
+      "peakDb": -10.01,
+      "sha256": "be537a30ba5dc2d42e8f3d49766c053d4e11a79240f862635ba593c55ab7cc25"
+    },
+    {
+      "file": "wolf/big-win.mp3",
+      "duration": 1.83,
+      "peakDb": -10.3,
+      "sha256": "398bac1e70204dd16a5a7f257c255cf30c317d5fb654c8b405ca638e7746cf81"
+    },
+    {
+      "file": "wolf/mega-win.mp3",
+      "duration": 2.43,
+      "peakDb": -10.53,
+      "sha256": "e0fbff01daa18cd1cd52aa7695f67b0653786f72fecc946b6107285ace0a1734"
+    },
+    {
+      "file": "wolf/multiplier.mp3",
+      "duration": 1.18,
+      "peakDb": -8.32,
+      "sha256": "00862c6807d3160a58df9b433028e62264bec18e30939ef2ac6fb75c45754372"
+    },
+    {
+      "file": "wolf/lightning-strike.mp3",
+      "duration": 1.08,
+      "peakDb": -7.99,
+      "sha256": "78d281a9b6398f90df1d9775d90615fe60a9abfdaad5817564700e9a095873bc"
+    },
+    {
+      "file": "wolf/thunder.mp3",
+      "duration": 1.48,
+      "peakDb": -9.02,
+      "sha256": "6985c7f675e9c396a4471679eb90af17d5d50c52ebf38f1acf4e3e612a114c1d"
+    },
+    {
+      "file": "wolf/scatter-land.mp3",
+      "duration": 0.93,
+      "peakDb": -10.66,
+      "sha256": "3db420f88e7fe49f99ff0d84810505de20bfd5718f49214c1871142558e73d90"
+    },
+    {
+      "file": "wolf/free-spins-trigger.mp3",
+      "duration": 2.58,
+      "peakDb": -11.14,
+      "sha256": "e96fd6a46b72753b8c1531809761e8744b9e4dac70e606d01435d7bdfe2e0ee3"
+    },
+    {
+      "file": "wolf/free-spins-end.mp3",
+      "duration": 1.88,
+      "peakDb": -8.67,
+      "sha256": "ce6c77a3fb3e038222be2abb52859f7e71970553b8c13e7620362fb4f0f99e73"
+    },
+    {
+      "file": "wolf/coin.mp3",
+      "duration": 0.5,
+      "peakDb": -11.35,
+      "sha256": "f544ed8afb7be43b086d469a3e2c0808ebfb9e63890d6c1d27fa29caba15a21a"
+    },
+    {
+      "file": "wolf/anticipation.mp3",
+      "duration": 1.38,
+      "peakDb": -11.99,
+      "sha256": "d554efd2e10420690caa9b3b55f918203a56fec9328595c0cfd4e00bd5e313b6"
+    },
+    {
+      "file": "wolf/switch.mp3",
+      "duration": 1.23,
+      "peakDb": -8.97,
+      "sha256": "f26379005a9648ac4e052153dbe042fb2ef579d809d02321248ca4a35eb0f9e1"
+    },
+    {
+      "file": "pharaoh/click.mp3",
+      "duration": 0.38,
+      "peakDb": -18.21,
+      "sha256": "79b3f3fdc8fa368fb9ce5aae45117ec08485d70b719275ce228d32c6a75f0964"
+    },
+    {
+      "file": "pharaoh/tick.mp3",
+      "duration": 0.37,
+      "peakDb": -18.6,
+      "sha256": "aa13b4f35e3f0f5a391df10ea765f0ca6f56ae97b105ba060043ee137c84b963"
+    },
+    {
+      "file": "pharaoh/spin.mp3",
+      "duration": 0.76,
+      "peakDb": -15.61,
+      "sha256": "fa82f4ae05f4c5ceb48ea975a5b13ca6cfa1ecaa925dc38865dd288b6527f0b6"
+    },
+    {
+      "file": "pharaoh/drop.mp3",
+      "duration": 0.5,
+      "peakDb": -14.6,
+      "sha256": "07ea22ed616eb311f200bbafdab5902df90a361aba347b4acff29d31a789386c"
+    },
+    {
+      "file": "pharaoh/cascade-clear.mp3",
+      "duration": 0.5,
+      "peakDb": -13.98,
+      "sha256": "b77a015b55d6452dfac631d6c622e7c1de4af51a6060638fbc03d70c96134278"
+    },
+    {
+      "file": "pharaoh/cascade-fall.mp3",
+      "duration": 0.62,
+      "peakDb": -13.28,
+      "sha256": "a61e7e44b81cb8e83a7aae4d7c64297747dfb9fa2e9439c3e976f05e009341d3"
+    },
+    {
+      "file": "pharaoh/cascade-land.mp3",
+      "duration": 0.54,
+      "peakDb": -13.84,
+      "sha256": "53bc9e681c779105db13d292e547cb654bc2be5a67fb33b3dab580de91c4b52e"
+    },
+    {
+      "file": "pharaoh/win.mp3",
+      "duration": 0.9,
+      "peakDb": -6.41,
+      "sha256": "0893023edcbc4a233f58d8a58b1dbd50f96a92f273f618992bf0c87299b268d8"
+    },
+    {
+      "file": "pharaoh/big-win.mp3",
+      "duration": 1.83,
+      "peakDb": -6.8,
+      "sha256": "10bf7b17eeb2f066b067648a4b5ac0efe8d37a3d3a37430ee314835a6a4deba2"
+    },
+    {
+      "file": "pharaoh/mega-win.mp3",
+      "duration": 2.43,
+      "peakDb": -6.54,
+      "sha256": "91d7d128926c8a25184959f2051784db15279343a8f9979060286f0722fbfa71"
+    },
+    {
+      "file": "pharaoh/multiplier.mp3",
+      "duration": 1.18,
+      "peakDb": -6.38,
+      "sha256": "1f240f64e1464dd8369d4f7d8592b16ba1591d05ec6318ce3bcfc72651610a20"
+    },
+    {
+      "file": "pharaoh/lightning-strike.mp3",
+      "duration": 1.08,
+      "peakDb": -10.11,
+      "sha256": "f96f4abf76f811035378ef11cd7b903e92fb468f239800d9c2e10aedb9a8125f"
+    },
+    {
+      "file": "pharaoh/thunder.mp3",
+      "duration": 1.48,
+      "peakDb": -9.19,
+      "sha256": "becf06e6b9f7fd7f11df2d17fb41f413ca3f073b9fc5e863e20e1da4af7d86fe"
+    },
+    {
+      "file": "pharaoh/scatter-land.mp3",
+      "duration": 0.93,
+      "peakDb": -8.2,
+      "sha256": "bb3dcb8b3f6b601ef81b272940c7bdf153621530997a4b5acd8ba5708ae826d4"
+    },
+    {
+      "file": "pharaoh/free-spins-trigger.mp3",
+      "duration": 2.58,
+      "peakDb": -6.54,
+      "sha256": "c6aa54cf634df698eed19b5ccc8724c486997ef2e246d7e24655fbee196f8957"
+    },
+    {
+      "file": "pharaoh/free-spins-end.mp3",
+      "duration": 1.88,
+      "peakDb": -7.59,
+      "sha256": "a969e5fd7d4720441c0351c2e34bafd7392198fbd7680134cf7b2a6507316a28"
+    },
+    {
+      "file": "pharaoh/coin.mp3",
+      "duration": 0.5,
+      "peakDb": -10.37,
+      "sha256": "150d2fbbe4ead26f9ed9fb3273004007851e2b0a38a58999b41faedd1794ffe9"
+    },
+    {
+      "file": "pharaoh/anticipation.mp3",
+      "duration": 1.38,
+      "peakDb": -7.85,
+      "sha256": "9a66cf3b3d2bcf2e4c4def1de0a1c3faa454f0cd14abee3c445bd3b884bdf4d6"
+    },
+    {
+      "file": "pharaoh/switch.mp3",
+      "duration": 1.23,
+      "peakDb": -7.72,
+      "sha256": "6b6d629009bcd0cd39aa3d9404eeb426b28e65284359de5d2044aff47784f5e1"
+    },
+    {
+      "file": "juan/click.mp3",
+      "duration": 0.38,
+      "peakDb": -18.21,
+      "sha256": "3f3a38e5e45c29bf33dd6d59d160f8be0117bf36dd50d5d5841c4b81139a4f06"
+    },
+    {
+      "file": "juan/tick.mp3",
+      "duration": 0.37,
+      "peakDb": -21.4,
+      "sha256": "d82aecb7c29797a0b434d98502d4c7a609962bea85d10dd5c466b1aa92ea46ce"
+    },
+    {
+      "file": "juan/spin.mp3",
+      "duration": 0.76,
+      "peakDb": -14.13,
+      "sha256": "ced0b41e9217187fb023e2175336b9cb382909c83bf4d430233dd3fb858399c8"
+    },
+    {
+      "file": "juan/drop.mp3",
+      "duration": 0.5,
+      "peakDb": -15.65,
+      "sha256": "66e2ab848ebc632b1837af7c315c965a4420ba5b3a88f0fbdfd9c57af663db0e"
+    },
+    {
+      "file": "juan/cascade-clear.mp3",
+      "duration": 0.5,
+      "peakDb": -16.13,
+      "sha256": "99a2b569fc8d42b64b00945a396d32b989b953c91b44db3b45df46c94fda3336"
+    },
+    {
+      "file": "juan/cascade-fall.mp3",
+      "duration": 0.62,
+      "peakDb": -14.85,
+      "sha256": "58ea384accf0cdba308f26902f471e5f034ca3433313be46423791210afb5299"
+    },
+    {
+      "file": "juan/cascade-land.mp3",
+      "duration": 0.54,
+      "peakDb": -14.74,
+      "sha256": "143cc660735ed5aa81f4c3837c8fed9bd5c2cf5b9c705e191b55d316601aa662"
+    },
+    {
+      "file": "juan/win.mp3",
+      "duration": 0.9,
+      "peakDb": -8.74,
+      "sha256": "aa1ab461cea863a709c49c8a1f2b02f010cc3f316c5dd420504a673bbb69a101"
+    },
+    {
+      "file": "juan/big-win.mp3",
+      "duration": 1.83,
+      "peakDb": -6.56,
+      "sha256": "2c3d3865f1215c69721ac690dde276572caae6f67f074c5bd972cd306222d8d9"
+    },
+    {
+      "file": "juan/mega-win.mp3",
+      "duration": 2.43,
+      "peakDb": -7.16,
+      "sha256": "271eee588828f76775584b9d24e2653f359729ca06e36257fa34ff807c2ae014"
+    },
+    {
+      "file": "juan/multiplier.mp3",
+      "duration": 1.18,
+      "peakDb": -7.62,
+      "sha256": "10d47488d58f13eebfec5c0d19fe440535eb77430000af80c4d589f33c11d6fd"
+    },
+    {
+      "file": "juan/lightning-strike.mp3",
+      "duration": 1.08,
+      "peakDb": -9.23,
+      "sha256": "f63845a62fe0f912c9adc1b5d6a8962d9f34bac4fc3e29fd4e1d896482f32b1e"
+    },
+    {
+      "file": "juan/thunder.mp3",
+      "duration": 1.48,
+      "peakDb": -7.72,
+      "sha256": "37e03c1eedb78291b16bf24ebfe8e7f84c07033608346806ad479f21418bfb42"
+    },
+    {
+      "file": "juan/scatter-land.mp3",
+      "duration": 0.93,
+      "peakDb": -8.52,
+      "sha256": "e35bd53879fe88800816b72c2afcc360faa1c7416b2a2c23343f52b6316c4eac"
+    },
+    {
+      "file": "juan/free-spins-trigger.mp3",
+      "duration": 2.58,
+      "peakDb": -7.15,
+      "sha256": "19816bab60c38f4e109d2533ce3d794b3695f83444b5d17e2fa9c259f6d1c9af"
+    },
+    {
+      "file": "juan/free-spins-end.mp3",
+      "duration": 1.88,
+      "peakDb": -7.66,
+      "sha256": "c2b514977ddd247416212cb5a283592eb9eb7630b621c7f546c6f730c9323d52"
+    },
+    {
+      "file": "juan/coin.mp3",
+      "duration": 0.5,
+      "peakDb": -10.71,
+      "sha256": "5fc577c9c46bbe6fef9a8fb631723ad310786e349ea54cea43fef6fbcdc1536f"
+    },
+    {
+      "file": "juan/anticipation.mp3",
+      "duration": 1.38,
+      "peakDb": -8.7,
+      "sha256": "bbc81084c10c09af662c6c45f11f3d7d43d33c7860eaa8784dd52837f6cd58a1"
+    },
+    {
+      "file": "juan/switch.mp3",
+      "duration": 1.23,
+      "peakDb": -7.38,
+      "sha256": "c9fc2a1740855a92e5cc2549bf5b077ce6eaa1925594c7cf79628beef55c35f0"
+    },
+    {
+      "file": "bass/click.mp3",
+      "duration": 0.38,
+      "peakDb": -20.13,
+      "sha256": "175c70d5f5b213253aa6de7ee2af02a5f1cc0fea8f734af512a61f9e3ee25a73"
+    },
+    {
+      "file": "bass/tick.mp3",
+      "duration": 0.37,
+      "peakDb": -17.62,
+      "sha256": "bf1e31c03eac4ba2c8f86f1e13c6dbad31040bbe272928a07e358fc158c0bce7"
+    },
+    {
+      "file": "bass/spin.mp3",
+      "duration": 0.76,
+      "peakDb": -16.39,
+      "sha256": "6c2fc7685b2f6735fd92550c907f2f92d72b83237a1fc697da1e1df8c244756d"
+    },
+    {
+      "file": "bass/drop.mp3",
+      "duration": 0.5,
+      "peakDb": -14.02,
+      "sha256": "3be7ad2a4e961c04b8dfce79d4e45dcf3bb0bbf69c3689deca0d3554d96b8266"
+    },
+    {
+      "file": "bass/cascade-clear.mp3",
+      "duration": 0.5,
+      "peakDb": -17.81,
+      "sha256": "695a9658b7514ac216894cb1c329c5b534fcd34552c8f43cd740a8a25ce9dfbd"
+    },
+    {
+      "file": "bass/cascade-fall.mp3",
+      "duration": 0.62,
+      "peakDb": -15.75,
+      "sha256": "5499a230ded8ddfac06252026fc832132fc12da4ca8e9c0678d6cc02bb2487e3"
+    },
+    {
+      "file": "bass/cascade-land.mp3",
+      "duration": 0.54,
+      "peakDb": -14.89,
+      "sha256": "51dea583d8e365c5e531713dfbb685233a6584b0acaa2ef309bd734a81a1f0e6"
+    },
+    {
+      "file": "bass/win.mp3",
+      "duration": 0.9,
+      "peakDb": -10.51,
+      "sha256": "6edcdd8517828139a517e55a01b10abf7400c8c88e4ddb7a6b6b86204cdf5257"
+    },
+    {
+      "file": "bass/big-win.mp3",
+      "duration": 1.83,
+      "peakDb": -9.49,
+      "sha256": "8819ae00ea3afd1007a60459ef109d696440355d7f7f3b2dd81d2b6a8f4ebb6b"
+    },
+    {
+      "file": "bass/mega-win.mp3",
+      "duration": 2.43,
+      "peakDb": -10.01,
+      "sha256": "a560454ded7c6e7a2ece84eb94e115a3c657a6aa4968482299415da519d79e96"
+    },
+    {
+      "file": "bass/multiplier.mp3",
+      "duration": 1.18,
+      "peakDb": -9.79,
+      "sha256": "dbd691a18180c7db8b664cd85a043f3bcf3cf4efc665299ed79a33038272279d"
+    },
+    {
+      "file": "bass/lightning-strike.mp3",
+      "duration": 1.08,
+      "peakDb": -9.0,
+      "sha256": "52ddc2097112ba923fa262b08630a636e16d0437365a36cee8f0f06b48dee66d"
+    },
+    {
+      "file": "bass/thunder.mp3",
+      "duration": 1.48,
+      "peakDb": -10.56,
+      "sha256": "7092482a6b3d9db15242f6b87ae65414c3aea4af9000a4662e5ba5f49fe00891"
+    },
+    {
+      "file": "bass/scatter-land.mp3",
+      "duration": 0.93,
+      "peakDb": -10.18,
+      "sha256": "5550ce5532739353934451a796b1a2bf8b70cd75f19dc4b77acc9b76815451f3"
+    },
+    {
+      "file": "bass/free-spins-trigger.mp3",
+      "duration": 2.58,
+      "peakDb": -9.3,
+      "sha256": "bf9b04cca8482983e041ee84af8da6625eb85fbb86bf8b61b7c2d8ffccfc372f"
+    },
+    {
+      "file": "bass/free-spins-end.mp3",
+      "duration": 1.88,
+      "peakDb": -8.35,
+      "sha256": "deb96a78e2482178b042d8d641be272154caa24031ffe8218ec492237d72be83"
+    },
+    {
+      "file": "bass/coin.mp3",
+      "duration": 0.5,
+      "peakDb": -11.07,
+      "sha256": "bab98ada8f9dd0392e6342e75126a30c33c700b066e60f176d5339632428851f"
+    },
+    {
+      "file": "bass/anticipation.mp3",
+      "duration": 1.38,
+      "peakDb": -10.62,
+      "sha256": "4326f15857f38f1c8464ddc9711e4a77df2486b5a1163ef979e1a8a62aad8066"
+    },
+    {
+      "file": "bass/switch.mp3",
+      "duration": 1.23,
+      "peakDb": -9.83,
+      "sha256": "6f4bd0fd448421fec45e8311f2fa987384c2bf33179a301f23e46826a45c9460"
+    },
+    {
+      "file": "lounge/click.mp3",
+      "duration": 0.38,
+      "peakDb": -19.02,
+      "sha256": "f7126dca67d5eabb9b8c59ed30775d302fb4204c06f9196b2d7f98ba1b37ec4f"
+    },
+    {
+      "file": "lounge/tick.mp3",
+      "duration": 0.37,
+      "peakDb": -19.56,
+      "sha256": "5bc5906c9e31ce5c4129a9cebeab69f941ff4cc1c2d4e8bf51afb42aff57063d"
+    },
+    {
+      "file": "lounge/spin.mp3",
+      "duration": 0.76,
+      "peakDb": -14.61,
+      "sha256": "288dccb50f3ef0517878213b6e1394d241bb6c3af6e827d7f13616aca0242eb1"
+    },
+    {
+      "file": "lounge/drop.mp3",
+      "duration": 0.5,
+      "peakDb": -14.96,
+      "sha256": "4a2a74d651ed846797f3748f79e6f1c90d52b2b2ad15486674ec7e87cd5d73cd"
+    },
+    {
+      "file": "lounge/cascade-clear.mp3",
+      "duration": 0.5,
+      "peakDb": -15.73,
+      "sha256": "c4122fade0f3eba8c458c612213ed03e05c82f85c2ee05a5ffd9136bece7edc8"
+    },
+    {
+      "file": "lounge/cascade-fall.mp3",
+      "duration": 0.62,
+      "peakDb": -15.5,
+      "sha256": "6c601e3e9fd87429f03bd38fc30b2d811f2ae475fd0735dc174d40d3b522dbbc"
+    },
+    {
+      "file": "lounge/cascade-land.mp3",
+      "duration": 0.54,
+      "peakDb": -15.11,
+      "sha256": "d0881f10aae4e1eb817901e400c75e1325de4588d3272426471dab6d0effa336"
+    },
+    {
+      "file": "lounge/win.mp3",
+      "duration": 0.9,
+      "peakDb": -10.37,
+      "sha256": "2046779c20a42983ecd10ba9a30e4881b6ba337ef709a22d4f451889c9317ab3"
+    },
+    {
+      "file": "lounge/big-win.mp3",
+      "duration": 1.83,
+      "peakDb": -11.84,
+      "sha256": "ed6e8efd0e5f035d26fc1f8a19377c75ea5c00071effc8137c747fde235042ff"
+    },
+    {
+      "file": "lounge/mega-win.mp3",
+      "duration": 2.43,
+      "peakDb": -10.26,
+      "sha256": "0d1d22b317b51ff500ff634adf6d454edf10b259a2b641550326e6e713e836dc"
+    },
+    {
+      "file": "lounge/multiplier.mp3",
+      "duration": 1.18,
+      "peakDb": -9.96,
+      "sha256": "dc54525cdae83987febbf412a1fb5ed57c19e3012165b1149a10964d3cbd02f8"
+    },
+    {
+      "file": "lounge/lightning-strike.mp3",
+      "duration": 1.08,
+      "peakDb": -9.55,
+      "sha256": "10b316e3209363fc7eda573eb77a6977cc890a1e3814f86db899e585b7f2e755"
+    },
+    {
+      "file": "lounge/thunder.mp3",
+      "duration": 1.48,
+      "peakDb": -9.38,
+      "sha256": "f97f6874b4e2704da6bd0d875d68f36f63b40c16512ca08b8c0fcacacba6d76d"
+    },
+    {
+      "file": "lounge/scatter-land.mp3",
+      "duration": 0.93,
+      "peakDb": -9.3,
+      "sha256": "c6956bddd4c99ff6c4af5746f9fdcb9a2551395ccfffd18c01f5d59a434be635"
+    },
+    {
+      "file": "lounge/free-spins-trigger.mp3",
+      "duration": 2.58,
+      "peakDb": -10.46,
+      "sha256": "54714bd05bfc34aeb18b4f4ea9fe0b4ba80575c81c2ee0f87d8364ee70d11d07"
+    },
+    {
+      "file": "lounge/free-spins-end.mp3",
+      "duration": 1.88,
+      "peakDb": -9.37,
+      "sha256": "63bc0cde3229f182c4ffe1985ae513d219c5d6aa37b2d78e2456e3f00d80336a"
+    },
+    {
+      "file": "lounge/coin.mp3",
+      "duration": 0.5,
+      "peakDb": -11.82,
+      "sha256": "cf1f62c376a58ad2b02cc0d299a68b801b457a85166400e9ccbdab8f050470a1"
+    },
+    {
+      "file": "lounge/anticipation.mp3",
+      "duration": 1.38,
+      "peakDb": -11.49,
+      "sha256": "c0e765ec7c28daaa0fd95c619d3f8dfabc7f2189b3d1d2a094e92e2736cfeb0e"
+    },
+    {
+      "file": "lounge/switch.mp3",
+      "duration": 1.23,
+      "peakDb": -9.01,
+      "sha256": "fc518e76a9ef7c58231e1c3ef2f2c993fffd9d6b0b40e4d74dbe56509f762ded"
+    },
+    {
+      "file": "olympus/music-base.mp3",
+      "duration": 16.28,
+      "peakDb": -7.84,
+      "sha256": "d61f43a761c313039d2f5a3b9345027dfcf65fababdc4e24f7452ce4c0c2d920"
+    },
+    {
+      "file": "olympus/music-free.mp3",
+      "duration": 16.28,
+      "peakDb": -8.08,
+      "sha256": "f248e6c8be0d9e30c0475e7e20325ee15a7419c8664c54f37a35f200ce1ecc43"
+    },
+    {
+      "file": "bonanza/music-base.mp3",
+      "duration": 16.28,
+      "peakDb": -9.18,
+      "sha256": "d27a327e3caa7fc862323653b174bb8618368d58044ff26f54752c0f640f4396"
+    },
+    {
+      "file": "bonanza/music-free.mp3",
+      "duration": 16.28,
+      "peakDb": -8.98,
+      "sha256": "8b3c62994c2442f338b397eeb91119f5704f31816bd2c45c946e01c0fcf8e95c"
+    },
+    {
+      "file": "sugar/music-base.mp3",
+      "duration": 16.28,
+      "peakDb": -9.02,
+      "sha256": "36d54ef16d859d0a6f69a88774fdc03f535bfa3892c79cb26757ddc8ea664d30"
+    },
+    {
+      "file": "sugar/music-free.mp3",
+      "duration": 16.28,
+      "peakDb": -8.0,
+      "sha256": "28bcff1447c215b77dc2df1b850c4be8dd237ee44922f1dcf32cd55173d53515"
+    },
+    {
+      "file": "wanted/music-base.mp3",
+      "duration": 16.28,
+      "peakDb": -8.34,
+      "sha256": "2ee86444969b3cd3a4ed372c8d6e6f8017041283a4c53223eb6d6d9d5c886fbe"
+    },
+    {
+      "file": "wanted/music-free.mp3",
+      "duration": 16.28,
+      "peakDb": -8.63,
+      "sha256": "778190981a5a1b9ae56a565d2dc54f736da29c642e9f5da817f533ed0f9f5675"
+    },
+    {
+      "file": "wolf/music-base.mp3",
+      "duration": 16.28,
+      "peakDb": -8.65,
+      "sha256": "97bf470bdadac5df6659da6e6d2c61ffb3de45900a19a1ef3f44a116af347fd1"
+    },
+    {
+      "file": "wolf/music-free.mp3",
+      "duration": 16.28,
+      "peakDb": -8.04,
+      "sha256": "1b306fda66ce660becf81b87613d79c01441746db743d18cc6f31693e50b51a8"
+    },
+    {
+      "file": "pharaoh/music-base.mp3",
+      "duration": 16.28,
+      "peakDb": -8.09,
+      "sha256": "011ce4214d1ee0f6344bff7bfa60789b95d2b11ce915d8159d5ed38d56582df9"
+    },
+    {
+      "file": "pharaoh/music-free.mp3",
+      "duration": 16.28,
+      "peakDb": -8.19,
+      "sha256": "643aa85317d73beebdab404dc4a3f9047b2043cb04c2bd1d35e49109b7d2e171"
+    },
+    {
+      "file": "juan/music-base.mp3",
+      "duration": 16.28,
+      "peakDb": -7.83,
+      "sha256": "0f4917fb746b78aaca50791968d9824674219b01378fbaad927936390d8a3443"
+    },
+    {
+      "file": "juan/music-free.mp3",
+      "duration": 16.28,
+      "peakDb": -7.74,
+      "sha256": "00fcb08089c31dc2ff3af309315bd13e2e75faa33c94473d9db3f78068c82ae2"
+    },
+    {
+      "file": "bass/music-base.mp3",
+      "duration": 16.28,
+      "peakDb": -8.48,
+      "sha256": "dcde0ac3234fd0daa6f2a580601a26ef634d13f7c8e1d4cbaae673b3f5ce8d80"
+    },
+    {
+      "file": "bass/music-free.mp3",
+      "duration": 16.28,
+      "peakDb": -9.17,
+      "sha256": "43d9053b453694a38caea5da9f1bbeaf222cc91510f279f0210bfe6fa280aeea"
+    },
+    {
+      "file": "lounge/music-base.mp3",
+      "duration": 16.28,
+      "peakDb": -9.81,
+      "sha256": "ff417fb0a3be1e5cb79639a1b58300ea7dd27bb852a0c1caf861407418d115ed"
+    },
+    {
+      "file": "lounge/music-free.mp3",
+      "duration": 16.28,
+      "peakDb": -9.69,
+      "sha256": "ca5b8e946ec11a22c2ca4cff6a8fb95cd6941e659840fc8303f4255feaeabcd6"
+    }
+  ]
+}

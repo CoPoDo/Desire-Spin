@@ -1,9 +1,10 @@
 import { useState } from 'react';
+import { AudioSettings } from '../components/AudioSettings';
 import { useGame } from '../game-context';
 import { Modal } from '../components/ui/Modal';
 
 export function Settings() {
-  const { balance, sound, fairness, history, session } = useGame();
+  const { balance, fairness, history, session } = useGame();
   const [confirm, setConfirm] = useState<'balance' | 'zero' | 'seeds' | 'history' | 'stats' | null>(null);
   const actions = {
     balance: { title: 'Reset play balance?', text: 'Your play-money balance will become 1,000 credits. Your history and stats will stay unchanged.', run: () => balance.reset(1000) },
@@ -15,7 +16,7 @@ export function Settings() {
   return <div className="max-w-2xl space-y-6">
     <div><p className="label mb-2">Your lounge</p><h1 className="font-display text-3xl font-bold">Settings</h1></div>
     <section className="card p-5 space-y-3"><h2 className="font-semibold">Play-money balance</h2><p className="text-sm text-ink-dim">Current balance: <span className="font-mono">{balance.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span> credits</p><div className="flex flex-wrap gap-2"><button className="btn-primary" onClick={() => balance.credit(1000)}>Add 1,000</button><button className="btn-ghost" onClick={() => setConfirm('balance')}>Reset to 1,000</button><button className="btn-danger" onClick={() => setConfirm('zero')}>Set to zero</button></div></section>
-    <section className="card p-5 space-y-3"><h2 className="font-semibold">Sound & motion</h2><label className="flex items-center gap-3 text-sm py-2"><input type="checkbox" checked={sound.enabled} onChange={(event) => sound.setEnabled(event.target.checked)} className="accent-accent w-5 h-5" />Sound effects</label><p className="text-xs text-ink-dim">Animations follow your device's reduced-motion preference.</p></section>
+    <section className="card p-5 space-y-3"><h2 className="font-semibold">Sound & motion</h2><AudioSettings /><p className="text-xs text-ink-dim">Animations follow your device's reduced-motion preference.</p></section>
     <section className="card p-5 space-y-3"><h2 className="font-semibold">Local fairness seeds</h2><p className="text-sm text-ink-dim">Rotate the local seed to reveal it and start a new one. Save revealed seeds before rotating again if you want to replay earlier rounds.</p><div className="flex flex-wrap gap-2"><button className="btn-ghost" onClick={fairness.rotate}>Rotate local seed</button><button className="btn-danger" onClick={() => setConfirm('seeds')}>Reset all seeds</button></div></section>
     <section className="card p-5 space-y-3"><h2 className="font-semibold">Your activity</h2><p className="text-sm text-ink-dim">{history.history.length} recent bets saved. Stats include all settled rounds since your last reset.</p><div className="flex flex-wrap gap-2"><button className="btn-danger" onClick={() => setConfirm('history')}>Clear history</button><button className="btn-ghost" onClick={() => setConfirm('stats')}>Reset stats</button></div></section>
     <p className="text-xs text-ink-mute">Everything stays in this browser. Clearing site data resets your credits, history, preferences and seeds. Nothing here has monetary value.</p>

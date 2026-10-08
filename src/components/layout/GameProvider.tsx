@@ -10,11 +10,11 @@ import { GameContext } from '../../game-context';
 /** Provides game-wide state (balance, fairness, history, sound, sessionStats)
  *  without any visual chrome. Used by both Layout (lobby/settings) and
  *  SlotPageLayout (full-screen immersive game pages). */
-export function GameProvider({ children }: { children: ReactNode }) {
+export function GameProvider({ children, audioRoute = '/' }: { children: ReactNode; audioRoute?: string }) {
   const balance = useBalance();
   const fairness = useFairness();
   const history = useBetHistory();
-  const sound = useSound();
+  const sound = useSound(audioRoute);
   const session = useSessionStats();
   const favorites = useFavorites();
   return (

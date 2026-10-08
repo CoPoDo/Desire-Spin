@@ -22,7 +22,7 @@ vi.mock('../src/game-context', () => ({ useGame: () => ({
 }) }));
 vi.mock('../src/pages/slots/_shared/ArtworkGate', () => ({ ArtworkGate: ({ children }: { children: React.ReactNode }) => children }));
 vi.mock('../src/hooks/useMusic', () => ({ useMusic: () => ({ start: vi.fn(), stop: vi.fn(), duck: vi.fn(), musicEnabled: false, setMusicEnabled: vi.fn() }) }));
-vi.mock('../src/lib/zeusVoice', () => ({ primeZeus: vi.fn(), speakZeus: vi.fn(), zeusLineFor: () => '' }));
+vi.mock('../src/lib/zeusVoice', () => ({ primeZeus: vi.fn(), cancelZeus: vi.fn(), speakZeus: vi.fn(), zeusLineFor: () => '' }));
 vi.mock('../src/lib/confetti', () => ({ fireConfetti: vi.fn() }));
 vi.mock('framer-motion', async () => {
   const React = await import('react');
@@ -133,6 +133,7 @@ describe('slot round ownership and accessible controls', () => {
   it('allows a tumble reel to be skipped immediately without a second wager', async () => {
     viewTumble();
     fireEvent.click(screen.getByRole('button', { name: 'Spin' }));
+    expect(screen.getByRole('button', { name: /Turbo (on|off)/ })).toBeDisabled();
     fireEvent.click(screen.getByRole('button', { name: 'Skip to result' }));
     await act(async () => { await Promise.resolve(); });
     expect(state.debit).toHaveBeenCalledTimes(1);
@@ -154,11 +155,12 @@ describe('slot round ownership and accessible controls', () => {
     state.consumeNonce.mockReturnValueOnce({ serverSeed: 'sugar-control', clientSeed: 'client', nonce });
     const view = render(<SugarRush />);
     fireEvent.click(screen.getByRole('button', { name: 'Spin · 1.00' }));
-    await act(async () => { await vi.advanceTimersByTimeAsync(650); });
+    expect(screen.getByRole('button', { name: /Turbo (on|off)/ })).toBeDisabled();
+    await act(async () => { await vi.advanceTimersByTimeAsync(1190); });
     const candy = view.container.querySelector<HTMLElement>(`[data-slot-cell-key="${viewKey}"]`)!;
     expect(candy.dataset.position).toBe(String(oldPosition));
     const art = candy.innerHTML;
-    await act(async () => { await vi.advanceTimersByTimeAsync(520); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(1190); });
     const landed = view.container.querySelector<HTMLElement>(`[data-slot-cell-key="${viewKey}"]`)!;
     expect(landed).toBe(candy);
     expect(landed.innerHTML).toBe(art);

@@ -1,0 +1,42 @@
+{
+  "engine": "Chatterbox English (official ResembleAI public demo)",
+  "modelLicense": "MIT",
+  "source": "https://huggingface.co/spaces/ResembleAI/Chatterbox",
+  "modelCard": "https://huggingface.co/ResembleAI/chatterbox",
+  "synthetic": true,
+  "watermark": "Upstream PerTh embedded; no removal attempted. Detection after editing not independently verified.",
+  "selectedDirection": "User preferred expressive option 2 on 2026-10-08. Exact performance split, not regenerated.",
+  "sourceWavSha256": "7aa1ac8c22f5fca615ed962e8e08e6358b56f309bc8b39ba263aed775602d828",
+  "originalText": "Behold my power! Rise, and claim your glory!",
+  "originalGeneration": {
+    "referenceAudio": null,
+    "exaggeration": 1.25,
+    "temperature": 0.8,
+    "seed": 4271,
+    "cfgWeight": 0.3
+  },
+  "files": [
+    {
+      "id": "power",
+      "text": "Behold my power!",
+      "file": "voices/olympus/power.mp3",
+      "sourceRangeSeconds": [
+        0,
+        1.78
+      ],
+      "durationSeconds": 1.764,
+      "sha256": "f70b260005a653f66710134d914b26f7c633d5a115eaa7aa7ad4b0a55e4f6c72"
+    },
+    {
+      "id": "glory",
+      "text": "Rise, and claim your glory!",
+      "file": "voices/olympus/glory.mp3",
+      "sourceRangeSeconds": [
+        1.78,
+        4.04
+      ],
+      "durationSeconds": 2.304,
+      "sha256": "a07bae63e0aee24a1a76abd52a865204873c056a7cb177d8ac89cca6bdf90447"
+    }
+  ]
+}
