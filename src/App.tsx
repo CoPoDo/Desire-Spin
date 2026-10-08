@@ -1,5 +1,5 @@
 import { lazy, Suspense, type ReactNode } from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { PlaySessionGuard } from './components/PlaySessionGuard';
 import { ComingSoon } from './components/layout/ComingSoon';
@@ -72,10 +72,11 @@ function SlotRoute({ title, accent, accentDeep, children }: { title: string; acc
 }
 
 export default function App() {
+  const { pathname } = useLocation();
   return (
     <ErrorBoundary>
       <PlaySessionGuard>
-        <GameProvider>
+        <GameProvider audioRoute={pathname}>
           <Routes>
             <Route path="/slots/sweet-bonanza" element={<SlotRoute title="Sweet Bonanza" accent="#ff7ab6" accentDeep="#a8307a"><SweetBonanza /></SlotRoute>} />
             <Route path="/slots/gates-of-olympus" element={<SlotRoute title="Gates of Olympus" accent="#ffd166" accentDeep="#c8932e"><GatesOfOlympus /></SlotRoute>} />

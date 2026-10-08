@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { AudioSettings } from '../AudioSettings';
+import { GameAudioSettings } from '../GameAudioSettings';
 import { Link, useLocation } from 'react-router-dom';
 import { useGame } from '../../game-context';
 import { GAME_REFERENCES } from '../../games/references';
@@ -11,19 +13,22 @@ export function GameMenu({ open, onClose }: { open: boolean; onClose: () => void
   const { sound } = useGame();
   const { pathname } = useLocation();
   const reference = GAME_REFERENCES.find((game) => game.route === pathname);
+  const [audioOpen, setAudioOpen] = useState(false);
   const [panel, setPanel] = useState<'stats' | 'history' | 'fairness' | 'rules' | null>(null);
   const show = (next: typeof panel) => { onClose(); setPanel(next); };
   return <>
     <Modal open={open} onClose={onClose} title="Game menu" width="sm">
       <div className="space-y-2">
         <p className="mb-4 text-xs text-ink-dim">Play-money credits · saved on this device</p>
-        <button className="game-menu-item" aria-pressed={sound.enabled} onClick={() => sound.setEnabled(!sound.enabled)}><span>Sound effects</span><span>{sound.enabled ? 'On' : 'Off'}</span></button>
+        <button className="game-menu-item" aria-pressed={sound.enabled} onClick={() => sound.setEnabled(!sound.enabled)}><span>All sound</span><span>{sound.enabled ? 'On' : 'Off'}</span></button>
+        <button className="game-menu-item" aria-expanded={audioOpen} onClick={() => setAudioOpen(!audioOpen)}>Audio mixer <span>{audioOpen ? '−' : '+'}</span></button>
+        {audioOpen && <><AudioSettings compact /><GameAudioSettings route={pathname} /></>}
         <button className="game-menu-item" onClick={() => show('rules')}>About this game <span>›</span></button>
         <button className="game-menu-item" onClick={() => show('stats')}>Session stats <span>›</span></button>
         <button className="game-menu-item" onClick={() => show('history')}>Bet history <span>›</span></button>
         <button className="game-menu-item" onClick={() => show('fairness')}>Local fairness <span>›</span></button>
         <Link className="game-menu-item" to="/settings" onClick={onClose}>Settings <span>›</span></Link>
-        <Link className="game-menu-item" to="/" onClick={onClose}>Back to lobby <span>↗</span></Link>
+        <Link className="game-menu-item" to="/" onClick={onClose}>Back to lobby <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M5 19 19 5M5 5h14v14" /></svg></Link>
       </div>
     </Modal>
     <Modal open={panel === 'rules'} onClose={() => setPanel(null)} title={reference?.title ?? 'About this game'}>

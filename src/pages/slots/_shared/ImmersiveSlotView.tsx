@@ -10,7 +10,7 @@ import { useMusic } from '../../../hooks/useMusic';
 import { usePersistedBet } from '../../../hooks/usePersistedBet';
 import { createRng } from '../../../lib/fairness';
 import { fireConfetti } from '../../../lib/confetti';
-import { speakZeus, zeusLineFor, primeZeus } from '../../../lib/zeusVoice';
+import { speakZeus, zeusLineFor, primeZeus, cancelZeus } from '../../../lib/zeusVoice';
 import { fmtCurrency, fmtMultiplier } from '../../../lib/format';
 import type {
   Frame,
@@ -87,12 +87,10 @@ export type ImmersiveSlotViewProps = {
 };
 
 // Frame delays — tuned so the cells visually FINISH landing before the
-// next frame fires. Cell drop in Grid.tsx uses 0.42s easing + a
-// per-column 0.05s stagger, so a 6-col grid takes ~670ms for the last
-// column to settle. Earlier 320ms initialDrop / 260ms tumble was way
-// too fast — the wins/tumble frame fired before the cells finished
-// dropping, so highlights painted on top of still-falling symbols.
-// The FS frames stay long for dramatic pacing (audited in earlier pass).
+// next frame fires. Cascades share an explicit gravity clock: 140ms to clear,
+// a 22ms column stagger, distance-aware falling, and a 70ms landing settle.
+// The full six-column journey fits within 650ms at normal speed; the buffer
+// below keeps the next win announcement off moving symbols.
 const FRAME_DELAY: Record<string, number> = {
   initialDrop: 200,         // the SpinReel inside the initialDrop case
                             //   already blocks for the full per-column
@@ -107,10 +105,7 @@ const FRAME_DELAY: Record<string, number> = {
                             // each) so this is just the breath after the
                             // last orb lands before the next frame fires.
   wins: 600,                // winning highlight hold
-  tumble: 850,              // matches tumble cells landing in last
-                            //   column (5*80ms stagger + 420ms drop ≈
-                            //   820ms). Was 540 — last column was still
-                            //   landing when the next frame fired.
+  tumble: 850,              // full gravity sequence plus a reading pause
   scattersWon: 750,         // scatter pay flash
   freeSpinsAwarded: 1100,   // award announcement
   freeSpinsBegin: 950,      // FS session start
@@ -233,13 +228,13 @@ export function ImmersiveSlotView({
   const [bigWinBolts, setBigWinBolts] = useState<{ id: string; d: string; tx: number; ty: number; delay: number }[]>([]);
   // Zeus eyes glow red briefly when divine events fire (multipliers
   // landing, lightning strike, free-spins trigger). Only shown on
-  // Olympus since Zeus is in that backdrop. Paired with a deep TTS
+  // Olympus since Zeus is in that backdrop. Paired with the selected prerecorded voice
   // line via lib/zeusVoice so the moment lands as "the god has
   // spoken" rather than just "a glow appeared".
   const [zeusEyesGlow, setZeusEyesGlow] = useState<boolean>(false);
   /** Visible Zeus speech-bubble callout. Pairs with the spoken voice
    *  line so players who have audio muted (or who use a browser without
-   *  reliable SpeechSynthesis) still see Zeus's pronouncement. The
+   *  audio playback) still see Zeus's pronouncement. The
    *  speakZeusWithCallout() wrapper below sets this whenever it speaks. */
   const [zeusCallout, setZeusCallout] = useState<{ text: string; key: number } | null>(null);
   const [scatterFlashes, setScatterFlashes] = useState<{ id: string; col: number; row: number }[]>([]);
@@ -279,13 +274,14 @@ export function ImmersiveSlotView({
   }, []);
   useEffect(() => { turboRef.current = turbo; saveJson('turbo', turbo); }, [turbo]);
 
-  // Speak a Zeus line AND show it as a visible callout — paired so the
-  // moment lands even if browser SpeechSynthesis doesn't play. Callout
-  // auto-clears after 1500ms; speakZeus has its own cooldown internally.
+  // Captions remain useful with narration muted. An older caption timeout
+  // cannot clear a newer line during a rapid multiplier/feature sequence.
   const speakAndShout = useCallback((line: string) => {
+    if (!line) return;
     if (soundEnabledRef.current) speakZeus(line);
-    setZeusCallout({ text: line, key: Date.now() });
-    const t = setTimeout(() => setZeusCallout(null), 1600);
+    const key = Date.now();
+    setZeusCallout({ text: line, key });
+    const t = setTimeout(() => setZeusCallout(current => current?.key === key ? null : current), 1600);
     spinTimers.current.push(t);
   }, []);
 
@@ -313,7 +309,7 @@ export function ImmersiveSlotView({
     return () => {
       aliveRef.current = false;
       music.stop(); // stop music when leaving the slot page
-      if (cfg.id === 'gates-of-olympus' && 'speechSynthesis' in window) window.speechSynthesis.cancel();
+      if (cfg.id === 'gates-of-olympus') cancelZeus();
       clearSpinTimers();
       // Unblock any reel-spin promise that's still awaiting — otherwise
       // playFrames would hang in its `await new Promise(...)` forever
@@ -326,7 +322,7 @@ export function ImmersiveSlotView({
   }, []);
 
   useEffect(() => {
-    if (!sound.enabled && cfg.id === 'gates-of-olympus' && 'speechSynthesis' in window) window.speechSynthesis.cancel();
+    if (!sound.enabled && cfg.id === 'gates-of-olympus') cancelZeus();
   }, [sound.enabled, cfg.id]);
 
   const playFrames = useCallback(
@@ -440,7 +436,6 @@ export function ImmersiveSlotView({
             setLightningStrike(true);
             if (isZeus) {
               setZeusEyesGlow(true);
-              speakAndShout(zeusLineFor('lightningStrike'));
             }
             // Pre-landing grid (lastGrid is the grid before this batch).
             const stripFresh = (g: TGrid): TGrid =>
@@ -449,8 +444,7 @@ export function ImmersiveSlotView({
               ? stripFresh(lastGrid)
               : stripFresh(frame.grid);
             setGrid(preGrid);
-            // Brief inhale before the first orb lands so the white flash
-            // and "POWER!" voice register first.
+            // Brief visual anticipation before the first orb emphasis.
             await sleep(skipRef.current ? 80 : turboRef.current ? 200 : 380);
             const buildBolt = (col: number, row: number) => {
               const startX = 18, startY = 22;
@@ -549,7 +543,6 @@ export function ImmersiveSlotView({
             lastGrid = frame.grid;
             if (isZeus && landings.length) {
               setZeusEyesGlow(true);
-              speakAndShout(zeusLineFor('multiplierLanded'));
               scheduleSpin(() => setZeusEyesGlow(false), stagger * landings.length + 450);
             }
             for (let index = 0; index < landings.length; index++) {
@@ -628,7 +621,6 @@ export function ImmersiveSlotView({
             setGrid(frame.grid);
             setWinning(new Set());
             lastGrid = frame.grid;
-            sound.play('drop');
             break;
           }
           case 'scattersWon': {
@@ -729,18 +721,6 @@ export function ImmersiveSlotView({
                   speakAndShout(zeusLineFor('bigWin'));
                   scheduleSpin(() => setZeusEyesGlow(false), 1800);
                 }
-              } else if (cfg.id === 'gates-of-olympus' && Math.random() < 0.18) {
-                // Zeus interjection — on ~18% of regular Olympus base
-                // spins (no win, no scatter trigger, no multipliers
-                // landed), Zeus randomly speaks a flavour line and
-                // his eyes flash red. Mirrors real Pragmatic Olympus
-                // where Zeus periodically interjects between spins
-                // even when nothing dramatic happens. This GUARANTEES
-                // the player sees the eye-glow + voice within a few
-                // spins, not waiting for rare events to fire.
-                setZeusEyesGlow(true);
-                speakAndShout(zeusLineFor('multiplierLanded'));
-                scheduleSpin(() => setZeusEyesGlow(false), 1100);
               }
             }
             break;
@@ -771,6 +751,7 @@ export function ImmersiveSlotView({
 
   const requestSkip = useCallback(() => {
     skipWaits();
+    cancelZeus();
     reelSpinResolveRef.current?.();
     clearSpinTimers();
     setBigWin(null); setFsOverlay(null); setFsOutroOverlay(null);
@@ -1230,7 +1211,7 @@ export function ImmersiveSlotView({
               )}
               {/* Zeus speech-bubble callout — visible Spanish-style hand-
                *  drawn comic bubble positioned next to Zeus's mouth that
-               *  shows the spoken line so players who can't hear the TTS
+               *  shows the spoken line so players who can't hear the narration
                *  voice still see the pronouncement. Positioned on the
                *  right of Zeus's face (~24%, ~14%) so it doesn't overlap
                *  with the eyes-glow but still reads as "from him". */}
@@ -1434,7 +1415,7 @@ export function ImmersiveSlotView({
                 onComplete={() => reelSpinResolveRef.current?.()}
               />
             ) : (
-              <Grid grid={grid} cfg={cfg} winning={winning} newKeys={newKeys} renderCell={renderCell} speed={turbo ? 0.5 : 1} bare />
+              <Grid grid={grid} cfg={cfg} winning={winning} newKeys={newKeys} renderCell={renderCell} onCascadePhase={(phase) => { if (!skipRef.current) sound.play(`cascade-${phase}`); }} speed={reduceMotion || skipRef.current ? 0 : turbo ? 0.5 : 1} bare />
             )}
           </div>
 
@@ -2083,7 +2064,7 @@ export function ImmersiveSlotView({
         controlsDisabled={busy || autoplay !== null} decreaseDisabled={presetIdx === 0} increaseDisabled={presetIdx === betPresets.length - 1}
         onDecrease={stepDown} onIncrease={stepUp} onBet={() => setBetSheetOpen(true)}
         toolbar={<>
-          <button aria-label={turbo ? 'Turbo on' : 'Turbo off'} aria-pressed={turbo} onClick={() => setTurbo((value) => !value)}><TurboIcon size={14} /><span className="cabinet-tool-label">Turbo</span></button>
+          <button disabled={busy} aria-label={turbo ? 'Turbo on' : 'Turbo off'} aria-pressed={turbo} onClick={() => setTurbo((value) => !value)}><TurboIcon size={14} /><span className="cabinet-tool-label">Turbo</span></button>
           <button aria-label="Auto play" onClick={() => setAutoplaySheetOpen(true)} disabled={busy || inFree}><AutoplayIcon size={14} /><span className="cabinet-tool-label">Auto</span></button>
           <button className="cabinet-bonus" onClick={() => setBuyBonusOpen(true)} disabled={busy || inFree || ante || autoplay !== null || balance.balance < buyCost} title={ante ? "Turn Ante off to buy free spins" : undefined}><span>Buy free spins</span><strong>{fmtCurrency(buyCost)}</strong></button>
           <button aria-pressed={ante} onClick={() => setAnte((value) => !value)} disabled={busy || inFree || autoplay !== null}>Ante {ante ? 'on' : 'off'}</button>
@@ -2428,7 +2409,7 @@ export function ImmersiveSlotView({
             onClick={() => {
               setWelcomeSplash(false);
               // Prime Zeus voice on first user gesture so the
-              // SpeechSynthesis API has permission to speak when the
+              // shared audio context is unlocked when the
               // first multiplier or scatter event fires. Browsers
               // require a user gesture before audio/speech can play;
               // tapping the welcome splash is the earliest possible

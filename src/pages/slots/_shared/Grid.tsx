@@ -1,6 +1,7 @@
 import { motion, useReducedMotion } from 'framer-motion';
 import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { Grid as TGrid, SlotConfig } from './types';
+import { useGravityMotion, CASCADE_CLEAR_MS, type CascadePhase } from './cascadeMotion';
 
 export type CellRenderer = (args: {
   symbolId: string;
@@ -36,6 +37,7 @@ export function Grid({
   renderCell,
   bare = false,
   speed = 1,
+  onCascadePhase,
 }: {
   grid: TGrid;
   cfg: SlotConfig;
@@ -45,11 +47,13 @@ export function Grid({
   /** When true, omit the grid background/border (caller provides chrome). */
   bare?: boolean;
   speed?: number;
+  onCascadePhase?: (phase: CascadePhase) => void;
 }) {
   const reducedMotion = useReducedMotion();
   const timing = reducedMotion ? 0 : speed;
   const cells = useMemo(() => grid.flatMap((column, col) => column.map((cell, row) => ({ ...cell, col, row }))), [grid]);
-  const leaving = useCascadeExit(cells, 120 * timing);
+  const leaving = useCascadeExit(cells, CASCADE_CLEAR_MS * timing);
+  const bindCell = useGravityMotion(cells, newKeys, timing, 6, onCascadePhase);
   return (
     <div
       className={
@@ -72,32 +76,16 @@ export function Grid({
           const cellClass = `cell ${cfg.theme.cellClass ?? ''}`;
           if (!cell) return <div key={`empty-${idx}`} className={cellClass} />;
           const isWin = winning.has(`${c}:${r}`);
-          const isNew = newKeys.has(cell.key);
-          // Every incoming symbol in a column starts above its highest empty
-          // slot. The distance scales with actual cell height, so three empty
-          // rows fall three strides on both phones and wide screens.
-          const incomingRows = grid[c]?.filter((entry) => newKeys.has(entry.key)).length ?? 0;
-          const columnDelay = isNew ? c * 0.03 * timing : 0;
           return (
-            <motion.div
+            <div
+              ref={bindCell(cell.key)}
               key={cell.key}
               data-slot-cell-key={cell.key}
               data-symbol={cell.symbolId}
               data-multiplier={cell.multiplier}
               aria-label={`${cfg.symbols.find((symbol) => symbol.id === cell.symbolId)?.label ?? cell.symbolId}${cell.multiplier ? ` ${cell.multiplier}×` : ''}${isWin ? ', winning symbol' : ''}`}
               className={`${cellClass} ${isWin ? 'win' : ''}`}
-              initial={isNew && timing > 0 ? { y: `calc(${-incomingRows * 100}% + ${-incomingRows * 6}px)`, opacity: 1 } : false}
-              animate={{ y: 'calc(0% + 0px)', opacity: 1 }}
-              transition={{
-                duration: 0.38 * timing,
-                ease: [0.22, 0.68, 0.32, 1],
-                delay: isNew ? 0.12 * timing + columnDelay : 0,
-                layout: { duration: 0.34 * timing, delay: 0.1 * timing, ease: [0.22, 0.68, 0.32, 1] },
-              }}
-              // Explicit tracks keep exiting cells from making remaining cells
-              // reflow sideways. Position-only FLIP preserves survivor size.
-              style={{ gridColumn: c + 1, gridRow: r + 1, minWidth: 0, minHeight: 0 }}
-              layout={timing > 0 ? 'position' : false}
+              style={{ gridColumn: c + 1, gridRow: r + 1, minWidth: 0, minHeight: 0, animation: 'none' }}
             >
               {renderCell({
                 symbolId: cell.symbolId,
@@ -105,11 +93,11 @@ export function Grid({
                 winning: isWin,
                 cellKey: cell.key,
               })}
-            </motion.div>
+            </div>
           );
         })}
       {leaving.map((cell) => (
-        <motion.div key={`exit-${cell.key}`} data-slot-exiting={cell.key} aria-hidden="true" className={`cell ${cfg.theme.cellClass ?? ''}`} initial={{ opacity: 1, scale: 1 }} animate={{ opacity: 0, scale: .86 }} transition={{ duration: .12 * timing, ease: 'easeOut' }} style={{ gridColumn: cell.col + 1, gridRow: cell.row + 1, minWidth: 0, minHeight: 0, pointerEvents: 'none', zIndex: 1 }}>
+        <motion.div key={`exit-${cell.key}`} data-slot-exiting={cell.key} aria-hidden="true" className={`cell ${cfg.theme.cellClass ?? ''}`} initial={{ opacity: 1, scale: 1 }} animate={{ opacity: 0, scale: .86 }} transition={{ duration: CASCADE_CLEAR_MS / 1000 * timing, ease: 'easeOut' }} style={{ gridColumn: cell.col + 1, gridRow: cell.row + 1, minWidth: 0, minHeight: 0, pointerEvents: 'none', zIndex: 1 }}>
           {renderCell({ symbolId: cell.symbolId, multiplier: cell.multiplier, winning: false, cellKey: cell.key })}
         </motion.div>
       ))}

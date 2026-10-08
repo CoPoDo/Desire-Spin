@@ -1,6 +1,7 @@
-import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useCascadeExit } from '../_shared/Grid';
+import { useGravityMotion, CASCADE_CLEAR_MS } from '../_shared/cascadeMotion';
 import { useGame } from '../../../game-context';
 import { createRng } from '../../../lib/fairness';
 import { fmtCurrency } from '../../../lib/format';
@@ -34,20 +35,6 @@ function SugarRushGame() {
   const [turbo, setTurbo] = useState(false);
   const [incoming, setIncoming] = useState<number[]>([]);
   const roundKey = useRef(0);
-  const spotsRef = useRef<HTMLDivElement>(null);
-  const [rowStride, setRowStride] = useState(0);
-  useLayoutEffect(() => {
-    const board = spotsRef.current;
-    if (!board) return;
-    const measure = () => {
-      const cell = board.firstElementChild;
-      if (cell) setRowStride(cell.getBoundingClientRect().height + parseFloat(getComputedStyle(board).rowGap || '0'));
-    };
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(board);
-    return () => observer.disconnect();
-  }, []);
   const [status, setStatus] = useState('Five or more connected candies win');
   const [cellKeys, setCellKeys] = useState(EMPTY_GRID.map((_, index) => `initial-${index}`));
   const [grid, setGrid] = useState<SugarSymbol[]>(EMPTY_GRID);
@@ -57,22 +44,29 @@ function SugarRushGame() {
   const [win, setWin] = useState(0);
   const [inFree, setInFree] = useState(false);
   const [freeRemaining, setFreeRemaining] = useState(0);
-  const cells = useMemo(() => grid.map((symbolId, index) => ({ key: cellKeys[index]!, symbolId, index })), [grid, cellKeys]);
-  const leaving = useCascadeExit(cells, reduceMotion || skipped.current ? 0 : turbo ? 50 : 120);
+  const cells = useMemo(() => grid.map((symbolId, index) => ({ key: cellKeys[index]!, symbolId, index, col: index % 7, row: Math.floor(index / 7) })), [grid, cellKeys]);
+  const motionSpeed = reduceMotion || skipped.current ? 0 : turbo ? .5 : 1;
+  const freshKeys = useMemo(() => new Set(incoming.map(index => cellKeys[index]!)), [incoming, cellKeys]);
+  const leaving = useCascadeExit(cells, CASCADE_CLEAR_MS * motionSpeed);
+  const bindCell = useGravityMotion(cells, freshKeys, motionSpeed, 3, phase => { if (!skipped.current) sound.play(`cascade-${phase}`); });
 
   const playFrames = useCallback(async (frames: readonly SugarFrame[]) => {
     for (const frame of frames) {
       if (!alive.current) return;
       setGrid(frame.grid);
       setCellKeys(frame.cellKeys.map((key) => `${roundKey.current}-${key}`));
+      setWinning([]);
+      const arrivals = frame.incomingPositions ?? (frame.cascade === 0 ? frame.grid.map((_, index) => index) : []);
+      setIncoming(skipped.current || reduceMotion ? [] : arrivals);
+      // Show each complete fall before announcing the next winning cluster.
+      // The same keyed gravity clock drives both survivors and arrivals.
+      await wait(reduceMotion ? 0 : turbo ? 370 : 740);
+      if (!alive.current) return;
       setSpots(frame.spots);
       setMarked(frame.marked);
       setWinning(frame.winningPositions);
-      const arrivals = frame.cascade === 0 ? frame.grid.map((_, index) => index) : frame.incomingPositions ?? [];
-      setIncoming(skipped.current || reduceMotion ? [] : arrivals);
       if (frame.winningPositions.length && !skipped.current) sound.play('win');
-      // Allow the last column to land before highlighting its next cluster.
-      await wait(reduceMotion ? 0 : turbo ? 210 : frame.winningPositions.length ? 520 : arrivals.length ? 650 : 250);
+      await wait(reduceMotion ? 0 : turbo ? 160 : frame.winningPositions.length ? 450 : 120);
     }
     if (alive.current) { setWinning([]); setIncoming([]); }
   }, [reduceMotion, sound, alive, skipped, turbo, wait]);
@@ -134,7 +128,7 @@ function SugarRushGame() {
         <h1 className="authored-wordmark"><strong>Sugar Rush</strong><small>THE SWEETEST LITTLE BAKERY</small></h1>
         {inFree && <div className="authored-free-hud"><span>Free spins<strong>{freeRemaining}</strong></span><span>Marked spots<strong>{markedSpotCount}</strong></span></div>}
           <div className="sugar-candy-board">
-            <div ref={spotsRef} className="sugar-spots" aria-hidden="true">
+            <div className="sugar-spots" aria-hidden="true">
               {spots.map((multiplier, index) => <div key={index} className="sugar-spot" data-state={multiplier > 0 ? 'active' : marked[index] ? 'marked' : 'empty'}>
                 {multiplier > 0 && <span>{multiplier}×</span>}
               </div>)}
@@ -143,16 +137,13 @@ function SugarRushGame() {
                 {grid.map((symbolId, index) => {
                   const Symbol = SUGAR_SYMBOL_MAP[symbolId];
                   const isWinner = winning.includes(index);
-                  const fresh = incoming.includes(index);
-                  const motionOn = !reduceMotion && !skipped.current;
-                  const incomingRows = incoming.filter((position) => position % 7 === index % 7).length;
-                  return <motion.div key={cellKeys[index]} data-slot-cell-key={cellKeys[index]} data-symbol={symbolId} data-position={index} layout={motionOn ? 'position' : false} className="sugar-candy relative aspect-square min-h-0 min-w-0" aria-label={`Row ${Math.floor(index / 7) + 1}, column ${index % 7 + 1}: ${symbolId}`} style={{ gridColumn: index % 7 + 1, gridRow: Math.floor(index / 7) + 1 }} initial={motionOn && fresh ? { y: -incomingRows * rowStride, opacity: 1 } : false} animate={{ y: 0, scale: isWinner && motionOn ? [1, 1.06, 1] : 1, opacity: 1 }} transition={{ duration: motionOn ? turbo ? .12 : .38 : 0, ease: [.22, .68, .32, 1], delay: fresh && motionOn ? turbo ? .03 : .1 + (index % 7) * .025 : 0, layout: { duration: motionOn ? turbo ? .12 : .34 : 0, delay: motionOn ? turbo ? .03 : .1 : 0, ease: [.22, .68, .32, 1] } }}>
+                  return <div ref={bindCell(cellKeys[index]!)} key={cellKeys[index]} data-slot-cell-key={cellKeys[index]} data-symbol={symbolId} data-position={index} className={`sugar-candy relative aspect-square min-h-0 min-w-0 ${isWinner ? 'is-winner' : ''}`} aria-label={`Row ${Math.floor(index / 7) + 1}, column ${index % 7 + 1}: ${symbolId}`} style={{ gridColumn: index % 7 + 1, gridRow: Math.floor(index / 7) + 1 }}>
                     {Symbol ? <Symbol /> : <span className="text-[8px]">{symbolId}</span>}
-                  </motion.div>;
+                  </div>;
                 })}
               {leaving.map((cell) => {
                 const Symbol = SUGAR_SYMBOL_MAP[cell.symbolId];
-                return <motion.div key={`exit-${cell.key}`} data-slot-exiting={cell.key} aria-hidden="true" className="sugar-candy relative aspect-square min-h-0 min-w-0" initial={{ opacity: 1, scale: 1 }} animate={{ opacity: 0, scale: .85 }} transition={{ duration: turbo ? .05 : .12, ease: 'easeOut' }} style={{ gridColumn: cell.index % 7 + 1, gridRow: Math.floor(cell.index / 7) + 1, pointerEvents: 'none', zIndex: 1 }}>{Symbol && <Symbol />}</motion.div>;
+                return <motion.div key={`exit-${cell.key}`} data-slot-exiting={cell.key} aria-hidden="true" className="sugar-candy relative aspect-square min-h-0 min-w-0" initial={{ opacity: 1, scale: 1 }} animate={{ opacity: 0, scale: .85 }} transition={{ duration: CASCADE_CLEAR_MS / 1000 * motionSpeed, ease: 'easeOut' }} style={{ gridColumn: cell.index % 7 + 1, gridRow: Math.floor(cell.index / 7) + 1, pointerEvents: 'none', zIndex: 1 }}>{Symbol && <Symbol />}</motion.div>;
               })}
             </div>
           </div>
@@ -163,7 +154,7 @@ function SugarRushGame() {
             onDecrease={() => setBet([...BET_PRESETS].reverse().find((value) => value < bet) ?? BET_PRESETS[0]!)}
             onIncrease={() => setBet(BET_PRESETS.find((value) => value > bet) ?? BET_PRESETS[BET_PRESETS.length - 1]!)}
             toolbar={<>
-              <button aria-label={turbo ? 'Turbo on' : 'Turbo off'} aria-pressed={turbo} onClick={() => setTurbo((value) => !value)}><TurboIcon size={14} />Turbo</button>
+              <button disabled={busy} aria-label={turbo ? 'Turbo on' : 'Turbo off'} aria-pressed={turbo} onClick={() => setTurbo((value) => !value)}><TurboIcon size={14} />Turbo</button>
               <button aria-label={`Buy free spins · ${fmtCurrency(bet * 100)}`} className="cabinet-bonus" onClick={() => setBuyOpen(true)} disabled={busy || bet <= 0 || balance.balance < bet * 100}><span>Buy free spins</span><strong>{fmtCurrency(bet * 100)}</strong></button>
               <button onClick={() => setInfoOpen(true)}><InfoIcon size={14} />Rules & pays</button>
             </>}

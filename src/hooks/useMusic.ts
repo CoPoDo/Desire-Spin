@@ -1,250 +1,29 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { isBoolean, loadJson, saveJson } from '../lib/storage';
+import { useCallback, useEffect, useRef } from 'react';
+import { gameAudio } from '../lib/audio/engine';
+import { useAudioPreferences } from './useAudioPreferences';
 
-const KEY = 'music-on';
-
-/** Simple ambient music loop synthesized via Web Audio. Uses Phrygian-mode
- *  chord pads + slow lead notes for a "Greek/mystic" vibe — no copyrighted
- *  audio assets. Two intensity tracks: 'base' (low/calm) and 'free' (more
- *  intense for free-spins sessions). */
-type Intensity = 'base' | 'free' | null;
-
-// E Phrygian-ish chord roots (Hz): Em, F, G, Em (i, ♭II, ♭III, i)
-const BASE_PROG = [
-  { roots: [82.41, 164.81, 196.00] }, // Em (E A B)
-  { roots: [87.31, 174.61, 220.00] }, // Fmaj-ish (F A C)
-  { roots: [98.00, 196.00, 246.94] }, // G (G B D)
-  { roots: [82.41, 164.81, 196.00] }, // Em
-];
-
-const LEAD_NOTES = [329.63, 392.0, 440.0, 523.25, 392.0, 440.0]; // E G A C G A
-
+/** Original rendered ambient beds share the master mixer and its voice ducking.
+ * No second AudioContext, oscillator scheduler, or delayed melody callbacks. */
 export function useMusic({ soundEnabled }: { soundEnabled: boolean }) {
-  const [musicEnabled, setMusicEnabled] = useState<boolean>(() => loadJson<boolean>(KEY, true, isBoolean));
-  const ctxRef = useRef<AudioContext | null>(null);
-  const masterGainRef = useRef<GainNode | null>(null);
-  const intensityRef = useRef<Intensity>(null);
-  const stopFnsRef = useRef(new Set<() => void>());
-  const leadTimersRef = useRef(new Set<ReturnType<typeof setTimeout>>());
-  const fadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const enabledRef = useRef({ musicEnabled, soundEnabled });
-  enabledRef.current = { musicEnabled, soundEnabled };
-  const chordIdxRef = useRef(0);
-  const tickRef = useRef<number | null>(null);
-  const leadIdxRef = useRef(0);
-
-  useEffect(() => saveJson(KEY, musicEnabled), [musicEnabled]);
-
-  const ensureCtx = useCallback(() => {
-    if (typeof window === 'undefined') return null;
-    if (!ctxRef.current) {
-      const W = window as Window & { webkitAudioContext?: typeof AudioContext };
-      const Ctx = window.AudioContext ?? W.webkitAudioContext;
-      if (!Ctx) return null;
-      try {
-        ctxRef.current = new Ctx();
-        masterGainRef.current = ctxRef.current.createGain();
-        masterGainRef.current.gain.value = 0;
-        masterGainRef.current.connect(ctxRef.current.destination);
-      } catch {
-        ctxRef.current = null;
-        masterGainRef.current = null;
-        return null;
-      }
-    }
-    if (ctxRef.current.state === 'suspended') {
-      void ctxRef.current.resume().catch(() => {});
-    }
-    return ctxRef.current;
+  const { settings, update } = useAudioPreferences();
+  const state = useRef({ soundEnabled, musicEnabled: settings.musicEnabled });
+  state.current = { soundEnabled, musicEnabled: settings.musicEnabled };
+  const route = useRef(gameAudio.getRoute());
+  const alive = useRef(true);
+  const start = useCallback((intensity: 'base' | 'free' | null) => {
+    if (alive.current && state.current.soundEnabled && state.current.musicEnabled && intensity) gameAudio.startMusic(intensity, route.current);
   }, []);
-
-  const stopAll = useCallback(() => {
-    if (tickRef.current != null) {
-      clearInterval(tickRef.current);
-      tickRef.current = null;
-    }
-    if (fadeTimerRef.current !== null) clearTimeout(fadeTimerRef.current);
-    fadeTimerRef.current = null;
-    leadTimersRef.current.forEach(clearTimeout);
-    leadTimersRef.current.clear();
-    stopFnsRef.current.forEach((fn) => fn());
-    stopFnsRef.current.clear();
-  }, []);
-
-  const playPad = useCallback(
-    (frequencies: number[], duration: number, gain: number) => {
-      const ctx = ctxRef.current;
-      const master = masterGainRef.current;
-      if (!ctx || !master) return;
-      const now = ctx.currentTime;
-      const padGain = ctx.createGain();
-      padGain.gain.setValueAtTime(0.0001, now);
-      padGain.gain.exponentialRampToValueAtTime(gain, now + 0.6);
-      padGain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
-      const filter = ctx.createBiquadFilter();
-      filter.type = 'lowpass';
-      filter.frequency.value = 1400;
-      padGain.connect(filter).connect(master);
-      const oscs: OscillatorNode[] = [];
-      for (const freq of frequencies) {
-        const osc1 = ctx.createOscillator();
-        osc1.type = 'triangle';
-        osc1.frequency.value = freq;
-        osc1.detune.value = -3;
-        const osc2 = ctx.createOscillator();
-        osc2.type = 'sawtooth';
-        osc2.frequency.value = freq;
-        osc2.detune.value = 5;
-        const mixer = ctx.createGain();
-        mixer.gain.value = 0.5;
-        osc1.connect(mixer).connect(padGain);
-        osc2.connect(mixer);
-        osc1.start(now);
-        osc2.start(now);
-        osc1.stop(now + duration + 0.2);
-        osc2.stop(now + duration + 0.2);
-        oscs.push(osc1, osc2);
-      }
-      const release = () => {
-        for (const osc of oscs) {
-          try { osc.stop(); } catch { /* already ended */ }
-          osc.disconnect();
-        }
-        padGain.disconnect();
-        filter.disconnect();
-        stopFnsRef.current.delete(release);
-      };
-      stopFnsRef.current.add(release);
-      oscs[oscs.length - 1]!.onended = release;
-    },
-    [],
-  );
-
-  const playLead = useCallback((freq: number, duration: number, gain: number) => {
-    const ctx = ctxRef.current;
-    const master = masterGainRef.current;
-    if (!ctx || !master) return;
-    const now = ctx.currentTime;
-    const osc = ctx.createOscillator();
-    osc.type = 'sine';
-    osc.frequency.value = freq;
-    const g = ctx.createGain();
-    g.gain.setValueAtTime(0.0001, now);
-    g.gain.exponentialRampToValueAtTime(gain, now + 0.05);
-    g.gain.exponentialRampToValueAtTime(0.0001, now + duration);
-    osc.connect(g).connect(master);
-    osc.start(now);
-    osc.stop(now + duration + 0.1);
-    const release = () => {
-      try { osc.stop(); } catch { /* already ended */ }
-      osc.disconnect();
-      g.disconnect();
-      stopFnsRef.current.delete(release);
-    };
-    stopFnsRef.current.add(release);
-    osc.onended = release;
-  }, []);
-
-  const start = useCallback(
-    (intensity: Intensity) => {
-      if (!enabledRef.current.musicEnabled || !enabledRef.current.soundEnabled || !intensity) return;
-      // Idempotent: if already playing this intensity, do nothing — avoids
-      // the music chopping every time runRound is called.
-      if (intensityRef.current === intensity && tickRef.current != null) return;
-      if (!ensureCtx()) return;
-      stopAll();
-      intensityRef.current = intensity;
-      const master = masterGainRef.current;
-      if (!master) return;
-      const ctx = ctxRef.current!;
-      // Smoothly ramp master volume to target depending on intensity.
-      const targetVol = intensity === 'free' ? 0.12 : 0.07;
-      master.gain.cancelScheduledValues(ctx.currentTime);
-      master.gain.setValueAtTime(master.gain.value, ctx.currentTime);
-      master.gain.exponentialRampToValueAtTime(Math.max(targetVol, 0.0001), ctx.currentTime + 1.2);
-
-      // Tempo: base = ~14s/chord (slow), free = ~7s (more energy)
-      const chordDur = intensity === 'free' ? 7 : 14;
-
-      const playStep = () => {
-        if (intensityRef.current !== intensity) return;
-        const chord = BASE_PROG[chordIdxRef.current % BASE_PROG.length]!;
-        playPad(chord.roots, chordDur, intensity === 'free' ? 0.3 : 0.18);
-        chordIdxRef.current++;
-        if (intensity === 'free') {
-          // Plays a sparse melody of high notes during free spins
-          for (let i = 0; i < 2; i++) {
-            const note = LEAD_NOTES[leadIdxRef.current % LEAD_NOTES.length]!;
-            const timer = setTimeout(() => {
-              leadTimersRef.current.delete(timer);
-              if (intensityRef.current === intensity && enabledRef.current.musicEnabled && enabledRef.current.soundEnabled) {
-                playLead(note, 0.6, 0.05);
-              }
-            }, i * (chordDur * 1000) / 2 + 200);
-            leadTimersRef.current.add(timer);
-            leadIdxRef.current++;
-          }
-        }
-      };
-      playStep();
-      tickRef.current = window.setInterval(playStep, chordDur * 1000);
-    },
-    [ensureCtx, stopAll, playPad, playLead],
-  );
-
-  const stop = useCallback(() => {
-    intensityRef.current = null;
-    if (tickRef.current !== null) clearInterval(tickRef.current);
-    tickRef.current = null;
-    leadTimersRef.current.forEach(clearTimeout);
-    leadTimersRef.current.clear();
-    if (fadeTimerRef.current !== null) clearTimeout(fadeTimerRef.current);
-    fadeTimerRef.current = null;
-    const ctx = ctxRef.current;
-    const master = masterGainRef.current;
-    if (ctx && master) {
-      master.gain.cancelScheduledValues(ctx.currentTime);
-      master.gain.setValueAtTime(master.gain.value, ctx.currentTime);
-      master.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.6);
-    }
-    if (ctx && master) fadeTimerRef.current = setTimeout(stopAll, 700);
-    else stopAll();
-  }, [stopAll]);
-
-  /** Briefly duck the music volume — used during big wins so the celebration
-   *  SFX are prominent. */
-  const duck = useCallback((durMs = 1800, factor = 0.25) => {
-    const ctx = ctxRef.current;
-    const master = masterGainRef.current;
-    if (!ctx || !master) return;
-    const now = ctx.currentTime;
-    const current = master.gain.value;
-    master.gain.cancelScheduledValues(now);
-    master.gain.setValueAtTime(current, now);
-    master.gain.exponentialRampToValueAtTime(Math.max(current * factor, 0.0001), now + 0.1);
-    master.gain.exponentialRampToValueAtTime(Math.max(current, 0.0001), now + durMs / 1000);
-  }, []);
-
-  // Stop music if the user mutes SFX or disables music.
+  const stop = useCallback(() => gameAudio.stopBus('music'), []);
+  const duck = useCallback((ms = 1800, factor = .25) => gameAudio.duckMusic(ms, factor), []);
+  const setMusicEnabled = useCallback((musicEnabled: boolean) => update({ musicEnabled }), [update]);
   useEffect(() => {
-    if (!soundEnabled || !musicEnabled) stop();
-  }, [soundEnabled, musicEnabled, stop]);
-
-  // Close the AudioContext on unmount so the OS-level audio resource is
-  // released cleanly. Without this, navigating slot pages back-to-back
-  // could accrue dangling audio contexts (~1 per visit).
+    if (!soundEnabled || !settings.musicEnabled) stop();
+  }, [soundEnabled, settings.musicEnabled, stop]);
   useEffect(() => {
-    return () => {
-      intensityRef.current = null;
-      stopAll();
-      const ctx = ctxRef.current;
-      if (ctx && ctx.state !== 'closed') {
-        try { void ctx.close().catch(() => {}); } catch { /* ignore */ }
-      }
-      ctxRef.current = null;
-      masterGainRef.current = null;
-    };
-  }, [stopAll]);
-
-  return { musicEnabled, setMusicEnabled, start, stop, duck };
+    alive.current = true;
+    // Parent's route layout effect has run before this passive effect.
+    route.current = gameAudio.getRoute();
+    return () => { alive.current = false; stop(); };
+  }, [stop]);
+  return { musicEnabled: settings.musicEnabled, setMusicEnabled, start, stop, duck };
 }
