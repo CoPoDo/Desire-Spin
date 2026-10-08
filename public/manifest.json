@@ -4,7 +4,7 @@
   "description": "Play-money casino emulator",
   "start_url": "/",
   "display": "standalone",
-  "orientation": "portrait",
+  "orientation": "any",
   "background_color": "#060311",
   "theme_color": "#0f1419",
   "icons": [

@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
 import { useGame } from '../../../game-context';
 import { useHotkey } from '../../../hooks/useHotkey';
-import { createRng } from '../../../lib/fairness';
+import { useInteractiveRound, useRoundState } from '../_shared/useInteractiveRound';
 import { fmtCurrency, fmtMultiplier } from '../../../lib/format';
 import { BetInput } from '../_shared/BetInput';
 import {
@@ -12,6 +12,7 @@ import {
   applyPump,
   cashOut,
   multiplierAt,
+  maxPumpsFor,
   newRound,
   popProbFor,
   pumpOnce,
@@ -21,11 +22,12 @@ import { fireConfetti } from '../../../lib/confetti';
 const DIFFICULTIES: Difficulty[] = ['easy', 'medium', 'hard', 'expert'];
 
 export function PumpGame() {
-  const { balance, fairness, sound, history, session } = useGame();
+  const { balance, sound } = useGame();
   const [bet, setBet] = useState(1);
   const [difficulty, setDifficulty] = useState<Difficulty>('medium');
-  const [round, setRound] = useState<PumpRound | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [round, setRound, roundRef] = useRoundState<PumpRound | null>(null);
+  const [busy, setBusy, busyRef] = useRoundState(false);
+  const { begin, settle, delay, wager, onLeave, error } = useInteractiveRound('Pump');
 
   const inGame = round !== null && !round.popped && !round.cashed;
   const currentMult = round ? multiplierAt(round.difficulty, round.pumps) : 1;
@@ -33,67 +35,53 @@ export function PumpGame() {
   const cashoutAmount = round ? +(round.bet * currentMult).toFixed(2) : 0;
   const popPct = +(popProbFor(difficulty) * 100).toFixed(1);
 
+  onLeave.current = (updateView = false) => {
+    const current = roundRef.current;
+    if (!current) return 0;
+    if (current.popped || current.cashed) return current.payout;
+    const next = current.pumps ? cashOut(current) : { ...current, cashed: true, payout: current.bet };
+    if (updateView) setRound(next);
+    return next.payout;
+  };
+
   const start = useCallback(() => {
-    if (round && inGame) return;
-    if (balance.balance < bet || bet <= 0 || busy) return;
+    const current = roundRef.current;
+    if (busyRef.current || (current && !current.cashed && !current.popped)) return;
+    const entry = begin(bet);
+    if (!entry) return;
     sound.play('click');
-    balance.debit(bet);
-    setRound(newRound(bet, difficulty));
-  }, [round, inGame, balance, bet, difficulty, busy, sound]);
+    setRound(newRound(entry.bet, difficulty));
+    setBusy(true);
+    delay(() => setBusy(false), 220);
+  }, [roundRef, busyRef, begin, bet, difficulty, sound, setRound, setBusy, delay]);
 
   const onPump = useCallback(() => {
-    if (!round || round.popped || round.cashed || busy) return;
+    const current = roundRef.current;
+    const entry = wager.current;
+    if (!current || current.popped || current.cashed || busyRef.current || !entry || entry.settled) return;
     setBusy(true);
-    sound.play('click');
-    const seeds = fairness.consumeNonce();
-    const rng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
-    const survived = pumpOnce(rng, round.difficulty);
-    const next = applyPump(round, survived);
+    const next = applyPump(current, pumpOnce(entry.rng, current.difficulty, current.pumps));
     setRound(next);
-    if (!survived) {
-      sound.play('drop');
-      history.record({
-        game: 'Pump',
-        bet: round.bet,
-        payout: 0,
-        multiplier: 0,
-        serverSeedHash: fairness.hash,
-        clientSeed: seeds.clientSeed,
-        nonce: seeds.nonce,
-      });
-      session.recordSpin(round.bet, 0, false);
-    } else {
-      sound.play('win');
-    }
-    setTimeout(() => setBusy(false), 220);
-  }, [round, busy, fairness, sound, history, session]);
+    if (next.popped || next.cashed) settle(next.payout);
+    sound.play(next.popped ? 'drop' : next.cashed ? 'big-win' : 'win');
+    delay(() => setBusy(false), 220);
+  }, [roundRef, wager, busyRef, setBusy, setRound, settle, sound, delay]);
 
   const doCashOut = useCallback(() => {
-    if (!round || round.popped || round.cashed || round.pumps === 0) return;
-    // Tier SFX with the cash-out multiplier so a 1.1× safety hop and a
-    // 50× full-pump risk run feel different at the audio level.
-    sound.play(currentMult >= 10 ? 'mega-win' : currentMult >= 3 ? 'big-win' : 'win');
-    const next = cashOut(round);
+    const current = roundRef.current;
+    if (!current || current.popped || current.cashed || current.pumps === 0 || busyRef.current) return;
+    const next = cashOut(current);
     setRound(next);
-    balance.credit(next.payout);
-    if (currentMult >= 1.5) {
-      fireConfetti({
-        count: currentMult >= 20 ? 130 : currentMult >= 5 ? 80 : 50,
-      });
-    }
-    history.record({
-      game: 'Pump',
-      bet: round.bet,
-      payout: next.payout,
-      multiplier: currentMult,
-      serverSeedHash: fairness.hash,
-      clientSeed: '',
-      nonce: 0,
-    });
-    session.recordSpin(round.bet, next.payout, false);
-  }, [round, balance, currentMult, fairness, history, session, sound]);
+    if (!settle(next.payout)) return;
+    const mult = multiplierAt(current.difficulty, current.pumps);
+    sound.play(mult >= 10 ? 'mega-win' : mult >= 3 ? 'big-win' : 'win');
+    if (mult >= 1.5) fireConfetti({ count: mult >= 20 ? 100 : 50 });
+  }, [roundRef, busyRef, setRound, settle, sound]);
 
-  const reset = useCallback(() => setRound(null), []);
+  const reset = useCallback(() => {
+    const current = roundRef.current;
+    if (!busyRef.current && current && (current.cashed || current.popped)) setRound(null);
+  }, [roundRef, busyRef, setRound]);
 
   // Space-to-pump hotkey. If a round is active, Space adds a pump.
   // If idle, Space starts a fresh round. Bypassed when balloon has
@@ -119,11 +107,12 @@ export function PumpGame() {
   return (
     <OriginalPageLayout title="Pump">
       <div className="flex flex-col p-4 gap-4 max-w-md mx-auto w-full">
+        {error && <p role="alert" className="text-stake-red text-sm text-center">{error}</p>}
         {/* Status */}
         <div className="rounded-lg bg-stake-card border border-stake-border p-3 text-center">
           {!round ? (
             <div className="text-[10px] uppercase tracking-widest text-stake-muted">
-              Set bet & difficulty · {popPct}% pop chance per pump
+              Set bet & difficulty · {popPct}% initial pop chance
             </div>
           ) : round.popped ? (
             <>
@@ -149,7 +138,7 @@ export function PumpGame() {
                 {fmtMultiplier(currentMult)}
               </div>
               <div className="text-[10px] text-stake-muted mt-1">
-                {round.pumps} pumps · cash out{' '}
+                {round.pumps} / {maxPumpsFor(round.difficulty)} pumps · cash out{' '}
                 <span className="text-stake-green">{fmtCurrency(cashoutAmount)}</span>
               </div>
             </>
@@ -237,6 +226,8 @@ export function PumpGame() {
           </AnimatePresence>
         </div>
 
+        <p className="text-[11px] text-stake-muted text-center">Leaving cashes out surviving pumps. An unpumped bet is returned. The last safe pump cashes out automatically.</p>
+
         {/* Controls */}
         {!inGame ? (
           <div className="rounded-lg bg-stake-card border border-stake-border p-4 space-y-3">
@@ -259,7 +250,7 @@ export function PumpGame() {
                 ))}
               </div>
               <div className="mt-1.5 text-[10px] text-stake-muted">
-                {(popProbFor(difficulty) * 100).toFixed(1)}% pop / pump · ×{(((1 - 0.01) / (1 - popProbFor(difficulty)))).toFixed(3)} mult / pump
+                {(popProbFor(difficulty) * 100).toFixed(1)}% initial pop risk · up to {maxPumpsFor(difficulty)} pumps · 98% RTP
               </div>
             </div>
             <button
@@ -278,9 +269,9 @@ export function PumpGame() {
                 <div className="font-mono font-bold text-base text-stake-text mt-0.5 tabular-nums">{fmtMultiplier(nextMult)}</div>
               </div>
               <div className="rounded-lg bg-stake-input border border-stake-border p-2 text-center">
-                <div className="text-[10px] uppercase tracking-widest text-stake-muted">Pop Risk</div>
+                <div className="text-[10px] uppercase tracking-widest text-stake-muted">Next Pop Risk</div>
                 <div className="font-mono font-bold text-base text-stake-red mt-0.5 tabular-nums">
-                  {(popProbFor(difficulty) * 100).toFixed(0)}%
+                  {(popProbFor(round.difficulty, round.pumps) * 100).toFixed(0)}%
                 </div>
               </div>
             </div>

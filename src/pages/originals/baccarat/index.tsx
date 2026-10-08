@@ -1,3 +1,4 @@
+import { useRoundPlayback } from '../_shared/useRoundPlayback';
 import { useCallback, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
@@ -23,27 +24,28 @@ export function BaccaratGame() {
   const [bet, setBet] = useState(1);
   const [bets, setBets] = useState<Bets>({ player: 0, banker: 0, tie: 0, playerPair: 0, bankerPair: 0 });
   const [round, setRound] = useState<BaccaratRound | null>(null);
-  const [busy, setBusy] = useState(false);
+  const { busy, busyRef, setBusy, schedule } = useRoundPlayback();
 
-  const totalBet = bets.player + bets.banker + bets.tie + bets.playerPair + bets.bankerPair;
+  const totalBet = +(bets.player + bets.banker + bets.tie + bets.playerPair + bets.bankerPair).toFixed(2);
 
   const place = useCallback((kind: BetKind) => {
-    if (busy) return;
+    if (busyRef.current) return;
     sound.play('tick');
     setBets((b) => ({ ...b, [kind]: +(b[kind] + bet).toFixed(2) }));
   }, [busy, bet, sound]);
 
   const clear = useCallback(() => {
-    if (busy) return;
+    if (busyRef.current) return;
     setBets({ player: 0, banker: 0, tie: 0, playerPair: 0, bankerPair: 0 });
     setRound(null);
   }, [busy]);
 
   const deal = useCallback(() => {
-    if (busy || totalBet === 0 || balance.balance < totalBet) return;
+    if (busyRef.current || totalBet === 0 || balance.balance < totalBet) return;
+    if (busyRef.current || !balance.debit(totalBet)) return;
     setBusy(true);
     sound.play('click');
-    balance.debit(totalBet);
+
     const seeds = fairness.consumeNonce();
     const rng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
     const r = play(rng);
@@ -52,28 +54,8 @@ export function BaccaratGame() {
     BET_KINDS.forEach((k) => {
       if (bets[k] > 0) totalPayout += payoutFor(k, bets[k], r);
     });
-    // Per-card deal SFX matching the staggered CardView entrance
-    // (delay = i * 100ms in HandPanel). Both hands deal in parallel,
-    // so the max card index drives total deal duration. 2-3 cards
-    // per side → 600ms max.
-    const totalCards = Math.max(r.player.length, r.banker.length);
-    for (let i = 0; i < totalCards; i++) {
-      window.setTimeout(() => sound.play('drop'), 80 + i * 180);
-    }
-    const settleAt = 80 + totalCards * 180 + 120;
-    if (totalPayout > 0) {
-      balance.credit(totalPayout);
-      window.setTimeout(() => {
-        sound.play(totalPayout >= totalBet * 5 ? 'mega-win' : totalPayout > totalBet ? 'big-win' : 'win');
-        if (totalPayout > totalBet) {
-          fireConfetti({
-            count: totalPayout >= totalBet * 5 ? 130 : 70,
-          });
-        }
-      }, settleAt);
-    } else {
-      window.setTimeout(() => sound.play('drop'), settleAt);
-    }
+
+    if (totalPayout > 0) balance.credit(totalPayout);
     history.record({
       game: 'Baccarat',
       bet: totalBet,
@@ -84,7 +66,29 @@ export function BaccaratGame() {
       nonce: seeds.nonce,
     });
     session.recordSpin(totalBet, totalPayout, false);
-    setTimeout(() => setBusy(false), 800);
+    // Per-card deal SFX matching the staggered CardView entrance
+    // (delay = i * 100ms in HandPanel). Both hands deal in parallel,
+    // so the max card index drives total deal duration. 2-3 cards
+    // per side → 600ms max.
+    const totalCards = Math.max(r.player.length, r.banker.length);
+    for (let i = 0; i < totalCards; i++) {
+      schedule(() => sound.play('drop'), 80 + i * 180);
+    }
+    const settleAt = 80 + totalCards * 180 + 120;
+    if (totalPayout > 0) {
+      schedule(() => {
+        sound.play(totalPayout >= totalBet * 5 ? 'mega-win' : totalPayout > totalBet ? 'big-win' : 'win');
+        if (totalPayout > totalBet) {
+          fireConfetti({
+            count: totalPayout >= totalBet * 5 ? 130 : 70,
+          });
+        }
+      }, settleAt);
+    } else {
+      schedule(() => sound.play('drop'), settleAt);
+    }
+
+    schedule(() => setBusy(false), 800);
   }, [busy, totalBet, balance, bets, fairness, sound, history, session]);
 
   return (
@@ -134,8 +138,8 @@ export function BaccaratGame() {
             in rank. ~7.7% probability per pair, ~92.3% RTP — a high-
             variance side spice for players who want the lottery shot. */}
         <div className="grid grid-cols-2 gap-2">
-          <BetButton label="Player Pair" mult="11×" tone="cyan" amount={bets.playerPair} onClick={() => place('playerPair')} compact />
-          <BetButton label="Banker Pair" mult="11×" tone="hot" amount={bets.bankerPair} onClick={() => place('bankerPair')} compact />
+          <BetButton label="Player Pair" mult="12×" tone="cyan" amount={bets.playerPair} onClick={() => place('playerPair')} compact />
+          <BetButton label="Banker Pair" mult="12×" tone="hot" amount={bets.bankerPair} onClick={() => place('bankerPair')} compact />
         </div>
 
         {/* Bet panel */}

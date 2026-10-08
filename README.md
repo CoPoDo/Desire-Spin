@@ -6,14 +6,17 @@ The lobby contains **34 retained games**; five unsupported prototypes and all of
 
 ## Run locally
 
+Requires Node.js 22.12 or newer (see `.nvmrc`).
+
 ```bash
-npm install
+npm ci
 npm run dev
-npm test
-npm run build
+npm run check
 ```
 
 The starting balance is 1,000 play-money credits and can be refilled freely.
+
+See the [October quality-overhaul notes](docs/QUALITY_OVERHAUL.md) for verified fixes and remaining limits.
 
 ## Architecture
 

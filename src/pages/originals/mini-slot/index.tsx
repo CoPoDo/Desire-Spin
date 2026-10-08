@@ -1,5 +1,6 @@
+import { ReelStrip } from '../_shared/ReelStrip';
+import { useRoundPlayback } from '../_shared/useRoundPlayback';
 import { useCallback, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
 import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
 import { useGame } from '../../../game-context';
 import { useHotkey } from '../../../hooks/useHotkey';
@@ -23,69 +24,25 @@ export function MiniSlotGame() {
   const [mode, setMode] = useState<Mode>('manual');
   const [autoConfig, setAutoConfig] = useState<AutoConfig>({ count: 10, stopOnProfit: 0, stopOnLoss: 0 });
   const [autoActive, setAutoActive] = useState(false);
-  const [busy, setBusy] = useState(false);
+  const { busy, busyRef, setBusy, wait } = useRoundPlayback();
   const [reels, setReels] = useState<SymbolId[]>(['cherry', 'lemon', 'grape']);
   const [winning, setWinning] = useState<boolean[]>([false, false, false]);
+  const [reelRound, setReelRound] = useState(0);
   const [lastOutcome, setLastOutcome] = useState<{ outcome: string; payout: number; mult: number } | null>(null);
   const stateRef = useRef({ bet });
   stateRef.current = { bet };
 
-  const playOnce = useCallback(async (): Promise<number> => {
+  const playOnce = useCallback(async (): Promise<number | null> => {
     const { bet: b } = stateRef.current;
-    if (balance.balance < b || b <= 0) return 0;
+    if (!balance.canAfford(b)) return null;
+    if (busyRef.current || !balance.debit(b)) return null;
     setBusy(true);
     sound.play('click');
-    balance.debit(b);
+
     const seeds = fairness.consumeNonce();
     const rng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
     const r = spin(rng, b);
-
-    // Reveal reels one at a time for drama. Each reel visibly SPINS
-    // before settling — quickly cycling through random symbols every
-    // 60ms for ~280ms then locking on the final symbol with a 'drop'
-    // thunk. Real slot machines never just morph from one emoji to
-    // another; the rapid cycle sells the "reel pulled the right
-    // symbol" moment. Per-cycle 'tick' adds the audible spin click.
-    setWinning([false, false, false]);
-    setLastOutcome(null);
-    for (let i = 0; i < 3; i++) {
-      const SPIN_TICKS = 5;
-      for (let t = 0; t < SPIN_TICKS; t++) {
-        await new Promise<void>((res) => setTimeout(res, 60));
-        const rand = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)]!.id;
-        setReels((prev) => {
-          const next = [...prev];
-          next[i] = rand;
-          return next;
-        });
-        sound.play('tick');
-      }
-      // Final settle on the actual result
-      setReels((prev) => {
-        const next = [...prev];
-        next[i] = r.reels[i]!;
-        return next;
-      });
-      sound.play('drop');
-    }
-    // Highlight winning cells
-    if (r.multiplier > 0) {
-      const win =
-        r.reels[0] === r.reels[1] && r.reels[1] === r.reels[2]
-          ? [true, true, true]
-          : r.reels.map((s) => s === 'cherry');
-      setWinning(win);
-      sound.play(r.multiplier >= 100 ? 'mega-win' : r.multiplier >= 10 ? 'big-win' : 'win');
-      balance.credit(r.payout);
-      // Confetti shower for 3-of-a-kind wins (audit's signature
-      // big-win flourish, ported from House Edge in lib/confetti).
-      if (r.multiplier >= 10) {
-        fireConfetti({ count: r.multiplier >= 100 ? 120 : 70 });
-      }
-    } else {
-      sound.play('drop');
-    }
-    setLastOutcome({ outcome: r.outcome, payout: r.payout, mult: r.multiplier });
+    if (r.payout > 0) balance.credit(r.payout);
     history.record({
       game: 'Classic 3-Reel Slot',
       bet: b,
@@ -96,6 +53,31 @@ export function MiniSlotGame() {
       nonce: seeds.nonce,
     });
     session.recordSpin(b, r.payout, false);
+
+
+    setWinning([false, false, false]); setLastOutcome(null);
+    setReels(r.reels); setReelRound((id) => id + 1);
+    // The last symbol is physically part of each moving strip.
+    if (!(await wait(1120))) return null;
+    sound.play('drop');
+    // Highlight winning cells
+    if (r.multiplier > 0) {
+      const win =
+        r.reels[0] === r.reels[1] && r.reels[1] === r.reels[2]
+          ? [true, true, true]
+          : r.reels.map((s) => s === 'cherry');
+      setWinning(win);
+      sound.play(r.multiplier >= 100 ? 'mega-win' : r.multiplier >= 10 ? 'big-win' : 'win');
+      // Confetti shower for 3-of-a-kind wins (audit's signature
+      // big-win flourish, ported from House Edge in lib/confetti).
+      if (r.multiplier >= 10) {
+        fireConfetti({ count: r.multiplier >= 100 ? 120 : 70 });
+      }
+    } else {
+      sound.play('drop');
+    }
+    setLastOutcome({ outcome: r.outcome, payout: r.payout, mult: r.multiplier });
+
     setBusy(false);
     return r.payout - b;
   }, [balance, fairness, history, session, sound]);
@@ -115,42 +97,16 @@ export function MiniSlotGame() {
       <div className="flex flex-col p-4 gap-4 max-w-md mx-auto w-full">
         {/* Reels */}
         <div className="rounded-lg bg-stake-card border border-stake-border p-4">
-          <div className="flex items-center justify-center gap-2 sm:gap-3">
-            {reels.map((s, i) => {
-              const meta = symbolMeta(s);
-              const isWin = winning[i];
-              return (
-                <motion.div
-                  key={i}
-                  className="rounded-xl flex items-center justify-center text-5xl sm:text-6xl aspect-square w-[28%] select-none"
-                  animate={
-                    isWin
-                      ? { scale: [1, 1.15, 1], rotate: [0, -3, 3, 0] }
-                      : busy
-                        ? { y: [0, -4, 0] }
-                        : { scale: 1, y: 0 }
-                  }
-                  transition={{
-                    duration: isWin ? 0.6 : 0.35,
-                    repeat: isWin ? Infinity : 0,
-                    ease: 'easeInOut',
-                  }}
-                  style={{
-                    background: isWin
-                      ? 'linear-gradient(180deg, rgba(0,231,1,.25), rgba(0,231,1,.05))'
-                      : 'linear-gradient(180deg, #1a1f29, #0e1218)',
-                    border: isWin
-                      ? '2px solid rgba(0,231,1,.6)'
-                      : '1px solid #2a3142',
-                    boxShadow: isWin
-                      ? '0 0 18px rgba(0,231,1,.4), inset 0 1px 0 rgba(0,231,1,.3)'
-                      : 'inset 0 1px 0 rgba(255,255,255,.06)',
-                  }}
-                >
-                  {meta.emoji}
-                </motion.div>
-              );
-            })}
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            {reels.map((symbol, reel) => (
+              <ReelStrip key={reel} reel={reel} roundId={reelRound} symbols={[symbol]}
+                pool={SYMBOLS.map((item) => item.id)} duration={0.76 + reel * 0.18}
+                renderSymbol={(id, row) => (
+                  <div className={`w-full h-full rounded-lg flex items-center justify-center text-5xl sm:text-6xl border ${row !== null && winning[reel] ? 'border-stake-green bg-stake-green/15' : 'border-stake-border bg-stake-bg'}`}>
+                    {symbolMeta(id as SymbolId).emoji}
+                  </div>
+                )} />
+            ))}
           </div>
         </div>
 
@@ -197,13 +153,13 @@ export function MiniSlotGame() {
           {mode === 'auto' && (
             <>
               <AutoConfigFields config={autoConfig} onChange={setAutoConfig} disabled={autoActive} />
-              {autoActive && <AutoProgressDisplay progress={progress} config={autoConfig} />}
+              {(autoActive || progress.stopReason) && <AutoProgressDisplay progress={progress} config={autoConfig} />}
             </>
           )}
           {mode === 'manual' ? (
             <button
               onClick={() => void playOnce()}
-              disabled={busy || balance.balance < bet || bet <= 0}
+              disabled={busy || !balance.canAfford(bet)}
               className="w-full py-3.5 rounded-xl bg-stake-green text-stake-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
             >
               {busy ? 'Spinning…' : `Spin · ${fmtCurrency(bet)}`}
@@ -211,7 +167,7 @@ export function MiniSlotGame() {
           ) : (
             <button
               onClick={() => setAutoActive((a) => !a)}
-              disabled={!autoActive && (balance.balance < bet || bet <= 0)}
+              disabled={!autoActive && (busy || !balance.canAfford(bet))}
               className={`w-full py-3.5 rounded-xl font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99] ${
                 autoActive ? 'bg-stake-red text-white' : 'bg-stake-green text-stake-bg'
               }`}

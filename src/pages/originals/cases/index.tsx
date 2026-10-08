@@ -1,3 +1,4 @@
+import { useRoundPlayback } from '../_shared/useRoundPlayback';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
@@ -20,7 +21,7 @@ export function CasesGame() {
   const [phase, setPhase] = useState<Phase>('idle');
   const [result, setResult] = useState<CaseItem | null>(null);
   const [reel, setReel] = useState<CaseItem[]>([]);
-  const [busy, setBusy] = useState(false);
+  const { busy, busyRef, setBusy, schedule } = useRoundPlayback();
   /** Rare-reveal flash overlay — fires when the opened item is
    *  rare / legendary / mythic. Real CS:GO-style cases have a
    *  dramatic golden beam reveal for high-tier drops; this is the
@@ -31,16 +32,29 @@ export function CasesGame() {
   const spinKey = useRef(0);
 
   const start = useCallback(() => {
-    if (busy) return;
-    if (balance.balance < bet || bet <= 0) return;
+    if (busyRef.current) return;
+    if (!balance.canAfford(bet)) return;
+    if (busyRef.current || !balance.debit(bet)) return;
     setBusy(true);
     sound.play('click');
-    balance.debit(bet);
+
     setPhase('opening');
     setResult(null);
     const seeds = fairness.consumeNonce();
     const rng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
     const r = play(rng, bet, risk);
+    if (r.payout > 0) balance.credit(r.payout);
+    history.record({
+      game: 'Cases',
+      bet,
+      payout: r.payout,
+      multiplier: r.multiplier,
+      serverSeedHash: fairness.hash,
+      clientSeed: seeds.clientSeed,
+      nonce: seeds.nonce,
+    });
+    session.recordSpin(bet, r.payout, false);
+
     const activePool = CASE_POOLS[risk];
     // Build the carousel: a long strip of random items, with the WINNING
     // item placed at the deterministic landing index (REEL_LENGTH - 6),
@@ -52,7 +66,7 @@ export function CasesGame() {
         strip.push(r.item);
       } else {
         // Filler items — mostly low-rarity to feel realistic.
-        const filler = activePool[rng.nextInt(activePool.length)]!;
+        const filler = activePool[rng.weighted(activePool.map((item) => item.weight))]!;
         strip.push(filler);
       }
     }
@@ -71,13 +85,13 @@ export function CasesGame() {
     ];
     const tickTimers: number[] = [];
     for (const t of tickAt) {
-      tickTimers.push(window.setTimeout(() => sound.play('tick'), t));
+      tickTimers.push(schedule(() => sound.play('tick'), t));
     }
     // After scroll animation finishes (~3.0s), reveal result + payout.
-    setTimeout(() => {
+    schedule(() => {
       tickTimers.forEach((id) => clearTimeout(id));
     }, 3100);
-    setTimeout(() => {
+    schedule(() => {
       setResult(r.item);
       setPhase('reveal');
       // Rare-tier flash: any item at 'rare' rarity or higher triggers
@@ -85,10 +99,9 @@ export function CasesGame() {
       // Cleared automatically after 2400ms.
       if (r.item.rarity === 'rare' || r.item.rarity === 'legendary' || r.item.rarity === 'mythic') {
         setRareFlash(r.item);
-        window.setTimeout(() => setRareFlash(null), 2400);
+        schedule(() => setRareFlash(null), 2400);
       }
       if (r.payout > bet) {
-        balance.credit(r.payout);
         sound.play(r.multiplier >= 50 ? 'mega-win' : r.multiplier >= 3 ? 'big-win' : 'win');
         // Chip-shower confetti on high-value crate opens. Tinted with
         // the prize tier's colour so opening a "Legendary" crate fires
@@ -100,21 +113,11 @@ export function CasesGame() {
           });
         }
       } else if (r.payout > 0) {
-        balance.credit(r.payout);
         sound.play('drop');
       } else {
         sound.play('drop');
       }
-      history.record({
-        game: 'Cases',
-        bet,
-        payout: r.payout,
-        multiplier: r.multiplier,
-        serverSeedHash: fairness.hash,
-        clientSeed: seeds.clientSeed,
-        nonce: seeds.nonce,
-      });
-      session.recordSpin(bet, r.payout, false);
+
       setBusy(false);
     }, 3100);
   }, [busy, balance, bet, risk, fairness, sound, history, session]);
@@ -154,7 +157,7 @@ export function CasesGame() {
               style={{ color: result.multiplier > 0 ? result.color : '#9aa3b2' }}
             >
               {result.label} · {fmtMultiplier(result.multiplier)}
-              {result.multiplier > 0 ? ` · +${fmtCurrency(profit)}` : ` · -${fmtCurrency(bet)}`}
+              {result.multiplier > 0 ? ` · ${profit >= 0 ? '+' : ''}${fmtCurrency(profit)}` : ` · -${fmtCurrency(bet)}`}
             </div>
           )}
         </div>
@@ -219,7 +222,7 @@ export function CasesGame() {
                   {fmtMultiplier(i.multiplier)}
                 </div>
                 <div className="text-[8px] font-mono text-stake-muted tabular-nums">
-                  {i.pct < 1 ? i.pct.toFixed(1) : i.pct.toFixed(0)}%
+                  {i.pct < 0.01 ? i.pct.toFixed(4) : i.pct < 1 ? i.pct.toFixed(2) : i.pct.toFixed(1)}%
                 </div>
               </div>
             ))}
@@ -245,7 +248,7 @@ export function CasesGame() {
             <BetInput bet={bet} onBetChange={setBet} disabled={busy} />
             <button
               onClick={phase === 'reveal' ? () => { reset(); start(); } : start}
-              disabled={busy || balance.balance < bet || bet <= 0}
+              disabled={busy || !balance.canAfford(bet)}
               className="w-full py-3.5 rounded-xl bg-stake-green text-stake-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
             >
               {phase === 'reveal' ? 'Open Again' : `Open Case · ${fmtCurrency(bet)}`}

@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import type { ReactNode } from 'react';
 import type { Grid as TGrid, SlotConfig } from './types';
 
@@ -16,6 +16,7 @@ export function Grid({
   newKeys,
   renderCell,
   bare = false,
+  speed = 1,
 }: {
   grid: TGrid;
   cfg: SlotConfig;
@@ -24,7 +25,10 @@ export function Grid({
   renderCell: CellRenderer;
   /** When true, omit the grid background/border (caller provides chrome). */
   bare?: boolean;
+  speed?: number;
 }) {
+  const reducedMotion = useReducedMotion();
+  const timing = reducedMotion ? 0 : speed;
   return (
     <div
       className={
@@ -35,6 +39,7 @@ export function Grid({
       style={{
         display: 'grid',
         gridTemplateColumns: `repeat(${cfg.cols}, minmax(0, 1fr))`,
+        gridTemplateRows: `repeat(${cfg.rows}, minmax(0, 1fr))`,
         gap: '6px',
         aspectRatio: `${cfg.cols} / ${cfg.rows}`,
       }}
@@ -52,15 +57,19 @@ export function Grid({
           // etc. — matches real Pragmatic's left-to-right reel reveal. 80ms
           // per column (was 50ms — a touch too fast) lines up with how the
           // real Sweet Bonanza / Olympus reels reveal column-by-column.
-          const columnDelay = isNew ? c * 0.08 : 0;
+          const columnDelay = isNew ? c * 0.08 * timing : 0;
           return (
             <motion.div
               key={cell.key}
+              data-slot-cell-key={cell.key}
+              data-symbol={cell.symbolId}
+              data-multiplier={cell.multiplier}
+              aria-label={`${cfg.symbols.find((symbol) => symbol.id === cell.symbolId)?.label ?? cell.symbolId}${cell.multiplier ? ` ${cell.multiplier}×` : ''}${isWin ? ', winning symbol' : ''}`}
               className={`${cellClass} ${isWin ? 'win' : ''}`}
               // Real-game-style drop: symbols fall from above with a small
               // landing squish (scale [0.85,1.05,1]) so they feel weighted.
-              initial={isNew ? { y: -90, opacity: 0, scale: 0.85 } : false}
-              animate={{ y: 0, opacity: 1, scale: isNew ? [0.85, 1.05, 0.97, 1] : 1 }}
+              initial={isNew && !reducedMotion ? { y: -90, opacity: 0, scale: 0.85 } : false}
+              animate={{ y: 0, opacity: 1, scale: isNew && !reducedMotion ? [0.85, 1.05, 0.97, 1] : 1 }}
               // Win → tumble: cell puffs out with a softer brightness lift
               // then fades. 0.4s lingers on the winning cell long enough
               // for the player to register WHICH symbols matched before
@@ -71,14 +80,14 @@ export function Grid({
                 scale: 1.22,
                 opacity: 0,
                 filter: 'brightness(1.35) saturate(1.15)',
-                transition: { duration: 0.4, ease: [0.4, 0, 0.2, 1] },
+                transition: { duration: 0.4 * timing, ease: [0.4, 0, 0.2, 1] },
               }}
               // Tween-based drop (cheaper than spring physics on 30 simultaneous
               // cells with drop-shadow filters) — keeps the bouncy "land + squish"
               // feel via the multi-keyframe `scale`.
               transition={
                 isNew
-                  ? { duration: 0.42, ease: [0.34, 1.2, 0.5, 1], delay: columnDelay }
+                  ? { duration: 0.42 * timing, ease: [0.34, 1.2, 0.5, 1], delay: columnDelay }
                   : { type: 'spring', stiffness: 380, damping: 26 }
               }
               // will-change only while a cell is actually animating (drop-in
@@ -87,8 +96,8 @@ export function Grid({
               // each symbol carries, that's real memory pressure on phones
               // and a source of cascade stutter. Scope it to the few active
               // cells so the GPU only promotes what's moving.
-              style={{ willChange: isNew || isWin ? 'transform' : 'auto' }}
-              layout
+              style={{ minWidth: 0, minHeight: 0, willChange: isNew || isWin ? 'transform' : 'auto' }}
+              layout={!reducedMotion}
             >
               {renderCell({
                 symbolId: cell.symbolId,

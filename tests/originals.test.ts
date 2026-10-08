@@ -102,13 +102,15 @@ describe('Originals RTP — regression', () => {
     }
   });
 
-  it('Dragon Tower: per-step multiplier matches difficulty (analytical)', () => {
-    // step = (tiles/safe) × 0.99
-    expect(Tower.stepMultiplierFor('easy')).toBeCloseTo(1.32, 2); // 4/3 × 0.99
-    expect(Tower.stepMultiplierFor('medium')).toBeCloseTo(1.485, 2); // 3/2 × 0.99
-    expect(Tower.stepMultiplierFor('hard')).toBeCloseTo(1.98, 2); // 2/1 × 0.99
-    expect(Tower.stepMultiplierFor('expert')).toBeCloseTo(2.97, 2); // 3/1 × 0.99
-    expect(Tower.stepMultiplierFor('master')).toBeCloseTo(3.96, 2); // 4/1 × 0.99
+  it('Dragon Tower: fixed 98% RTP at every row (analytical)', () => {
+    for (const difficulty of ['easy', 'medium', 'hard', 'expert', 'master'] as const) {
+      const { tiles, deaths } = Tower.configFor(difficulty);
+      for (let row = 1; row <= Tower.ROWS; row++) {
+        const survival = ((tiles - deaths) / tiles) ** row;
+        expect(Tower.multiplierAt(difficulty, row) * survival).toBeCloseTo(0.98, 5);
+      }
+      expect(Tower.stepMultiplierFor(difficulty)).toBeCloseTo(Tower.multiplierAt(difficulty, 1), 4);
+    }
   });
 
   it('Plinko: every (risk, rows) is 95-101% RTP (analytical)', () => {

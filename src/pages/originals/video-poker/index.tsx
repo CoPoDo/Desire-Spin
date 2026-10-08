@@ -1,14 +1,15 @@
-import { useCallback, useState } from 'react';
+import { forwardRef, useCallback, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
 import { useGame } from '../../../game-context';
-import { createRng } from '../../../lib/fairness';
+import { useInteractiveRound, useRoundState } from '../_shared/useInteractiveRound';
 import { fmtCurrency } from '../../../lib/format';
 import { BetInput } from '../_shared/BetInput';
 import {
   type Card,
   type HandRank,
   dealCards,
+  drawHand,
   payForRank,
   payoutMultiplier,
   rankLabel,
@@ -31,84 +32,65 @@ const RANKS_ORDER: HandRank[] = [
 ];
 
 export function VideoPokerGame() {
-  const { balance, fairness, sound, history, session } = useGame();
+  const { balance, sound } = useGame();
   const [bet, setBet] = useState(1);
-  const [phase, setPhase] = useState<Phase>('idle');
-  const [hand, setHand] = useState<Card[]>([]);
-  const [held, setHeld] = useState<boolean[]>([false, false, false, false, false]);
+  const [phase, setPhase, phaseRef] = useRoundState<Phase>('idle');
+  const [hand, setHand, handRef] = useRoundState<Card[]>([]);
+  const [held, setHeld, heldRef] = useRoundState<boolean[]>([false, false, false, false, false]);
   const [result, setResult] = useState<{ rank: HandRank; multiplier: number; payout: number } | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy, busyRef] = useRoundState(false);
+  const { begin, settle, delay, wager, onLeave, error } = useInteractiveRound('Video Poker');
+
+  // Navigation completes the selected draw; a dealt hand is never refunded.
+  onLeave.current = (updateView = false) => {
+    const entry = wager.current;
+    if (!entry || phaseRef.current !== 'hold') return 0;
+    const cards = drawHand(entry.rng, handRef.current, heldRef.current);
+    const evaluated = payoutMultiplier(cards);
+    const payout = +(entry.bet * evaluated.multiplier).toFixed(2);
+    if (updateView) { setHand(cards); setResult({ ...evaluated, payout }); setPhase('done'); }
+    return payout;
+  };
 
   const deal = useCallback(() => {
-    if (busy || balance.balance < bet || bet <= 0) return;
+    if (busyRef.current || phaseRef.current === 'hold') return;
+    const entry = begin(bet);
+    if (!entry) return;
     setBusy(true);
     sound.play('click');
-    balance.debit(bet);
-    const seeds = fairness.consumeNonce();
-    const rng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
-    const cards = dealCards(rng, 5);
-    setHand(cards);
+    setHand(dealCards(entry.rng, 5));
     setHeld([false, false, false, false, false]);
     setResult(null);
     setPhase('hold');
-    setBusy(false);
-  }, [busy, balance, bet, fairness, sound]);
+    delay(() => setBusy(false), 220);
+  }, [busyRef, phaseRef, begin, bet, setBusy, sound, setHand, setHeld, setPhase, delay]);
 
   const drawCards = useCallback(() => {
-    if (phase !== 'hold' || busy) return;
+    const entry = wager.current;
+    if (phaseRef.current !== 'hold' || busyRef.current || !entry || entry.settled) return;
     setBusy(true);
-    sound.play('click');
-    const seeds = fairness.consumeNonce();
-    const rng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
-    const newCards = [...hand];
-    const replacementsNeeded = held.filter((h) => !h).length;
-    if (replacementsNeeded > 0) {
-      const draws = dealCards(rng, replacementsNeeded, hand.filter((_, i) => held[i]));
-      let dIdx = 0;
-      for (let i = 0; i < 5; i++) {
-        if (!held[i]) {
-          newCards[i] = draws[dIdx++]!;
-        }
-      }
-      setHand(newCards);
-    }
-    const r = payoutMultiplier(newCards);
-    const payout = +(bet * r.multiplier).toFixed(2);
-    setResult({ rank: r.rank, multiplier: r.multiplier, payout });
-    if (payout > 0) {
-      balance.credit(payout);
-      sound.play(r.multiplier >= 50 ? 'mega-win' : r.multiplier >= 4 ? 'big-win' : 'win');
-      if (r.multiplier >= 4) {
-        fireConfetti({
-          count: r.multiplier >= 50 ? 130 : 70,
-        });
-      }
-    } else {
-      sound.play('drop');
-    }
-    history.record({
-      game: 'Video Poker',
-      bet,
-      payout,
-      multiplier: r.multiplier,
-      serverSeedHash: fairness.hash,
-      clientSeed: seeds.clientSeed,
-      nonce: seeds.nonce,
-    });
-    session.recordSpin(bet, payout, false);
+    const cards = drawHand(entry.rng, handRef.current, heldRef.current);
+    const r = payoutMultiplier(cards);
+    const payout = +(entry.bet * r.multiplier).toFixed(2);
+    setHand(cards);
+    setResult({ ...r, payout });
     setPhase('done');
-    setTimeout(() => setBusy(false), 220);
-  }, [phase, busy, hand, held, bet, balance, fairness, history, session, sound]);
+    settle(payout);
+    sound.play(r.multiplier >= 50 ? 'mega-win' : r.multiplier >= 4 ? 'big-win' : payout > 0 ? 'win' : 'drop');
+    if (r.multiplier >= 4) fireConfetti({ count: r.multiplier >= 50 ? 100 : 60 });
+    delay(() => setBusy(false), 220);
+  }, [wager, phaseRef, busyRef, setBusy, handRef, heldRef, setHand, setPhase, settle, sound, delay]);
 
   const toggleHold = useCallback((idx: number) => {
-    if (phase !== 'hold' || busy) return;
+    if (phaseRef.current !== 'hold' || busyRef.current) return;
     sound.play('tick');
-    setHeld((prev) => prev.map((h, i) => (i === idx ? !h : h)));
-  }, [phase, busy, sound]);
+    setHeld(previous => previous.map((value, i) => i === idx ? !value : value));
+  }, [phaseRef, busyRef, sound, setHeld]);
 
   return (
     <OriginalPageLayout title="Video Poker">
       <div className="flex flex-col p-4 gap-4 max-w-md mx-auto w-full">
+        {error && <p role="alert" className="text-stake-red text-sm text-center">{error}</p>}
         {/* Paytable */}
         <div className="rounded-lg bg-stake-card border border-stake-border p-3">
           <div className="text-[10px] uppercase tracking-widest text-stake-muted mb-1.5 px-1">Pays per 1× bet</div>
@@ -157,7 +139,7 @@ export function VideoPokerGame() {
                     card={c}
                     held={held[i]}
                     onToggle={() => toggleHold(i)}
-                    interactive={phase === 'hold'}
+                    interactive={phase === 'hold' && !busy}
                   />
                 ))}
               </AnimatePresence>
@@ -178,6 +160,8 @@ export function VideoPokerGame() {
             </div>
           </div>
         )}
+
+        <p className="text-[11px] text-stake-muted text-center">Leaving completes your draw using the current holds and settles the hand.</p>
 
         {/* Controls */}
         <div className="rounded-lg bg-stake-card border border-stake-border p-4 space-y-3">
@@ -222,20 +206,23 @@ export function VideoPokerGame() {
   );
 }
 
-function CardView({
-  card,
-  held,
-  onToggle,
-  interactive,
-}: {
+const CardView = forwardRef<HTMLButtonElement, {
   card: Card;
   held?: boolean;
   onToggle: () => void;
   interactive: boolean;
-}) {
+}>(function CardView({
+  card,
+  held,
+  onToggle,
+  interactive,
+}, ref) {
   const red = card.suit === '♥' || card.suit === '♦';
   return (
     <motion.button
+      ref={ref}
+      aria-label={`Hold ${rankLabel(card.rank)} ${card.suit}`}
+      aria-pressed={!!held}
       onClick={onToggle}
       disabled={!interactive}
       className="relative active:scale-95 transition"
@@ -284,4 +271,4 @@ function CardView({
       )}
     </motion.button>
   );
-}
+});

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 
 /** Particle shower of falling gold coins + jewel-toned gems used during the
  *  Big/Huge/Mega/Epic Win celebrations. The intensity arg scales the
@@ -11,9 +11,11 @@ export function CoinShower({
   active: boolean;
   intensity?: number;
 }) {
+  const reducedMotion = useReducedMotion();
   type Particle = {
     id: number;
     kind: 'coin' | 'gem-red' | 'gem-purple' | 'gem-blue';
+    drift: number;
     left: number;     // % from left of viewport
     delay: number;    // s
     duration: number; // s
@@ -24,11 +26,11 @@ export function CoinShower({
   const [particles, setParticles] = useState<Particle[]>([]);
 
   useEffect(() => {
-    if (!active) {
+    if (!active || reducedMotion) {
       setParticles([]);
       return;
     }
-    const count = Math.floor(20 * intensity + 6);
+    const count = Math.min(80, Math.max(0, Math.floor(20 * intensity + 6)));
     const next: Particle[] = [];
     for (let i = 0; i < count; i++) {
       const r = Math.random();
@@ -36,6 +38,7 @@ export function CoinShower({
         r < 0.6 ? 'coin' : r < 0.78 ? 'gem-red' : r < 0.9 ? 'gem-blue' : 'gem-purple';
       next.push({
         id: i,
+        drift: (Math.random() - 0.5) * 60,
         kind,
         left: Math.random() * 100,
         delay: Math.random() * 0.8,
@@ -46,9 +49,9 @@ export function CoinShower({
       });
     }
     setParticles(next);
-  }, [active, intensity]);
+  }, [active, intensity, reducedMotion]);
 
-  if (!active) return null;
+  if (!active || reducedMotion) return null;
 
   return (
     <div className="fixed inset-0 z-[125] pointer-events-none overflow-hidden">
@@ -65,7 +68,7 @@ export function CoinShower({
             }}
             animate={{
               y: '110vh',
-              x: (Math.random() - 0.5) * 60,
+              x: p.drift,
               opacity: [1, 1, 1, 0],
               rotate: p.rotateTo,
               scale: [0.4, 1, 1, 0.9],

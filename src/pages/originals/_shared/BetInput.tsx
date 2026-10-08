@@ -1,3 +1,4 @@
+import { MAX_STAKE } from '../../../lib/accounting';
 import { useGame } from '../../../game-context';
 import { fmtCurrency } from '../../../lib/format';
 
@@ -19,11 +20,11 @@ export function BetInput({
 }) {
   const { balance } = useGame();
   const half = () => onBetChange(Math.max(0.01, +(bet / 2).toFixed(2)));
-  const dbl = () => onBetChange(Math.min(balance.balance || 1e9, +(bet * 2).toFixed(2)));
+  const dbl = () => onBetChange(Math.max(0.01, Math.min(MAX_STAKE, balance.balance, +(bet * 2).toFixed(2))));
   return (
     <div>
       <div className="flex items-center justify-between mb-1.5">
-        <span className="text-xs text-stake-muted">Bet Amount</span>
+        <span className="text-xs text-stake-muted">Bet Amount <span className="text-[9px]">· max 10,000</span></span>
         <span className="text-xs font-mono text-stake-muted tabular-nums">{fmtCurrency(balance.balance)}</span>
       </div>
       <div
@@ -36,16 +37,18 @@ export function BetInput({
             type="number"
             inputMode="decimal"
             min={0.01}
-            step={0.1}
+            max={MAX_STAKE}
+            step={0.01}
+            aria-label="Bet amount"
             value={Number.isFinite(bet) ? bet : 0}
             disabled={disabled}
             onChange={(e) => {
               const v = parseFloat(e.target.value);
-              onBetChange(Number.isFinite(v) ? Math.max(0, v) : 0);
+              onBetChange(Number.isFinite(v) ? +Math.min(MAX_STAKE, Math.max(0, v)).toFixed(2) : 0);
             }}
             className="flex-1 min-w-0 bg-transparent outline-none font-mono font-semibold text-sm text-stake-text tabular-nums"
           />
-          <span className="text-stake-dim text-sm font-mono flex-shrink-0">$</span>
+          <span className="text-stake-dim text-[10px] font-mono flex-shrink-0">credits</span>
         </div>
         <button
           onClick={half}

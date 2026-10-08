@@ -26,6 +26,7 @@ export function animateCountUp(
   options: { bet?: number; durationMs?: number } = {},
 ): Promise<void> & CountUpHandle {
   let cancelled = false;
+  let frame = 0;
   const bet = options.bet ?? 1;
   const mult = (to - from) / Math.max(bet, 0.01);
   const durationMs = options.durationMs ?? durationForMagnitude(mult);
@@ -42,13 +43,14 @@ export function animateCountUp(
     const eased = 1 - Math.pow(1 - t, 3);
     const current = from + (to - from) * eased;
     target.textContent = format(current);
-    if (t < 1) requestAnimationFrame(tick);
+    if (t < 1) frame = requestAnimationFrame(tick);
     else { target.textContent = format(to); resolve(); }
   }
-  requestAnimationFrame(tick);
+  if (durationMs <= 0) { target.textContent = format(to); resolve(); }
+  else frame = requestAnimationFrame(tick);
 
   const handle = promise as Promise<void> & CountUpHandle;
-  handle.cancel = () => { cancelled = true; };
+  handle.cancel = () => { cancelled = true; cancelAnimationFrame(frame); resolve(); };
   return handle;
 }
 

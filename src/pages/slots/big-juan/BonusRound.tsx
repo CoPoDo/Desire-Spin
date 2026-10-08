@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { fmtCurrency } from '../../../lib/format';
 import { useGame } from '../../../game-context';
 import {
@@ -9,11 +9,14 @@ import {
   type JackpotTier,
   type RespinRoundOutcome,
   type RespinSymbol,
+  type RespinSample,
   type RespinTimelineEvent,
 } from './engine';
 import { fireConfetti } from '../../../lib/confetti';
 import { PinataSvg } from './symbols';
-import { flyCoin } from './coinFly';
+import { flyCoin, type FlyOptions } from './coinFly';
+import { useDialogFocus } from './useDialogFocus';
+import { FeatureReel } from './FeatureReel';
 
 /** Big Juan Respins feature reconstructed from the pinned sver=5 rules and
  * observed runtime event ordering, using locally calibrated hidden weights.
@@ -58,6 +61,13 @@ export function BigJuanBonusRound({
   onClose,
 }: BonusRoundProps) {
   const { sound } = useGame();
+  const reducedMotion = useReducedMotion();
+  const dialogRef = useDialogFocus<HTMLDivElement>(true);
+  const playbackAbortRef = useRef(new AbortController());
+  const fly = useCallback((source: HTMLElement, target: HTMLElement, options: FlyOptions) => {
+    if (reducedMotion || playbackAbortRef.current.signal.aborted) return Promise.resolve();
+    return flyCoin(source, target, { ...options, signal: playbackAbortRef.current.signal });
+  }, [reducedMotion]);
 
   // Every delay owned by this component goes through one scheduler so it can
   // be sped up consistently and cancelled when the feature unmounts.
@@ -91,8 +101,10 @@ export function BigJuanBonusRound({
 
   useEffect(() => {
     mountedRef.current = true;
+    playbackAbortRef.current = new AbortController();
     return () => {
       mountedRef.current = false;
+      playbackAbortRef.current.abort();
       for (const id of timeoutIdsRef.current) clearTimeout(id);
       timeoutIdsRef.current.clear();
     };
@@ -109,6 +121,8 @@ export function BigJuanBonusRound({
   });
   const [cumulativeMult, setCumulativeMult] = useState(0);
   const [outer, setOuter] = useState<RespinSymbol[]>(() => Array(8).fill({ kind: 'blank' as const }));
+  const [reelTargets, setReelTargets] = useState<RespinSample | null>(null);
+  const [rollOrdinal, setRollOrdinal] = useState(0);
   const [fourth, setFourth] = useState<FourthReelOutcome | null>(null);
   const [phase, setPhase] = useState<'intro' | 'spinning' | 'fourth' | 'resolving' | 'idle' | 'jackpot' | 'finished'>('intro');
   const [jackpotFiring, setJackpotFiring] = useState<{ tier: JackpotTier; amount: number } | null>(null);
@@ -131,6 +145,15 @@ export function BigJuanBonusRound({
   cumulativeRef.current = cumulativeMult;
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
+  const closedRef = useRef(false);
+  const closeFeature = useCallback(() => {
+    if (closedRef.current || !mountedRef.current) return;
+    closedRef.current = true;
+    playbackAbortRef.current.abort();
+    for (const id of timeoutIdsRef.current) clearTimeout(id);
+    timeoutIdsRef.current.clear();
+    onCloseRef.current(outcome.totalMultiplier);
+  }, [outcome.totalMultiplier]);
   const soundRef = useRef(sound);
   soundRef.current = sound;
 
@@ -143,13 +166,13 @@ export function BigJuanBonusRound({
 
   // ── End-of-feature confetti shower ─────────────────────────────────
   useEffect(() => {
-    if (phase !== 'finished') return;
+    if (phase !== 'finished' || reducedMotion) return;
     const tier = totalPayoutMult >= 1000 ? 'epic' : totalPayoutMult >= 100 ? 'big' : 'small';
     fireConfetti({
       count: tier === 'epic' ? 240 : tier === 'big' ? 150 : 80,
       colors: ['#ff5560', '#ffd166', '#1fff7a', '#5fb8ff', '#c042b8', '#ffae50', '#ffffff'],
     });
-  }, [phase, totalPayoutMult]);
+  }, [phase, totalPayoutMult, reducedMotion]);
 
   // ── Auto-start each respin from idle ───────────────────────────────
   useEffect(() => {
@@ -173,11 +196,11 @@ export function BigJuanBonusRound({
     const finalFeatureMultiplier = cumulativeRef.current;
     soundRef.current.play(finalFeatureMultiplier >= 100 ? 'mega-win' : 'big-win');
     const t = schedule(
-      () => onCloseRef.current(finalFeatureMultiplier),
+      closeFeature,
       3200,
     );
     return () => cancelScheduled(t);
-  }, [phase, schedule, cancelScheduled]);
+  }, [phase, schedule, cancelScheduled, closeFeature]);
 
   // ── Replay the next precomputed respin event ─────────────────────
   const kickRespin = useCallback(() => {
@@ -195,6 +218,8 @@ export function BigJuanBonusRound({
     }
     eventCursorRef.current += 1;
     const sample = event.sample;
+    setReelTargets(sample);
+    setRollOrdinal(event.ordinal);
 
     // Outer cells use a reference-tuned stagger; this timing is presentation,
     // not a published probability or protocol value.
@@ -263,7 +288,7 @@ export function BigJuanBonusRound({
       if (sample.outer[i]!.kind !== 'extra') continue;
       const cellEl = document.querySelector(`[data-bj-outer-cell="${i}"]`) as HTMLElement | null;
       if (cellEl && respinCounterEl) {
-        flyCoin(cellEl, respinCounterEl, {
+        void fly(cellEl, respinCounterEl, {
           glyph: '+1', value: 0, durationMs: scaledMs(500), endScale: 0.7,
         });
         sound.play('juan-reel-stop');
@@ -287,7 +312,7 @@ export function BigJuanBonusRound({
           const cellEl = document.querySelector(`[data-bj-outer-cell="${i}"]`) as HTMLElement | null;
           const meterEl = document.querySelector(`[data-bj-meter="${tier}"]`) as HTMLElement | null;
           if (cellEl && meterEl) {
-            flyCoin(cellEl, meterEl, {
+            void fly(cellEl, meterEl, {
               glyph: tier.toUpperCase(),
               value: 0,
               durationMs: scaledMs(480),
@@ -328,14 +353,14 @@ export function BigJuanBonusRound({
         const cellEl = document.querySelector(`[data-bj-outer-cell="${i}"]`) as HTMLElement | null;
         if (!cellEl || !tallyEl) continue;
         if (s.kind === 'coin') {
-          flyCoin(cellEl, tallyEl, { glyph: '$', value: s.value, durationMs: scaledMs(580) });
+          void fly(cellEl, tallyEl, { glyph: '$', value: s.value, durationMs: scaledMs(580) });
           sound.play('juan-coin');
           await sleep(140);
         }
       }
       // Money bag fires its value to the tally.
       if (bagEl && tallyEl && res.bagPaid > 0) {
-        flyCoin(bagEl, tallyEl, { glyph: 'BAG', value: res.bagPaid, durationMs: scaledMs(600) });
+        void fly(bagEl, tallyEl, { glyph: 'BAG', value: res.bagPaid, durationMs: scaledMs(600) });
         sound.play('juan-coin');
         await sleep(280);
       }
@@ -349,7 +374,7 @@ export function BigJuanBonusRound({
         if (s.kind !== 'coin') continue;
         const cellEl = document.querySelector(`[data-bj-outer-cell="${i}"]`) as HTMLElement | null;
         if (cellEl && bagEl) {
-          flyCoin(cellEl, bagEl, {
+          void fly(cellEl, bagEl, {
             glyph: '$',
             value: s.value,
             durationMs: scaledMs(520),
@@ -370,13 +395,19 @@ export function BigJuanBonusRound({
     setRespinsLeft(event.respinsAfter);
     if (res.cappedAtMax) setCappedAtMax(true);
     setOuter((previous) => previous.map(() => ({ kind: 'blank' })));
+    setReelTargets(null);
     await sleep(500);
     setPhase('idle');
-  }, [sleep, sound, scaledMs]);
+  }, [sleep, sound, scaledMs, fly]);
 
   return (
     <motion.div
-      className="fixed inset-0 z-[200] flex flex-col items-center justify-start p-3 overflow-hidden"
+      ref={dialogRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Big Juan Fiesta Respins"
+      tabIndex={-1}
+      className="bj-bonus-round fixed inset-0 z-[200] flex flex-col items-center justify-start p-3"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -407,7 +438,7 @@ export function BigJuanBonusRound({
       </div>
 
       {/* Main play area — jackpot meters | 3x3 grid | 4th reel */}
-      <div className="flex items-center justify-center gap-2 flex-1 w-full max-w-3xl">
+      <div className="bj-feature-board flex items-center justify-center gap-2 flex-1 w-full max-w-3xl">
         {/* Left rail: 4 jackpot meters stacked. Each shows tier + payout
             + segment progress (filled / required). Per spec §9: floats
             on the left side of the feature screen. */}
@@ -424,20 +455,23 @@ export function BigJuanBonusRound({
         </div>
 
         {/* Centre: 3x3 grid with sticky bag, and 4th reel to the right. */}
-        <div className="flex items-center gap-2 flex-1 justify-center">
+        <div className="bj-feature-center flex items-center gap-2 flex-1 justify-center">
           <BonusGrid
             outer={outer}
+            landingOuter={reelTargets?.outer}
+            rollOrdinal={rollOrdinal}
+            stepMs={scaledMs(80)}
             bagValue={bagValue}
             phase={phase}
             coinsLanded={coinsLanded}
             lastRespinKind={lastRespinKind}
           />
-          <FourthReelCell phase={phase} value={fourth} />
+          <FourthReelCell value={fourth} target={reelTargets?.fourth ?? fourth ?? undefined} rollOrdinal={rollOrdinal} durationMs={scaledMs(1920)} />
         </div>
       </div>
 
       {/* Stats bar — respins / total win / bag value */}
-      <div className="flex items-center justify-center gap-2 w-full max-w-md mt-3 mb-1 px-3">
+      <div className="bj-feature-stats flex items-center justify-center gap-2 w-full max-w-md mt-3 mb-1 px-3">
         <div data-bj-respins="true">
           <StatTile label="Respins" value={String(respinsLeft)} accent="#ffd166" />
         </div>
@@ -457,6 +491,11 @@ export function BigJuanBonusRound({
         {phase === 'finished' && (cappedAtMax ? 'MAX WIN!' : 'Round complete')}
         {phase === 'idle' && respinsLeft > 0 && 'Next respin…'}
       </div>
+
+      <button type="button" onClick={closeFeature}
+        className="relative z-[60] shrink-0 min-h-11 rounded-xl border border-[#ffd166]/60 bg-black/40 px-5 py-2 text-xs font-bold text-[#fff5c4]">
+        {phase === 'finished' ? 'Continue' : 'Skip animation'}
+      </button>
 
       {/* Jackpot fanfare overlay — fires once per filled meter, sequentially. */}
       <AnimatePresence>
@@ -629,9 +668,12 @@ function JackpotMeter({
 }
 
 function BonusGrid({
-  outer, bagValue, phase, coinsLanded, lastRespinKind,
+  outer, landingOuter, rollOrdinal, stepMs, bagValue, phase, coinsLanded, lastRespinKind,
 }: {
   outer: RespinSymbol[];
+  landingOuter?: RespinSymbol[];
+  rollOrdinal: number;
+  stepMs: number;
   bagValue: number;
   phase: string;
   coinsLanded: Set<number>;
@@ -641,7 +683,7 @@ function BonusGrid({
   // map to the outer[0..7] array (skipping the center).
   return (
     <div
-      className="rounded-2xl p-2 relative"
+      className="bj-feature-grid rounded-2xl p-2 relative"
       style={{
         background: 'linear-gradient(145deg, #fff0a6 0%, #bf7d14 42%, #6d3b07 100%)',
         border: '3px solid #fff5c4',
@@ -674,6 +716,9 @@ function BonusGrid({
               key={gridIdx}
               outerIdx={outerIdx}
               symbol={sym}
+              landingSymbol={landingOuter?.[outerIdx]}
+              rollOrdinal={rollOrdinal}
+              durationMs={stepMs * (outerIdx + 1)}
               spinning={phase === 'spinning' && sym.kind === 'blank'}
               landed={coinsLanded.has(outerIdx)}
               fadingOut={phase === 'resolving' && lastRespinKind === 'blank' && sym.kind !== 'blank'}
@@ -688,6 +733,7 @@ function BonusGrid({
 }
 
 function MoneyBagCell({ value, pulse }: { value: number; pulse: boolean }) {
+  const reducedMotion = useReducedMotion();
   return (
     <motion.div
       data-bj-money-bag="true"
@@ -697,7 +743,7 @@ function MoneyBagCell({ value, pulse }: { value: number; pulse: boolean }) {
         border: '2px solid #ffd166',
         boxShadow: 'inset 0 1px 0 rgba(255,255,255,.35), 0 0 14px rgba(255,209,102,.55), 0 4px 8px rgba(0,0,0,.5)',
       }}
-      animate={pulse ? { scale: [1, 1.18, 1.08], rotate: [0, -2, 2, 0] } : { scale: 1 }}
+      animate={pulse && !reducedMotion ? { scale: [1, 1.18, 1.08], rotate: [0, -2, 2, 0] } : { scale: 1 }}
       transition={{ duration: 0.8, ease: 'easeOut' }}
     >
       <svg viewBox="0 0 64 64" aria-hidden="true" className="h-8 w-8 drop-shadow-md">
@@ -719,10 +765,13 @@ function MoneyBagCell({ value, pulse }: { value: number; pulse: boolean }) {
 }
 
 function OuterCell({
-  outerIdx, symbol, spinning, landed, fadingOut, collectingForWin, streamingToBag,
+  outerIdx, symbol, landingSymbol, rollOrdinal, durationMs, spinning, landed, fadingOut, collectingForWin, streamingToBag,
 }: {
   outerIdx: number;
   symbol: RespinSymbol;
+  landingSymbol?: RespinSymbol;
+  rollOrdinal: number;
+  durationMs: number;
   spinning: boolean;
   landed: boolean;
   fadingOut: boolean;
@@ -749,13 +798,22 @@ function OuterCell({
         }}
         transition={{ duration: fadingOut || collectingForWin || streamingToBag ? 0.4 : 0.25 }}
       >
-        <RespinSymbolGlyph symbol={symbol} spinning={spinning} />
+        {landingSymbol ? (
+          <FeatureReel key={rollOrdinal}
+            label={landed ? 'Collected feature symbol' : 'Feature reel'}
+            durationMs={durationMs}
+            target={<RespinSymbolGlyph symbol={landingSymbol} spinning={false} />}
+            fillers={FEATURE_FILLERS.map((filler) => <RespinSymbolGlyph symbol={filler} spinning={false} />)}
+          />
+        ) : <RespinSymbolGlyph symbol={symbol} spinning={spinning} />}
       </motion.div>
     </div>
   );
 }
 
 function RespinSymbolGlyph({ symbol, spinning }: { symbol: RespinSymbol; spinning: boolean }) {
+  const reducedMotion = useReducedMotion();
+  if (spinning && reducedMotion) return <span aria-label="Rolling">…</span>;
   if (spinning) {
     return (
       <motion.div
@@ -818,6 +876,8 @@ function RespinSymbolGlyph({ symbol, spinning }: { symbol: RespinSymbol; spinnin
   );
 }
 
+const FEATURE_FILLERS: RespinSymbol[] = [{ kind: 'coin', value: 1 }, { kind: 'mini' }, { kind: 'extra' }, { kind: 'minor' }, { kind: 'coin', value: 2 }, { kind: 'grand' }];
+
 const RESPIN_DISPLAY_TOKENS = [
   'major', 'money', 'mini', 'major', 'money', 'grand', 'extra', 'mini',
   'money', 'extra', 'grand', 'money', 'minor', 'money', 'grand', 'minor',
@@ -844,98 +904,43 @@ const FOURTH_REEL_DISPLAY_STRIP: FourthReelOutcome[] = [
   'win', 'blank', 'boost', 'blank', 'blank',
 ];
 
-function FourthReelCell({ phase, value }: { phase: string; value: FourthReelOutcome | null }) {
-  const spinning = phase === 'spinning' || phase === 'fourth';
-  // "Tall" cell to the right of the 3x3.
+function FourthReelCell({ value, target, rollOrdinal, durationMs }: {
+  value: FourthReelOutcome | null;
+  target?: FourthReelOutcome;
+  rollOrdinal: number;
+  durationMs: number;
+}) {
   return (
-    <div
-      className="rounded-2xl p-2 flex items-center justify-center"
+    <div className="bj-feature-fourth rounded-2xl p-2 flex items-center justify-center"
       style={{
-        background: 'linear-gradient(145deg, #fff0a6 0%, #bf7d14 42%, #6d3b07 100%)',
-        border: '3px solid #fff5c4',
-        boxShadow: '0 0 0 2px #8d510d, inset 0 1px 0 rgba(255,255,255,.75), 0 12px 30px rgba(0,0,0,.65)',
+        background: 'linear-gradient(145deg, #e1c17d, #785223)',
+        border: '2px solid #ddbd74',
         width: 'clamp(52px, 16vw, 100px)',
         height: 'clamp(150px, 48vw, 320px)',
-      }}
-    >
-      <div
-        className="w-full h-full rounded-lg flex items-center justify-center text-center overflow-hidden relative"
-        style={{
-          background: 'linear-gradient(100deg, #edf8ff 0%, #b9d3e2 47%, #f7fdff 74%, #94b4ca 100%)',
-          border: '1px solid rgba(126,78,12,.5)',
-        }}
-      >
-        <AnimatePresence mode="wait">
-          {spinning && value === null ? (
-            <motion.div
-              key="spin"
-              className="absolute inset-x-0 top-0 flex flex-col items-stretch font-display font-extrabold"
-              animate={{ y: [0, -900] }}
-              transition={{ duration: 0.72, repeat: Infinity, ease: 'linear' }}
-              exit={{ opacity: 0 }}
-            >
-              {FOURTH_REEL_DISPLAY_STRIP.map((outcome, index) => (
-                <div
-                  key={`${outcome}-${index}`}
-                  className="flex h-12 shrink-0 items-center justify-center border-b border-[#c8932e]/25 text-[10px] uppercase"
-                  style={{
-                    color: outcome === 'win' ? '#ffd166' : outcome === 'boost' ? '#ff8a40' : '#8f7786',
-                    background: outcome === 'blank' ? 'rgba(0,0,0,.26)' : 'rgba(255,209,102,.07)',
-                  }}
-                >
-                  {outcome === 'blank' ? '—' : outcome}
-                </div>
-              ))}
-            </motion.div>
-          ) : value === 'win' ? (
-            <motion.div
-              key="win"
-              initial={{ scale: 0.4, opacity: 0, rotate: -6 }}
-              animate={{ scale: [0.4, 1.15, 1], opacity: 1, rotate: 0 }}
-              transition={{ duration: 0.55, ease: [0.34, 1.4, 0.5, 1] }}
-              exit={{ opacity: 0 }}
-              className="font-display font-extrabold text-base px-2 py-1 rounded-md"
-              style={{
-                background: 'linear-gradient(180deg, #ffd166 0%, #c8932e 100%)',
-                color: '#5a0810',
-                border: '2px solid #fff5c4',
-                boxShadow: '0 0 16px rgba(255,209,102,.85)',
-                textShadow: '0 1px 0 rgba(255,255,255,.45)',
-              }}
-            >
-              WIN
-            </motion.div>
-          ) : value === 'boost' ? (
-            <motion.div
-              key="boost"
-              initial={{ scale: 0.4, opacity: 0, rotate: 6 }}
-              animate={{ scale: [0.4, 1.15, 1], opacity: 1, rotate: 0 }}
-              transition={{ duration: 0.55, ease: [0.34, 1.4, 0.5, 1] }}
-              exit={{ opacity: 0 }}
-              className="font-display font-extrabold text-[12px] px-2 py-1 rounded-md leading-tight"
-              style={{
-                background: 'linear-gradient(180deg, #ff8a40 0%, #c8102e 100%)',
-                color: '#fff5c4',
-                border: '2px solid #fff5c4',
-                boxShadow: '0 0 16px rgba(255,138,64,.85)',
-                textShadow: '0 1px 1px rgba(0,0,0,.6)',
-              }}
-            >
-              BOOST
-            </motion.div>
-          ) : value === 'blank' ? (
-            <motion.div
-              key="blank"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="text-[#ffd166]/30 text-xs uppercase tracking-widest"
-            >
-              —
-            </motion.div>
-          ) : null}
-        </AnimatePresence>
+      }}>
+      <div className="w-full h-full rounded-lg flex items-center justify-center text-center overflow-hidden relative"
+        style={{ background: 'linear-gradient(90deg, #dbe5e7, #f6f6eb 50%, #dbe5e7)', border: '1px solid #8f805d' }}>
+        {target !== undefined ? (
+          <FeatureReel key={rollOrdinal} label="Fourth reel" durationMs={durationMs}
+            target={<FourthOutcomeGlyph value={target} />}
+            fillers={FOURTH_REEL_DISPLAY_STRIP.slice(0, 8).map((item) => <FourthOutcomeGlyph value={item} />)} />
+        ) : value !== null ? <FourthOutcomeGlyph value={value} /> : null}
       </div>
     </div>
+  );
+}
+
+function FourthOutcomeGlyph({ value }: { value: FourthReelOutcome }) {
+  if (value === 'blank') return <span className="text-[#665d50]/50 text-xl" data-fourth-outcome="blank">—</span>;
+  return (
+    <span data-fourth-outcome={value}
+      className="rounded px-1.5 py-2 font-display text-[12px] font-extrabold uppercase leading-none"
+      style={{
+        color: value === 'win' ? '#563b13' : '#fff4dc',
+        background: value === 'win' ? '#eac779' : '#b54c31',
+        border: '1px solid #b79254',
+      }}>
+      {value}
+    </span>
   );
 }

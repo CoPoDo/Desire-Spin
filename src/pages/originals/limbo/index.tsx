@@ -1,3 +1,4 @@
+import { useRoundPlayback } from '../_shared/useRoundPlayback';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
@@ -26,7 +27,7 @@ export function LimboGame() {
   const [mode, setMode] = useState<Mode>('manual');
   const [autoConfig, setAutoConfig] = useState<AutoConfig>({ count: 10, stopOnProfit: 0, stopOnLoss: 0 });
   const [autoActive, setAutoActive] = useState(false);
-  const [busy, setBusy] = useState(false);
+  const { busy, busyRef, setBusy, schedule, wait } = useRoundPlayback();
   const [lastResult, setLastResult] = useState<number | null>(null);
   const [lastWin, setLastWin] = useState<boolean | null>(null);
   const [recent, setRecent] = useState<{ id: string; result: number; win: boolean }[]>([]);
@@ -36,46 +37,18 @@ export function LimboGame() {
   const winChance = useMemo(() => winChanceFor(target), [target]);
   const profitOnWin = useMemo(() => +(bet * target - bet).toFixed(2), [bet, target]);
 
-  const playOnce = useCallback(async (): Promise<number> => {
+  const playOnce = useCallback(async (): Promise<number | null> => {
     const { bet: b, target: t } = stateRef.current;
-    if (balance.balance < b || b <= 0 || t < 1.01) return 0;
+    if (!balance.canAfford(b) || t < 1.01) return null;
+    if (busyRef.current || !balance.debit(b)) return null;
     setBusy(true);
     sound.play('click');
-    balance.debit(b);
+
     try {
       const seeds = fairness.consumeNonce();
       const rng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
       const r = play(rng, b, t);
-      setLastResult(r.result);
-      setLastWin(r.win);
-      setRecent((prev) => [{ id: `${seeds.nonce}`, result: r.result, win: r.win }, ...prev].slice(0, 8));
-      // Rocket-climb beats during the 700ms CountUp animation — three
-      // accelerating ticks then the result chime lands at the moment
-      // the number stops climbing. Real Stake Limbo has a whoosh that
-      // peaks just before the reveal; the previous code fired the
-      // win/lose chime instantly while the CountUp was still running,
-      // which spoiled the reveal moment. Now the celebration lands ON
-      // the final number.
-      window.setTimeout(() => sound.play('tick'), 120);
-      window.setTimeout(() => sound.play('tick'), 360);
-      window.setTimeout(() => sound.play('tick'), 580);
-      if (r.win) {
-        balance.credit(r.payout);
-        window.setTimeout(
-          () => sound.play(t >= 10 ? 'mega-win' : t >= 3 ? 'big-win' : 'win'),
-          720,
-        );
-        if (t >= 3) {
-          window.setTimeout(() => {
-            fireConfetti({
-              count: t >= 50 ? 130 : t >= 10 ? 80 : 50,
-              colors: ['#00e701', '#22d3ee', '#ffd166', '#ffffff'],
-            });
-          }, 720);
-        }
-      } else {
-        window.setTimeout(() => sound.play('drop'), 720);
-      }
+    if (r.payout > 0) balance.credit(r.payout);
       history.record({
         game: 'Limbo',
         bet: b,
@@ -86,6 +59,38 @@ export function LimboGame() {
         nonce: seeds.nonce,
       });
       session.recordSpin(b, r.payout, false);
+
+      setLastResult(r.result);
+      setLastWin(r.win);
+      setRecent((prev) => [{ id: `${seeds.nonce}`, result: r.result, win: r.win }, ...prev].slice(0, 8));
+      // Rocket-climb beats during the 700ms CountUp animation — three
+      // accelerating ticks then the result chime lands at the moment
+      // the number stops climbing. Real Stake Limbo has a whoosh that
+      // peaks just before the reveal; the previous code fired the
+      // win/lose chime instantly while the CountUp was still running,
+      // which spoiled the reveal moment. Now the celebration lands ON
+      // the final number.
+      schedule(() => sound.play('tick'), 120);
+      schedule(() => sound.play('tick'), 360);
+      schedule(() => sound.play('tick'), 580);
+      if (r.win) {
+        schedule(
+          () => sound.play(t >= 10 ? 'mega-win' : t >= 3 ? 'big-win' : 'win'),
+          720,
+        );
+        if (t >= 3) {
+          schedule(() => {
+            fireConfetti({
+              count: t >= 50 ? 130 : t >= 10 ? 80 : 50,
+              colors: ['#00e701', '#22d3ee', '#ffd166', '#ffffff'],
+            });
+          }, 720);
+        }
+      } else {
+        schedule(() => sound.play('drop'), 720);
+      }
+
+      await wait(740);
       return r.payout - b;
     } finally {
       setBusy(false);
@@ -101,7 +106,7 @@ export function LimboGame() {
   });
 
   const manualPlay = useCallback(() => {
-    if (busy || balance.balance < bet || bet <= 0 || target < 1.01) return;
+    if (busyRef.current || !balance.canAfford(bet) || target < 1.01) return;
     void playOnce();
   }, [busy, balance, bet, target, playOnce]);
 
@@ -201,7 +206,7 @@ export function LimboGame() {
               disabled={busy || autoActive}
               onChange={(e) => {
                 const v = parseFloat(e.target.value);
-                if (Number.isFinite(v)) setTarget(Math.max(1.01, Math.min(1_000_000, v)));
+                if (Number.isFinite(v)) setTarget(+Math.max(1.01, Math.min(1_000_000, v)).toFixed(2));
               }}
               className="font-mono font-semibold text-sm tabular-nums bg-stake-input border border-stake-border rounded px-2 py-1 w-24 text-right text-stake-text outline-none focus:border-stake-dim"
             />
@@ -256,13 +261,13 @@ export function LimboGame() {
           {mode === 'auto' && (
             <>
               <AutoConfigFields config={autoConfig} onChange={setAutoConfig} disabled={autoActive} />
-              {autoActive && <AutoProgressDisplay progress={progress} config={autoConfig} />}
+              {(autoActive || progress.stopReason) && <AutoProgressDisplay progress={progress} config={autoConfig} />}
             </>
           )}
           {mode === 'manual' ? (
             <button
               onClick={manualPlay}
-              disabled={busy || balance.balance < bet || bet <= 0 || target < 1.01}
+              disabled={busy || !balance.canAfford(bet) || target < 1.01}
               className="w-full py-3.5 rounded bg-stake-green text-stake-bg font-bold text-sm disabled:opacity-50 transition active:scale-[0.99] hover:bg-stake-green-hi"
             >
               {busy ? 'Rolling…' : 'Bet'}
@@ -270,7 +275,7 @@ export function LimboGame() {
           ) : (
             <button
               onClick={() => setAutoActive((a) => !a)}
-              disabled={!autoActive && (balance.balance < bet || bet <= 0)}
+              disabled={!autoActive && (busy || !balance.canAfford(bet))}
               className={`w-full py-3.5 rounded font-bold text-sm disabled:opacity-50 transition active:scale-[0.99] ${
                 autoActive ? 'bg-stake-red text-white' : 'bg-stake-green text-stake-bg hover:bg-stake-green-hi'
               }`}

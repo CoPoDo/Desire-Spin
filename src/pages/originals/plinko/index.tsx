@@ -1,3 +1,4 @@
+import { useRoundPlayback } from '../_shared/useRoundPlayback';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
@@ -27,6 +28,7 @@ type ActiveBall = {
   id: number;
   drop: PlinkoDrop;
   rows: number;
+  delay: number;
 };
 
 /** Stake-style Plinko rendered in SVG. SVG primitives composite on the GPU,
@@ -34,6 +36,7 @@ type ActiveBall = {
  *  HTML `left`/`top` percentages (which trigger layout + paint each frame). */
 export function PlinkoGame() {
   const { balance, fairness, sound, history, session } = useGame();
+  const { schedule } = useRoundPlayback();
   const [bet, setBet] = usePersistedBet('plinko', 1);
   const [rows, setRows] = useState(12);
   const [risk, setRisk] = useState<Risk>('medium');
@@ -54,20 +57,23 @@ export function PlinkoGame() {
 
   const mults = useMemo(() => multipliersFor(risk, rows), [risk, rows]);
 
-  const drop = useCallback((): Promise<number> => {
-    return new Promise<number>((resolve) => {
+  const drop = useCallback((delay = 0): Promise<number | null> => {
+    return new Promise<number | null>((resolve) => {
       const { bet: b, rows: r, risk: rk } = stateRef.current;
-      if (balance.balance < b || b <= 0) {
-        resolve(0);
+      if (!balance.debit(b)) {
+        resolve(null);
         return;
       }
       sound.play('click');
-      balance.debit(b);
       const seeds = fairness.consumeNonce();
       const rng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
       const result = dropBall(rng, b, r, rk);
+      if (result.payout > 0) balance.credit(result.payout);
+      history.record({ game: 'Plinko', bet: b, payout: result.payout, multiplier: result.multiplier,
+        serverSeedHash: fairness.hash, clientSeed: seeds.clientSeed, nonce: seeds.nonce });
+      session.recordSpin(b, result.payout, false);
       const id = ++ballIdRef.current;
-      setActiveBalls((prev) => [...prev, { id, drop: result, rows: r }]);
+      setActiveBalls((prev) => [...prev, { id, drop: result, rows: r, delay }]);
 
       // Peg-tick SFX synced to the visual fall — one tick per row
       // contact, with sqrt scaling so they accelerate as the ball
@@ -77,13 +83,12 @@ export function PlinkoGame() {
       const visualDur = Math.sqrt(r) * 320 + 300;
       for (let i = 0; i < r; i++) {
         const at = visualDur * Math.sqrt(i + 1) / Math.sqrt(r + 1);
-        window.setTimeout(() => sound.play('tick'), at);
+        schedule(() => sound.play('tick'), at + delay);
       }
 
       // Animation duration scales with rows (gravity-like: faster per row).
-      const animDur = r * 110 + 250;
-      setTimeout(() => {
-        if (result.payout > 0) balance.credit(result.payout);
+      const animDur = visualDur + delay;
+      schedule(() => {
         sound.play(
           result.multiplier >= 10 ? 'mega-win' :
           result.multiplier >= 2 ? 'big-win' :
@@ -96,23 +101,13 @@ export function PlinkoGame() {
           });
         }
         setFlashingBucket(result.bucket);
-        setTimeout(() => setFlashingBucket(null), 600);
-        history.record({
-          game: 'Plinko',
-          bet: b,
-          payout: result.payout,
-          multiplier: result.multiplier,
-          serverSeedHash: fairness.hash,
-          clientSeed: seeds.clientSeed,
-          nonce: seeds.nonce,
-        });
-        session.recordSpin(b, result.payout, false);
+        schedule(() => setFlashingBucket(null), 600);
         setRecentResults((prev) => [{ id, multiplier: result.multiplier }, ...prev].slice(0, 8));
-        setTimeout(() => {
+        schedule(() => {
           setActiveBalls((prev) => prev.filter((bb) => bb.id !== id));
         }, 400);
         resolve(result.payout - b);
-      }, animDur);
+      }, animDur, () => resolve(null));
     });
   }, [balance, fairness, sound, history, session]);
 
@@ -164,8 +159,8 @@ export function PlinkoGame() {
         </div>
 
         <div className="rounded-lg bg-stake-panel border border-stake-border p-3 space-y-3">
-          <ManualAutoTabs mode={mode} onChange={setMode} disabled={autoActive} />
-          <BetInput bet={bet} onBetChange={setBet} disabled={autoActive} />
+          <ManualAutoTabs mode={mode} onChange={setMode} disabled={autoActive || activeBalls.length > 0} />
+          <BetInput bet={bet} onBetChange={setBet} disabled={autoActive || activeBalls.length > 0} />
           <div>
             <div className="text-xs text-stake-muted mb-1.5">Risk</div>
             <div className="flex gap-1.5">
@@ -173,7 +168,7 @@ export function PlinkoGame() {
                 <button
                   key={r}
                   onClick={() => setRisk(r)}
-                  disabled={autoActive}
+                  disabled={autoActive || activeBalls.length > 0}
                   className={`flex-1 py-2 rounded text-xs font-semibold capitalize transition disabled:opacity-50 ${
                     risk === r
                       ? 'bg-stake-green text-stake-bg'
@@ -196,15 +191,15 @@ export function PlinkoGame() {
               max={16}
               step={1}
               value={rows}
-              disabled={autoActive}
+              disabled={autoActive || activeBalls.length > 0}
               onChange={(e) => setRows(parseInt(e.target.value))}
               className="dice-slider w-full appearance-none bg-stake-bg rounded-full h-2 cursor-pointer disabled:opacity-50"
             />
           </div>
           {mode === 'auto' && (
             <>
-              <AutoConfigFields config={autoConfig} onChange={setAutoConfig} disabled={autoActive} />
-              {autoActive && <AutoProgressDisplay progress={progress} config={autoConfig} />}
+              <AutoConfigFields config={autoConfig} onChange={setAutoConfig} disabled={autoActive || activeBalls.length > 0} />
+              {(autoActive || progress.stopReason) && <AutoProgressDisplay progress={progress} config={autoConfig} />}
             </>
           )}
           {mode === 'manual' ? (
@@ -216,7 +211,7 @@ export function PlinkoGame() {
                   <button
                     key={n}
                     onClick={() => setBulkCount(n)}
-                    disabled={autoActive}
+                    disabled={autoActive || activeBalls.length > 0}
                     className={`flex-1 py-1.5 rounded text-[11px] font-mono font-bold tabular-nums transition disabled:opacity-50 ${
                       bulkCount === n
                         ? 'bg-accent-gold text-stake-bg'
@@ -229,11 +224,10 @@ export function PlinkoGame() {
               </div>
               <button
                 onClick={() => {
-                  for (let i = 0; i < bulkCount; i++) {
-                    window.setTimeout(() => { void drop(); }, i * 80);
-                  }
+                  if (!balance.canAfford(+(bet * bulkCount).toFixed(2))) return;
+                  for (let i = 0; i < bulkCount; i++) void drop(i * 80);
                 }}
-                disabled={balance.balance < bet * bulkCount || bet <= 0}
+                disabled={!balance.canAfford(+(bet * bulkCount).toFixed(2))}
                 style={{ touchAction: 'manipulation' }}
                 className="w-full py-3.5 rounded bg-stake-green text-stake-bg font-bold text-sm disabled:opacity-50 transition active:scale-[0.99] hover:bg-stake-green-hi"
               >
@@ -243,7 +237,7 @@ export function PlinkoGame() {
           ) : (
             <button
               onClick={() => setAutoActive((a) => !a)}
-              disabled={!autoActive && (balance.balance < bet || bet <= 0)}
+              disabled={!autoActive && (activeBalls.length > 0 || balance.balance < bet || bet <= 0)}
               className={`w-full py-3.5 rounded font-bold text-sm disabled:opacity-50 transition active:scale-[0.99] ${
                 autoActive ? 'bg-stake-red text-white' : 'bg-stake-green text-stake-bg hover:bg-stake-green-hi'
               }`}
@@ -509,7 +503,7 @@ function Ball({
           opacity={0.4 - i * 0.10}
           initial={{ cx: cxKeys[0], cy: cyKeys[0] }}
           animate={{ cx: cxKeys, cy: cyKeys }}
-          transition={{ duration: dur, times, ease: 'linear', delay }}
+          transition={{ duration: dur, times, ease: 'linear', delay: delay + ball.delay / 1000 }}
         />
       ))}
       {/* Main ball */}
@@ -521,7 +515,7 @@ function Ball({
         filter="url(#plinko-ball-glow)"
         initial={{ cx: cxKeys[0], cy: cyKeys[0] }}
         animate={{ cx: cxKeys, cy: cyKeys }}
-        transition={{ duration: dur, times, ease: 'linear' }}
+        transition={{ duration: dur, times, ease: 'linear', delay: ball.delay / 1000 }}
       />
     </>
   );

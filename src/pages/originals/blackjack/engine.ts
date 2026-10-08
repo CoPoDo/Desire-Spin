@@ -159,6 +159,8 @@ export function split(rng: Rng, state: RoundState): RoundState {
     fromSplit: true,
     done: isAces,
   });
+  left.done ||= handValue(left.cards).value === 21;
+  right.done ||= handValue(right.cards).value === 21;
   // Replace active hand with [left, right]. Other hands unchanged.
   const newHands = [
     ...state.hands.slice(0, state.activeIdx),
@@ -248,6 +250,7 @@ export function stand(rng: Rng, state: RoundState): RoundState {
 }
 
 export function resolveDealer(rng: Rng, state: RoundState): RoundState {
+  if (state.phase === 'done') return state;
   // Only draw the dealer's full hand if any player hand survived (i.e.,
   // didn't bust). If every player hand busted, the dealer's hole stays
   // unseen and pays nothing on every hand. We still expose the dealer

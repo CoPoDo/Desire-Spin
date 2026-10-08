@@ -1,9 +1,10 @@
+import { MAX_ROUND_MULTIPLIER } from '../../../lib/accounting';
 import { useCallback, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useHotkey } from '../../../hooks/useHotkey';
 import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
 import { useGame } from '../../../game-context';
-import { createRng } from '../../../lib/fairness';
+import { useInteractiveRound, useRoundState } from '../_shared/useInteractiveRound';
 import { fmtCurrency, fmtMultiplier } from '../../../lib/format';
 import { BetInput } from '../_shared/BetInput';
 import { type Side, flip, multiplierAfter } from './engine';
@@ -12,93 +13,67 @@ import { fireConfetti } from '../../../lib/confetti';
 type Phase = 'idle' | 'choosing' | 'flipping' | 'won' | 'lost';
 
 export function CoinFlipGame() {
-  const { balance, fairness, sound, history, session } = useGame();
+  const { balance, sound } = useGame();
+  const round = useInteractiveRound('Flip');
   const [bet, setBet] = useState(1);
-  const [phase, setPhase] = useState<Phase>('idle');
-  const [streak, setStreak] = useState(0);
+  const [phase, setPhase, phaseRef] = useRoundState<Phase>('idle');
+  const [streak, setStreak, streakRef] = useRoundState(0);
   const [lastFlip, setLastFlip] = useState<Side | null>(null);
   const [history$, setHistory$] = useState<Side[]>([]);
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy, busyRef] = useRoundState(false);
 
   const accumMult = multiplierAfter(streak);
-  const cashoutAmount = +(bet * accumMult).toFixed(2);
+  const committedBet = round.wager.current?.bet ?? bet;
+  const cashoutAmount = +(committedBet * accumMult).toFixed(2);
+  round.onLeave.current = (updateView = false) => {
+    if (updateView) { setPhase('won'); setStreak(streakRef.current); setBusy(false); }
+    return (round.wager.current?.bet ?? 0) * multiplierAfter(streakRef.current);
+  };
   const nextMult = multiplierAfter(streak + 1);
 
   const start = useCallback(() => {
-    if (busy) return;
-    if (balance.balance < bet || bet <= 0) return;
+    if (busyRef.current || phaseRef.current === 'choosing' || phaseRef.current === 'flipping') return;
+    if (!round.begin(bet)) return;
     sound.play('click');
-    balance.debit(bet);
-    setStreak(0);
-    setLastFlip(null);
-    setHistory$([]);
-    setPhase('choosing');
-  }, [busy, balance, bet, sound]);
+    setStreak(0); setLastFlip(null); setHistory$([]); setPhase('choosing');
+  }, [bet, round, sound, busyRef, phaseRef, setStreak, setPhase]);
 
   const choose = useCallback((side: Side) => {
-    if (phase !== 'choosing' || busy) return;
-    setBusy(true);
-    sound.play('click');
-    setPhase('flipping');
-    const seeds = fairness.consumeNonce();
-    const rng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
-    const result = flip(rng);
-    setTimeout(() => {
+    const wager = round.wager.current;
+    if (phaseRef.current !== 'choosing' || busyRef.current || !wager || wager.settled) return;
+    setBusy(true); setPhase('flipping'); sound.play('click');
+    const result = flip(wager.rng);
+    const won = result === side;
+    // Commit the decision before animation; navigation cannot cancel a loss.
+    if (won) {
+      streakRef.current += 1;
+      if (multiplierAfter(streakRef.current) >= MAX_ROUND_MULTIPLIER) round.settle(wager.bet * MAX_ROUND_MULTIPLIER);
+    } else round.settle(0);
+    round.delay(() => {
+      if (round.wager.current !== wager || phaseRef.current !== 'flipping') return;
       setLastFlip(result);
-      setHistory$((prev) => [result, ...prev].slice(0, 12));
-      const won = result === side;
+      setHistory$((previous) => [result, ...previous].slice(0, 12));
       if (won) {
-        setStreak((s) => s + 1);
-        sound.play('win');
-        setPhase('choosing');
-      } else {
-        setPhase('lost');
-        sound.play('drop');
-        history.record({
-          game: 'Flip',
-          bet,
-          payout: 0,
-          multiplier: 0,
-          serverSeedHash: fairness.hash,
-          clientSeed: seeds.clientSeed,
-          nonce: seeds.nonce,
-        });
-        session.recordSpin(bet, 0, false);
-      }
+        setStreak(streakRef.current); setPhase(wager.settled ? 'won' : 'choosing'); sound.play('win');
+      } else { setPhase('lost'); sound.play('drop'); }
       setBusy(false);
     }, 520);
-  }, [phase, busy, fairness, sound, history, session, bet]);
+  }, [round, sound, phaseRef, busyRef, setBusy, setPhase, setStreak, streakRef]);
 
   const cashOut = useCallback(() => {
-    if (phase !== 'choosing' || streak === 0) return;
-    // Tier SFX with cash-out multiplier — a 10-streak (~1024×) and a
-    // 1-streak (1.98×) sounded the same. Now ≥10× = mega.
-    sound.play(accumMult >= 10 ? 'mega-win' : 'big-win');
-    balance.credit(cashoutAmount);
-    if (accumMult >= 2) {
-      fireConfetti({
-        count: accumMult >= 16 ? 130 : accumMult >= 4 ? 80 : 50,
-      });
-    }
-    history.record({
-      game: 'Flip',
-      bet,
-      payout: cashoutAmount,
-      multiplier: accumMult,
-      serverSeedHash: fairness.hash,
-      clientSeed: '',
-      nonce: 0,
-    });
-    session.recordSpin(bet, cashoutAmount, false);
+    if (phaseRef.current !== 'choosing' || busyRef.current || streakRef.current === 0) return;
+    const multiplier = multiplierAfter(streakRef.current);
+    const payout = (round.wager.current?.bet ?? 0) * multiplier;
+    if (!round.settle(payout)) return;
     setPhase('won');
-  }, [phase, streak, balance, bet, accumMult, cashoutAmount, fairness, history, session, sound]);
+    sound.play(multiplier >= 10 ? 'mega-win' : 'big-win');
+    if (multiplier >= 2) fireConfetti({ count: multiplier >= 16 ? 130 : 70 });
+  }, [round, phaseRef, busyRef, streakRef, setPhase, sound]);
 
   const reset = useCallback(() => {
-    setPhase('idle');
-    setStreak(0);
-    setLastFlip(null);
-    setHistory$([]);
-  }, []);
+    if (round.wager.current && !round.wager.current.settled) return;
+    setPhase('idle'); setStreak(0); setLastFlip(null); setHistory$([]);
+  }, [round, setPhase, setStreak]);
 
   // Keyboard shortcuts: H for Heads, T for Tails, C/Space for Cash Out.
   useHotkey('h', () => { if (phase === 'choosing' && !busy) choose('heads'); }, true);
@@ -119,7 +94,9 @@ export function CoinFlipGame() {
 
   return (
     <OriginalPageLayout title="Flip">
+      {round.error && <p role="alert" className="p-3 text-sm text-stake-red">{round.error}</p>}
       <div className="flex flex-col p-4 gap-4 max-w-md mx-auto w-full">
+        <p className="text-[11px] text-stake-muted">Leaving cashes out your completed flips. Each successful flip multiplies your return by 1.98; the 1% edge compounds with each flip. The local simulation automatically cashes out at 10,000,000×.</p>
         {/* Status */}
         <div className="rounded-lg bg-stake-card border border-stake-border p-4 text-center min-h-[200px] flex flex-col items-center justify-center gap-3">
           <AnimatePresence mode="wait">

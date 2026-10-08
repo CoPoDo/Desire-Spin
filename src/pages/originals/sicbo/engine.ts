@@ -1,42 +1,9 @@
 import type { Rng } from '../../../lib/fairness';
 
-/** Sic Bo — three-dice ancient Chinese casino game.
- *
- *  Roll 3 dice (each 1..6 = 216 equally likely outcomes). Bet types
- *  with payouts calibrated for ~99% RTP:
- *
- *  Small (sum 4-10, no triples):
- *    P = 105/216 ≈ 48.61%   →  2.04×   (RTP = 0.4861 × 2.04 ≈ 0.9916)
- *  Big   (sum 11-17, no triples):
- *    P = 105/216 ≈ 48.61%   →  2.04×
- *  Odd  (no triples):
- *    P = 105/216 ≈ 48.61%   →  2.04×
- *  Even (no triples):
- *    P = 105/216 ≈ 48.61%   →  2.04×
- *  Any Triple (3-of-a-kind, any face):
- *    P = 6/216  ≈ 2.78%     →  35.64×  (RTP ≈ 0.99)
- *  Specific Triple (e.g. 4-4-4):
- *    P = 1/216  ≈ 0.46%     →  213.84× (RTP ≈ 0.99)
- *  Specific Total (sum N for N in 4..17):
- *    P = ways(N)/216        →  varies; payouts table tuned to 99% RTP each.
- *
- *  Specific-total payouts (excluding 3 and 18 since those are "any triple"
- *  territory) — designed so each bet pays ~99% RTP independently.
- *    sum 4:  ways=3  → 0.99 × 216/3  ≈ 71.28×
- *    sum 5:  ways=6  → 0.99 × 216/6  ≈ 35.64×
- *    sum 6:  ways=10 → 21.38×
- *    sum 7:  ways=15 → 14.26×
- *    sum 8:  ways=21 → 10.18×
- *    sum 9:  ways=25 → 8.55×
- *    sum 10: ways=27 → 7.92×
- *    sum 11: ways=27 → 7.92×
- *    sum 12: ways=25 → 8.55×
- *    sum 13: ways=21 → 10.18×
- *    sum 14: ways=15 → 14.26×
- *    sum 15: ways=10 → 21.38×
- *    sum 16: ways=6  → 35.64×
- *    sum 17: ways=3  → 71.28×
- */
+/** Sic Bo: three fair dice, with the standard Macau total-return table.
+ * Small/Big exclude every triple (102 winning combinations out of 216).
+ * Odd/Even exclude triples (105/216). Total bets include triples.
+ * Returns include the original stake. House edge varies by wager. */
 
 export const SUM_WAYS: Record<number, number> = {
   3: 1,  4: 3,  5: 6,  6: 10, 7: 15, 8: 21, 9: 25, 10: 27,
@@ -101,7 +68,7 @@ export function payoutMultiplier(bet: Bet, r: Roll): number {
       // (where a triple shares that sum) — payouts were calibrated
       // against the full ways-count, but triples were silently
       // disqualified, so RTP fell to ~89-95% for those sums instead
-      // of the 99% target.
+      // of the payout table probability.
       return sum === bet.sum ? (SUM_PAYOUTS[bet.sum] ?? 0) : 0;
     case 'singleDie': {
       // Real Sic Bo "single die" wager: pays 1:1 / 2:1 / 3:1 (returns

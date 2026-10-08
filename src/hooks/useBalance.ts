@@ -1,43 +1,65 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type SetStateAction } from 'react';
 import { loadJson, saveJson } from '../lib/storage';
+import { DEFAULT_BALANCE, MAX_MONEY, MAX_ROUND_MULTIPLIER, MAX_STAKE, moneyCents, normalizeMoney } from '../lib/accounting';
 
 const KEY = 'balance';
-const DEFAULT_BALANCE = 1000;
 
 export function useBalance() {
-  const [balance, setBalance] = useState<number>(() =>
-    loadJson<number>(KEY, DEFAULT_BALANCE),
+  const [balance, setBalanceState] = useState(() =>
+    normalizeMoney(loadJson<unknown>(KEY, DEFAULT_BALANCE), DEFAULT_BALANCE),
   );
   const ref = useRef(balance);
-  useEffect(() => {
-    ref.current = balance;
-  }, [balance]);
 
-  useEffect(() => {
-    saveJson(KEY, balance);
-  }, [balance]);
+  // Persist a sanitized legacy value on mount. Read the ref because a child
+  // may already have recovered a pending round before this effect runs.
+  useEffect(() => { saveJson(KEY, ref.current); }, []);
 
-  // Ref-based mutators so rapid debit→credit pairs in the same tick can't
-  // race against React's batched state updates.
-  const debit = useCallback((amount: number) => {
-    const next = Math.max(0, +(ref.current - amount).toFixed(2));
+  const commit = useCallback((next: number) => {
     ref.current = next;
-    setBalance(next);
+    saveJson(KEY, next);
+    setBalanceState(next);
   }, []);
 
-  const credit = useCallback((amount: number) => {
-    const next = +(ref.current + amount).toFixed(2);
-    ref.current = next;
-    setBalance(next);
+  const getBalance = useCallback(() => ref.current, []);
+  const canAfford = useCallback((amount: number) => {
+    const cents = moneyCents(amount);
+    return cents !== null && cents > 0 && cents <= Math.round(ref.current * 100) &&
+      ref.current + Math.min(amount, MAX_STAKE) * MAX_ROUND_MULTIPLIER <= MAX_MONEY;
   }, []);
 
-  const reset = useCallback((to = DEFAULT_BALANCE) => {
-    ref.current = to;
-    setBalance(to);
-  }, []);
+  /** Returns false without changing the wallet if the whole debit cannot fit. */
+  const debit = useCallback((amount: number): boolean => {
+    const cents = moneyCents(amount);
+    const available = Math.round(ref.current * 100);
+    if (cents === null || cents <= 0 || cents > available ||
+      ref.current + Math.min(amount, MAX_STAKE) * MAX_ROUND_MULTIPLIER > MAX_MONEY) return false;
+    commit((available - cents) / 100);
+    return true;
+  }, [commit]);
+
+  const credit = useCallback((amount: number): boolean => {
+    const cents = moneyCents(amount);
+    if (cents === null) return false;
+    const next = Math.round(ref.current * 100) + cents;
+    if (!Number.isSafeInteger(next) || next / 100 > MAX_MONEY) return false;
+    commit(next / 100);
+    return true;
+  }, [commit]);
+
+  // Keep the public setter compatible with React's functional-setter shape,
+  // but never expose React's raw setter: it bypasses the authoritative ref.
+  const setBalance = useCallback((value: SetStateAction<number>): boolean => {
+    const next = typeof value === 'function' ? value(ref.current) : value;
+    const cents = moneyCents(next);
+    if (cents === null) return false;
+    commit(cents / 100);
+    return true;
+  }, [commit]);
+
+  const reset = useCallback((to = DEFAULT_BALANCE) => setBalance(to), [setBalance]);
 
   return useMemo(
-    () => ({ balance, setBalance, debit, credit, reset }),
-    [balance, debit, credit, reset],
+    () => ({ balance, setBalance, debit, credit, reset, canAfford, getBalance }),
+    [balance, setBalance, debit, credit, reset, canAfford, getBalance],
   );
 }

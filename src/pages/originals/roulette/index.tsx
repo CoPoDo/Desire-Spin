@@ -1,3 +1,4 @@
+import { useRoundPlayback } from '../_shared/useRoundPlayback';
 import { useCallback, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
@@ -44,14 +45,14 @@ export function RouletteGame() {
   const { balance, fairness, sound, history, session } = useGame();
   const [chip, setChip] = useState(1);
   const [chips, setChips] = useState<ChipMap>({});
-  const [busy, setBusy] = useState(false);
+  const { busy, busyRef, setBusy, schedule } = useRoundPlayback();
   const [winning, setWinning] = useState<number | null>(null);
   const [result, setResult] = useState<{ totalStake: number; totalReturn: number } | null>(null);
   const [recent, setRecent] = useState<{ id: string; n: number }[]>([]);
 
   const placeChip = useCallback(
     (t: BetType) => {
-      if (busy) return;
+      if (busyRef.current) return;
       sound.play('tick');
       setChips((prev) => ({
         ...prev,
@@ -62,7 +63,7 @@ export function RouletteGame() {
   );
 
   const clearBets = useCallback(() => {
-    if (busy) return;
+    if (busyRef.current) return;
     setChips({});
     setResult(null);
   }, [busy]);
@@ -73,26 +74,38 @@ export function RouletteGame() {
   );
 
   const spin = useCallback(() => {
-    if (busy || totalStake <= 0 || balance.balance < totalStake) return;
+    if (busyRef.current || totalStake <= 0 || balance.balance < totalStake) return;
+    if (busyRef.current || !balance.debit(totalStake)) return;
     setBusy(true);
     sound.play('click');
-    balance.debit(totalStake);
+
     const seeds = fairness.consumeNonce();
     const rng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
     const bets: Bet[] = Object.entries(chips).map(([k, amount]) => ({ type: typeOf(k), amount }));
     const r = play(rng, bets);
+    if (r.totalReturn > 0) balance.credit(r.totalReturn);
+    history.record({
+      game: 'Roulette',
+      bet: totalStake,
+      payout: r.totalReturn,
+      multiplier: r.totalReturn / Math.max(totalStake, 0.01),
+      serverSeedHash: fairness.hash,
+      clientSeed: seeds.clientSeed,
+      nonce: seeds.nonce,
+    });
+    session.recordSpin(totalStake, r.totalReturn, false);
+
     // Wheel-tick SFX matching the visual deceleration. Real roulette
     // wheels click as the ball hops over the frets — silent spinning
     // felt arcade-y. Schedule sampled from the same ease-out curve
     // the wheel uses (cubic-bezier 0.22, 1, 0.36, 1) so ticks bunch
     // up early and space out as the wheel slows.
     const wheelTicks = [80, 200, 340, 500, 680, 880, 1100, 1340, 1600, 1880, 2150, 2360];
-    wheelTicks.forEach((t) => window.setTimeout(() => sound.play('tick'), t));
+    wheelTicks.forEach((t) => schedule(() => sound.play('tick'), t));
     // Animate the wheel for ~2.5s then reveal
-    setTimeout(() => {
+    schedule(() => {
       setWinning(r.winningNumber);
       if (r.totalReturn > 0) {
-        balance.credit(r.totalReturn);
         sound.play(r.totalReturn >= totalStake * 5 ? 'mega-win' : r.totalReturn >= totalStake * 2 ? 'big-win' : 'win');
         if (r.totalReturn >= totalStake * 2) {
           fireConfetti({
@@ -103,16 +116,7 @@ export function RouletteGame() {
       } else {
         sound.play('drop');
       }
-      history.record({
-        game: 'Roulette',
-        bet: totalStake,
-        payout: r.totalReturn,
-        multiplier: r.totalReturn / Math.max(totalStake, 0.01),
-        serverSeedHash: fairness.hash,
-        clientSeed: seeds.clientSeed,
-        nonce: seeds.nonce,
-      });
-      session.recordSpin(totalStake, r.totalReturn, false);
+
       setResult({ totalStake, totalReturn: r.totalReturn });
       setRecent((prev) => [{ id: `${seeds.nonce}`, n: r.winningNumber }, ...prev].slice(0, 12));
       setBusy(false);

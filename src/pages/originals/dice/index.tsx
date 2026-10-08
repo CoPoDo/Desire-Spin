@@ -1,3 +1,4 @@
+import { useRoundPlayback } from '../_shared/useRoundPlayback';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
@@ -31,7 +32,7 @@ export function DiceGame() {
   const [mode, setMode] = useState<Mode>('manual');
   const [autoConfig, setAutoConfig] = useState<AutoConfig>({ count: 10, stopOnProfit: 0, stopOnLoss: 0 });
   const [autoActive, setAutoActive] = useState(false);
-  const [busy, setBusy] = useState(false);
+  const { busy, busyRef, setBusy, wait } = useRoundPlayback();
   const [lastRoll, setLastRoll] = useState<number | null>(null);
   const [lastWin, setLastWin] = useState<boolean | null>(null);
   const [recentRolls, setRecentRolls] = useState<{ id: string; roll: number; win: boolean }[]>([]);
@@ -42,21 +43,33 @@ export function DiceGame() {
   const multiplier = useMemo(() => multiplierFor(direction, target), [direction, target]);
   const profitOnWin = useMemo(() => +(bet * multiplier - bet).toFixed(2), [bet, multiplier]);
 
-  const playOnce = useCallback(async (): Promise<number> => {
+  const playOnce = useCallback(async (): Promise<number | null> => {
     const { direction: dir, target: tgt, bet: b } = stateRef.current;
-    if (balance.balance < b || b <= 0) return 0;
+    if (!balance.canAfford(b)) return null;
+    if (busyRef.current || !balance.debit(b)) return null;
     setBusy(true);
     sound.play('click');
-    balance.debit(b);
+
     try {
       const seeds = fairness.consumeNonce();
       const rng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
       const result = play(rng, b, dir, tgt);
+    if (result.payout > 0) balance.credit(result.payout);
+      history.record({
+        game: 'Dice',
+        bet: b,
+        payout: result.payout,
+        multiplier: result.win ? result.multiplier : 0,
+        serverSeedHash: fairness.hash,
+        clientSeed: seeds.clientSeed,
+        nonce: seeds.nonce,
+      });
+      session.recordSpin(b, result.payout, false);
+
       setLastRoll(result.roll);
       setLastWin(result.win);
       setRecentRolls((r) => [{ id: `${seeds.nonce}`, roll: result.roll, win: result.win }, ...r].slice(0, 8));
       if (result.win) {
-        balance.credit(result.payout);
         // Sound + confetti tier on the win multiplier — matches the
         // pattern used by Crash, Limbo, Tower, Hilo, etc. (≥4× = big
         // celebration, ≥10× = mega, ≥40× = epic). Real Stake Dice
@@ -75,16 +88,8 @@ export function DiceGame() {
       } else {
         sound.play('drop');
       }
-      history.record({
-        game: 'Dice',
-        bet: b,
-        payout: result.payout,
-        multiplier: result.win ? result.multiplier : 0,
-        serverSeedHash: fairness.hash,
-        clientSeed: seeds.clientSeed,
-        nonce: seeds.nonce,
-      });
-      session.recordSpin(b, result.payout, false);
+
+      await wait(180);
       return result.payout - b;
     } finally {
       setBusy(false);
@@ -100,7 +105,7 @@ export function DiceGame() {
   });
 
   const manualRoll = useCallback(() => {
-    if (busy || balance.balance < bet || bet <= 0) return;
+    if (busyRef.current || !balance.canAfford(bet)) return;
     void playOnce();
   }, [busy, balance, bet, playOnce]);
 
@@ -220,7 +225,7 @@ export function DiceGame() {
             disabled={busy || autoActive}
             onChange={(v) => {
               const chance = Math.max(2, Math.min(98, 99 / Math.max(1.01, v)));
-              setTarget(direction === 'over' ? +(100 - chance).toFixed(2) : +chance.toFixed(2));
+              setTarget(direction === 'over' ? +(99.99 - chance).toFixed(2) : +chance.toFixed(2));
             }}
             format={(v) => fmtMultiplier(v)}
           />
@@ -242,7 +247,7 @@ export function DiceGame() {
             disabled={busy || autoActive}
             onChange={(v) => {
               const c = Math.max(2, Math.min(98, v));
-              setTarget(direction === 'over' ? +(100 - c).toFixed(2) : +c.toFixed(2));
+              setTarget(direction === 'over' ? +(99.99 - c).toFixed(2) : +c.toFixed(2));
             }}
             format={(v) => `${v.toFixed(2)}`}
           />
@@ -262,13 +267,13 @@ export function DiceGame() {
           {mode === 'auto' && (
             <>
               <AutoConfigFields config={autoConfig} onChange={setAutoConfig} disabled={autoActive} />
-              {autoActive && <AutoProgressDisplay progress={progress} config={autoConfig} />}
+              {(autoActive || progress.stopReason) && <AutoProgressDisplay progress={progress} config={autoConfig} />}
             </>
           )}
           {mode === 'manual' ? (
             <button
               onClick={manualRoll}
-              disabled={busy || balance.balance < bet || bet <= 0}
+              disabled={busy || !balance.canAfford(bet)}
               className="w-full py-3.5 rounded bg-stake-green text-stake-bg font-bold text-sm disabled:opacity-50 transition active:scale-[0.99] hover:bg-stake-green-hi"
             >
               {busy ? 'Rolling…' : 'Bet'}
@@ -276,7 +281,7 @@ export function DiceGame() {
           ) : (
             <button
               onClick={() => setAutoActive((a) => !a)}
-              disabled={!autoActive && (balance.balance < bet || bet <= 0)}
+              disabled={!autoActive && (busy || !balance.canAfford(bet))}
               className={`w-full py-3.5 rounded font-bold text-sm disabled:opacity-50 transition active:scale-[0.99] ${
                 autoActive ? 'bg-stake-red text-white' : 'bg-stake-green text-stake-bg hover:bg-stake-green-hi'
               }`}

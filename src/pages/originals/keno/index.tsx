@@ -1,3 +1,4 @@
+import { useRoundPlayback } from '../_shared/useRoundPlayback';
 import { useCallback, useState } from 'react';
 import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
 import { useGame } from '../../../game-context';
@@ -23,11 +24,11 @@ export function KenoGame() {
   const [picks, setPicks] = useState<number[]>([]);
   const [draw, setDraw] = useState<KenoDraw | null>(null);
   const [revealing, setRevealing] = useState<Set<number>>(new Set());
-  const [busy, setBusy] = useState(false);
+  const { busy, busyRef, setBusy, wait } = useRoundPlayback();
 
   const togglePick = useCallback(
     (n: number) => {
-      if (busy) return;
+      if (busyRef.current) return;
       if (draw) {
         // Reset to allow new picks
         setDraw(null);
@@ -43,14 +44,14 @@ export function KenoGame() {
   );
 
   const clearPicks = useCallback(() => {
-    if (busy) return;
+    if (busyRef.current) return;
     setPicks([]);
     setDraw(null);
     setRevealing(new Set());
   }, [busy]);
 
   const autoPick = useCallback(() => {
-    if (busy) return;
+    if (busyRef.current) return;
     const all = Array.from({ length: TOTAL }, (_, i) => i + 1);
     // Fisher-Yates pick 10
     for (let i = all.length - 1; i > 0; i--) {
@@ -63,25 +64,37 @@ export function KenoGame() {
   }, [busy]);
 
   const playRound = useCallback(async () => {
-    if (busy || picks.length === 0 || balance.balance < bet || bet <= 0) return;
+    if (busyRef.current || picks.length === 0 || !balance.canAfford(bet)) return;
+    if (busyRef.current || !balance.debit(bet)) return;
     setBusy(true);
     sound.play('click');
-    balance.debit(bet);
+
     const seeds = fairness.consumeNonce();
     const rng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
     const result = play(rng, bet, picks, risk);
+    if (result.payout > 0) balance.credit(result.payout);
+    history.record({
+      game: 'Keno',
+      bet,
+      payout: result.payout,
+      multiplier: result.multiplier,
+      serverSeedHash: fairness.hash,
+      clientSeed: seeds.clientSeed,
+      nonce: seeds.nonce,
+    });
+    session.recordSpin(bet, result.payout, false);
+
 
     // Reveal one by one
     setRevealing(new Set());
     for (let i = 0; i < result.drawn.length; i++) {
-      await new Promise<void>((res) => setTimeout(res, 220));
+      if (!(await wait(220))) return;
       setRevealing((prev) => new Set([...prev, result.drawn[i]!]));
       const isHit = picks.includes(result.drawn[i]!);
       sound.play(isHit ? 'win' : 'click');
     }
     setDraw(result);
     if (result.payout > 0) {
-      balance.credit(result.payout);
       sound.play(
         result.multiplier >= 50 ? 'mega-win' :
         result.multiplier >= 5 ? 'big-win' : 'win',
@@ -94,16 +107,7 @@ export function KenoGame() {
     } else {
       sound.play('drop');
     }
-    history.record({
-      game: 'Keno',
-      bet,
-      payout: result.payout,
-      multiplier: result.multiplier,
-      serverSeedHash: fairness.hash,
-      clientSeed: seeds.clientSeed,
-      nonce: seeds.nonce,
-    });
-    session.recordSpin(bet, result.payout, false);
+
     setBusy(false);
   }, [busy, picks, balance, bet, risk, fairness, history, session, sound]);
 
@@ -175,7 +179,7 @@ export function KenoGame() {
             {RISKS.map((r) => (
               <button
                 key={r}
-                onClick={() => setRisk(r)}
+                onClick={() => { setRisk(r); setDraw(null); setRevealing(new Set()); }}
                 disabled={busy}
                 className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition disabled:opacity-50 ${
                   risk === r ? 'bg-stake-green text-stake-bg' : 'bg-stake-input border border-stake-border text-stake-muted hover:text-stake-text'
@@ -237,7 +241,7 @@ export function KenoGame() {
           </div>
           <button
             onClick={playRound}
-            disabled={busy || picks.length === 0 || balance.balance < bet || bet <= 0}
+            disabled={busy || picks.length === 0 || !balance.canAfford(bet)}
             className="w-full py-3.5 rounded-xl bg-stake-green text-stake-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
           >
             {busy ? 'Drawing…' : `Play · ${fmtCurrency(bet)}`}

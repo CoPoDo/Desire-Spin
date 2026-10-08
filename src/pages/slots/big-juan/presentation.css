@@ -1,0 +1,56 @@
+.big-juan-stage .bj-reels-shell {
+  max-width: min(760px, calc((100dvh - 245px) * 1.24));
+}
+.big-juan-stage .bj-intro {
+  overflow-y: auto;
+  justify-content: safe center;
+}
+.big-juan-stage :is(button, input):focus-visible,
+.bj-bonus-round button:focus-visible {
+  outline: 3px solid #fff5c4;
+  outline-offset: 3px;
+}
+.bj-bonus-round {
+  overflow-y: auto;
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+}
+.bj-bonus-round .bj-feature-board,
+.bj-bonus-round .bj-feature-center {
+  min-width: 0;
+}
+.bj-bonus-round .bj-feature-grid {
+  min-width: 0;
+  flex: 1;
+  max-width: 342px;
+}
+.bj-bonus-round .bj-feature-grid > div {
+  width: 100% !important;
+}
+.bj-bonus-round .bj-feature-fourth {
+  flex-shrink: 0;
+}
+.bj-bonus-round .bj-feature-stats {
+  min-width: 0;
+  padding-inline: 0;
+}
+.bj-bonus-round .bj-feature-stats > div {
+  min-width: 0;
+}
+@media (max-width: 420px) {
+  .big-juan-stage .bj-controls { gap: 4px; padding-inline: 8px; }
+  .big-juan-stage .bj-controls > button { width: 42px; padding-inline: 4px; }
+  .big-juan-stage .bj-controls > button:first-child { width: 70px; }
+  .big-juan-stage .bj-controls > button:nth-child(4) { width: 66px; }
+  .bj-bonus-round .bj-feature-stats span:last-child { font-size: 13px; }
+}
+@media (max-width: 350px) {
+  .big-juan-stage .bj-controls { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .big-juan-stage .bj-controls > button { width: 100%; min-height: 44px; }
+  .big-juan-stage .bj-controls > button:first-child { font-size: 10px; }
+  .big-juan-stage .bj-controls > button:first-child span:last-child { font-size: 11px; }
+}
+@media (max-height: 550px) {
+  .bj-bonus-round > div:first-child { padding-top: 8px; }
+  .bj-bonus-round .bj-feature-grid { max-width: 210px; }
+  .bj-bonus-round .bj-feature-fourth { height: 190px !important; }
+}

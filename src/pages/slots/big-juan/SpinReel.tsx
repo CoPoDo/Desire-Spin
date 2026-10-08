@@ -1,4 +1,5 @@
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState, type ReactNode } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 
 /** SpinReel v3 — true downward-scrolling slot reel.
  *
@@ -76,6 +77,33 @@ export const SpinReel = forwardRef<SpinReelHandle, {
 
   useEffect(() => () => activeSpinRef.current?.abort(), []);
 
+  // One renderer owns both the moving strip and the resting symbols. A
+  // separate lightweight glyph set made every landed symbol visibly morph.
+  const cellMarkup = useMemo(() => {
+    const cache = new Map<string, string>();
+    return (symbol: string) => {
+      let html = cache.get(symbol);
+      if (!html) {
+        html = renderToStaticMarkup(
+          <div className="bj-spin-cell" data-symbol-id={symbol}>
+            <span className="bj-spin-glyph">{renderCell(symbol)}</span>
+          </div>,
+        );
+        cache.set(symbol, html);
+      }
+      return html;
+    };
+  }, [renderCell]);
+
+  // The final strip stays visible until React has painted exactly the same
+  // column in the rest layer. Layout effects run before the browser paints,
+  // so there is no blank frame between an imperative stop and React's commit.
+  useLayoutEffect(() => {
+    if (spinning || activeSpinRef.current) return;
+    const strip = stripRef.current;
+    if (strip) strip.replaceChildren();
+  }, [spinning, settledSymbols]);
+
   const spin = useCallback(async (final: ReelSymbolId[], opts: SpinOptions) => {
     const strip = stripRef.current;
     if (!strip) return;
@@ -84,26 +112,27 @@ export const SpinReel = forwardRef<SpinReelHandle, {
     activeSpinRef.current = controller;
     setSpinning(true);
     try {
-      await runMultiPhaseSpin(strip, symbols, final, fillerPool, opts, controller.signal);
+      await runMultiPhaseSpin(strip, settledSymbols, final, fillerPool, opts, controller.signal, cellMarkup);
     } finally {
+      // A superseded animation must never erase its replacement's strip.
+      if (activeSpinRef.current !== controller) return;
       strip.style.transition = 'none';
       strip.style.transform = 'translate3d(0,0,0)';
       strip.classList.remove('bj-spinning', 'bj-slowing');
-      strip.innerHTML = '';
       if (activeSpinRef.current === controller) {
         activeSpinRef.current = null;
         setSettledSymbols(final);
         setSpinning(false);
       }
     }
-  }, [symbols, fillerPool]);
+  }, [settledSymbols, fillerPool, cellMarkup]);
 
   const stop = useCallback(() => activeSpinRef.current?.abort(), []);
 
   useImperativeHandle(ref, () => ({ spin, stop }), [spin, stop]);
 
   return (
-    <div className="spin-reel" data-reel={reelIndex}>
+    <div className="spin-reel" data-reel={reelIndex} role="group" aria-label={`Reel ${reelIndex + 1}`} aria-busy={spinning}>
       <div
         className="bj-rest-cells"
         style={{ visibility: spinning ? 'hidden' : 'visible' }}
@@ -117,14 +146,14 @@ export const SpinReel = forwardRef<SpinReelHandle, {
           if (isActiveWin) classes.push('bj-cell-active-win');
           if (isIgniting) classes.push('bj-cell-igniting');
           return (
-            <div key={row} className={classes.join(' ')} data-symbol-id={sym}>
+            <div key={row} className={classes.join(' ')} data-symbol-id={sym} role="img" aria-label={sym === 'chili' ? 'Chili wild' : sym === 'pinata' ? 'Piñata scatter' : sym.replaceAll('_', ' ')}>
               <span className="bj-spin-glyph">{renderCell(sym)}</span>
             </div>
           );
         })}
       </div>
 
-      <div className="spin-reel-strip" ref={stripRef} />
+      <div className="spin-reel-strip" ref={stripRef} aria-hidden="true" />
 
       {showAnticipationGlow && <div className="bj-anticipation-glow" />}
     </div>
@@ -142,6 +171,7 @@ async function runMultiPhaseSpin(
   fillerPool: readonly ReelSymbolId[],
   opts: SpinOptions,
   signal: AbortSignal,
+  cellMarkup: (symbol: string) => string,
 ): Promise<void> {
   const {
     durationMs,
@@ -197,7 +227,7 @@ async function runMultiPhaseSpin(
     ...filler,
     ...currentSymbols,  // bottom of strip (visible FIRST)
   ];
-  paintStrip(strip, fullStrip);
+  strip.innerHTML = fullStrip.map(cellMarkup).join('');
 
   const totalCells = fullStrip.length;
   const startPosition = -(totalCells - ROWS) * stride;
@@ -210,12 +240,15 @@ async function runMultiPhaseSpin(
   void strip.offsetHeight;
 
   await phaseSpinUp(strip, startPosition, spinUpMs, topSpeed, signal);
+  if (signal.aborted) return;
 
   const constantStartPos = startPosition + (topSpeed / 2 * spinUpMs) / 1000;
   await phaseConstant(strip, constantStartPos, constantMs, topSpeed, slowDownStartPosition, signal);
+  if (signal.aborted) return;
 
   const currentPos = readCurrentY(strip);
   await phaseSlowDown(strip, currentPos, endPosition, slowDownMs, slowDownExponent, signal);
+  if (signal.aborted) return;
 
   await phaseSettle(strip, endPosition, signal);
 }
@@ -227,7 +260,15 @@ function phaseSpinUp(
   topSpeed: number,
   signal: AbortSignal,
 ): Promise<void> {
-  return new Promise(resolve => {
+  return new Promise(resolvePromise => {
+    let frame = 0;
+    const resolve = () => {
+      cancelAnimationFrame(frame);
+      signal.removeEventListener('abort', resolve);
+      resolvePromise();
+    };
+    if (signal.aborted) { resolve(); return; }
+    signal.addEventListener('abort', resolve, { once: true });
     strip.classList.add('bj-spinning');
     const startTime = performance.now();
     const distance = (topSpeed / 2) * (durationMs / 1000);
@@ -240,10 +281,10 @@ function phaseSpinUp(
       const y = startPos + eased * distance;
       strip.style.transform = `translate3d(0, ${y}px, 0)`;
 
-      if (t < 1) requestAnimationFrame(tick);
+      if (t < 1) frame = requestAnimationFrame(tick);
       else resolve();
     };
-    requestAnimationFrame(tick);
+    frame = requestAnimationFrame(tick);
   });
 }
 
@@ -255,7 +296,15 @@ function phaseConstant(
   slowDownStartPos: number,
   signal: AbortSignal,
 ): Promise<void> {
-  return new Promise(resolve => {
+  return new Promise(resolvePromise => {
+    let frame = 0;
+    const resolve = () => {
+      cancelAnimationFrame(frame);
+      signal.removeEventListener('abort', resolve);
+      resolvePromise();
+    };
+    if (signal.aborted) { resolve(); return; }
+    signal.addEventListener('abort', resolve, { once: true });
     const startTime = performance.now();
 
     const tick = (now: number) => {
@@ -271,10 +320,10 @@ function phaseConstant(
 
       strip.style.transform = `translate3d(0, ${y}px, 0)`;
 
-      if (elapsed < durationMs) requestAnimationFrame(tick);
+      if (elapsed < durationMs) frame = requestAnimationFrame(tick);
       else resolve();
     };
-    requestAnimationFrame(tick);
+    frame = requestAnimationFrame(tick);
   });
 }
 
@@ -286,7 +335,15 @@ function phaseSlowDown(
   exponent: number,
   signal: AbortSignal,
 ): Promise<void> {
-  return new Promise(resolve => {
+  return new Promise(resolvePromise => {
+    let frame = 0;
+    const resolve = () => {
+      cancelAnimationFrame(frame);
+      signal.removeEventListener('abort', resolve);
+      resolvePromise();
+    };
+    if (signal.aborted) { resolve(); return; }
+    signal.addEventListener('abort', resolve, { once: true });
     strip.classList.remove('bj-spinning');
     strip.classList.add('bj-slowing');
 
@@ -321,7 +378,7 @@ function phaseSlowDown(
       }
 
       if (t < 1) {
-        requestAnimationFrame(tick);
+        frame = requestAnimationFrame(tick);
       } else {
         if (lastHighlighted >= 0 && cellEls[lastHighlighted]) {
           cellEls[lastHighlighted]!.classList.remove('bj-passing-center');
@@ -330,12 +387,20 @@ function phaseSlowDown(
         resolve();
       }
     };
-    requestAnimationFrame(tick);
+    frame = requestAnimationFrame(tick);
   });
 }
 
 function phaseSettle(strip: HTMLDivElement, finalPos: number, signal: AbortSignal): Promise<void> {
-  return new Promise(resolve => {
+  return new Promise(resolvePromise => {
+    let frame = 0;
+    const resolve = () => {
+      cancelAnimationFrame(frame);
+      signal.removeEventListener('abort', resolve);
+      resolvePromise();
+    };
+    if (signal.aborted) { resolve(); return; }
+    signal.addEventListener('abort', resolve, { once: true });
     const overshoot = 1.5;
     const durationMs = 60;
     const startTime = performance.now();
@@ -347,14 +412,14 @@ function phaseSettle(strip: HTMLDivElement, finalPos: number, signal: AbortSigna
       const bounce = Math.sin(t * Math.PI) * overshoot;
       strip.style.transform = `translate3d(0, ${finalPos + bounce}px, 0)`;
 
-      if (t < 1) requestAnimationFrame(tick);
+      if (t < 1) frame = requestAnimationFrame(tick);
       else {
         strip.style.transform = `translate3d(0, ${finalPos}px, 0)`;
         strip.classList.remove('bj-slowing');
         resolve();
       }
     };
-    requestAnimationFrame(tick);
+    frame = requestAnimationFrame(tick);
   });
 }
 
@@ -362,51 +427,4 @@ function readCurrentY(strip: HTMLDivElement): number {
   const transform = strip.style.transform;
   const m = transform.match(/translate3d\(\s*0\s*,\s*(-?[\d.]+)px/);
   return m ? parseFloat(m[1]!) : 0;
-}
-
-function paintStrip(strip: HTMLDivElement, symbols: ReelSymbolId[]) {
-  strip.innerHTML = symbols.map((sym) => renderCellHtml(sym)).join('');
-}
-
-function renderCellHtml(symbolId: ReelSymbolId): string {
-  const colour = COLOR_FOR.get(symbolId) ?? '#888';
-  const glyph = symbolGlyph(symbolId);
-  return (
-    `<div class="bj-spin-cell" data-symbol-id="${symbolId}" ` +
-    `style="border-color: ${colour}66;">` +
-    `<span class="bj-spin-glyph" style="width:82%;height:82%">${glyph}</span></div>`
-  );
-}
-
-const COLOR_FOR = new Map<string, string>([
-  ['juan',      '#ff5560'],
-  ['senorita',  '#ff7ad9'],
-  ['chihuahua', '#d8a060'],
-  ['vihuela',   '#c8932e'],
-  ['hot_sauce', '#ff8a40'],
-  ['chili',     '#ff5560'],
-  ['pinata',    '#ffd166'],
-  ['A',         '#ff5560'],
-  ['K',         '#ffd166'],
-  ['Q',         '#ff7ad9'],
-  ['J',         '#1fff7a'],
-  ['10',        '#5fb8ff'],
-]);
-
-function symbolGlyph(id: string): string {
-  switch (id) {
-    case 'juan': return `<svg viewBox="0 0 64 64" aria-hidden="true"><path fill="#c52b28" d="M5 17h54l-8 9H13z"/><path fill="#d94332" d="M18 7h28l7 12H11z"/><circle cx="32" cy="35" r="15" fill="#df9b5d"/><path d="M20 38q6-7 12 0 6-7 12 0-5 8-12 3-7 5-12-3" fill="#25150e"/><circle cx="26" cy="32" r="2"/><circle cx="38" cy="32" r="2"/><path d="M16 52h32l-5 12H21z" fill="#267052"/></svg>`;
-    case 'senorita': return `<svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="16" r="9" fill="#d7925b"/><path d="M23 24h18l5 12-7 5 10 17H15l10-17-7-5z" fill="#d83c83"/><path d="M16 56q16-15 32 0" fill="none" stroke="#ffd166" stroke-width="5"/><circle cx="43" cy="10" r="6" fill="#f05b65"/></svg>`;
-    case 'chihuahua': return `<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M14 23 8 6l17 10M50 23 56 6 39 16" fill="#b9743a" stroke="#6b3a1e" stroke-width="2"/><circle cx="32" cy="34" r="19" fill="#c88a4f"/><path d="M11 18h42l-7 8H18z" fill="#49a16f"/><circle cx="25" cy="32" r="2"/><circle cx="39" cy="32" r="2"/><path d="M28 40h8l-4 5z" fill="#2b1710"/></svg>`;
-    case 'vihuela': return `<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M36 3h8v30h-8z" fill="#7f4a25"/><path d="M40 26c16 0 19 11 10 18 7 11-2 18-10 14-8 4-17-3-10-14-9-7-6-18 10-18z" fill="#b66b2f" stroke="#603619" stroke-width="2"/><circle cx="40" cy="43" r="6" fill="#3c2418"/><path d="M40 4v53" stroke="#f3d49b" stroke-width="1.5"/></svg>`;
-    case 'hot_sauce': return `<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M25 5h14v10l5 7v34H20V22l5-7z" fill="#d32d28" stroke="#7b1b18" stroke-width="2"/><path d="M24 29h16v17H24z" fill="#f6d467"/><path d="M29 32q9 4 3 11-7-4-3-11" fill="#e43d26"/><path d="M25 5h14v7H25z" fill="#4d8c48"/></svg>`;
-    case 'chili': return `<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M43 12q-10 5-8 14" fill="none" stroke="#3b9b52" stroke-width="6"/><path d="M37 21q20 14-3 35Q12 70 9 47q20 9 28-26" fill="#e6312d" stroke="#8f1818" stroke-width="2"/><text x="32" y="48" text-anchor="middle" font-size="12" font-weight="900" fill="#fff4b5">WILD</text></svg>`;
-    case 'pinata': return `<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M15 24h34v22H15z" fill="#4ebbd0"/><path d="M13 42h13v8H13zM38 42h13v8H38z" fill="#a54ac4"/><path d="M43 18h13v20H45z" fill="#ef5c68"/><path d="m17 24 7-12 8 12" fill="#ffd166"/><path d="M15 29h34M15 35h34M15 41h34" stroke="#f3c43f" stroke-width="3"/><circle cx="51" cy="24" r="2"/></svg>`;
-    case 'A':         return '<span class="bj-royal" style="color:#ff5560">A</span>';
-    case 'K':         return '<span class="bj-royal" style="color:#ffd166">K</span>';
-    case 'Q':         return '<span class="bj-royal" style="color:#ff7ad9">Q</span>';
-    case 'J':         return '<span class="bj-royal" style="color:#1fff7a">J</span>';
-    case '10':        return '<span class="bj-royal" style="color:#5fb8ff">10</span>';
-  }
-  return id;
 }

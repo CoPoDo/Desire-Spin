@@ -10,7 +10,7 @@ import type { Rng } from '../../../lib/fairness';
  *  that constraint; see the smoke test in tests/originals.test.ts.
  *
  *  Risk character:
- *    - LOW: many small wins, no zeros; sum 0.99×N spread across all
+ *    - LOW: many small wins, two zeros per ten segments; sum 0.99×N spread across all
  *      segments using a 1.5 / 1.2 / 0.9 mix.
  *    - MEDIUM: half the segments are zero; the winning ones pay
  *      1.5–4× with a single bigger headline at the end.

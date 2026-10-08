@@ -2344,3 +2344,32 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Shared interaction polish: comfortable touch targets, contained dialogs,
+   legible forms and stable mobile viewport sizing. */
+@layer components {
+  .game-menu-item { @apply flex w-full items-center justify-between gap-4 rounded-xl border border-edge bg-bg-elev px-4 py-3 text-sm text-ink transition-colors hover:bg-bg-hover; }
+}
+button, a, input, select { touch-action: manipulation; }
+button:disabled { cursor: not-allowed; }
+input, select, textarea { font: inherit; }
+@media (max-width: 639px) {
+  input[type='number'], input[type='text'], select { font-size: 16px; }
+}
+.game-card { transition: border-color 180ms, box-shadow 180ms, transform 180ms; }
+@media (hover:hover) { .game-card:hover { transform: translateY(-4px); box-shadow: 0 16px 32px #0005; } }
+.skip-link { position: fixed; top: -80px; left: 16px; z-index: 200; padding: 12px 20px; border-radius: 12px; background: #ffc62a; color: #111; font-weight: 700; }
+.skip-link:focus { top: 12px; }
+
+/* Table-style slots keep their scrolling reels below an opaque app bar. */
+.contained-game-header + main .line-slot,
+.contained-game-header + main .sugar-slot { padding-top: 16px; }
+@media (max-width: 400px) {
+  .contained-game-header { display: grid; grid-template-columns: 44px 1fr 44px 44px; gap: 4px 8px; }
+  .contained-game-header > div { display: contents; }
+  .contained-game-header .game-chrome-title { grid-column: 1 / -1; grid-row: 1; text-align: center; white-space: normal; padding: 2px 0; margin: 0; }
+  .contained-game-header > a { grid-column: 1; grid-row: 2; }
+  .contained-game-header > div > div:not(.game-chrome-title) { grid-column: 2; grid-row: 2; justify-self: end; }
+  .contained-game-header > div > button { grid-column: 3; grid-row: 2; }
+  .contained-game-header > button { grid-column: 4; grid-row: 2; }
+}

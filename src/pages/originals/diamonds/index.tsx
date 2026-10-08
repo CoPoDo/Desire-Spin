@@ -1,3 +1,4 @@
+import { useRoundPlayback } from '../_shared/useRoundPlayback';
 import { useCallback, useRef, useState } from 'react';
 import { useHotkey } from '../../../hooks/useHotkey';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -23,44 +24,26 @@ export function DiamondsGame() {
   const [mode, setMode] = useState<Mode>('manual');
   const [autoConfig, setAutoConfig] = useState<AutoConfig>({ count: 10, stopOnProfit: 0, stopOnLoss: 0 });
   const [autoActive, setAutoActive] = useState(false);
-  const [busy, setBusy] = useState(false);
+  const { busy, busyRef, setBusy, wait } = useRoundPlayback();
   const [result, setResult] = useState<DiamondsResult | null>(null);
   const [revealing, setRevealing] = useState<number>(0);
   const stateRef = useRef({ bet });
   stateRef.current = { bet };
 
-  const playOnce = useCallback(async (): Promise<number> => {
+  const playOnce = useCallback(async (): Promise<number | null> => {
     const { bet: b } = stateRef.current;
-    if (balance.balance < b || b <= 0) return 0;
+    if (!balance.canAfford(b)) return null;
+    if (busyRef.current || !balance.debit(b)) return null;
     setBusy(true);
     sound.play('click');
-    balance.debit(b);
+
     setRevealing(0);
     setResult(null);
     const seeds = fairness.consumeNonce();
     const rng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
     const r = play(rng, b);
-    // Reveal cards one by one for drama. Per-gem 'tick' keeps the
-    // sequence audibly paced — silent reveal felt clinical for what's
-    // meant to be a "diamond hunt" game. Increase the cadence on the
-    // final gem so it lands with a tiny crescendo.
-    for (let i = 0; i < 5; i++) {
-      await new Promise<void>((res) => setTimeout(res, 220));
-      sound.play('tick');
-      setRevealing(i + 1);
-    }
     setResult(r);
-    if (r.payout > 0) {
-      balance.credit(r.payout);
-      sound.play(r.multiplier >= 50 ? 'mega-win' : r.multiplier >= 5 ? 'big-win' : 'win');
-      if (r.multiplier >= 5) {
-        fireConfetti({
-          count: r.multiplier >= 50 ? 130 : 70,
-        });
-      }
-    } else {
-      sound.play('drop');
-    }
+    if (r.payout > 0) balance.credit(r.payout);
     history.record({
       game: 'Diamonds',
       bet: b,
@@ -71,6 +54,28 @@ export function DiamondsGame() {
       nonce: seeds.nonce,
     });
     session.recordSpin(b, r.payout, false);
+
+    // Reveal cards one by one for drama. Per-gem 'tick' keeps the
+    // sequence audibly paced — silent reveal felt clinical for what's
+    // meant to be a "diamond hunt" game. Increase the cadence on the
+    // final gem so it lands with a tiny crescendo.
+    for (let i = 0; i < 5; i++) {
+      if (!(await wait(220))) return null;
+      sound.play('tick');
+      setRevealing(i + 1);
+    }
+    setResult(r);
+    if (r.payout > 0) {
+      sound.play(r.multiplier >= 50 ? 'mega-win' : r.multiplier >= 5 ? 'big-win' : 'win');
+      if (r.multiplier >= 5) {
+        fireConfetti({
+          count: r.multiplier >= 50 ? 130 : 70,
+        });
+      }
+    } else {
+      sound.play('drop');
+    }
+
     setBusy(false);
     return r.payout - b;
   }, [balance, fairness, sound, history, session]);
@@ -90,7 +95,7 @@ export function DiamondsGame() {
       <div className="flex flex-col p-4 gap-4 max-w-md mx-auto w-full">
         {/* Result */}
         <div className="rounded-lg bg-stake-card border border-stake-border p-4 text-center min-h-[80px]">
-          {result ? (
+          {result && !busy ? (
             <>
               <div className="text-[10px] uppercase tracking-widest text-stake-muted">
                 {DIAMOND_CATEGORY_LABEL[result.category]}
@@ -118,7 +123,7 @@ export function DiamondsGame() {
             {Array.from({ length: 5 }).map((_, i) => {
               const revealed = i < revealing;
               const gem = revealed && result ? result.gems[i] : null;
-              const isWinning = Boolean(result && revealed && gem && result.winningGems.includes(gem));
+              const isWinning = Boolean(!busy && result && revealed && gem && result.winningGems.includes(gem));
               const meta = gem ? gemMeta(gem) : null;
               return (
                 <motion.div
@@ -183,13 +188,13 @@ export function DiamondsGame() {
           {mode === 'auto' && (
             <>
               <AutoConfigFields config={autoConfig} onChange={setAutoConfig} disabled={autoActive} />
-              {autoActive && <AutoProgressDisplay progress={progress} config={autoConfig} />}
+              {(autoActive || progress.stopReason) && <AutoProgressDisplay progress={progress} config={autoConfig} />}
             </>
           )}
           {mode === 'manual' ? (
             <button
               onClick={() => void playOnce()}
-              disabled={busy || balance.balance < bet || bet <= 0}
+              disabled={busy || !balance.canAfford(bet)}
               className="w-full py-3.5 rounded-xl bg-stake-green text-stake-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
             >
               {busy ? 'Drawing…' : `Bet · ${fmtCurrency(bet)}`}
@@ -197,7 +202,7 @@ export function DiamondsGame() {
           ) : (
             <button
               onClick={() => setAutoActive((a) => !a)}
-              disabled={!autoActive && (balance.balance < bet || bet <= 0)}
+              disabled={!autoActive && (busy || !balance.canAfford(bet))}
               className={`w-full py-3.5 rounded-xl font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99] ${
                 autoActive ? 'bg-stake-red text-white' : 'bg-stake-green text-stake-bg'
               }`}

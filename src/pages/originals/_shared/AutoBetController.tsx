@@ -68,12 +68,14 @@ export function AutoConfigFields({
           <input
             type="number"
             min={0}
+            max={1000}
+            aria-label="Number of bets"
             inputMode="numeric"
             value={config.count || ''}
             disabled={disabled}
             onChange={(e) => {
               const v = parseInt(e.target.value);
-              onChange({ ...config, count: Number.isFinite(v) ? Math.max(0, v) : 0 });
+              onChange({ ...config, count: Number.isFinite(v) ? Math.min(1000, Math.max(0, v)) : 0 });
             }}
             className="flex-1 min-w-0 bg-transparent px-3 py-2.5 font-mono text-sm text-stake-text tabular-nums outline-none"
             placeholder="∞"
@@ -149,52 +151,73 @@ export function useAutoBetRunner({
   active: boolean;
   config: AutoConfig;
   intervalMs: number;
-  runOnce: () => Promise<number>;
+  runOnce: () => Promise<number | null>;
   onStop: () => void;
 }) {
-  const [progress, setProgress] = useState({
-    completed: 0,
-    netProfit: 0,
-  });
-
-  // Latest values via refs so the loop reads fresh state.
-  const activeRef = useRef(active);
-  const configRef = useRef(config);
+  const [progress, setProgress] = useState({ completed: 0, netProfit: 0, stopReason: '' });
   const runRef = useRef(runOnce);
-  useEffect(() => { activeRef.current = active; }, [active]);
-  useEffect(() => { configRef.current = config; }, [config]);
-  useEffect(() => { runRef.current = runOnce; }, [runOnce]);
+  const stopRef = useRef(onStop);
+  runRef.current = runOnce;
+  stopRef.current = onStop;
 
   useEffect(() => {
     if (!active) return;
     let cancelled = false;
-    setProgress({ completed: 0, netProfit: 0 });
+    let hidden = document.visibilityState === 'hidden';
+    // A run keeps the limits the player approved when pressing Start.
+    const cfg = { ...config };
     let completed = 0;
     let netProfit = 0;
+    let pause: ReturnType<typeof setTimeout> | undefined;
+    let wake: (() => void) | undefined;
+    setProgress({ completed: 0, netProfit: 0, stopReason: '' });
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') {
+        hidden = true;
+        if (pause) clearTimeout(pause);
+        wake?.();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
 
     const loop = async () => {
-      while (!cancelled && activeRef.current) {
-        const cfg = configRef.current;
-        if (cfg.count > 0 && completed >= cfg.count) break;
-        if (cfg.stopOnProfit > 0 && netProfit >= cfg.stopOnProfit) break;
-        if (cfg.stopOnLoss > 0 && -netProfit >= cfg.stopOnLoss) break;
-
-        const delta = await runRef.current();
-        if (cancelled) return;
-        completed += 1;
-        netProfit += delta;
-        setProgress({ completed, netProfit });
-
-        if (intervalMs > 0) {
-          await new Promise<void>((res) => setTimeout(res, intervalMs));
+      let stopReason = '';
+      try {
+        while (!cancelled) {
+          if (hidden) { stopReason = 'Paused because this tab was hidden.'; break; }
+          if (cfg.count > 0 && completed >= cfg.count) { stopReason = 'Bet count reached.'; break; }
+          if (cfg.stopOnProfit > 0 && netProfit >= cfg.stopOnProfit) { stopReason = 'Profit limit reached.'; break; }
+          if (cfg.stopOnLoss > 0 && -netProfit >= cfg.stopOnLoss) { stopReason = 'Loss limit reached.'; break; }
+          const delta = await runRef.current();
+          if (cancelled) return;
+          // null means no wager was accepted; a zero-profit push is a real bet.
+          if (delta === null || !Number.isFinite(delta)) {
+            stopReason = 'Stopped: no bet was placed. Check your balance and bet settings.';
+            break;
+          }
+          completed += 1;
+          netProfit = Math.round((netProfit + delta) * 100) / 100;
+          setProgress({ completed, netProfit, stopReason: '' });
+          if (intervalMs > 0) {
+            await new Promise<void>((resolve) => { wake = resolve; pause = setTimeout(resolve, intervalMs); });
+          }
         }
+      } catch {
+        stopReason = 'Stopped after an unexpected round error.';
       }
-      if (!cancelled) onStop();
+      if (!cancelled) {
+        setProgress({ completed, netProfit, stopReason });
+        stopRef.current();
+      }
     };
-    loop();
+    void loop();
     return () => {
       cancelled = true;
+      if (pause) clearTimeout(pause);
+      wake?.();
+      document.removeEventListener('visibilitychange', onVisibility);
     };
+    // Limits are captured once; callbacks are kept current through refs.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active]);
 
@@ -205,11 +228,12 @@ export function AutoProgressDisplay({
   progress,
   config,
 }: {
-  progress: { completed: number; netProfit: number };
+  progress: { completed: number; netProfit: number; stopReason?: string };
   config: AutoConfig;
 }) {
   return (
     <div className="grid grid-cols-2 gap-2">
+      {progress.stopReason && <p role="status" className="col-span-2 text-xs text-stake-muted">{progress.stopReason}</p>}
       <div className="rounded bg-stake-input border border-stake-border p-2.5 text-center">
         <div className="text-xs text-stake-muted">Bets</div>
         <div className="font-mono font-bold text-base text-stake-text mt-0.5 tabular-nums">

@@ -1,3 +1,4 @@
+import { useRoundPlayback } from '../_shared/useRoundPlayback';
 import { useCallback, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
@@ -36,26 +37,27 @@ export function DragonTigerGame() {
   const [revealedTiger, setRevealedTiger] = useState(false);
   const [winner, setWinner] = useState<'dragon' | 'tiger' | 'tie' | null>(null);
   const [totalReturn, setTotalReturn] = useState<number>(0);
-  const [busy, setBusy] = useState(false);
+  const { busy, busyRef, setBusy, schedule } = useRoundPlayback();
 
-  const totalStake = chips.dragon + chips.tie + chips.tiger;
+  const totalStake = +(chips.dragon + chips.tie + chips.tiger).toFixed(2);
 
   const placeChip = useCallback((kind: BetKind) => {
-    if (busy) return;
+    if (busyRef.current) return;
     sound.play('tick');
     setChips((c) => ({ ...c, [kind]: +(c[kind] + bet).toFixed(2) }));
   }, [busy, bet, sound]);
 
   const clearChips = useCallback(() => {
-    if (busy) return;
+    if (busyRef.current) return;
     setChips({ dragon: 0, tie: 0, tiger: 0 });
   }, [busy]);
 
   const start = useCallback(() => {
-    if (busy || totalStake <= 0 || balance.balance < totalStake) return;
+    if (busyRef.current || totalStake <= 0 || balance.balance < totalStake) return;
+    if (busyRef.current || !balance.debit(totalStake)) return;
     setBusy(true);
     sound.play('click');
-    balance.debit(totalStake);
+
     setPhase('dealing');
     setRevealedDragon(false);
     setRevealedTiger(false);
@@ -68,47 +70,47 @@ export function DragonTigerGame() {
     if (chips.tie > 0) activeBets.push({ kind: 'tie', amount: chips.tie });
     if (chips.tiger > 0) activeBets.push({ kind: 'tiger', amount: chips.tiger });
     const r = play(rng, activeBets);
+    if (r.totalReturn > 0) balance.credit(r.totalReturn);
+    history.record({
+      game: 'Dragon Tiger',
+      bet: r.totalStake,
+      payout: r.totalReturn,
+      multiplier: r.totalReturn / Math.max(r.totalStake, 0.01),
+      serverSeedHash: fairness.hash,
+      clientSeed: seeds.clientSeed,
+      nonce: seeds.nonce,
+    });
+    session.recordSpin(r.totalStake, r.totalReturn, false);
+
     setDragon(r.dragon);
     setTiger(r.tiger);
-    setTimeout(() => {
+    schedule(() => {
       setRevealedDragon(true);
       sound.play('drop');
     }, 700);
-    setTimeout(() => {
+    schedule(() => {
       setRevealedTiger(true);
       sound.play('drop');
     }, 1300);
-    setTimeout(() => {
+    schedule(() => {
       setPhase('reveal');
       setWinner(r.winner);
       setTotalReturn(r.totalReturn);
       const p = r.totalReturn - r.totalStake;
       if (r.totalReturn > r.totalStake) {
-        balance.credit(r.totalReturn);
         sound.play(p >= r.totalStake * 5 ? 'mega-win' : 'big-win');
         fireConfetti({
           count: p >= r.totalStake * 5 ? 130 : 70,
           colors: ['#ffd166', '#c8102e', '#00e701', '#ffffff'],
         });
       } else if (r.totalReturn === r.totalStake) {
-        balance.credit(r.totalReturn);
         sound.play('tick');
       } else if (r.totalReturn > 0) {
-        balance.credit(r.totalReturn);
         sound.play('win');
       } else {
         sound.play('drop');
       }
-      history.record({
-        game: 'Dragon Tiger',
-        bet: r.totalStake,
-        payout: r.totalReturn,
-        multiplier: r.totalReturn / Math.max(r.totalStake, 0.01),
-        serverSeedHash: fairness.hash,
-        clientSeed: seeds.clientSeed,
-        nonce: seeds.nonce,
-      });
-      session.recordSpin(r.totalStake, r.totalReturn, false);
+
       setBusy(false);
     }, 1700);
   }, [busy, balance, chips, totalStake, fairness, sound, history, session]);
@@ -126,7 +128,7 @@ export function DragonTigerGame() {
   // Space-to-deal. After a reveal, Space resets and deals again so
   // the player can rapid-fire rounds with chips kept in place.
   useHotkey(' ', () => {
-    if (busy || totalStake <= 0) return;
+    if (busyRef.current || totalStake <= 0) return;
     if (phase === 'reveal') reset();
     start();
   }, true);

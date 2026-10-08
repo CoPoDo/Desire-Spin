@@ -1,3 +1,4 @@
+import { useRoundPlayback } from '../_shared/useRoundPlayback';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
@@ -27,7 +28,7 @@ export function WheelGame() {
   const [mode, setMode] = useState<Mode>('manual');
   const [autoConfig, setAutoConfig] = useState<AutoConfig>({ count: 10, stopOnProfit: 0, stopOnLoss: 0 });
   const [autoActive, setAutoActive] = useState(false);
-  const [busy, setBusy] = useState(false);
+  const { busy, busyRef, setBusy, schedule } = useRoundPlayback();
   const [rotation, setRotation] = useState(0); // accumulated rotation deg
   const [lastResult, setLastResult] = useState<{ multiplier: number; segment: number } | null>(null);
   const [recent, setRecent] = useState<{ id: number; m: number }[]>([]);
@@ -38,33 +39,46 @@ export function WheelGame() {
   const mults = useMemo(() => multipliersFor(risk, segments), [risk, segments]);
   const segAngle = 360 / segments;
 
-  const playOnce = useCallback(async (): Promise<number> => {
+  const playOnce = useCallback(async (): Promise<number | null> => {
     const { bet: b, risk: rk, segments: seg } = stateRef.current;
-    if (balance.balance < b || b <= 0) return 0;
+    if (!balance.canAfford(b)) return null;
+    if (busyRef.current || !balance.debit(b)) return null;
     setBusy(true);
     sound.play('click');
-    balance.debit(b);
+
     const seeds = fairness.consumeNonce();
     const rng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
     const r = spin(rng, b, rk, seg);
+    if (r.payout > 0) balance.credit(r.payout);
+    history.record({
+      game: 'Wheel',
+      bet: b,
+      payout: r.payout,
+      multiplier: r.multiplier,
+      serverSeedHash: fairness.hash,
+      clientSeed: seeds.clientSeed,
+      nonce: seeds.nonce,
+    });
+    session.recordSpin(b, r.payout, false);
+
     // Rotate so the *top* indicator points at segment r.segment.
     // Segments laid out clockwise starting at 12 o'clock.
     // Add 4-6 full rotations for drama.
     const fullRots = 4 + Math.floor(Math.random() * 3);
-    const targetAbs = -(r.segment * (360 / seg)) - (360 / seg) / 2;
+    const targetAbs = -(r.segment * (360 / seg));
     const next = Math.floor(rotation / 360) * 360 + fullRots * 360 + targetAbs;
+    setLastResult(null);
     setRotation(next);
     // Pointer-tick SFX during the 3.2s wheel deceleration. Sampled
     // from the same ease-out curve the wheel uses, so ticks bunch up
     // early and stretch out as the wheel slows. Real Wheel-of-Fortune
     // pointers click each segment edge — the silent spin felt mute.
     const wheelTicks = [80, 200, 340, 500, 680, 880, 1100, 1340, 1600, 1880, 2150, 2410, 2660, 2880, 3060];
-    wheelTicks.forEach((t) => window.setTimeout(() => sound.play('tick'), t));
-    return new Promise<number>((resolve) => {
-      setTimeout(() => {
+    wheelTicks.forEach((t) => schedule(() => sound.play('tick'), t));
+    return new Promise<number | null>((resolve) => {
+      schedule(() => {
         setLastResult({ multiplier: r.multiplier, segment: r.segment });
         if (r.payout > 0) {
-          balance.credit(r.payout);
           sound.play(r.multiplier >= 10 ? 'mega-win' : r.multiplier >= 2 ? 'big-win' : 'win');
           if (r.multiplier >= 2) {
             fireConfetti({
@@ -75,21 +89,12 @@ export function WheelGame() {
         } else {
           sound.play('drop');
         }
-        history.record({
-          game: 'Wheel',
-          bet: b,
-          payout: r.payout,
-          multiplier: r.multiplier,
-          serverSeedHash: fairness.hash,
-          clientSeed: seeds.clientSeed,
-          nonce: seeds.nonce,
-        });
-        session.recordSpin(b, r.payout, false);
+
         const id = ++idRef.current;
         setRecent((prev) => [{ id, m: r.multiplier }, ...prev].slice(0, 10));
         setBusy(false);
         resolve(r.payout - b);
-      }, 3200);
+      }, 3200, () => resolve(null));
     });
   }, [balance, fairness, history, session, sound, rotation]);
 
@@ -257,7 +262,7 @@ export function WheelGame() {
               {(['low', 'medium', 'high'] as Risk[]).map((r) => (
                 <button
                   key={r}
-                  onClick={() => setRisk(r)}
+                  onClick={() => { setRisk(r); setLastResult(null); }}
                   disabled={autoActive || busy}
                   className={`flex-1 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition disabled:opacity-50 ${
                     risk === r
@@ -276,7 +281,7 @@ export function WheelGame() {
               {SEG_OPTIONS.map((s) => (
                 <button
                   key={s}
-                  onClick={() => setSegments(s)}
+                  onClick={() => { setSegments(s); setLastResult(null); }}
                   disabled={autoActive || busy}
                   className={`flex-1 py-1.5 rounded-lg text-xs font-bold tabular-nums transition disabled:opacity-50 ${
                     segments === s
@@ -292,13 +297,13 @@ export function WheelGame() {
           {mode === 'auto' && (
             <>
               <AutoConfigFields config={autoConfig} onChange={setAutoConfig} disabled={autoActive} />
-              {autoActive && <AutoProgressDisplay progress={progress} config={autoConfig} />}
+              {(autoActive || progress.stopReason) && <AutoProgressDisplay progress={progress} config={autoConfig} />}
             </>
           )}
           {mode === 'manual' ? (
             <button
               onClick={() => void playOnce()}
-              disabled={busy || balance.balance < bet || bet <= 0}
+              disabled={busy || !balance.canAfford(bet)}
               className="w-full py-3.5 rounded-xl bg-stake-green text-stake-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
             >
               {busy ? 'Spinning…' : `Spin · ${fmtCurrency(bet)}`}
@@ -306,7 +311,7 @@ export function WheelGame() {
           ) : (
             <button
               onClick={() => setAutoActive((a) => !a)}
-              disabled={!autoActive && (balance.balance < bet || bet <= 0)}
+              disabled={!autoActive && (busy || !balance.canAfford(bet))}
               className={`w-full py-3.5 rounded-xl font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99] ${
                 autoActive ? 'bg-stake-red text-white' : 'bg-stake-green text-stake-bg'
               }`}

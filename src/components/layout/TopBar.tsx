@@ -1,71 +1,28 @@
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { useGame } from '../../game-context';
 import { fmtCurrency } from '../../lib/format';
 
-export function TopBar({
-  onOpenFairness,
-  onOpenHistory,
-  onToggleNav,
-}: {
+export function TopBar({ onOpenFairness, onOpenHistory, onToggleNav, navOpen }: {
   onOpenFairness: () => void;
   onOpenHistory: () => void;
   onToggleNav: () => void;
+  navOpen: boolean;
 }) {
   const { balance, sound } = useGame();
-  return (
-    <header className="sticky top-0 z-20 backdrop-blur bg-bg/70 border-b border-edge">
-      <div className="max-w-[1400px] mx-auto h-16 px-4 md:px-6 flex items-center gap-3">
-        <button
-          aria-label="Toggle navigation"
-          className="md:hidden btn-ghost px-2 py-1 text-lg"
-          onClick={onToggleNav}
-        >
-          ☰
-        </button>
-        <Link to="/" className="md:hidden font-display font-bold">
-          Desire-Spin
-        </Link>
-
-        <div className="hidden md:flex flex-1" />
-
-        <motion.div
-          className="ml-auto flex items-center gap-2 rounded-xl bg-bg-card border border-edge pl-4 pr-2 py-1.5"
-          initial={false}
-          animate={{ scale: [1, 1.02, 1] }}
-          transition={{ duration: 0.4 }}
-          key={balance.balance}
-        >
-          <span className="label">Balance</span>
-          <span className="font-mono font-semibold text-ink tabular-nums">
-            {fmtCurrency(balance.balance)}
-          </span>
-          <button
-            className="ml-2 btn-primary py-1 px-3 text-xs"
-            onClick={() => balance.credit(1000)}
-            title="Add 1,000 play money"
-          >
-            +1,000
-          </button>
-        </motion.div>
-
-        <button
-          className="btn-ghost py-1.5 px-3 text-xs hidden sm:inline-flex"
-          onClick={onOpenHistory}
-        >
-          History
-        </button>
-        <button className="btn-ghost py-1.5 px-3 text-xs" onClick={onOpenFairness}>
-          Fairness
-        </button>
-        <button
-          className="btn-ghost py-1.5 px-2 text-base"
-          aria-label={sound.enabled ? 'Mute sound' : 'Unmute sound'}
-          onClick={() => sound.setEnabled(!sound.enabled)}
-        >
-          {sound.enabled ? '♪' : '♪̸'}
-        </button>
+  return <header className="sticky top-0 z-20 backdrop-blur-xl bg-bg/90 border-b border-edge">
+    <div className="max-w-[1400px] mx-auto min-h-16 px-3 md:px-6 py-2 flex flex-wrap items-center gap-2">
+      <button aria-label="Toggle navigation" aria-expanded={navOpen} aria-controls="lobby-navigation" className="md:hidden btn-ghost w-11 h-11 p-0 text-lg shrink-0" onClick={onToggleNav}>☰</button>
+      <Link to="/" className="md:hidden font-display font-bold text-sm min-w-0">Desire-Spin</Link>
+      <span className="hidden md:flex flex-1 items-center gap-2 text-xs uppercase tracking-[.18em] text-ink-dim"><span className="w-1.5 h-1.5 rounded-full bg-accent" />Play-money lounge</span>
+      <div className="ml-auto flex items-center gap-2 rounded-xl bg-bg-card border border-edge pl-3 pr-1.5 py-1.5">
+        <div><span className="block text-[9px] uppercase tracking-widest text-ink-dim">Play credits</span><span className="font-mono text-sm font-semibold text-ink tabular-nums">{fmtCurrency(balance.balance)}</span></div>
+        <button className="btn-primary min-h-10 px-2 text-xs" onClick={() => balance.credit(1000)} aria-label="Add 1,000 play-money credits">+1k</button>
       </div>
-    </header>
-  );
+      <div className="flex items-center justify-end w-full sm:w-auto gap-1">
+        <button className="btn-ghost min-h-10 px-3 text-xs" onClick={onOpenHistory}>History</button>
+        <button className="btn-ghost min-h-10 px-3 text-xs" onClick={onOpenFairness}>Fairness</button>
+        <button className="btn-ghost w-10 h-10 p-0 text-base" aria-label={sound.enabled ? 'Mute sound' : 'Unmute sound'} aria-pressed={sound.enabled} onClick={() => sound.setEnabled(!sound.enabled)}>{sound.enabled ? '♪' : '♪̸'}</button>
+      </div>
+    </div>
+  </header>;
 }

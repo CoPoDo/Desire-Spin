@@ -1,3 +1,4 @@
+import { useRoundPlayback } from '../_shared/useRoundPlayback';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
@@ -27,7 +28,7 @@ export function SlideGame() {
   const [mode, setMode] = useState<Mode>('manual');
   const [autoConfig, setAutoConfig] = useState<AutoConfig>({ count: 10, stopOnProfit: 0, stopOnLoss: 0 });
   const [autoActive, setAutoActive] = useState(false);
-  const [busy, setBusy] = useState(false);
+  const { busy, busyRef, setBusy } = useRoundPlayback();
   const [stop, setStop] = useState<number | null>(null);
   const [win, setWin] = useState<boolean | null>(null);
   const [recent, setRecent] = useState<{ id: string; stop: number; win: boolean }[]>([]);
@@ -37,19 +38,32 @@ export function SlideGame() {
   const stateRef = useRef({ bet, target });
   stateRef.current = { bet, target };
 
-  const playOnce = useCallback(async (): Promise<number> => {
+  const playOnce = useCallback(async (): Promise<number | null> => {
     const { bet: b, target: t } = stateRef.current;
-    if (balance.balance < b || b <= 0 || t < 1.01) return 0;
+    if (!balance.canAfford(b) || t < 1.01) return null;
+    if (busyRef.current || !balance.debit(b)) return null;
     setBusy(true);
     setPhase('sliding');
     setStop(null);
     setWin(null);
     setLiveValue(1.0);
     sound.play('click');
-    balance.debit(b);
+
     const seeds = fairness.consumeNonce();
     const rng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
     const r = play(rng, b, t);
+    if (r.payout > 0) balance.credit(r.payout);
+    history.record({
+      game: 'Slide',
+      bet: b,
+      payout: r.payout,
+      multiplier: r.multiplier,
+      serverSeedHash: fairness.hash,
+      clientSeed: seeds.clientSeed,
+      nonce: seeds.nonce,
+    });
+    session.recordSpin(b, r.payout, false);
+
 
     // Animate slider from 1.0 → r.stop over a time proportional to stop
     // (smaller stops finish faster, big stops take longer but cap at 2.5s).
@@ -60,7 +74,7 @@ export function SlideGame() {
     // multiplier thresholds during the ascent.
     const milestones = [1.5, 2, 3, 5, 10, 25, 50, 100, 250, 500, 1000];
     let lastMilestone = 0;
-    return new Promise<number>((resolve) => {
+    return new Promise<number | null>((resolve) => {
       const tick = (now: number) => {
         const dt = now - start;
         const progress = Math.min(1, dt / dur);
@@ -81,7 +95,6 @@ export function SlideGame() {
           setWin(r.win);
           setPhase('reveal');
           if (r.win) {
-            balance.credit(r.payout);
             sound.play(
               r.payout >= b * 50 ? 'mega-win' :
               r.payout >= b * 5 ? 'big-win' : 'win',
@@ -95,16 +108,7 @@ export function SlideGame() {
           } else {
             sound.play('drop');
           }
-          history.record({
-            game: 'Slide',
-            bet: b,
-            payout: r.payout,
-            multiplier: r.multiplier,
-            serverSeedHash: fairness.hash,
-            clientSeed: seeds.clientSeed,
-            nonce: seeds.nonce,
-          });
-          session.recordSpin(b, r.payout, false);
+
           setRecent((prev) =>
             [{ id: `${seeds.nonce}`, stop: r.stop, win: r.win }, ...prev].slice(0, 12),
           );
@@ -279,7 +283,7 @@ export function SlideGame() {
               max={1000000}
               step={0.01}
               value={target}
-              onChange={(e) => setTarget(Math.max(1.01, parseFloat(e.target.value) || 2))}
+              onChange={(e) => setTarget(+Math.min(1_000_000, Math.max(1.01, parseFloat(e.target.value) || 2)).toFixed(2))}
               disabled={autoActive || busy}
               className="w-full bg-stake-input border border-stake-border rounded-lg px-3 py-2 text-sm font-mono tabular-nums text-stake-text"
             />
@@ -299,13 +303,13 @@ export function SlideGame() {
           {mode === 'auto' && (
             <>
               <AutoConfigFields config={autoConfig} onChange={setAutoConfig} disabled={autoActive} />
-              {autoActive && <AutoProgressDisplay progress={progress} config={autoConfig} />}
+              {(autoActive || progress.stopReason) && <AutoProgressDisplay progress={progress} config={autoConfig} />}
             </>
           )}
           {mode === 'manual' ? (
             <button
               onClick={() => void playOnce()}
-              disabled={busy || balance.balance < bet || bet <= 0 || target < 1.01}
+              disabled={busy || !balance.canAfford(bet) || target < 1.01}
               className="w-full py-3.5 rounded-xl bg-stake-green text-stake-bg font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99]"
             >
               {busy ? 'Sliding…' : `Slide · ${fmtCurrency(bet)}`}
@@ -313,7 +317,7 @@ export function SlideGame() {
           ) : (
             <button
               onClick={() => setAutoActive((a) => !a)}
-              disabled={!autoActive && (balance.balance < bet || bet <= 0)}
+              disabled={!autoActive && (busy || !balance.canAfford(bet))}
               className={`w-full py-3.5 rounded-xl font-bold text-sm uppercase tracking-wider disabled:opacity-50 transition active:scale-[0.99] ${
                 autoActive ? 'bg-stake-red text-white' : 'bg-stake-green text-stake-bg'
               }`}

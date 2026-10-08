@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { loadJson, saveJson } from '../lib/storage';
+import { isBoolean, loadJson, saveJson } from '../lib/storage';
 
 const KEY = 'music-on';
 
@@ -20,11 +20,15 @@ const BASE_PROG = [
 const LEAD_NOTES = [329.63, 392.0, 440.0, 523.25, 392.0, 440.0]; // E G A C G A
 
 export function useMusic({ soundEnabled }: { soundEnabled: boolean }) {
-  const [musicEnabled, setMusicEnabled] = useState<boolean>(() => loadJson<boolean>(KEY, true));
+  const [musicEnabled, setMusicEnabled] = useState<boolean>(() => loadJson<boolean>(KEY, true, isBoolean));
   const ctxRef = useRef<AudioContext | null>(null);
   const masterGainRef = useRef<GainNode | null>(null);
   const intensityRef = useRef<Intensity>(null);
-  const stopFnsRef = useRef<(() => void)[]>([]);
+  const stopFnsRef = useRef(new Set<() => void>());
+  const leadTimersRef = useRef(new Set<ReturnType<typeof setTimeout>>());
+  const fadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const enabledRef = useRef({ musicEnabled, soundEnabled });
+  enabledRef.current = { musicEnabled, soundEnabled };
   const chordIdxRef = useRef(0);
   const tickRef = useRef<number | null>(null);
   const leadIdxRef = useRef(0);
@@ -37,13 +41,19 @@ export function useMusic({ soundEnabled }: { soundEnabled: boolean }) {
       const W = window as Window & { webkitAudioContext?: typeof AudioContext };
       const Ctx = window.AudioContext ?? W.webkitAudioContext;
       if (!Ctx) return null;
-      ctxRef.current = new Ctx();
-      masterGainRef.current = ctxRef.current.createGain();
-      masterGainRef.current.gain.value = 0;
-      masterGainRef.current.connect(ctxRef.current.destination);
+      try {
+        ctxRef.current = new Ctx();
+        masterGainRef.current = ctxRef.current.createGain();
+        masterGainRef.current.gain.value = 0;
+        masterGainRef.current.connect(ctxRef.current.destination);
+      } catch {
+        ctxRef.current = null;
+        masterGainRef.current = null;
+        return null;
+      }
     }
     if (ctxRef.current.state === 'suspended') {
-      void ctxRef.current.resume();
+      void ctxRef.current.resume().catch(() => {});
     }
     return ctxRef.current;
   }, []);
@@ -53,8 +63,12 @@ export function useMusic({ soundEnabled }: { soundEnabled: boolean }) {
       clearInterval(tickRef.current);
       tickRef.current = null;
     }
+    if (fadeTimerRef.current !== null) clearTimeout(fadeTimerRef.current);
+    fadeTimerRef.current = null;
+    leadTimersRef.current.forEach(clearTimeout);
+    leadTimersRef.current.clear();
     stopFnsRef.current.forEach((fn) => fn());
-    stopFnsRef.current = [];
+    stopFnsRef.current.clear();
   }, []);
 
   const playPad = useCallback(
@@ -91,6 +105,17 @@ export function useMusic({ soundEnabled }: { soundEnabled: boolean }) {
         osc2.stop(now + duration + 0.2);
         oscs.push(osc1, osc2);
       }
+      const release = () => {
+        for (const osc of oscs) {
+          try { osc.stop(); } catch { /* already ended */ }
+          osc.disconnect();
+        }
+        padGain.disconnect();
+        filter.disconnect();
+        stopFnsRef.current.delete(release);
+      };
+      stopFnsRef.current.add(release);
+      oscs[oscs.length - 1]!.onended = release;
     },
     [],
   );
@@ -110,15 +135,23 @@ export function useMusic({ soundEnabled }: { soundEnabled: boolean }) {
     osc.connect(g).connect(master);
     osc.start(now);
     osc.stop(now + duration + 0.1);
+    const release = () => {
+      try { osc.stop(); } catch { /* already ended */ }
+      osc.disconnect();
+      g.disconnect();
+      stopFnsRef.current.delete(release);
+    };
+    stopFnsRef.current.add(release);
+    osc.onended = release;
   }, []);
 
   const start = useCallback(
     (intensity: Intensity) => {
-      if (!musicEnabled || !soundEnabled || !intensity) return;
+      if (!enabledRef.current.musicEnabled || !enabledRef.current.soundEnabled || !intensity) return;
       // Idempotent: if already playing this intensity, do nothing — avoids
       // the music chopping every time runRound is called.
       if (intensityRef.current === intensity && tickRef.current != null) return;
-      ensureCtx();
+      if (!ensureCtx()) return;
       stopAll();
       intensityRef.current = intensity;
       const master = masterGainRef.current;
@@ -142,7 +175,13 @@ export function useMusic({ soundEnabled }: { soundEnabled: boolean }) {
           // Plays a sparse melody of high notes during free spins
           for (let i = 0; i < 2; i++) {
             const note = LEAD_NOTES[leadIdxRef.current % LEAD_NOTES.length]!;
-            setTimeout(() => playLead(note, 0.6, 0.05), i * (chordDur * 1000) / 2 + 200);
+            const timer = setTimeout(() => {
+              leadTimersRef.current.delete(timer);
+              if (intensityRef.current === intensity && enabledRef.current.musicEnabled && enabledRef.current.soundEnabled) {
+                playLead(note, 0.6, 0.05);
+              }
+            }, i * (chordDur * 1000) / 2 + 200);
+            leadTimersRef.current.add(timer);
             leadIdxRef.current++;
           }
         }
@@ -150,11 +189,17 @@ export function useMusic({ soundEnabled }: { soundEnabled: boolean }) {
       playStep();
       tickRef.current = window.setInterval(playStep, chordDur * 1000);
     },
-    [musicEnabled, soundEnabled, ensureCtx, stopAll, playPad, playLead],
+    [ensureCtx, stopAll, playPad, playLead],
   );
 
   const stop = useCallback(() => {
     intensityRef.current = null;
+    if (tickRef.current !== null) clearInterval(tickRef.current);
+    tickRef.current = null;
+    leadTimersRef.current.forEach(clearTimeout);
+    leadTimersRef.current.clear();
+    if (fadeTimerRef.current !== null) clearTimeout(fadeTimerRef.current);
+    fadeTimerRef.current = null;
     const ctx = ctxRef.current;
     const master = masterGainRef.current;
     if (ctx && master) {
@@ -162,7 +207,8 @@ export function useMusic({ soundEnabled }: { soundEnabled: boolean }) {
       master.gain.setValueAtTime(master.gain.value, ctx.currentTime);
       master.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.6);
     }
-    setTimeout(stopAll, 700);
+    if (ctx && master) fadeTimerRef.current = setTimeout(stopAll, 700);
+    else stopAll();
   }, [stopAll]);
 
   /** Briefly duck the music volume — used during big wins so the celebration
@@ -189,10 +235,11 @@ export function useMusic({ soundEnabled }: { soundEnabled: boolean }) {
   // could accrue dangling audio contexts (~1 per visit).
   useEffect(() => {
     return () => {
+      intensityRef.current = null;
       stopAll();
       const ctx = ctxRef.current;
       if (ctx && ctx.state !== 'closed') {
-        try { void ctx.close(); } catch { /* ignore */ }
+        try { void ctx.close().catch(() => {}); } catch { /* ignore */ }
       }
       ctxRef.current = null;
       masterGainRef.current = null;

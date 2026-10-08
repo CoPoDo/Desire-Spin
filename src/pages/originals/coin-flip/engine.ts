@@ -1,3 +1,4 @@
+import { MAX_ROUND_MULTIPLIER } from '../../../lib/accounting';
 import type { Rng } from '../../../lib/fairness';
 
 /** Flip — Stake-style streak coin game.
@@ -15,7 +16,7 @@ const HOUSE_EDGE = 0.01;
 const PER_FLIP = 2 * (1 - HOUSE_EDGE); // 1.98
 
 export function multiplierAfter(streak: number): number {
-  return +Math.pow(PER_FLIP, streak).toFixed(4);
+  return +Math.min(MAX_ROUND_MULTIPLIER, Math.pow(PER_FLIP, Math.max(0, Math.floor(streak)))).toFixed(4);
 }
 
 export function flip(rng: Rng): Side {

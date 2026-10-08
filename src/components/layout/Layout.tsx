@@ -11,14 +11,16 @@ export function Layout({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen flex">
+      <a href="#main-content" className="skip-link">Skip to games</a>
       <Sidebar open={navOpen} onClose={() => setNavOpen(false)} />
       <div className="flex-1 flex flex-col min-w-0">
         <TopBar
           onOpenFairness={() => setFairnessOpen(true)}
           onOpenHistory={() => setHistoryOpen(true)}
           onToggleNav={() => setNavOpen((v) => !v)}
+          navOpen={navOpen}
         />
-        <main className="flex-1 px-4 md:px-8 pb-24 pt-6 max-w-[1400px] w-full mx-auto">
+        <main id="main-content" tabIndex={-1} className="flex-1 px-4 md:px-8 pb-24 pt-6 max-w-[1400px] w-full mx-auto">
           {children}
         </main>
         <footer className="border-t border-edge bg-bg-elev/60">

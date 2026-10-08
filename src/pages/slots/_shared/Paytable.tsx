@@ -62,9 +62,9 @@ function PaytableTab({ cfg, renderCell }: { cfg: SlotConfig; renderCell: CellRen
   return (
     <>
       <p className="text-xs text-ink-mute mb-4">
-        <strong className="text-ink-dim">Pay-anywhere:</strong> 8 or more matching symbols
+        <strong className="text-ink-dim">Local paytable:</strong> {cfg.payAnywhereThreshold} or more matching symbols
         anywhere on the {cfg.cols}×{cfg.rows} grid pay.
-        Scatters pay independently for 4 or more anywhere on screen.
+        Scatters pay independently in the base game for 4 or more. All values multiply the base stake, before ante or bonus-buy costs. Local probabilities and payouts are approximations, not provider-certified odds.
       </p>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {paying.map((s) => (
@@ -87,7 +87,7 @@ function PaytableTab({ cfg, renderCell }: { cfg: SlotConfig; renderCell: CellRen
                   .map(([n, mult]) => (
                     <tr key={n}>
                       <td className="text-ink-dim">{n}+</td>
-                      <td className="font-mono text-right">{fmtMultiplier(mult)}</td>
+                      <td className="font-mono text-right">{fmtMultiplier(mult * (s.tier === 'scatter' ? 1 : cfg.payoutScaleBase ?? 1))}{s.tier !== 'scatter' && (cfg.payoutScaleBase ?? 1) !== (cfg.payoutScaleFree ?? 1) && <span className="block text-[10px] text-ink-mute">FS {fmtMultiplier(mult * (cfg.payoutScaleFree ?? 1))}</span>}</td>
                     </tr>
                   ))}
               </tbody>
@@ -118,8 +118,8 @@ function RulesTab({ cfg }: { cfg: SlotConfig }) {
         chains.
       </Section>
       <Section title="Multiplier Symbols" accent={accent}>
-        Random multiplier orbs (2× to 500×) can land on any spin or tumble. In the base
-        game, the multiplier applies to the chain it lands in. In free spins, every
+        {cfg.multiplierBaseMode === 'disabled' ? 'Multiplier symbols appear only during free spins in this game. ' : 'Multiplier symbols can appear in base play; the sum visible on a winning grid multiplies that chain. '}
+        In free spins, every
         multiplier that lands sticks on the grid; at the end of each spin, all multiplier
         values sum together and apply to that spin's total win.
       </Section>
@@ -154,18 +154,13 @@ function FeaturesTab({ cfg }: { cfg: SlotConfig }) {
       <div className="card bg-bg-elev/60 p-4">
         <div className="grid grid-cols-3 gap-3 text-center">
           <div>
-            <div className="text-[10px] uppercase tracking-widest text-ink-mute">RTP</div>
-            <div className="font-mono font-bold text-base mt-0.5" style={accentStyle}>~96.5%</div>
+            <div className="text-[10px] uppercase tracking-widest text-ink-mute">Odds model</div>
+            <div className="font-mono font-bold text-base mt-0.5" style={accentStyle}>Local</div>
           </div>
           <div>
-            <div className="text-[10px] uppercase tracking-widest text-ink-mute">Volatility</div>
-            <div className="mt-0.5 leading-none flex justify-center gap-0.5" style={accentStyle}>
-              {/* 5/5 stars matching real game's high-volatility rating */}
-              {[0, 1, 2, 3, 4].map((i) => (
-                <span key={i} style={{ filter: `drop-shadow(0 0 6px ${glow})` }}>★</span>
-              ))}
-            </div>
-            <div className="text-[9px] text-ink-mute mt-0.5">High</div>
+            <div className="text-[10px] uppercase tracking-widest text-ink-mute">Play mode</div>
+            <div className="mt-1 font-mono text-base font-bold" style={accentStyle}>Credits</div>
+            <div className="text-[9px] text-ink-mute mt-0.5">No cash value</div>
           </div>
           <div>
             <div className="text-[10px] uppercase tracking-widest text-ink-mute">Max Win</div>
@@ -190,8 +185,7 @@ function FeaturesTab({ cfg }: { cfg: SlotConfig }) {
       <Section title="Ante Bet" accent={accent}>
         Toggle the Ante checkbox to increase your bet by {' '}
         <strong>{Math.round((cfg.ante.betMultiplier - 1) * 100)}%</strong>{' '}
-        and roughly {cfg.ante.scatterWeightBoost.toFixed(1)}× your scatter chance — more
-        frequent free-spin triggers.
+        and multiply the local scatter symbol weight by {cfg.ante.scatterWeightBoost.toFixed(1)}. This does not mean the feature chance rises by the same factor.
       </Section>
       <Section title="Buy Bonus" accent={accent}>
         Tap "Buy {cfg.buyBonusCost}×" to skip the wait and enter the bonus round directly,
@@ -201,11 +195,11 @@ function FeaturesTab({ cfg }: { cfg: SlotConfig }) {
       <Section title="Auto-play / Turbo" accent={accent}>
         Tap the ⚡ button to enable turbo (faster spins). Tap the ↻ button to start
         auto-play with a configurable spin count. Auto-play pauses if your balance falls
-        below the bet.
+        below the bet or you leave the tab. Opening game menus pauses autoplay.
       </Section>
       <Section title="Tap to Skip" accent={accent}>
         Tap anywhere on the painted scene during a spin to fast-forward animations to
-        the end. The reels still resolve to the same outcome — only the timing changes.
+        the end, or press Space/the spin button again. The complete round is saved to your play balance and history before animation, so leaving or refreshing does not lose awarded free-spin wins.
       </Section>
     </div>
   );

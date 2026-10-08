@@ -15,14 +15,14 @@ export function useHotkey(key: string, handler: () => void, enabled = true) {
   useEffect(() => {
     if (!enabled) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key !== key) return;
+      if (e.key !== key || e.repeat || e.ctrlKey || e.metaKey || e.altKey || e.isComposing || document.hidden) return;
+      if (key !== 'Escape' && document.querySelector('[role="dialog"][aria-modal="true"]')) return;
       // Don't fire when focused inside an input/textarea/select — let
       // the user type freely. contenteditable elements report tagName
       // as their underlying tag, so we also check isContentEditable.
       const t = e.target as HTMLElement | null;
-      if (t) {
-        const tag = t.tagName;
-        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      if (key !== 'Escape' && t instanceof HTMLElement) {
+        if (t.closest('button, a, input, textarea, select, [role="button"]')) return;
         if (t.isContentEditable) return;
       }
       e.preventDefault();

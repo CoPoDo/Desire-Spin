@@ -1,4 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { InstantGameArt } from '../components/layout/InstantGameArt';
 import { GameCard } from '../components/layout/GameCard';
 import { useGame } from '../game-context';
 import { BonanzaArt } from './slots/sweet-bonanza/Art';
@@ -56,7 +58,7 @@ export const GAMES: Game[] = [
   { to: '/originals/sicbo',         title: 'Sic Bo',                subtitle: 'Three dice',                badge: 'LIVE', art: <PlaceholderArt label="🎲" tone="#1a3a1a" />, category: 'original', searchTags: ['dice', 'asian', 'table'] },
   { to: '/originals/scratch',       title: 'Scratch Card',          subtitle: 'Match 3 to win',            badge: 'LIVE', art: <PlaceholderArt label="🎟️" tone="#2a3a10" />, category: 'original', searchTags: ['scratch', 'lottery'] },
   { to: '/slots/big-bass-bonanza',  title: 'Big Bass Bonanza',      subtitle: '5×3 · fisherman collects',  badge: 'NEW', art: <PlaceholderArt label="🐟" tone="#10303a" />, category: 'slot', searchTags: ['fish', 'fishing', 'pragmatic', 'slot'] },
-  { to: '/originals/slide',         title: 'Slide',                 subtitle: 'Live multiplier slide',     badge: 'LIVE', art: <PlaceholderArt label="📈" tone="#1a3a30" />, category: 'original', searchTags: ['multiplier'] },
+  { to: '/originals/slide',         title: 'Slide',                 subtitle: 'Local multiplier slide',     badge: 'LIVE', art: <PlaceholderArt label="📈" tone="#1a3a30" />, category: 'original', searchTags: ['multiplier'] },
   { to: '/originals/bingo',         title: 'Bingo',                 subtitle: '5×5 lines + draws',         badge: 'LIVE', art: <PlaceholderArt label="🎱" tone="#3a1030" />, category: 'original', searchTags: ['bingo', 'numbers', 'lines'] },
   { to: '/originals/aviator',       title: 'Aviator',               subtitle: 'Plane crashes when?',       badge: 'LIVE', art: <PlaceholderArt label="✈️" tone="#1a3a5a" />, category: 'original', searchTags: ['plane', 'crash', 'spribe'] },
 ];
@@ -74,6 +76,8 @@ function matchesQuery(game: Game, q: string): boolean {
 export function Home() {
   const { history, favorites } = useGame();
   const [query, setQuery] = useState('');
+  const [params, setParams] = useSearchParams();
+  const category = params.get('category') === 'slot' ? 'slot' : params.get('category') === 'original' ? 'original' : 'all';
 
   const recent = useMemo(() => {
     const seen = new Set<string>();
@@ -100,12 +104,12 @@ export function Home() {
   );
 
   const slots = useMemo(
-    () => GAMES.filter((g) => g.category === 'slot' && matchesQuery(g, query)),
-    [query],
+    () => GAMES.filter((g) => g.category === 'slot' && category !== 'original' && matchesQuery(g, query)),
+    [query, category],
   );
   const originals = useMemo(
-    () => GAMES.filter((g) => g.category === 'original' && matchesQuery(g, query)),
-    [query],
+    () => GAMES.filter((g) => g.category === 'original' && category !== 'slot' && matchesQuery(g, query)),
+    [query, category],
   );
 
   return (
@@ -115,9 +119,15 @@ export function Home() {
       {/* Search bar — single input filters both Slots and Originals.
           Real Stake lobby has this above the games grid; with 39
           titles it's the most-used navigation feature. */}
-      <SearchBar value={query} onChange={setQuery} totalCount={GAMES.length} />
+      <div className="space-y-4">
+        <SearchBar value={query} onChange={setQuery} totalCount={GAMES.length} />
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Filter games">
+          {([['all', 'All games'], ['slot', 'Slots'], ['original', 'Table & instant']] as const).map(([value, label]) => <button key={value} aria-pressed={category === value} onClick={() => setParams(value === 'all' ? {} : { category: value }, { replace: true })} className={`rounded-full border px-4 py-2.5 text-xs font-semibold transition-colors ${category === value ? 'bg-accent text-bg border-accent' : 'bg-bg-card text-ink-dim border-edge hover:text-ink'}`}>{label}</button>)}
+          <span className="ml-auto self-center text-xs text-ink-mute" role="status">{slots.length + originals.length} games</span>
+        </div>
+      </div>
 
-      {!query && favs.length > 0 && (
+      {!query && category === 'all' && favs.length > 0 && (
         <section>
           <SectionHeader
             title="Favorites"
@@ -131,7 +141,7 @@ export function Home() {
         </section>
       )}
 
-      {!query && recent.length > 0 && (
+      {!query && category === 'all' && recent.length > 0 && (
         <section>
           <SectionHeader title="Recently Played" subtitle={`${recent.length} game${recent.length === 1 ? '' : 's'} in your history`} />
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
@@ -146,7 +156,7 @@ export function Home() {
         <section>
           <SectionHeader
             title="Slots"
-            subtitle={query ? `${slots.length} match${slots.length === 1 ? '' : 'es'}` : 'High-fidelity tumble slots'}
+            subtitle={query ? `${slots.length} match${slots.length === 1 ? '' : 'es'}` : 'Reels, tumbles and bonus rounds'}
           />
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
             {slots.map((g) => (
@@ -159,8 +169,8 @@ export function Home() {
       {originals.length > 0 && (
         <section>
           <SectionHeader
-            title="Originals"
-            subtitle={query ? `${originals.length} match${originals.length === 1 ? '' : 'es'}` : 'Stake Originals and canonical casino games'}
+            title="Table & instant"
+            subtitle={query ? `${originals.length} match${originals.length === 1 ? '' : 'es'}` : 'Cards, strategy and quick-play classics'}
           />
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
             {originals.map((g) => (
@@ -241,66 +251,35 @@ function SectionHeader({ title, subtitle }: { title: string; subtitle?: string }
 }
 
 function PlaceholderArt({ label, tone }: { label: string; tone: string }) {
-  return (
-    <div
-      className="w-full h-full flex items-center justify-center text-6xl relative overflow-hidden"
-      style={{ background: `linear-gradient(180deg, ${tone}, #0b0f17)` }}
-    >
-      <span
-        className="absolute pointer-events-none"
-        style={{
-          left: '-15%',
-          top: '-10%',
-          width: '70%',
-          height: '70%',
-          background: `radial-gradient(circle at 50% 50%, ${tone} 0%, transparent 65%)`,
-          filter: 'blur(20px)',
-          opacity: 0.85,
-        }}
-      />
-      <span
-        className="absolute pointer-events-none"
-        style={{
-          right: '-20%',
-          bottom: '-15%',
-          width: '80%',
-          height: '70%',
-          background: `radial-gradient(circle at 50% 50%, ${tone} 0%, transparent 65%)`,
-          filter: 'blur(24px)',
-          opacity: 0.6,
-        }}
-      />
-      <span
-        className="relative z-10 opacity-90"
-        style={{ filter: 'drop-shadow(0 6px 14px rgba(0,0,0,.55))' }}
-      >
-        {label}
-      </span>
-    </div>
-  );
+  return <InstantGameArt label={label} tone={tone} />;
 }
 
 function Hero() {
-  return (
-    <section className="relative overflow-hidden rounded-3xl border border-edge bg-gradient-to-br from-bonanza-purple/30 via-bg-card to-olympus-navy/30 p-8 md:p-12">
-      <div className="relative z-10 max-w-2xl">
-        <div className="pill bg-accent/15 text-accent mb-3">play money · locally reproducible</div>
-        <h1 className="font-display text-3xl md:text-5xl font-extrabold leading-tight">
-          The casino, without the cost.
-        </h1>
-        <p className="mt-3 text-ink-dim max-w-lg">
-          A private, play-money recreation of modern slots and casino games. Every result
-          can be replayed from its local seed and nonce. No real money and no live wagering.
-        </p>
-      </div>
-      <div
-        className="absolute -right-16 -bottom-16 w-[420px] h-[420px] rounded-full bg-accent/15 blur-3xl pointer-events-none"
-        style={{ animation: 'heroBlobBreathe 7s ease-in-out infinite' }}
-      />
-      <div
-        className="absolute -right-32 top-10 w-[260px] h-[260px] rounded-full bg-accent-violet/20 blur-3xl pointer-events-none"
-        style={{ animation: 'heroBlobBreathe 9s ease-in-out -3s infinite' }}
-      />
-    </section>
-  );
+  return <section>
+    <div className="flex items-end justify-between gap-4 mb-5">
+      <div><h1 className="font-display text-3xl font-bold tracking-tight">Casino</h1><p className="mt-1 text-sm text-ink-dim">Slots, table games and originals. All for play.</p></div>
+      <span className="hidden sm:inline text-xs text-ink-mute">34 games · free credits</span>
+    </div>
+    <div className="grid gap-3 sm:grid-cols-[1.35fr_1fr] lg:grid-cols-[1.35fr_1fr_1fr]">
+      <Link to="/slots/big-juan" className="feature-game relative isolate h-56 sm:h-64 overflow-hidden rounded-xl bg-[#431c16] border border-[#9a65413d] group">
+        <div className="absolute inset-y-0 right-0 w-[62%] opacity-95 transition-transform duration-500 group-hover:scale-105"><BigJuanArt /></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-[#321916] via-[#321916]/75 to-transparent" />
+        <div className="absolute inset-y-0 left-0 flex flex-col items-start justify-center p-6"><span className="text-[10px] uppercase tracking-[.18em] text-[#d0a477]">Featured slot</span><h2 className="mt-3 font-display text-4xl font-black leading-[.9] text-[#ffe5ad]">BIG<br />JUAN</h2><p className="mt-3 max-w-[160px] text-xs text-[#ddc1a4]">40 lines. Wild switches.<br />A full-on fiesta.</p><span className="mt-5 inline-flex rounded-md bg-[#f5c87c] px-4 py-2 text-xs font-bold text-[#321916]">Play now <LaunchArrow /></span></div>
+      </Link>
+      <Link to="/slots/gates-of-olympus" className="feature-game relative isolate h-44 sm:h-64 overflow-hidden rounded-xl border border-[#72628a55] bg-[#1a1834] group">
+        <div className="absolute -right-9 -top-5 h-[110%] w-[70%] opacity-85 transition-transform duration-500 group-hover:scale-105"><OlympusArt /></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-[#18162d] via-[#18162d]/75 to-transparent" />
+        <div className="absolute left-5 bottom-6"><span className="text-[10px] uppercase tracking-[.18em] text-[#b0a5c9]">Tumble reels</span><h2 className="mt-2 font-display text-2xl font-bold leading-tight text-[#f2deb1]">Gates of<br />Olympus</h2><span className="mt-4 block text-xs font-semibold text-[#d6c6a2]">Enter the temple <LaunchArrow /></span></div>
+      </Link>
+      <Link to="/originals/blackjack" className="feature-game relative isolate hidden lg:block h-64 overflow-hidden rounded-xl border border-[#427a6544] bg-[#122a24] group">
+        <div className="absolute -right-5 -top-3 h-full w-[75%] opacity-85 transition-transform duration-500 group-hover:rotate-3"><InstantGameArt label="🃏" tone="#144c3c" /></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-[#132921] via-[#132921]/70 to-transparent" />
+        <div className="absolute left-5 bottom-6"><span className="text-[10px] uppercase tracking-[.18em] text-[#8eb7a7]">The classics</span><h2 className="mt-2 font-display text-2xl font-bold text-[#e1ede5]">Blackjack</h2><p className="mt-2 text-xs text-[#9cb6aa]">Dealer stands on soft 17.</p><span className="mt-4 block text-xs font-semibold text-[#bfe7d5]">Take a seat <LaunchArrow /></span></div>
+      </Link>
+    </div>
+  </section>;
+}
+
+function LaunchArrow() {
+  return <svg aria-hidden="true" viewBox="0 0 16 16" fill="none" className="inline-block w-3.5 h-3.5 ml-1 align-[-2px]" stroke="currentColor" strokeWidth="1.6"><path d="M4 12 12 4M4 4h8v8" /></svg>;
 }

@@ -1,47 +1,41 @@
-/**
- * Typed localStorage with versioning and safe fallbacks for SSR / private mode.
- */
+/** Typed localStorage with versioning and safe fallbacks for SSR/private mode. */
 const PREFIX = 'desire-spin:v1:';
 
 function safeWindow(): Storage | null {
   try {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      return window.localStorage;
-    }
+    return typeof window === 'undefined' ? null : window.localStorage;
   } catch {
-    /* ignore */
+    return null;
   }
-  return null;
 }
 
-export function loadJson<T>(key: string, fallback: T): T {
-  const ls = safeWindow();
-  if (!ls) return fallback;
-  const raw = ls.getItem(PREFIX + key);
-  if (!raw) return fallback;
+/** The optional validator checks untrusted persisted data before it reaches UI. */
+export function loadJson<T>(key: string, fallback: T, validate?: (value: unknown) => boolean): T {
   try {
-    return JSON.parse(raw) as T;
+    const raw = safeWindow()?.getItem(PREFIX + key);
+    if (raw == null) return fallback;
+    const value: unknown = JSON.parse(raw);
+    return !validate || validate(value) ? value as T : fallback;
   } catch {
+    // Some browsers expose localStorage but throw from getItem itself.
     return fallback;
   }
 }
 
 export function saveJson<T>(key: string, value: T): void {
-  const ls = safeWindow();
-  if (!ls) return;
   try {
-    ls.setItem(PREFIX + key, JSON.stringify(value));
+    safeWindow()?.setItem(PREFIX + key, JSON.stringify(value));
   } catch {
-    /* ignore quota errors */
+    // Storage is best-effort; a private-mode/quota failure must not break play.
   }
 }
 
 export function removeKey(key: string): void {
-  const ls = safeWindow();
-  if (!ls) return;
   try {
-    ls.removeItem(PREFIX + key);
+    safeWindow()?.removeItem(PREFIX + key);
   } catch {
-    /* ignore */
+    // Storage may be blocked even when the Storage object is available.
   }
 }
+
+export const isBoolean = (value: unknown): value is boolean => typeof value === 'boolean';

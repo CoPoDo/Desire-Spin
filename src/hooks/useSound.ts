@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { loadJson, saveJson } from '../lib/storage';
+import { isBoolean, loadJson, saveJson } from '../lib/storage';
 
 const KEY = 'sound-on';
 
@@ -30,25 +30,37 @@ type Voice =
  * to the real Pragmatic mobile palette (drops, chimes, dramatic hits, fanfares).
  */
 export function useSound() {
-  const [enabled, setEnabled] = useState<boolean>(() => loadJson<boolean>(KEY, true));
+  const [enabled, setEnabled] = useState<boolean>(() => loadJson<boolean>(KEY, true, isBoolean));
   const ctxRef = useRef<AudioContext | null>(null);
+  const enabledRef = useRef(enabled);
+  enabledRef.current = enabled;
 
   useEffect(() => saveJson(KEY, enabled), [enabled]);
 
   const ensureCtx = useCallback(() => {
-    if (!enabled) return null;
+    if (!enabledRef.current) return null;
     if (typeof window === 'undefined') return null;
     if (!ctxRef.current) {
       const W = window as Window & { webkitAudioContext?: typeof AudioContext };
       const Ctx = window.AudioContext ?? W.webkitAudioContext;
       if (!Ctx) return null;
-      ctxRef.current = new Ctx();
+      try { ctxRef.current = new Ctx(); } catch { return null; }
     }
     if (ctxRef.current.state === 'suspended') {
-      void ctxRef.current.resume();
+      void ctxRef.current.resume().catch(() => {});
     }
     return ctxRef.current;
-  }, [enabled]);
+  }, []);
+
+  const closeContext = useCallback(() => {
+    const ctx = ctxRef.current;
+    ctxRef.current = null;
+    if (ctx && ctx.state !== 'closed') {
+      try { void ctx.close().catch(() => {}); } catch { /* audio is optional */ }
+    }
+  }, []);
+  useEffect(() => { if (!enabled) closeContext(); }, [enabled, closeContext]);
+  useEffect(() => closeContext, [closeContext]);
 
   /** Tone with attack/release envelope. */
   const tone = useCallback(

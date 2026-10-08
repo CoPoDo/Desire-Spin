@@ -3,154 +3,136 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
 import { useGame } from '../../../game-context';
 import { useHotkey } from '../../../hooks/useHotkey';
+import { MAX_ROUND_MULTIPLIER } from '../../../lib/accounting';
 import { usePersistedBet } from '../../../hooks/usePersistedBet';
-import { createRng } from '../../../lib/fairness';
+import { useInteractiveRound, useRoundState } from '../_shared/useInteractiveRound';
 import { fmtCurrency, fmtMultiplier } from '../../../lib/format';
 import { BetInput } from '../_shared/BetInput';
 import {
   type Card,
   drawCard,
   higherChance,
-  higherMult,
   lowerChance,
-  lowerMult,
   rankLabel,
+  isWinningGuess,
+  advanceMultiplier,
 } from './engine';
 import { fireConfetti } from '../../../lib/confetti';
 
 type Phase = 'idle' | 'playing' | 'lost';
 
 export function HiloGame() {
-  const { balance, fairness, sound, history, session } = useGame();
+  const { balance, sound } = useGame();
   const [bet, setBet] = usePersistedBet('hilo', 1);
-  const [phase, setPhase] = useState<Phase>('idle');
-  const [current, setCurrent] = useState<Card | null>(null);
+  const [phase, setPhase, phaseRef] = useRoundState<Phase>('idle');
+  const [current, setCurrent, currentRef] = useRoundState<Card | null>(null);
   const [previous, setPrevious] = useState<Card | null>(null);
   /** History of drawn cards across the current streak. Most recent
    *  first. Real Stake Hilo shows this strip so players can track
    *  which way the deck has been going. Cleared on round end. */
   const [cardHistory, setCardHistory] = useState<Card[]>([]);
-  const [picks, setPicks] = useState(0);
-  const [accumMult, setAccumMult] = useState(1);
-  const [busy, setBusy] = useState(false);
+  const [picks, setPicks, picksRef] = useRoundState(0);
+  const [accumMult, setAccumMult, multRef] = useRoundState(1);
+  const [busy, setBusy, busyRef] = useRoundState(false);
+  const [lastBet, setLastBet] = useState(bet);
+  const [skips, setSkips, skipsRef] = useRoundState(0);
+  const [lastPayout, setLastPayout] = useState<number | null>(null);
+  const { begin, settle, delay, wager, onLeave, error } = useInteractiveRound('Hilo');
+
+  onLeave.current = (updateView = false) => {
+    const entry = wager.current;
+    if (!entry || phaseRef.current !== 'playing') return 0;
+    const payout = picksRef.current ? +(entry.bet * multRef.current).toFixed(2) : entry.bet;
+    if (updateView) { setPhase('idle'); setCurrent(null); setLastPayout(payout); }
+    return payout;
+  };
 
   const start = useCallback(() => {
-    if (busy) return;
-    if (balance.balance < bet || bet <= 0) return;
-    sound.play('click');
-    balance.debit(bet);
-    const seeds = fairness.consumeNonce();
-    const rng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
-    const first = drawCard(rng);
+    if (busyRef.current || phaseRef.current === 'playing') return;
+    const entry = begin(bet);
+    if (!entry) return;
+    const first = drawCard(entry.rng);
     setCurrent(first);
     setPrevious(null);
     setPicks(0);
     setAccumMult(1);
     setCardHistory([first]);
     setPhase('playing');
-  }, [busy, balance, bet, fairness, sound]);
+    setLastBet(entry.bet);
+    setSkips(0);
+    setLastPayout(null);
+    setBusy(true);
+    delay(() => setBusy(false), 250);
+    sound.play('click');
+  }, [busyRef, phaseRef, begin, bet, setCurrent, setPicks, setAccumMult, setPhase, setBusy, delay, sound, setSkips]);
 
-  const guess = useCallback(
-    (direction: 'higher' | 'lower') => {
-      if (!current || phase !== 'playing' || busy) return;
-      setBusy(true);
-      sound.play('click');
-      const seeds = fairness.consumeNonce();
-      const rng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
-      const next = drawCard(rng);
-
-      const correct =
-        direction === 'higher' ? next.rank >= current.rank : next.rank <= current.rank;
-
-      const stepMult =
-        direction === 'higher' ? higherMult(current.rank) : lowerMult(current.rank);
-
-      // Card-deal thunk lands ~120ms in so the flip animation has audio
-      // weight rather than 350ms of silence before the result chime.
-      window.setTimeout(() => sound.play('drop'), 120);
-      setTimeout(() => {
-        setPrevious(current);
-        setCurrent(next);
-        setCardHistory((h) => [next, ...h].slice(0, 12));
-        if (correct) {
-          const nextMult = +(accumMult * stepMult).toFixed(4);
-          setAccumMult(nextMult);
-          setPicks((p) => p + 1);
-          sound.play('win');
-        } else {
-          setPhase('lost');
-          sound.play('drop');
-          history.record({
-            game: 'Hilo',
-            bet,
-            payout: 0,
-            multiplier: 0,
-            serverSeedHash: fairness.hash,
-            clientSeed: seeds.clientSeed,
-            nonce: seeds.nonce,
-          });
-          session.recordSpin(bet, 0, false);
-        }
-        setBusy(false);
-      }, 350);
-    },
-    [accumMult, balance, bet, busy, current, fairness, history, phase, session, sound],
-  );
+  const guess = useCallback((direction: 'higher' | 'lower') => {
+    const card = currentRef.current;
+    const entry = wager.current;
+    if (!card || phaseRef.current !== 'playing' || busyRef.current || !entry || entry.settled) return;
+    setBusy(true);
+    const next = drawCard(entry.rng);
+    const correct = isWinningGuess(card.rank, next.rank, direction);
+    setPrevious(card);
+    setCurrent(next);
+    setCardHistory(h => [next, ...h].slice(0, 12));
+    if (correct) {
+      const nextMult = Math.min(MAX_ROUND_MULTIPLIER, advanceMultiplier(multRef.current, card.rank, direction, picksRef.current === 0));
+      setAccumMult(nextMult);
+      setPicks(picksRef.current + 1);
+      sound.play('win');
+      if (nextMult >= MAX_ROUND_MULTIPLIER) {
+        const payout = +(entry.bet * nextMult).toFixed(2);
+        settle(payout);
+        setLastPayout(payout);
+        setPhase('idle');
+      }
+    } else {
+      setPhase('lost');
+      settle(0);
+      sound.play('drop');
+    }
+    delay(() => setBusy(false), 350);
+  }, [currentRef, wager, phaseRef, busyRef, setBusy, setCurrent, multRef, picksRef, setAccumMult, setPicks, sound, settle, setPhase, delay]);
 
   const cashOut = useCallback(() => {
-    if (phase !== 'playing' || picks === 0) return;
-    // Tier the SFX with the cash-out multiplier — flat 'big-win' on
-    // every cash-out (even tiny 1.05× chains) read as same-volume regardless
-    // of stake. Now ≥10× = mega, ≥3× = big, otherwise win.
-    sound.play(accumMult >= 10 ? 'mega-win' : accumMult >= 3 ? 'big-win' : 'win');
-    const payout = +(bet * accumMult).toFixed(2);
-    balance.credit(payout);
-    if (accumMult >= 2) {
-      fireConfetti({
-        count: accumMult >= 20 ? 130 : accumMult >= 5 ? 80 : 50,
-      });
-    }
-    history.record({
-      game: 'Hilo',
-      bet,
-      payout,
-      multiplier: accumMult,
-      serverSeedHash: fairness.hash,
-      clientSeed: '',
-      nonce: 0,
-    });
-    session.recordSpin(bet, payout, false);
+    const entry = wager.current;
+    if (phaseRef.current !== 'playing' || busyRef.current || !picksRef.current || !entry || entry.settled) return;
+    const payout = +(entry.bet * multRef.current).toFixed(2);
+    if (!settle(payout)) return;
+    sound.play(multRef.current >= 10 ? 'mega-win' : multRef.current >= 3 ? 'big-win' : 'win');
+    if (multRef.current >= 2) fireConfetti({ count: multRef.current >= 20 ? 100 : 50 });
+    setLastPayout(payout);
     setPhase('idle');
     setCurrent(null);
     setPrevious(null);
     setPicks(0);
     setAccumMult(1);
-  }, [phase, picks, accumMult, balance, bet, fairness, history, session, sound]);
+  }, [wager, phaseRef, busyRef, picksRef, multRef, settle, sound, setPhase, setCurrent, setPicks, setAccumMult]);
 
   const skip = useCallback(() => {
-    // "Skip card" — draw a new card without guessing. Real Stake has this.
-    if (!current || phase !== 'playing' || busy) return;
+    const card = currentRef.current;
+    const entry = wager.current;
+    if (!card || phaseRef.current !== 'playing' || busyRef.current || skipsRef.current >= 52 || !entry || entry.settled) return;
     setBusy(true);
+    setSkips(skipsRef.current + 1);
+    const next = drawCard(entry.rng);
+    setPrevious(card);
+    setCurrent(next);
+    setCardHistory(h => [next, ...h].slice(0, 12));
     sound.play('click');
-    const seeds = fairness.consumeNonce();
-    const rng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
-    const next = drawCard(rng);
-    setTimeout(() => {
-      setPrevious(current);
-      setCurrent(next);
-      setCardHistory((h) => [next, ...h].slice(0, 12));
-      setBusy(false);
-    }, 250);
-  }, [current, phase, busy, fairness, sound]);
+    delay(() => setBusy(false), 250);
+  }, [currentRef, wager, phaseRef, busyRef, setBusy, setCurrent, sound, delay, skipsRef, setSkips]);
 
   const reset = useCallback(() => {
+    if (busyRef.current || phaseRef.current === 'playing') return;
     setPhase('idle');
     setCurrent(null);
     setPrevious(null);
     setPicks(0);
     setAccumMult(1);
     setCardHistory([]);
-  }, []);
+  }, [busyRef, phaseRef, setPhase, setCurrent, setPicks, setAccumMult]);
 
   // Keyboard shortcuts — real Stake binds:
   //   ArrowUp / H → Higher
@@ -175,8 +157,8 @@ export function HiloGame() {
     }
   }, true);
 
-  const hMult = current ? higherMult(current.rank) : 0;
-  const lMult = current ? lowerMult(current.rank) : 0;
+  const hMult = current ? Math.min(MAX_ROUND_MULTIPLIER, advanceMultiplier(accumMult, current.rank, 'higher', picks === 0)) : 0;
+  const lMult = current ? Math.min(MAX_ROUND_MULTIPLIER, advanceMultiplier(accumMult, current.rank, 'lower', picks === 0)) : 0;
   const hPct = current ? higherChance(current.rank) * 100 : 0;
   const lPct = current ? lowerChance(current.rank) * 100 : 0;
   // Real Stake Hilo label convention: at the boundary cards (Ace
@@ -186,11 +168,12 @@ export function HiloGame() {
   // inclusive rule.
   const hLabel = current?.rank === 13 ? 'Same' : current?.rank === 1 ? 'Higher' : 'Higher or =';
   const lLabel = current?.rank === 1 ? 'Same' : current?.rank === 13 ? 'Lower' : 'Lower or =';
-  const cashoutAmount = +(bet * accumMult).toFixed(2);
+  const cashoutAmount = +((wager.current?.bet ?? bet) * accumMult).toFixed(2);
 
   return (
     <OriginalPageLayout title="Hilo">
       <div className="flex flex-col p-4 gap-4 max-w-md mx-auto w-full">
+        {error && <p role="alert" className="text-stake-red text-sm text-center">{error}</p>}
         {/* Card area */}
         <div className="rounded-lg bg-stake-card border border-stake-border p-4 min-h-[260px] flex flex-col items-center justify-center gap-3">
           {/* Header streak/multiplier display — scale-pops on each correct
@@ -273,13 +256,16 @@ export function HiloGame() {
           </div>
         )}
 
+        <p className="text-[11px] text-stake-muted text-center">Leaving cashes out your resolved streak. A bet with no guesses is returned. Simulation max win: 10,000,000×, with automatic cashout. Up to 52 skips per round.</p>
+        {lastPayout !== null && <p role="status" className="text-stake-green text-center text-sm">Cashed out {fmtCurrency(lastPayout)}</p>}
+
         {/* Pre-game / lost */}
         {phase !== 'playing' ? (
           <div className="rounded-lg bg-stake-card border border-stake-border p-4 space-y-3">
             <BetInput bet={bet} onBetChange={setBet} />
             {phase === 'lost' && (
               <div className="text-center text-xs text-stake-red font-semibold">
-                Lost {fmtCurrency(bet)} — better luck next round
+                Lost {fmtCurrency(lastBet)} — better luck next round
               </div>
             )}
             <button
@@ -331,10 +317,10 @@ export function HiloGame() {
             <div className="flex gap-2">
               <button
                 onClick={skip}
-                disabled={busy}
+                disabled={busy || skips >= 52}
                 className="flex-shrink-0 px-4 py-3 rounded-xl bg-stake-input border border-stake-border text-stake-muted hover:text-stake-text font-bold text-xs uppercase tracking-wider disabled:opacity-50"
               >
-                Skip Card
+                Skip Card ({52 - skips})
               </button>
               <button
                 onClick={cashOut}

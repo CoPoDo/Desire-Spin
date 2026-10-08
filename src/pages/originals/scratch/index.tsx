@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OriginalPageLayout } from '../../../components/layout/OriginalPageLayout';
 import { useGame } from '../../../game-context';
@@ -16,105 +16,62 @@ export function ScratchGame() {
   const [phase, setPhase] = useState<Phase>('idle');
   const [result, setResult] = useState<ScratchResult | null>(null);
   const [revealed, setRevealed] = useState<boolean[]>(Array(9).fill(false));
-  const [busy, setBusy] = useState(false);
+  const busy = false;
+  const phaseRef = useRef<Phase>('idle');
+  const revealedRef = useRef<boolean[]>(Array(9).fill(false));
 
   const start = useCallback(() => {
-    if (busy) return;
-    if (balance.balance < bet || bet <= 0) return;
-    setBusy(true);
+    if (phaseRef.current === 'reveal' || !balance.debit(bet)) return;
+    phaseRef.current = 'reveal';
     sound.play('click');
-    balance.debit(bet);
     const seeds = fairness.consumeNonce();
     const rng = createRng(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
     const r = play(rng, bet);
-    setResult(r);
-    setRevealed(Array(9).fill(false));
-    setPhase('reveal');
-    history.record({
-      game: 'Scratch',
-      bet,
-      payout: r.payout,
-      multiplier: r.multiplier,
-      serverSeedHash: fairness.hash,
-      clientSeed: seeds.clientSeed,
-      nonce: seeds.nonce,
-    });
+    // Scratch gestures reveal an already-settled ticket. They never pay twice,
+    // and leaving a partly scratched ticket cannot strand its prize.
+    if (r.payout > 0) balance.credit(r.payout);
+    history.record({ game: 'Scratch', bet, payout: r.payout, multiplier: r.multiplier,
+      serverSeedHash: fairness.hash, clientSeed: seeds.clientSeed, nonce: seeds.nonce });
     session.recordSpin(bet, r.payout, false);
-    setBusy(false);
-  }, [busy, bet, balance, fairness, sound, history, session]);
+    setResult(r);
+    revealedRef.current = Array(9).fill(false);
+    setRevealed(revealedRef.current);
+    setPhase('reveal');
+  }, [bet, balance, fairness, sound, history, session]);
 
-  const revealTile = useCallback(
-    (idx: number) => {
-      if (phase !== 'reveal' || revealed[idx]) return;
-      // Differentiated reveal SFX — scratching ONE of the winning trio
-      // tiles plays a positive 'coin' chime so the player audibly
-      // knows they hit one of the matched cells. Other tiles get the
-      // plain 'tick' scratch. Real scratch-cards have a separate
-      // "ding" for matched symbols vs the dull rasp on misses.
-      const isWinningTile = result?.winningPositions.includes(idx) ?? false;
-      sound.play(isWinningTile ? 'coin' : 'tick');
-      setRevealed((prev) => {
-        const next = [...prev];
-        next[idx] = true;
-        const allRevealed = next.every(Boolean);
-        if (allRevealed) {
-          // Settle round: credit win, play sound
-          if (result) {
-            if (result.payout > bet) {
-              balance.credit(result.payout);
-              sound.play(
-                result.multiplier >= 50
-                  ? 'mega-win'
-                  : result.multiplier >= 5
-                    ? 'big-win'
-                    : 'win',
-              );
-              if (result.multiplier >= 5) {
-                fireConfetti({
-                  count: result.multiplier >= 50 ? 130 : 65,
-                  colors: result.winningSymbol
-                    ? [result.winningSymbol.color, '#fff5dc', '#ffffff']
-                    : undefined,
-                });
-              }
-            } else if (result.payout > 0) {
-              balance.credit(result.payout);
-              sound.play('win');
-            } else {
-              sound.play('drop');
-            }
-          }
-          setPhase('done');
-        }
-        return next;
-      });
-    },
-    [phase, revealed, result, bet, balance, sound],
-  );
+  const celebrate = useCallback(() => {
+    if (!result || phaseRef.current !== 'reveal') return;
+    phaseRef.current = 'done';
+    setPhase('done');
+    sound.play(result.multiplier >= 50 ? 'mega-win' : result.multiplier >= 5 ? 'big-win' : result.payout > 0 ? 'win' : 'drop');
+    if (result.multiplier >= 5) fireConfetti({ count: result.multiplier >= 50 ? 130 : 65 });
+  }, [result, sound]);
+
+  const revealTile = useCallback((idx: number) => {
+    if (phaseRef.current !== 'reveal' || revealedRef.current[idx]) return;
+    sound.play(result?.winningPositions.includes(idx) ? 'coin' : 'tick');
+    revealedRef.current = revealedRef.current.map((value, index) => value || index === idx);
+    setRevealed(revealedRef.current);
+    if (revealedRef.current.every(Boolean)) celebrate();
+  }, [result, sound, celebrate]);
 
   const revealAll = useCallback(() => {
-    if (phase !== 'reveal' || !result) return;
-    sound.play('click');
-    setRevealed(Array(9).fill(true));
-    if (result.payout > bet) {
-      balance.credit(result.payout);
-      sound.play(result.multiplier >= 50 ? 'mega-win' : result.multiplier >= 5 ? 'big-win' : 'win');
-    } else if (result.payout > 0) {
-      balance.credit(result.payout);
-      sound.play('win');
-    } else {
-      sound.play('drop');
-    }
-    setPhase('done');
-  }, [phase, result, bet, balance, sound]);
+    if (phaseRef.current !== 'reveal' || !result) return;
+    revealedRef.current = Array(9).fill(true);
+    setRevealed(revealedRef.current);
+    celebrate();
+  }, [result, celebrate]);
 
   const reset = useCallback(() => {
+    if (phaseRef.current === 'reveal') return;
+    phaseRef.current = 'idle';
     setPhase('idle');
     setResult(null);
-    setRevealed(Array(9).fill(false));
+    revealedRef.current = Array(9).fill(false);
+    setRevealed(revealedRef.current);
   }, []);
 
-  const profit = result ? +(result.payout - bet).toFixed(2) : 0;
+  const profit = result ? +(result.payout - result.bet).toFixed(2) : 0;
   const allRevealed = revealed.every(Boolean);
 
   return (
@@ -142,7 +99,7 @@ export function ScratchGame() {
               }}
             >
               {result.winningSymbol
-                ? `${result.winningSymbol.emoji} × 3 · ${fmtMultiplier(result.multiplier)} · +${fmtCurrency(profit)}`
+                ? `${result.winningSymbol.emoji} × 3 · ${fmtMultiplier(result.multiplier)} · ${profit >= 0 ? '+' : ''}${fmtCurrency(profit)}`
                 : `No match · -${fmtCurrency(bet)}`}
             </div>
           )}

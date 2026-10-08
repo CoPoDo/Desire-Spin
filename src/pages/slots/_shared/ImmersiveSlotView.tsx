@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { loadJson, saveJson } from '../../../lib/storage';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { Modal } from '../../../components/ui/Modal';
+import { useSlotPlayback } from './useSlotPlayback';
 import { useGame } from '../../../game-context';
 import { useHotkey } from '../../../hooks/useHotkey';
 import { useMusic } from '../../../hooks/useMusic';
@@ -167,6 +169,10 @@ export function ImmersiveSlotView({
   maxWinLabel,
 }: ImmersiveSlotViewProps) {
   const { balance, fairness, history, sound, session } = useGame();
+  const reduceMotion = useReducedMotion();
+  const soundEnabledRef = useRef(sound.enabled);
+  soundEnabledRef.current = sound.enabled;
+  const { wait: sleep, skip: skipWaits, skipped: skipRef } = useSlotPlayback();
   // Derive default maxWinLabel from cfg.maxWinMultiplier so each slot's
   // welcome splash + status pills auto-match the engine's cap. Callers
   // can still override via the prop (legacy slots use this).
@@ -249,7 +255,6 @@ export function ImmersiveSlotView({
   const [autoplaySheetOpen, setAutoplaySheetOpen] = useState(false);
   // Skip flag — when set true mid-spin, the playFrames loop fast-forwards to
   // the end with near-zero delays. Real-Olympus parity: tap-to-skip cascades.
-  const skipRef = useRef(false);
   const aliveRef = useRef(true);
   const busyRef = useRef(false);
   const turboRef = useRef(turbo);
@@ -259,7 +264,8 @@ export function ImmersiveSlotView({
   // mid-spin (N+1) — visible bug where flashes/orbs vanish unexpectedly.
   const spinTimers = useRef<number[]>([]);
   const scheduleSpin = useCallback((fn: () => void, ms: number): number => {
-    const id = window.setTimeout(fn, ms);
+    if (!aliveRef.current || skipRef.current) return 0;
+    const id = window.setTimeout(() => { if (aliveRef.current && !skipRef.current) fn(); }, ms);
     spinTimers.current.push(id);
     return id;
   }, []);
@@ -273,7 +279,7 @@ export function ImmersiveSlotView({
   // moment lands even if browser SpeechSynthesis doesn't play. Callout
   // auto-clears after 1500ms; speakZeus has its own cooldown internally.
   const speakAndShout = useCallback((line: string) => {
-    speakZeus(line);
+    if (soundEnabledRef.current) speakZeus(line);
     setZeusCallout({ text: line, key: Date.now() });
     const t = setTimeout(() => setZeusCallout(null), 1600);
     spinTimers.current.push(t);
@@ -303,6 +309,7 @@ export function ImmersiveSlotView({
     return () => {
       aliveRef.current = false;
       music.stop(); // stop music when leaving the slot page
+      if (cfg.id === 'gates-of-olympus' && 'speechSynthesis' in window) window.speechSynthesis.cancel();
       clearSpinTimers();
       // Unblock any reel-spin promise that's still awaiting — otherwise
       // playFrames would hang in its `await new Promise(...)` forever
@@ -314,9 +321,14 @@ export function ImmersiveSlotView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    if (!sound.enabled && cfg.id === 'gates-of-olympus' && 'speechSynthesis' in window) window.speechSynthesis.cancel();
+  }, [sound.enabled, cfg.id]);
+
   const playFrames = useCallback(
     async (frames: Frame[], betUsed: number, mode: SpinMode) => {
       let lastGrid: TGrid | null = null;
+      let winningLocal = new Set<string>();
       // Track whether we're currently inside a free-spins session (set by
       // freeSpinsBegin, cleared by freeSpinsEnd). The outer `mode` arg only
       // tells us how the round STARTED — the inner spins inside playRound's
@@ -328,9 +340,19 @@ export function ImmersiveSlotView({
       // Pre-spin pause matches real game's "reels stopping" gap (~220ms).
       // Skipped under turbo + tap-to-skip — those want maximum speed.
       const presDur = turboRef.current ? (skipRef.current ? 0 : 80) : 220;
-      if (presDur > 0) await sleep(presDur);
+      if (presDur > 0 && !reduceMotion) await sleep(presDur);
       for (const frame of frames) {
         if (!aliveRef.current) return;
+        if (reduceMotion || skipRef.current) {
+          if ('grid' in frame) { setGrid(frame.grid); lastGrid = frame.grid; }
+          if (frame.kind === 'final') setWinTotal(frame.runningPayout);
+          if (frame.kind === 'freeSpinsEnd') setWinTotal(frame.totalPayout);
+          setFreeSpins(null);
+          setWinning(new Set());
+          setNewKeys(new Set());
+          setPrespin(false);
+          continue;
+        }
         // Between-FS-spin breather: real Pragmatic pauses ~500ms between
         // free spins so the player has breathing room between cascades.
         // Detect: we're in FS, last frame was a 'final', and current is
@@ -443,6 +465,8 @@ export function ImmersiveSlotView({
               return `M ${startX} ${startY} L ${seg(0.28, 4)} L ${seg(0.55, 5)} L ${seg(0.78, 4)} L ${endX} ${endY}`;
             };
             for (let i = 0; i < landings.length; i++) {
+              if (!aliveRef.current) return;
+              if (skipRef.current) break;
               const m = landings[i]!;
               const staged: TGrid = preGrid.map((col) => col.map((c) => ({ ...c })));
               for (let j = 0; j <= i; j++) {
@@ -490,6 +514,7 @@ export function ImmersiveSlotView({
             for (const w of frame.wins) for (const [c, r] of w.positions) win.add(`${c}:${r}`);
             setGrid(frame.grid);
             setWinning(win);
+            winningLocal = win;
             // Escalating chain sounds: chain 1-2 plays standard win,
             // 3-4 escalates to big-win, 5+ goes mega — builds tension.
             const chainSound: 'win' | 'big-win' | 'mega-win' =
@@ -570,6 +595,8 @@ export function ImmersiveSlotView({
             };
 
             for (let i = 0; i < landings.length; i++) {
+              if (!aliveRef.current) return;
+              if (skipRef.current) break;
               const m = landings[i]!;
               // Stage the grid: include landings[0..i].
               const staged: TGrid = preGrid.map((col) => col.map((c) => ({ ...c })));
@@ -666,9 +693,9 @@ export function ImmersiveSlotView({
             // away → spawn a particle burst at each. Real Pragmatic
             // tumbles end with a "POP" beat on each winner; this lays
             // that over the standard exit fade.
-            if (winning.size > 0) {
+            if (winningLocal.size > 0) {
               const bursts: { id: string; col: number; row: number }[] = [];
-              for (const key of winning) {
+              for (const key of winningLocal) {
                 const [cStr, rStr] = key.split(':');
                 const c = Number(cStr), r = Number(rStr);
                 if (Number.isFinite(c) && Number.isFinite(r)) {
@@ -760,6 +787,7 @@ export function ImmersiveSlotView({
             break;
           }
           case 'final': {
+            setWinTotal(frame.runningPayout);
             if (inFsLocal) {
               // Inside an FS session — decrement remaining + add to running.
               // Do NOT trigger bigWin per-spin; freeSpinsEnd handles the
@@ -815,16 +843,29 @@ export function ImmersiveSlotView({
         lastFrameKind = frame.kind;
       }
     },
-    [sound],
+    [sound, cfg, reduceMotion, scheduleSpin, speakAndShout, sleep, skipRef],
   );
+
+  const requestSkip = useCallback(() => {
+    skipWaits();
+    reelSpinResolveRef.current?.();
+    clearSpinTimers();
+    setBigWin(null); setFsOverlay(null); setFsOutroOverlay(null);
+    setFsMultReveal(null); setFloatingMults([]); setOrbImpacts([]);
+    setZeusBolts([]); setOrbRumble(null); setBigWinBolts([]);
+    setLightningStrike(false); setRetrigger(null); setWinBursts([]);
+    setScatterFlashes([]); setClusterPopups([]); setZeusCallout(null);
+    setZeusEyesGlow(false); setAnticipation(0);
+  }, [skipWaits, clearSpinTimers]);
 
   const runRound = useCallback(
     async (mode: 'spin' | 'buy') => {
-      if (busyRef.current) return;
+      if (busyRef.current || !Number.isFinite(bet) || bet <= 0) return;
+      if (bigWin || fsOutroOverlay || fsOverlay) { requestSkip(); return; }
       const baseBet = bet;
       const adjBet = ante ? +(bet * cfg.ante.betMultiplier).toFixed(2) : bet;
       const cost = mode === 'buy' ? cfg.buyBonusCost * baseBet : adjBet;
-      if (balance.balance < cost) {
+      if (!balance.debit(cost)) {
         setStatusMsg('Insufficient balance');
         return;
       }
@@ -858,7 +899,7 @@ export function ImmersiveSlotView({
       // policy requires a user gesture). switchIntensity is no-op if already
       // playing the right track.
       music.start(freeSpins ? 'free' : 'base');
-      balance.debit(cost);
+      let settled = false;
 
       try {
         const seeds = fairness.consumeNonce();
@@ -873,11 +914,9 @@ export function ImmersiveSlotView({
             ? buyBonusRound(rng, cfg, { bet: baseBet, ante: false })
             : playRound(rng, cfg, { bet: baseBet, ante });
 
-        await playFrames(result.frames, baseBet, mode === 'buy' ? 'free' : 'base');
-
         const payout = result.totalPayout;
-        setWinTotal(payout);
         if (payout > 0) balance.credit(payout);
+        settled = true;
         history.record({
           game: cfg.name,
           bet: cost,
@@ -888,17 +927,22 @@ export function ImmersiveSlotView({
           nonce: seeds.nonce,
         });
         session.recordSpin(cost, payout, result.freeSpinsAwarded > 0);
+        await playFrames(result.frames, baseBet, mode === 'buy' ? 'free' : 'base');
+        if (aliveRef.current) {
+          setWinTotal(payout);
+          setStatusMsg(payout >= (cfg.maxWinMultiplier ?? 5000) * baseBet ? `Maximum round win · ${fmtCurrency(payout)}` : payout > 0 ? `${fmtCurrency(payout)} total win` : 'No win · ready to spin');
+        }
       } catch (err) {
-        balance.credit(cost);
-        setStatusMsg('Spin failed — bet refunded.');
+        if (!settled) balance.credit(cost);
+        if (aliveRef.current) setStatusMsg(settled ? 'Result saved in history. Animation interrupted.' : 'Spin failed. Stake refunded.');
         // eslint-disable-next-line no-console
         console.error('Spin failed:', err);
       } finally {
         busyRef.current = false;
-        setBusy(false);
+        if (aliveRef.current) { setBusy(false); setPrespin(false); }
       }
     },
-    [ante, balance, bet, cfg, fairness, history, playFrames, sound],
+    [ante, balance, bet, cfg, fairness, history, playFrames, sound, session, music, freeSpins, clearSpinTimers, skipRef, bigWin, fsOutroOverlay, fsOverlay, requestSkip],
   );
 
   // Space-to-spin hotkey — real Pragmatic mobile players Space-spam
@@ -910,9 +954,10 @@ export function ImmersiveSlotView({
       setAutoplay(null);
       return;
     }
-    if (busy || balance.balance < (ante ? bet * cfg.ante.betMultiplier : bet)) return;
+    if (busy) { requestSkip(); return; }
+    if (balance.balance < (ante ? bet * cfg.ante.betMultiplier : bet)) return;
     runRound('spin');
-  }, !autoplay);
+  }, !autoplay && !betSheetOpen && !buyBonusOpen && !autoplaySheetOpen && !paytableOpen && !welcomeSplash);
 
   // Esc closes any open sheets / modals on the slot. Stops autoplay
   // first if running, then dismisses bet/autoplay/buy/paytable sheets.
@@ -929,6 +974,7 @@ export function ImmersiveSlotView({
   // any game event. Real Pragmatic Olympus has stormy ambient effects too.
   const [ambientLightning, setAmbientLightning] = useState<number>(0);
   useEffect(() => {
+    if (reduceMotion || cfg.id !== 'gates-of-olympus') return;
     let timer: number;
     const schedule = () => {
       const wait = 12000 + Math.random() * 18000; // 12–30s
@@ -939,14 +985,14 @@ export function ImmersiveSlotView({
     };
     schedule();
     return () => clearTimeout(timer);
-  }, []);
+  }, [reduceMotion, cfg.id]);
 
   // Idle cell glints — occasional sparkles on random cells while at rest.
   // Real Pragmatic shows tiny glint highlights on its symbols even between
   // spins for ambient liveliness.
   const [idleGlint, setIdleGlint] = useState<{ id: string; col: number; row: number } | null>(null);
   useEffect(() => {
-    if (busy || autoplay) return;
+    if (busy || autoplay || reduceMotion) return;
     let timer: number;
     const schedule = () => {
       const wait = 2400 + Math.random() * 4000; // 2.4-6.4s
@@ -957,13 +1003,13 @@ export function ImmersiveSlotView({
           row: Math.floor(Math.random() * cfg.rows),
         });
         // Auto-clear so the next schedule can fire
-        setTimeout(() => setIdleGlint(null), 900);
+        scheduleSpin(() => setIdleGlint(null), 900);
         schedule();
       }, wait);
     };
     schedule();
     return () => clearTimeout(timer);
-  }, [busy, autoplay, cfg.cols, cfg.rows]);
+  }, [busy, autoplay, cfg.cols, cfg.rows, reduceMotion, scheduleSpin]);
 
   // Switch music intensity to match game state (base / free spins).
   // Tracks change immediately when entering or exiting a free-spins session.
@@ -977,7 +1023,7 @@ export function ImmersiveSlotView({
   // overlay after a duration scaled by tier intensity. Plus coin-drop tinkles
   // staggered through the coin shower so each visible coin has audio impact.
   useEffect(() => {
-    if (!bigWin) return;
+    if (!bigWin || reduceMotion) return;
     // CountUp duration scales with tier so bigger wins take longer to
     // tick up — real Pragmatic visibly slows the counter for MEGA/
     // COLOSSAL so the player has time to register the amount. Then add
@@ -1053,7 +1099,7 @@ export function ImmersiveSlotView({
       coinTimers.forEach(clearTimeout);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bigWin]);
+  }, [bigWin, reduceMotion]);
 
   // Auto-play loop: when autoplay state is set, the effect kicks off
   // sequential spins, decrementing the counter each time, until exhausted,
@@ -1068,7 +1114,7 @@ export function ImmersiveSlotView({
   //   - retrigger callout
   // Real Pragmatic also pauses autoplay on big wins by default.
   useEffect(() => {
-    if (!autoplay || busyRef.current || freeSpins) return;
+    if (!autoplay || busyRef.current || freeSpins || betSheetOpen || buyBonusOpen || autoplaySheetOpen || paytableOpen || welcomeSplash || document.hidden) return;
     if (bigWin || fsOverlay || fsOutroOverlay || lightningStrike || retrigger) return;
     const adjBet = ante ? +(bet * cfg.ante.betMultiplier).toFixed(2) : bet;
     if (balance.balance < adjBet) {
@@ -1076,7 +1122,9 @@ export function ImmersiveSlotView({
       return;
     }
     const t = setTimeout(() => {
+      if (document.hidden || document.querySelector('[aria-modal="true"]')) { setAutoplay(null); return; }
       runRound('spin').then(() => {
+        if (!aliveRef.current) return;
         setAutoplay((s) => {
           if (!s) return null;
           if (s.infinite) return s;
@@ -1086,7 +1134,13 @@ export function ImmersiveSlotView({
       });
     }, 200);
     return () => clearTimeout(t);
-  }, [autoplay, busy, freeSpins, bigWin, fsOverlay, fsOutroOverlay, lightningStrike, retrigger, ante, balance.balance, bet, cfg.ante.betMultiplier, runRound]);
+  }, [autoplay, busy, freeSpins, bigWin, fsOverlay, fsOutroOverlay, lightningStrike, retrigger, ante, balance.balance, bet, cfg.ante.betMultiplier, runRound, betSheetOpen, buyBonusOpen, autoplaySheetOpen, paytableOpen, welcomeSplash]);
+
+  useEffect(() => {
+    const pause = () => { if (document.hidden) setAutoplay(null); };
+    document.addEventListener('visibilitychange', pause);
+    return () => document.removeEventListener('visibilitychange', pause);
+  }, []);
 
   const buyCost = useMemo(() => cfg.buyBonusCost * bet, [cfg.buyBonusCost, bet]);
   const inFree = freeSpins !== null;
@@ -1127,6 +1181,7 @@ export function ImmersiveSlotView({
 
   return (
     <div className="absolute inset-0 flex flex-col" style={fsThemeStyle}>
+      <p className="sr-only" role="status" aria-live="polite">{statusMsg}</p>
       {/* Persistent free-spins HUD — fixed top, shows over the floating top
           bar during a free-spins session. Three stats: spin counter, current
           on-grid multiplier total (sum of all visible orbs), and total won.
@@ -1214,7 +1269,7 @@ export function ImmersiveSlotView({
             }}
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: [0.45, 0.85, 0.45] }}
-            exit={{ opacity: 0, y: 4 }}
+            exit={{ opacity: 0, y: 4, transition: { opacity: { duration: 0.15, repeat: 0 }, y: { duration: 0.15 } } }}
             transition={{
               opacity: { duration: 1.4, repeat: Infinity, ease: 'easeInOut' },
             }}
@@ -1230,7 +1285,7 @@ export function ImmersiveSlotView({
           Tapping anywhere during an active spin fast-forwards animations. */}
       <button
         type="button"
-        onClick={() => { if (busyRef.current) { skipRef.current = true; } }}
+        onClick={() => { if (busyRef.current) requestSkip(); }}
         className="flex-1 min-h-0 flex items-center justify-center overflow-hidden pt-12 pb-1 px-2 cursor-default focus:outline-none"
         aria-label={busy ? 'Tap to skip animation' : 'Reels'}
       >
@@ -1541,7 +1596,7 @@ export function ImmersiveSlotView({
                 onComplete={() => reelSpinResolveRef.current?.()}
               />
             ) : (
-              <Grid grid={grid} cfg={cfg} winning={winning} newKeys={newKeys} renderCell={renderCell} bare />
+              <Grid grid={grid} cfg={cfg} winning={winning} newKeys={newKeys} renderCell={renderCell} speed={turbo ? 0.5 : 1} bare />
             )}
           </div>
 
@@ -2255,12 +2310,13 @@ export function ImmersiveSlotView({
 
         {/* Big round SPIN button (or stop button when autoplaying) */}
         <button
-          aria-label={autoplay ? 'Stop autoplay' : inFree ? 'Free spin' : 'Spin'}
+          aria-label={autoplay ? 'Stop autoplay' : busy ? 'Skip to result' : bigWin || fsOutroOverlay || fsOverlay ? 'Dismiss win' : 'Spin'}
           onClick={() => {
             if (autoplay) { setAutoplay(null); return; }
+            if (busyRef.current) { requestSkip(); return; }
             runRound('spin');
           }}
-          disabled={!autoplay && (busy || balance.balance < (ante ? bet * cfg.ante.betMultiplier : bet))}
+          disabled={!autoplay && !busy && balance.balance < (ante ? bet * cfg.ante.betMultiplier : bet)}
           className="spin-btn flex-shrink-0"
           data-fs={inFree ? '1' : undefined}
         >
@@ -2283,8 +2339,8 @@ export function ImmersiveSlotView({
                 </span>
               </span>
             ) : busy ? (
-              <span className="text-[#fff7d6] flex items-center justify-center animate-spin" style={{ filter: 'drop-shadow(0 0 8px rgba(255,200,80,.95))' }}>
-                <SpinArrowIcon size={28} />
+              <span className="text-[#fff7d6] flex items-center justify-center" style={{ filter: 'drop-shadow(0 0 8px rgba(255,200,80,.95))' }}>
+                <StopIcon size={26} />
               </span>
             ) : (
               <span className="text-[#fff7d6] flex items-center justify-center" style={{ filter: 'drop-shadow(0 0 10px rgba(255,200,80,.95))' }}>
@@ -2381,257 +2437,18 @@ export function ImmersiveSlotView({
         </div>
       </div>
 
-      {/* Buy Bonus confirmation dialog (real Olympus parity).
-          Shows guaranteed FS count + cost + warning before charging the user. */}
-      <AnimatePresence>
-        {buyBonusOpen && (
-          <>
-            <motion.button
-              aria-label="Close buy bonus"
-              onClick={() => setBuyBonusOpen(false)}
-              className="fixed inset-0 z-[140] bg-black/75 backdrop-blur-sm"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            />
-            <motion.div
-              role="dialog"
-              aria-modal="true"
-              className="fixed inset-x-4 top-1/2 -translate-y-1/2 z-[145] max-w-sm mx-auto rounded-3xl overflow-y-auto max-h-[calc(100dvh-1.5rem)]"
-              style={{
-                // Theme-tinted dialog backdrop. Was hardcoded Olympus
-                // amber + amethyst.
-                background: `radial-gradient(ellipse at 50% 0%, ${cfg.theme.accent}40, rgba(15,8,12,.96) 70%), linear-gradient(180deg, ${cfg.theme.accent}20 0%, rgba(8,4,8,.95) 60%, rgba(4,2,4,1) 100%)`,
-                border: `2px solid ${cfg.theme.accent}8c`,
-                boxShadow: `inset 0 1px 0 ${cfg.theme.accent}55, 0 0 60px ${cfg.theme.glow}, 0 24px 80px rgba(0,0,0,.7)`,
-              }}
-              initial={{ opacity: 0, scale: 0.7, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.85 }}
-              transition={{ type: 'spring', stiffness: 260, damping: 22 }}
-            >
-              {/* Corner decoration — uses the slot's FS-trigger glyph
-               *  (lightning for Olympus, chili for Cantina, sheriff star
-               *  for Wanted, etc.) so the buy-bonus dialog matches the
-               *  game's theme. */}
-              <span className="absolute top-3 left-3 text-2xl" style={{ color: cfg.theme.accent, textShadow: `0 0 12px ${cfg.theme.glow}` }}>{fsTriggerGlyph}</span>
-              <span className="absolute top-3 right-3 text-2xl" style={{ color: cfg.theme.accent, textShadow: `0 0 12px ${cfg.theme.glow}` }}>{fsTriggerGlyph}</span>
-
-              <div className="p-6 pt-10 text-center">
-                <div
-                  className="font-serif italic font-bold mb-1"
-                  style={{
-                    fontSize: 'clamp(22px, 6vw, 32px)',
-                    background: `linear-gradient(180deg, #ffffff 0%, #fff5dc 30%, ${cfg.theme.accent} 65%, rgba(0,0,0,.55) 100%)`,
-                    WebkitBackgroundClip: 'text',
-                    backgroundClip: 'text',
-                    color: 'transparent',
-                    filter: `drop-shadow(0 0 18px ${cfg.theme.glow}) drop-shadow(0 4px 6px rgba(0,0,0,.6))`,
-                    letterSpacing: '-0.02em',
-                  }}
-                >
-                  Buy Free Spins
-                </div>
-                <div
-                  className="text-[10px] mb-5 uppercase tracking-[0.3em]"
-                  style={{ color: `${cfg.theme.accent}c8` }}
-                >
-                  Skip the wait. Enter the bonus.
-                </div>
-
-                <div className="card bg-bg-elev/60 p-4 mb-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-ink-dim uppercase tracking-wider">You Get</span>
-                    <span
-                      className="font-serif italic font-bold text-2xl"
-                      style={{
-                        color: cfg.theme.accent,
-                        textShadow: `0 0 12px ${cfg.theme.glow}`,
-                      }}
-                    >
-                      {cfg.freeSpinsAwardOnTrigger} Free Spins
-                    </span>
-                  </div>
-                  <div className="border-t border-edge" />
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-ink-dim uppercase tracking-wider">Cost</span>
-                    <span className="font-mono font-bold text-2xl text-ink">
-                      {fmtCurrency(buyCost)}
-                    </span>
-                  </div>
-                  <div className="text-[10px] text-ink-mute">
-                    {cfg.buyBonusCost}× your current bet ({fmtCurrency(bet)})
-                  </div>
-                </div>
-
-                <p className="text-[11px] text-ink-mute mb-4 leading-relaxed">
-                  In free spins, multipliers persist on the grid and sum to apply at the
-                  end of each spin. Average return ≈ {fmtCurrency(buyCost * 0.96)}, but
-                  variance is high.
-                </p>
-
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setBuyBonusOpen(false)}
-                    className="flex-1 py-3 rounded-xl bg-bg-hover border border-edge text-ink-dim font-semibold transition active:scale-95"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    disabled={balance.balance < buyCost}
-                    onClick={() => {
-                      setBuyBonusOpen(false);
-                      runRound('buy');
-                    }}
-                    className="btn flex-1 py-3 disabled:opacity-50 font-bold"
-                    style={{
-                      // Theme-tinted Confirm button — accent gradient
-                      // matches the Buy Bonus button itself.
-                      background: `linear-gradient(180deg, ${cfg.theme.accent} 0%, ${cfg.theme.accent}c0 50%, rgba(20,8,30,.85) 100%)`,
-                      color: '#fff',
-                      border: `1.5px solid ${cfg.theme.accent}`,
-                      boxShadow: `0 0 14px ${cfg.theme.glow}, inset 0 1px 0 rgba(255,255,255,.25)`,
-                      textShadow: '0 1px 0 rgba(0,0,0,.45), 0 0 6px rgba(255,255,255,.4)',
-                    }}
-                  >
-                    Confirm
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-
-      {/* Autoplay sheet — per-slot tinted (was hardcoded Olympus gold) */}
-      {autoplaySheetOpen && (
-        <>
-          <button
-            aria-label="Close autoplay menu"
-            onClick={() => setAutoplaySheetOpen(false)}
-            className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm"
-          />
-          <div
-            className="fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl p-4 pb-[max(env(safe-area-inset-bottom),16px)] animate-rise overflow-hidden"
-            style={{
-              background: `radial-gradient(ellipse at 50% 0%, ${cfg.theme.accent}40, rgba(20,5,10,.96) 70%), linear-gradient(180deg, ${cfg.theme.accent}10 0%, #0a0716 60%, #050308 100%)`,
-              border: `1.5px solid ${cfg.theme.accent}73`,
-              borderBottom: 'none',
-              boxShadow: `inset 0 1px 0 ${cfg.theme.accent}4d, 0 -8px 24px rgba(0,0,0,.6), 0 0 32px ${cfg.theme.glow}`,
-            }}
-          >
-            <span className="absolute top-2 left-3 text-base opacity-80" style={{ color: cfg.theme.accent, textShadow: `0 0 8px ${cfg.theme.glow}` }}>{fsTriggerGlyph}</span>
-            <span className="absolute top-2 right-3 text-base opacity-80" style={{ color: cfg.theme.accent, textShadow: `0 0 8px ${cfg.theme.glow}` }}>{fsTriggerGlyph}</span>
-
-            <div className="flex items-center justify-between mb-1 mt-1">
-              <h3 className="font-serif italic font-bold olympus-fs-title text-lg">Auto-Play</h3>
-              <button onClick={() => setAutoplaySheetOpen(false)} className="text-lg w-6 h-6 flex items-center justify-center" style={{ color: cfg.theme.accent }}>✕</button>
-            </div>
-            <p className="text-[11px] mb-3 leading-relaxed" style={{ color: cfg.theme.accent, opacity: 0.7 }}>
-              Reels spin automatically with the current bet. Tap STOP any time, or it'll
-              pause if your balance dips below the bet.
-            </p>
-            <div className="grid grid-cols-3 gap-2">
-              {AUTOPLAY_OPTIONS.map((n) => (
-                <button
-                  key={n}
-                  onClick={() => {
-                    setAutoplay({ remaining: n === 0 ? 0 : n, infinite: n === 0 });
-                    setAutoplaySheetOpen(false);
-                    sound.play('click');
-                  }}
-                  className="py-3 rounded-xl font-mono font-semibold text-sm hover:text-[#fff7d6] transition"
-                  style={{
-                    color: cfg.theme.accent,
-                    background: `${cfg.theme.accent}10`,
-                    border: `1px solid ${cfg.theme.accent}40`,
-                  }}
-                >
-                  {n === 0 ? '∞' : n}
-                </button>
-              ))}
-            </div>
-            <button
-              onClick={() => setAutoplaySheetOpen(false)}
-              className="mt-3 w-full py-2.5 rounded-xl text-sm transition active:scale-95"
-              style={{
-                color: cfg.theme.accent,
-                background: `${cfg.theme.accent}0d`,
-                border: `1px solid ${cfg.theme.accent}40`,
-              }}
-            >Cancel</button>
-          </div>
-        </>
-      )}
-
-      {/* Bet preset sheet — Olympus-themed */}
-      {betSheetOpen && (
-        <>
-          <button
-            aria-label="Close bet menu"
-            onClick={() => setBetSheetOpen(false)}
-            className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm"
-          />
-          <div
-            className="fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl p-4 pb-[max(env(safe-area-inset-bottom),16px)] animate-rise overflow-hidden"
-            style={{
-              background: `radial-gradient(ellipse at 50% 0%, ${cfg.theme.accent}40, rgba(20,5,10,.96) 70%), linear-gradient(180deg, ${cfg.theme.accent}10 0%, #0a0716 60%, #050308 100%)`,
-              border: `1.5px solid ${cfg.theme.accent}73`,
-              borderBottom: 'none',
-              boxShadow: `inset 0 1px 0 ${cfg.theme.accent}4d, 0 -8px 24px rgba(0,0,0,.6), 0 0 32px ${cfg.theme.glow}`,
-            }}
-          >
-            {/* Decorative corner glyphs use the slot's FS-trigger glyph */}
-            <span className="absolute top-2 left-3 text-base opacity-80" style={{ color: cfg.theme.accent, textShadow: `0 0 8px ${cfg.theme.glow}` }}>{fsTriggerGlyph}</span>
-            <span className="absolute top-2 right-3 text-base opacity-80" style={{ color: cfg.theme.accent, textShadow: `0 0 8px ${cfg.theme.glow}` }}>{fsTriggerGlyph}</span>
-
-            <div className="flex items-center justify-between mb-1 mt-1">
-              <h3 className="font-serif italic font-bold olympus-fs-title text-lg">Bet Amount</h3>
-              <button onClick={() => setBetSheetOpen(false)} className="text-lg w-6 h-6 flex items-center justify-center" style={{ color: cfg.theme.accent }}>✕</button>
-            </div>
-            <p className="text-[10px] uppercase tracking-widest text-ink-mute mb-3">
-              {ante ? `Ante on · total per spin ${fmtCurrency(bet * cfg.ante.betMultiplier)}` : 'Per spin'}
-            </p>
-            <div className="grid grid-cols-3 gap-2">
-              {betPresets.map((v) => (
-                <button
-                  key={v}
-                  onClick={() => { setBet(v); setBetSheetOpen(false); sound.play('click'); }}
-                  className="py-3 rounded-xl font-mono font-semibold text-sm transition relative"
-                  style={
-                    bet === v
-                      ? {
-                          // Active preset uses theme accent gradient so
-                          // each slot's bet picker feels native.
-                          color: '#1a0f00',
-                          background: `linear-gradient(180deg, #fff5dc 0%, ${cfg.theme.accent} 30%, ${cfg.theme.accent} 70%, rgba(40,18,0,.7) 100%)`,
-                          border: `1.5px solid ${cfg.theme.accent}`,
-                          boxShadow: `inset 0 1px 0 rgba(255,255,255,.6), 0 0 18px ${cfg.theme.glow}`,
-                          textShadow: '0 1px 0 rgba(255,255,255,.4)',
-                        }
-                      : {
-                          color: cfg.theme.accent,
-                          background: `${cfg.theme.accent}10`,
-                          border: `1px solid ${cfg.theme.accent}40`,
-                        }
-                  }
-                >
-                  {fmtCurrency(v)}
-                </button>
-              ))}
-            </div>
-            <button
-              onClick={() => setBetSheetOpen(false)}
-              className="mt-3 w-full py-2.5 rounded-xl text-sm transition active:scale-95"
-              style={{
-                color: cfg.theme.accent,
-                background: `${cfg.theme.accent}0d`,
-                border: `1px solid ${cfg.theme.accent}40`,
-              }}
-            >Cancel</button>
-          </div>
-        </>
-      )}
+      <Modal open={buyBonusOpen} onClose={() => setBuyBonusOpen(false)} title="Buy free spins?" width="sm">
+        <p className="text-sm text-ink-dim">Spend {fmtCurrency(buyCost)} play credits for {cfg.freeSpinsAwardOnTrigger} free spins at a locked {fmtCurrency(bet)} stake. Wins are random and may be less than the cost. Local probabilities differ from the provider game.</p>
+        <div className="mt-5 flex gap-2"><button className="btn-ghost flex-1" onClick={() => setBuyBonusOpen(false)}>Cancel</button><button className="btn-primary flex-1" disabled={busy || !balance.canAfford(buyCost)} onClick={() => { setBuyBonusOpen(false); void runRound('buy'); }}>Buy · {fmtCurrency(buyCost)}</button></div>
+      </Modal>
+      <Modal open={autoplaySheetOpen} onClose={() => setAutoplaySheetOpen(false)} title="Autoplay" width="sm">
+        <p className="mb-4 text-sm text-ink-dim">Uses the current stake. Stop any time. Autoplay pauses for menus and stops when you leave the tab or run out of credits.</p>
+        <div className="grid grid-cols-3 gap-2">{AUTOPLAY_OPTIONS.map((count) => <button key={count} className="btn-ghost min-h-12" onClick={() => { setAutoplay({ remaining: count, infinite: count === 0 }); setAutoplaySheetOpen(false); }}>{count === 0 ? 'Until stopped' : `${count} spins`}</button>)}</div>
+      </Modal>
+      <Modal open={betSheetOpen} onClose={() => setBetSheetOpen(false)} title="Bet amount" width="sm">
+        <p className="mb-4 text-sm text-ink-dim">{ante ? `Ante on · total per spin ${fmtCurrency(bet * cfg.ante.betMultiplier)}` : 'Play credits per spin'}</p>
+        <div className="grid grid-cols-3 gap-2">{betPresets.map((value) => <button key={value} aria-pressed={bet === value} disabled={busy} className="btn-ghost min-h-12" style={{ borderColor: bet === value ? cfg.theme.accent : undefined }} onClick={() => { if (busyRef.current) return; setBet(value); setBetSheetOpen(false); sound.play('click'); }}>{fmtCurrency(value)}</button>)}</div>
+      </Modal>
 
       {/* Coin shower for big wins (tier-scaled intensity) */}
       <CoinShower active={bigWin !== null} intensity={bigWin?.tier.intensity ?? 1} />
@@ -3121,10 +2938,6 @@ function makeBlank(cfg: SlotConfig): TGrid {
     grid.push(col);
   }
   return grid;
-}
-
-function sleep(ms: number) {
-  return new Promise<void>((res) => setTimeout(res, ms));
 }
 
 function countScattersInGrid(grid: TGrid, scatterId: string): number {
